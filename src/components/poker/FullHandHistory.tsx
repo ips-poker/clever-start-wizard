@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,16 +14,19 @@ import {
   Clock,
   ChevronRight,
   RefreshCw,
-  Eye
+  Eye,
+  Play
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHandHistory, HandHistoryRecord, HandActionRecord } from '@/hooks/useHandHistory';
+import { HandReplayer, HandReplay, ReplayAction, ReplayPlayer } from './HandReplayer';
 
 interface FullHandHistoryProps {
   tableId?: string;
   playerId?: string;
   className?: string;
+  onReplayHand?: (hand: HandReplay) => void;
 }
 
 const PHASE_ORDER = ['preflop', 'flop', 'turn', 'river', 'showdown'];
@@ -44,7 +47,7 @@ const ACTION_LABELS: Record<string, string> = {
   'all-in': 'Олл-ин'
 };
 
-export function FullHandHistory({ tableId, playerId, className }: FullHandHistoryProps) {
+export function FullHandHistory({ tableId, playerId, className, onReplayHand }: FullHandHistoryProps) {
   const { hands, isLoading, error, selectedHand, setSelectedHand, fetchHistory, fetchHandDetails } = useHandHistory({
     tableId,
     playerId,
@@ -52,6 +55,75 @@ export function FullHandHistory({ tableId, playerId, className }: FullHandHistor
   });
 
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [showReplay, setShowReplay] = useState(false);
+
+  // Convert HandHistoryRecord to HandReplay format
+  const convertToReplayFormat = useCallback((hand: HandHistoryRecord): HandReplay => {
+    const players: ReplayPlayer[] = hand.players.map(p => ({
+      id: p.playerId,
+      name: p.playerName || `Seat ${p.seatNumber}`,
+      seatNumber: p.seatNumber,
+      stackStart: p.stackStart,
+      stackEnd: p.stackEnd || p.stackStart,
+      holeCards: p.holeCards,
+      isWinner: hand.winners.some(w => w.playerId === p.playerId),
+      amountWon: p.wonAmount,
+      handRank: p.handRank
+    }));
+
+    // Calculate running pot for each action
+    let runningPot = 0;
+    const sbPlayer = hand.players.find(p => p.seatNumber === hand.smallBlindSeat);
+    const bbPlayer = hand.players.find(p => p.seatNumber === hand.bigBlindSeat);
+    const smallBlind = sbPlayer ? Math.min(sbPlayer.betAmount, 10) : 10;
+    const bigBlind = bbPlayer ? Math.min(bbPlayer.betAmount, 20) : 20;
+    runningPot = smallBlind + bigBlind;
+
+    const actions: ReplayAction[] = hand.actions.map(a => {
+      if (a.amount) runningPot += a.amount;
+      return {
+        phase: a.phase as ReplayAction['phase'],
+        playerId: a.playerId,
+        playerName: a.playerName,
+        seatNumber: a.seatNumber,
+        action: a.actionType as ReplayAction['action'],
+        amount: a.amount,
+        potAfter: runningPot,
+        timestamp: new Date(a.createdAt).getTime()
+      };
+    });
+
+    return {
+      handId: hand.id,
+      handNumber: hand.handNumber,
+      timestamp: new Date(hand.startedAt).getTime(),
+      players,
+      communityCards: hand.communityCards,
+      actions,
+      dealerSeat: hand.dealerSeat,
+      smallBlindSeat: hand.smallBlindSeat,
+      bigBlindSeat: hand.bigBlindSeat,
+      smallBlindAmount: smallBlind,
+      bigBlindAmount: bigBlind,
+      potTotal: hand.pot,
+      winners: hand.winners.map(w => ({
+        playerId: w.playerId,
+        amount: w.amount,
+        handRank: w.handName
+      }))
+    };
+  }, []);
+
+  const handleReplayHand = useCallback(() => {
+    if (!selectedHand) return;
+    const replayData = convertToReplayFormat(selectedHand);
+    if (onReplayHand) {
+      onReplayHand(replayData);
+      setDetailsOpen(false);
+    } else {
+      setShowReplay(true);
+    }
+  }, [selectedHand, convertToReplayFormat, onReplayHand]);
 
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleString('ru-RU', {
@@ -219,16 +291,29 @@ export function FullHandHistory({ tableId, playerId, className }: FullHandHistor
       </Card>
 
       {/* Hand Details Dialog */}
-      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+      <Dialog open={detailsOpen && !showReplay} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <PlayCircle className="h-5 w-5" />
-              Раздача #{selectedHand?.handNumber}
-              {selectedHand?.completedAt && (
-                <span className="text-sm font-normal text-muted-foreground">
-                  {formatTime(selectedHand.completedAt)}
-                </span>
+            <DialogTitle className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <PlayCircle className="h-5 w-5" />
+                Раздача #{selectedHand?.handNumber}
+                {selectedHand?.completedAt && (
+                  <span className="text-sm font-normal text-muted-foreground">
+                    {formatTime(selectedHand.completedAt)}
+                  </span>
+                )}
+              </div>
+              {selectedHand && selectedHand.actions.length > 0 && (
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={handleReplayHand}
+                  className="ml-auto"
+                >
+                  <Play className="h-4 w-4 mr-1" />
+                  Воспроизвести
+                </Button>
               )}
             </DialogTitle>
           </DialogHeader>
@@ -414,6 +499,18 @@ export function FullHandHistory({ tableId, playerId, className }: FullHandHistor
                 </TabsContent>
               </ScrollArea>
             </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Inline Hand Replayer Dialog */}
+      <Dialog open={showReplay} onOpenChange={setShowReplay}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 bg-slate-900 border-white/10">
+          {selectedHand && (
+            <HandReplayer
+              hand={convertToReplayFormat(selectedHand)}
+              onClose={() => setShowReplay(false)}
+            />
           )}
         </DialogContent>
       </Dialog>
