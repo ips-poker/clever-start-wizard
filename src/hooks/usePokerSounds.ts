@@ -176,23 +176,7 @@ export function usePokerSounds() {
   }, []);
 
   const playShuffle = useCallback(() => {
-    if (!enabledRef.current) return;
-    
-    try {
-      if (shuffleSoundRef.current) {
-        const sound = shuffleSoundRef.current.cloneNode() as HTMLAudioElement;
-        sound.volume = 0.4;
-        sound.play().catch(() => {});
-        
-        // Stop shuffle sound after 2.5 seconds
-        setTimeout(() => {
-          sound.pause();
-          sound.currentTime = 0;
-        }, 2500);
-      }
-    } catch (e) {
-      console.warn('Audio not available:', e);
-    }
+    // Silent - no shuffle sound
   }, []);
 
   // Chip sounds - use preloaded MP3s
