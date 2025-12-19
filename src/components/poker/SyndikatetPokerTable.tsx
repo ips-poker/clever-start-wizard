@@ -1453,7 +1453,7 @@ export function SyndikatetPokerTable({
   
   const {
     isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
-    connect, disconnect, joinTable, fold, check, call, raise, allIn
+    connect, disconnect, joinTable, fold, check, call, raise, allIn, sitOut, sitIn
   } = pokerTable;
   
   // Check if player can join (not yet seated)
@@ -1870,7 +1870,40 @@ export function SyndikatetPokerTable({
 
         {/* Action panel */}
         <AnimatePresence>
-          {isMyTurn && tableState && (
+          {/* Show "Return to game" button when sitting out */}
+          {myPlayer?.isSittingOut && !isMyTurn && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="fixed bottom-0 left-0 right-0 z-40 p-4"
+              style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
+            >
+              <div className="max-w-lg mx-auto">
+                <div className="bg-black/80 backdrop-blur-md rounded-2xl p-4 border border-amber-500/30">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                        <span className="text-xl">💤</span>
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">Вы отсутствуете</p>
+                        <p className="text-white/60 text-sm">Карты сбрасываются автоматически</p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={sitIn}
+                      className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold px-6 py-2 rounded-xl"
+                    >
+                      Вернуться в игру
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+          
+          {isMyTurn && tableState && !myPlayer?.isSittingOut && (
             <ActionPanel
               isVisible={true}
               canCheck={canCheck}
