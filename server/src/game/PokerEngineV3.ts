@@ -1978,7 +1978,8 @@ export class PokerEngineV3 {
     });
     
     // Calculate positions
-    const positions = calculatePositions(gamePlayers, dealerSeat > 0 ? dealerSeat - 1 : null);
+    // dealerSeat is the PREVIOUS dealer position, engine will calculate next dealer
+    const positions = calculatePositions(gamePlayers, dealerSeat >= 0 ? dealerSeat : null);
     
     console.log('[Engine] Calculated positions:', {
       dealer: positions.dealerSeat,

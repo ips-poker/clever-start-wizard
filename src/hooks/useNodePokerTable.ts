@@ -1174,22 +1174,15 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     
     const currentBetAmount = tableState?.currentBet || 0;
     const myCurrentBet = tableStateRef.current?.players.find(p => p.playerId === playerId)?.betAmount || 0;
+    
+    // Engine v3 expects TOTAL raise amount (what we want our total bet to be)
+    // If currentBet=0, it's a "bet", otherwise it's a "raise"
+    // Engine will auto-convert raise to bet if needed
     const actionType = currentBetAmount === 0 ? 'bet' : 'raise';
-    
-    // Server v3 may expect different amount formats:
-    // Option 1: Total bet amount (what we want our total bet to be)
-    // Option 2: Raise amount (how much to add on top of current bet)
-    // 
-    // From error "Min raise to 2" when trying to raise to 4 with currentBet=2,
-    // it seems server expects the RAISE AMOUNT (delta), not total.
-    // So if we want to raise from 2 to 4, we send amount=2 (the raise BY amount)
-    
-    const raiseByAmount = totalAmount - currentBetAmount;
     
     console.log('[NodePoker] 💰 Raise/Bet action:', { 
       tableId, playerId, 
       totalAmount,
-      raiseByAmount,
       actionType, 
       currentBet: currentBetAmount,
       myCurrentBet 
@@ -1200,7 +1193,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       tableId,
       playerId,
       actionType,
-      amount: raiseByAmount  // Send raise-by amount (delta from current bet)
+      amount: totalAmount  // Send TOTAL bet amount (engine expects total, not delta)
     });
   }, [tableId, playerId, tableState?.currentBet, sendMessage]);
 
