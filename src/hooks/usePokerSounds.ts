@@ -58,6 +58,7 @@ export function usePokerSounds() {
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const chipSoundRef = useRef<HTMLAudioElement | null>(null);
   const shuffleSoundRef = useRef<HTMLAudioElement | null>(null);
+  const dealSoundRef = useRef<HTMLAudioElement | null>(null);
 
   // Preload sound MP3s
   useEffect(() => {
@@ -68,6 +69,10 @@ export function usePokerSounds() {
     shuffleSoundRef.current = new Audio('/sounds/card-shuffle.mp3');
     shuffleSoundRef.current.volume = 0.4;
     shuffleSoundRef.current.preload = 'auto';
+    
+    dealSoundRef.current = new Audio('/sounds/card-deal.mp3');
+    dealSoundRef.current.volume = 0.35;
+    dealSoundRef.current.preload = 'auto';
   }, []);
 
   const getAudioContext = useCallback(() => {
@@ -298,10 +303,18 @@ export function usePokerSounds() {
 
   // Card sounds
   const playDeal = useCallback(() => {
-    const s = SOUNDS.deal;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-    playNoise(40, 0.08);
-  }, [playTone, playNoise]);
+    if (!enabledRef.current) return;
+    
+    try {
+      if (dealSoundRef.current) {
+        const sound = dealSoundRef.current.cloneNode() as HTMLAudioElement;
+        sound.volume = 0.35;
+        sound.play().catch(() => {});
+      }
+    } catch (e) {
+      console.warn('Audio not available:', e);
+    }
+  }, []);
 
   const playCardFlip = useCallback(() => {
     const s = SOUNDS.cardFlip;
