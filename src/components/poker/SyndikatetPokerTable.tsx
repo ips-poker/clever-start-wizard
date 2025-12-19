@@ -980,6 +980,7 @@ const ActionPanel = memo(function ActionPanel({
 }) {
   const [raiseAmount, setRaiseAmount] = useState(minRaise);
   const [showRaisePanel, setShowRaisePanel] = useState(false);
+  const sounds = usePokerSounds();
 
   useEffect(() => {
     // Set default raise to 2x current bet or 2.5x BB
@@ -1060,7 +1061,7 @@ const ActionPanel = memo(function ActionPanel({
             
             {/* All-in button */}
             <button
-              onClick={() => { onAction('allin'); setShowRaisePanel(false); }}
+              onClick={() => { sounds.playAllIn(); onAction('allin'); setShowRaisePanel(false); }}
               className="w-full mb-4 py-3 rounded-xl font-bold text-white text-base"
               style={{
                 background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
@@ -1089,7 +1090,7 @@ const ActionPanel = memo(function ActionPanel({
             
             {/* Confirm raise - shows exact amount */}
             <button
-              onClick={() => { onAction('raise', raiseAmount); setShowRaisePanel(false); }}
+              onClick={() => { sounds.playRaise(); onAction('raise', raiseAmount); setShowRaisePanel(false); }}
               className="w-full py-4 font-bold rounded-xl text-white text-lg"
               style={{
                 background: 'linear-gradient(135deg, #f59e0b, #d97706)',
@@ -1106,7 +1107,7 @@ const ActionPanel = memo(function ActionPanel({
       <div className="flex gap-2 px-3 pb-safe pt-3" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 20px)', background: 'linear-gradient(to top, rgba(0,0,0,0.98), rgba(0,0,0,0.8), transparent)' }}>
         {/* Fold */}
         <button
-          onClick={() => onAction('fold')}
+          onClick={() => { sounds.playFold(); onAction('fold'); }}
           className="flex-1 py-4 rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
           style={{
             background: 'linear-gradient(135deg, #dc2626, #991b1b)',
@@ -1119,7 +1120,15 @@ const ActionPanel = memo(function ActionPanel({
         
         {/* Call / Check - CLEAR indication of action */}
         <button
-          onClick={() => canCheck ? onAction('check') : onAction('call')}
+          onClick={() => {
+            if (canCheck) {
+              sounds.playCheck();
+              onAction('check');
+            } else {
+              sounds.playCall();
+              onAction('call');
+            }
+          }}
           className="flex-1 py-4 rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform flex flex-col items-center justify-center"
           style={{
             background: canCheck 

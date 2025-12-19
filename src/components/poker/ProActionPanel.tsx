@@ -3,6 +3,7 @@ import React, { memo, useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Zap, Minus, Plus, Check, X } from 'lucide-react';
+import { usePokerSounds } from '@/hooks/usePokerSounds';
 
 interface ProActionPanelProps {
   isMyTurn: boolean;
@@ -209,6 +210,7 @@ export const ProActionPanel = memo(function ProActionPanel({
   const [raiseAmount, setRaiseAmount] = useState(minRaise);
   const [showSlider, setShowSlider] = useState(false);
   const [preAction, setPreAction] = useState<'fold' | 'check' | 'call' | 'callAny' | null>(null);
+  const sounds = usePokerSounds();
 
   // Sync raise amount with minRaise
   useEffect(() => {
@@ -225,19 +227,37 @@ export const ProActionPanel = memo(function ProActionPanel({
     if (isMyTurn && preAction && !disabled) {
       const timeout = setTimeout(() => {
         switch (preAction) {
-          case 'fold': onFold(); break;
-          case 'check': if (canCheck) onCheck(); break;
-          case 'call': if (!canCheck && callAmount <= myStack) onCall(); break;
+          case 'fold': 
+            sounds.playFold();
+            onFold(); 
+            break;
+          case 'check': 
+            if (canCheck) {
+              sounds.playCheck();
+              onCheck();
+            }
+            break;
+          case 'call': 
+            if (!canCheck && callAmount <= myStack) {
+              sounds.playCall();
+              onCall();
+            }
+            break;
           case 'callAny':
-            if (canCheck) onCheck();
-            else if (callAmount <= myStack) onCall();
+            if (canCheck) {
+              sounds.playCheck();
+              onCheck();
+            } else if (callAmount <= myStack) {
+              sounds.playCall();
+              onCall();
+            }
             break;
         }
         setPreAction(null);
       }, 200);
       return () => clearTimeout(timeout);
     }
-  }, [isMyTurn, preAction, canCheck, callAmount, myStack, disabled, onFold, onCheck, onCall]);
+  }, [isMyTurn, preAction, canCheck, callAmount, myStack, disabled, onFold, onCheck, onCall, sounds]);
 
   // Handle preset click
   const handlePreset = useCallback((multiplier: number) => {
@@ -247,12 +267,33 @@ export const ProActionPanel = memo(function ProActionPanel({
 
   // Handle raise confirm
   const handleRaiseConfirm = useCallback(() => {
-    // Ensure raiseAmount is at least minRaise
     const finalAmount = Math.max(raiseAmount, minRaise);
     console.log('[ProActionPanel] handleRaiseConfirm - finalAmount:', finalAmount, 'minRaise:', minRaise, 'maxRaise:', maxRaise);
+    sounds.playRaise();
     onRaise(finalAmount);
     setShowSlider(false);
-  }, [raiseAmount, minRaise, maxRaise, onRaise]);
+  }, [raiseAmount, minRaise, maxRaise, onRaise, sounds]);
+
+  // Wrapped action handlers with sounds
+  const handleFold = useCallback(() => {
+    sounds.playFold();
+    onFold();
+  }, [onFold, sounds]);
+
+  const handleCheck = useCallback(() => {
+    sounds.playCheck();
+    onCheck();
+  }, [onCheck, sounds]);
+
+  const handleCall = useCallback(() => {
+    sounds.playCall();
+    onCall();
+  }, [onCall, sounds]);
+
+  const handleAllIn = useCallback(() => {
+    sounds.playAllIn();
+    onAllIn();
+  }, [onAllIn, sounds]);
 
   // Step for slider
   const step = Math.max(1, Math.floor(minRaise / 2));
@@ -400,7 +441,7 @@ export const ProActionPanel = memo(function ProActionPanel({
         <ActionButton
           label="Fold"
           variant="fold"
-          onClick={onFold}
+          onClick={handleFold}
           disabled={disabled}
         />
 
@@ -408,7 +449,7 @@ export const ProActionPanel = memo(function ProActionPanel({
           <ActionButton
             label="Check"
             variant="check"
-            onClick={onCheck}
+            onClick={handleCheck}
             disabled={disabled}
           />
         ) : (
@@ -416,7 +457,7 @@ export const ProActionPanel = memo(function ProActionPanel({
             label="Call"
             subLabel={formatAmount(callAmount)}
             variant="call"
-            onClick={onCall}
+            onClick={handleCall}
             disabled={disabled || callAmount > myStack}
           />
         )}
@@ -452,7 +493,7 @@ export const ProActionPanel = memo(function ProActionPanel({
           label="All-In"
           subLabel={formatAmount(myStack)}
           variant="allin"
-          onClick={onAllIn}
+          onClick={handleAllIn}
           disabled={disabled}
           icon={<Zap className="w-4 h-4" />}
           flex={0.8}
