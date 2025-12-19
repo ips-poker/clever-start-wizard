@@ -1609,8 +1609,16 @@ export function SyndikatetPokerTable({
         sounds.playShuffle();
         setTimeout(() => sounds.playDeal(), 300);
         setTimeout(() => sounds.playDeal(), 450);
-      } else if (['flop', 'turn', 'river'].includes(phase)) {
-        // Community cards
+      } else if (phase === 'flop') {
+        // Flop - 3 cards with delays for each
+        sounds.playCardFlip();
+        setTimeout(() => sounds.playCardFlip(), 150);
+        setTimeout(() => sounds.playCardFlip(), 300);
+      } else if (phase === 'turn') {
+        // Turn - 1 card
+        sounds.playCardFlip();
+      } else if (phase === 'river') {
+        // River - 1 card
         sounds.playCardFlip();
       } else if (phase === 'showdown') {
         sounds.playShowdown();
