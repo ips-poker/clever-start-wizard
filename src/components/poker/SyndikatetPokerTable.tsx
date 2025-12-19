@@ -135,7 +135,8 @@ const PlayerSeat = memo(function PlayerSeat({
   canJoin = false,
   handStrength,
   communityCards = [],
-  showdownPlayers
+  showdownPlayers,
+  handId
 }: {
   player: PokerPlayer | null;
   position: { x: number; y: number };
@@ -159,6 +160,7 @@ const PlayerSeat = memo(function PlayerSeat({
   handStrength?: string;
   communityCards?: string[];
   showdownPlayers?: Array<{ playerId: string; seatNumber: number; holeCards: string[]; handName?: string }>;
+  handId?: string;
 }) {
   const avatarSize = isMobile ? (isHero ? 52 : 40) : (isHero ? 58 : 46);
   const showTurnTimer = isCurrentTurn && !player?.isFolded && !player?.isAllIn;
@@ -474,6 +476,8 @@ const PlayerSeat = memo(function PlayerSeat({
               winningCardIndices={player.winningCardIndices || []}
               size="xs"
               position={position}
+              handId={handId}
+              dealDelay={300 + seatIndex * 100} // Stagger deal by seat position
             />
           </div>
         );
@@ -505,6 +509,7 @@ const PlayerSeat = memo(function PlayerSeat({
   if (prev.lastAction?.action !== next.lastAction?.action) return false;
   if (prev.gamePhase !== next.gamePhase) return false;
   if (prev.isHero !== next.isHero) return false;
+  if (prev.handId !== next.handId) return false;
   if (JSON.stringify(prev.heroCards) !== JSON.stringify(next.heroCards)) return false;
   if (JSON.stringify(prev.showdownPlayers) !== JSON.stringify(next.showdownPlayers)) return false;
   return true;
@@ -1905,6 +1910,7 @@ export function SyndikatetPokerTable({
                 handStrength={heroHandStrength}
                 communityCards={tableState?.communityCards || []}
                 showdownPlayers={showdownResult?.showdownPlayers}
+                handId={tableState?.handId}
               />
             );
           })}
