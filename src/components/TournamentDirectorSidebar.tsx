@@ -13,7 +13,8 @@ import {
   Globe,
   Calculator,
   Gamepad2,
-  CreditCard
+  CreditCard,
+  Volume2
 } from "lucide-react";
 import {
   Sidebar,
@@ -46,6 +47,7 @@ const tournamentSections = [
     label: "Онлайн-покер",
     items: [
       { title: "Управление", id: "online-poker", icon: Gamepad2 },
+      { title: "Звуки", id: "sounds", icon: Volume2 },
     ]
   },
   {

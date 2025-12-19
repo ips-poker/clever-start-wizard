@@ -7,9 +7,10 @@ import { usePokerSounds } from '@/hooks/usePokerSounds';
 interface SoundDemoProps {
   isOpen: boolean;
   onClose: () => void;
+  embedded?: boolean; // For inline display without modal
 }
 
-export function SoundDemo({ isOpen, onClose }: SoundDemoProps) {
+export function SoundDemo({ isOpen, onClose, embedded = false }: SoundDemoProps) {
   const sounds = usePokerSounds();
   const [lastPlayed, setLastPlayed] = useState<string | null>(null);
 
@@ -30,7 +31,6 @@ export function SoundDemo({ isOpen, onClose }: SoundDemoProps) {
     { name: 'Фишка', description: 'Одна фишка', fn: sounds.playChipSingle, color: 'from-yellow-600 to-yellow-700' },
     { name: 'Стопка', description: 'Стопка фишек', fn: sounds.playChipStack, color: 'from-yellow-500 to-amber-600' },
     { name: 'Скольжение', description: 'Фишки скользят', fn: sounds.playChipSlide, color: 'from-amber-500 to-yellow-600' },
-    { name: 'Выигрыш банка', description: 'Сбор выигрыша', fn: sounds.playPotWin, color: 'from-emerald-500 to-green-600' },
     { name: '─────', description: 'Звуки карт', fn: () => {}, color: 'from-transparent to-transparent', disabled: true },
     { name: 'Раздача', description: 'Карта летит', fn: sounds.playDeal, color: 'from-indigo-600 to-indigo-700' },
     { name: 'Переворот', description: 'Карта открывается', fn: sounds.playCardFlip, color: 'from-purple-600 to-purple-700' },
@@ -39,6 +39,57 @@ export function SoundDemo({ isOpen, onClose }: SoundDemoProps) {
 
   if (!isOpen) return null;
 
+  // Embedded mode - no modal wrapper
+  if (embedded) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {soundButtons.map((btn, idx) => (
+            btn.disabled ? (
+              <div key={idx} className="col-span-2 sm:col-span-3 md:col-span-4 text-center text-muted-foreground text-xs py-2">
+                {btn.description}
+              </div>
+            ) : (
+              <motion.button
+                key={idx}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => playSound(btn.name, btn.fn)}
+                className={`relative p-4 rounded-xl bg-gradient-to-br ${btn.color} text-white font-medium shadow-lg overflow-hidden transition-all hover:shadow-xl hover:scale-[1.02]`}
+              >
+                {lastPlayed === btn.name && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0.8 }}
+                    animate={{ scale: 3, opacity: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="absolute inset-0 bg-white rounded-full"
+                    style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+                  />
+                )}
+                <div className="relative z-10">
+                  <div className="text-base font-bold">{btn.name}</div>
+                  <div className="text-xs opacity-80">{btn.description}</div>
+                </div>
+              </motion.button>
+            )
+          ))}
+        </div>
+
+        <div className="p-4 rounded-xl bg-muted border border-border">
+          <h3 className="font-semibold mb-2 flex items-center gap-2">
+            <span>💡</span> Описание звуков:
+          </h3>
+          <ul className="text-muted-foreground text-sm space-y-1">
+            <li>• <strong>Чек</strong> — глухой двойной стук по столу</li>
+            <li>• <strong>Колл</strong> — бросок керамической фишки</li>
+            <li>• <strong>Рейз</strong> — каскад нескольких фишек</li>
+            <li>• <strong>Скольжение</strong> — фишки едут по столу</li>
+          </ul>
+        </div>
+      </div>
+    );
+  }
+
+  // Modal mode
   return (
     <motion.div
       initial={{ opacity: 0 }}
