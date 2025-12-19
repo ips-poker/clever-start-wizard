@@ -56,6 +56,14 @@ export function usePokerSounds() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const enabledRef = useRef(true);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const chipSoundRef = useRef<HTMLAudioElement | null>(null);
+
+  // Preload chip sound MP3
+  useEffect(() => {
+    chipSoundRef.current = new Audio('/sounds/chip-bet.mp3');
+    chipSoundRef.current.volume = 0.5;
+    chipSoundRef.current.preload = 'auto';
+  }, []);
 
   const getAudioContext = useCallback(() => {
     if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
@@ -197,49 +205,29 @@ export function usePokerSounds() {
   }, [getAudioContext]);
 
   // Call - pleasant chip toss onto table
-  const playCall = useCallback(() => {
+  // Play chip sound from MP3
+  const playChipSound = useCallback((volume: number = 0.5) => {
     if (!enabledRef.current) return;
     
     try {
-      const ctx = getAudioContext();
-      const now = ctx.currentTime;
-      
-      // Ceramic/clay chip sound - high frequency with quick decay
-      const osc = ctx.createOscillator();
-      const gainNode = ctx.createGain();
-      const filter = ctx.createBiquadFilter();
-      
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(2800, now);
-      osc.frequency.exponentialRampToValueAtTime(2200, now + 0.08);
-      
-      filter.type = 'bandpass';
-      filter.frequency.value = 2500;
-      filter.Q.value = 2;
-      
-      gainNode.gain.setValueAtTime(0, now);
-      gainNode.gain.linearRampToValueAtTime(0.25, now + 0.005);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-      
-      osc.connect(filter);
-      filter.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      osc.start(now);
-      osc.stop(now + 0.15);
-      
-      // Add subtle click
-      playNoise(25, 0.08);
+      if (chipSoundRef.current) {
+        const sound = chipSoundRef.current.cloneNode() as HTMLAudioElement;
+        sound.volume = volume;
+        sound.play().catch(() => {});
+      }
     } catch (e) {
       console.warn('Audio not available:', e);
     }
-  }, [getAudioContext, playNoise]);
+  }, []);
+
+  // Call - pleasant chip toss onto table (uses MP3)
+  const playCall = useCallback(() => {
+    playChipSound(0.5);
+  }, [playChipSound]);
 
   const playBet = useCallback(() => {
-    const s = SOUNDS.bet;
-    playTone(s.frequencies, s.duration, s.type, s.volume);
-    playNoise(30, 0.06);
-  }, [playTone, playNoise]);
+    playChipSound(0.45);
+  }, [playChipSound]);
 
   // Raise - more emphatic chip stack sound
   const playRaise = useCallback(() => {
