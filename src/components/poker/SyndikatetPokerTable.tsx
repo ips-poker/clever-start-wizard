@@ -1448,6 +1448,7 @@ export function SyndikatetPokerTable({
   const [previousPhase, setPreviousPhase] = useState<string | null>(null);
   const [isCollectingPot, setIsCollectingPot] = useState(false);
   const [collectionBets, setCollectionBets] = useState<Array<{ seatPosition: { x: number; y: number }; amount: number }>>([]);
+  const [winDistribution, setWinDistribution] = useState<{ winnerSeat: number; amount: number } | null>(null);
   
   const [isMobile, setIsMobile] = useState(false);
   
@@ -1615,13 +1616,24 @@ export function SyndikatetPokerTable({
     }
   }, [tableState?.phase, tableState?.players, previousPhase, sounds, SEAT_POSITIONS]);
   
-  // Winner effects - chip sounds only, no annoying win melody
+  // Winner effects - chip animation from pot to winner
   useEffect(() => {
     if (showdownResult && showdownResult.winners.length > 0) {
-      // Play chip sliding/stacking sounds instead of win melody
-      sounds.playChipSlide();
-      setTimeout(() => sounds.playChipStack(), 200);
-      setTimeout(() => sounds.playPotWin(), 400);
+      const winner = showdownResult.winners[0];
+      
+      // Find winner's seat number
+      const winnerPlayer = tableState?.players.find(p => p.playerId === winner.playerId);
+      if (winnerPlayer !== undefined) {
+        // Trigger win distribution animation
+        setWinDistribution({
+          winnerSeat: winnerPlayer.seatNumber,
+          amount: winner.amount
+        });
+        
+        // Play chip sounds
+        sounds.playChipSlide();
+        setTimeout(() => sounds.playPotWin(), 300);
+      }
       
       // Check if hero won
       const heroWon = showdownResult.winners.some(w => w.playerId === playerId);
@@ -1630,7 +1642,7 @@ export function SyndikatetPokerTable({
         setTimeout(() => setShowConfetti(false), 4000);
       }
     }
-  }, [showdownResult, playerId, sounds]);
+  }, [showdownResult, playerId, sounds, tableState?.players]);
 
   const handleAction = useCallback((action: 'fold' | 'check' | 'call' | 'raise' | 'allin', amount?: number) => {
     switch (action) {
@@ -1894,6 +1906,98 @@ export function SyndikatetPokerTable({
               sounds.playChipStack();
             }}
           />
+          
+          {/* Win distribution animation - chips flying from pot to winner */}
+          <AnimatePresence>
+            {winDistribution && (() => {
+              // Calculate winner position based on seat rotation
+              const heroSeat = heroSeatForUI !== null && heroSeatForUI !== undefined ? heroSeatForUI : 0;
+              const visualPosition = (winDistribution.winnerSeat - heroSeat + 6) % 6;
+              const targetPos = SEAT_POSITIONS[visualPosition];
+              
+              // Pot is at top center (approximately 18-22% from top, 50% from left)
+              const potY = isMobile ? 18 : 22;
+              
+              return (
+                <motion.div
+                  key="win-distribution"
+                  className="absolute inset-0 pointer-events-none z-50"
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  {/* Flying chips from pot to winner */}
+                  {[...Array(8)].map((_, i) => (
+                    <motion.div
+                      key={`win-chip-${i}`}
+                      className="absolute"
+                      style={{ 
+                        left: '50%', 
+                        top: `${potY}%`,
+                        transform: 'translate(-50%, -50%)'
+                      }}
+                      initial={{ 
+                        x: 0, 
+                        y: 0, 
+                        scale: 1, 
+                        opacity: 1 
+                      }}
+                      animate={{ 
+                        x: `${(targetPos.x - 50) * (isMobile ? 3.5 : 4.5)}px`,
+                        y: `${(targetPos.y - potY) * (isMobile ? 5 : 6)}px`,
+                        scale: 0.6,
+                        opacity: [1, 1, 0.8, 0]
+                      }}
+                      transition={{
+                        duration: 0.6,
+                        delay: i * 0.05,
+                        ease: [0.4, 0, 0.2, 1]
+                      }}
+                      onAnimationComplete={() => {
+                        if (i === 7) {
+                          setTimeout(() => setWinDistribution(null), 100);
+                        }
+                      }}
+                    >
+                      {/* Chip stack visual */}
+                      <div className="relative">
+                        {[0, 1, 2].map((j) => (
+                          <div
+                            key={j}
+                            className="absolute rounded-full"
+                            style={{
+                              width: 20,
+                              height: 20,
+                              bottom: j * 2,
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              background: j % 2 === 0 
+                                ? 'radial-gradient(circle at 30% 30%, #fbbf24 0%, #f59e0b 60%, #d97706 100%)'
+                                : 'radial-gradient(circle at 30% 30%, #22c55e 0%, #16a34a 60%, #15803d 100%)',
+                              border: '2px solid rgba(255,255,255,0.4)',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.3)'
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </motion.div>
+                  ))}
+                  
+                  {/* Win amount floating label */}
+                  <motion.div
+                    className="absolute left-1/2 -translate-x-1/2"
+                    style={{ top: `${potY + 5}%` }}
+                    initial={{ opacity: 0, y: 0, scale: 0.8 }}
+                    animate={{ opacity: [0, 1, 1, 0], y: -20, scale: 1 }}
+                    transition={{ duration: 1, ease: 'easeOut' }}
+                  >
+                    <span className="text-lg font-bold text-yellow-400 drop-shadow-lg">
+                      +{winDistribution.amount.toLocaleString()}
+                    </span>
+                  </motion.div>
+                </motion.div>
+              );
+            })()}
+          </AnimatePresence>
           
           {/* Confetti for big wins */}
           <Confetti isActive={showConfetti} duration={4000} />
