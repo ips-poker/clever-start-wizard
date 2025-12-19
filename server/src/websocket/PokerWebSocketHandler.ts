@@ -34,6 +34,18 @@ const LeaveTableSchema = z.object({
   playerId: z.string().uuid()
 });
 
+const SitOutSchema = z.object({
+  type: z.literal('sit_out'),
+  tableId: z.string().uuid(),
+  playerId: z.string().uuid()
+});
+
+const SitInSchema = z.object({
+  type: z.literal('sit_in'),
+  tableId: z.string().uuid(),
+  playerId: z.string().uuid()
+});
+
 const SubscribeSchema = z.object({
   type: z.literal('subscribe'),
   tableId: z.string().uuid(),
@@ -163,6 +175,14 @@ export class PokerWebSocketHandler {
         
         case 'leave_table':
           await this.handleLeaveTable(ws, message);
+          break;
+        
+        case 'sit_out':
+          await this.handleSitOut(ws, message);
+          break;
+        
+        case 'sit_in':
+          await this.handleSitIn(ws, message);
           break;
         
         case 'subscribe':
@@ -335,6 +355,66 @@ export class PokerWebSocketHandler {
     }
     
     this.send(ws, { type: 'left_table', tableId });
+  }
+  
+  /**
+   * Handle sit out request
+   */
+  private async handleSitOut(ws: WebSocket, message: unknown): Promise<void> {
+    const result = SitOutSchema.safeParse(message);
+    if (!result.success) {
+      this.sendError(ws, 'Invalid sit out request');
+      return;
+    }
+    
+    const { tableId, playerId } = result.data;
+    
+    const table = this.gameManager.getTable(tableId);
+    if (!table) {
+      this.sendError(ws, 'Table not found');
+      return;
+    }
+    
+    const sitOutResult = await table.sitOut(playerId);
+    
+    if (!sitOutResult.success) {
+      this.sendError(ws, sitOutResult.error || 'Failed to sit out');
+      return;
+    }
+    
+    // Send updated state
+    const state = table.getPlayerState(playerId);
+    this.send(ws, { type: 'sit_out_success', tableId, state });
+  }
+  
+  /**
+   * Handle sit in request (return to game)
+   */
+  private async handleSitIn(ws: WebSocket, message: unknown): Promise<void> {
+    const result = SitInSchema.safeParse(message);
+    if (!result.success) {
+      this.sendError(ws, 'Invalid sit in request');
+      return;
+    }
+    
+    const { tableId, playerId } = result.data;
+    
+    const table = this.gameManager.getTable(tableId);
+    if (!table) {
+      this.sendError(ws, 'Table not found');
+      return;
+    }
+    
+    const sitInResult = await table.sitIn(playerId);
+    
+    if (!sitInResult.success) {
+      this.sendError(ws, sitInResult.error || 'Failed to sit in');
+      return;
+    }
+    
+    // Send updated state
+    const state = table.getPlayerState(playerId);
+    this.send(ws, { type: 'sit_in_success', tableId, state });
   }
   
   /**

@@ -21,6 +21,7 @@ export interface Player {
   isAllIn: boolean;
   timeBank: number;
   lastActionTime: number | null;
+  missedTurns: number; // Count of consecutive missed turns (timeouts)
 }
 
 export interface HandState {
@@ -219,7 +220,8 @@ export class PokerTable {
       isFolded: false,
       isAllIn: false,
       timeBank: this.config.timeBankSeconds,
-      lastActionTime: null
+      lastActionTime: null,
+      missedTurns: 0
     };
     
     this.players.set(playerId, player);
@@ -264,6 +266,7 @@ export class PokerTable {
   
   /**
    * Leave table
+   * If player is in a hand, they fold first then leave
    */
   async leaveTable(playerId: string): Promise<{ success: boolean; error?: string }> {
     const player = this.players.get(playerId);
@@ -271,11 +274,18 @@ export class PokerTable {
       return { success: false, error: 'Player not at table' };
     }
     
-    // Can't leave during hand
+    // If in active hand and not folded, fold first
     if (this.currentHand && !player.isFolded && player.status === 'active') {
-      // Mark as sitting out instead
+      // If it's this player's turn, fold them
+      if (this.currentHand.currentPlayerSeat === player.seatNumber) {
+        await this.action(playerId, 'fold');
+      } else {
+        // Mark as folded for this hand
+        player.isFolded = true;
+      }
+      // Mark as sitting out - will be removed after hand
       player.status = 'sitting_out';
-      this.emit('player_sitting_out', { playerId });
+      this.emit('player_sitting_out', { playerId, reason: 'leaving' });
       return { success: true };
     }
     
@@ -290,6 +300,72 @@ export class PokerTable {
       .eq('player_id', playerId);
     
     this.emit('player_left', { playerId, stack: player.stack });
+    
+    return { success: true };
+  }
+
+  /**
+   * Sit out - player will auto-fold when it's their turn
+   */
+  async sitOut(playerId: string): Promise<{ success: boolean; error?: string }> {
+    const player = this.players.get(playerId);
+    if (!player) {
+      return { success: false, error: 'Player not at table' };
+    }
+    
+    if (player.status === 'sitting_out') {
+      return { success: false, error: 'Already sitting out' };
+    }
+    
+    player.status = 'sitting_out';
+    logger.info('Player sitting out', { playerId: playerId.substring(0, 8) });
+    
+    // Update database
+    await this.supabase
+      .from('poker_table_players')
+      .update({ status: 'sitting_out' })
+      .eq('table_id', this.id)
+      .eq('player_id', playerId);
+    
+    this.emit('player_sitting_out', { playerId, reason: 'manual' });
+    
+    return { success: true };
+  }
+
+  /**
+   * Sit in - return to active play
+   */
+  async sitIn(playerId: string): Promise<{ success: boolean; error?: string }> {
+    const player = this.players.get(playerId);
+    if (!player) {
+      return { success: false, error: 'Player not at table' };
+    }
+    
+    if (player.status === 'active') {
+      return { success: false, error: 'Already active' };
+    }
+    
+    if (player.stack <= 0) {
+      return { success: false, error: 'No chips to play' };
+    }
+    
+    player.status = 'active';
+    player.missedTurns = 0; // Reset missed turns counter
+    logger.info('Player sitting in', { playerId: playerId.substring(0, 8) });
+    
+    // Update database
+    await this.supabase
+      .from('poker_table_players')
+      .update({ status: 'active' })
+      .eq('table_id', this.id)
+      .eq('player_id', playerId);
+    
+    this.emit('player_sitting_in', { playerId });
+    
+    // Check if we can start a hand now
+    if (!this.currentHand) {
+      this.checkStartHand();
+    }
     
     return { success: true };
   }
@@ -381,6 +457,9 @@ export class PokerTable {
       this.startActionTimer();
       return { success: false, error: result.error };
     }
+    
+    // Reset missed turns counter on successful action (player is active)
+    player.missedTurns = 0;
     
     // CRITICAL: Sync ALL player state from engine (engine is source of truth)
     // Do NOT call updatePlayerFromAction - it causes double subtraction!
@@ -521,6 +600,7 @@ export class PokerTable {
   
   /**
    * Handle player timeout
+   * After 2 consecutive timeouts, player is set to sitting_out
    */
   private async handleTimeout(): Promise<void> {
     if (!this.currentHand || this.currentHand.currentPlayerSeat === null) return;
@@ -531,7 +611,7 @@ export class PokerTable {
     const player = this.players.get(playerId);
     if (!player) return;
     
-    logger.info('Player timed out', { playerId });
+    logger.info('Player timed out', { playerId, missedTurns: player.missedTurns });
     
     // Use time bank if available
     if (player.timeBank > 0) {
@@ -541,6 +621,9 @@ export class PokerTable {
       return;
     }
     
+    // Increment missed turns counter
+    player.missedTurns++;
+    
     // Auto fold/check - PROFESSIONAL: prefer check when possible
     const canCheck = player.currentBet >= this.currentHand.currentBet;
     const autoAction = canCheck ? 'check' : 'fold';
@@ -548,12 +631,27 @@ export class PokerTable {
     logger.warn('Player auto-action due to timeout', { 
       playerId: playerId.substring(0, 8), 
       action: autoAction,
-      timeBankRemaining: player.timeBank
+      timeBankRemaining: player.timeBank,
+      missedTurns: player.missedTurns
     });
     
     await this.action(playerId, autoAction);
     
-    this.emit('timeout', { playerId, action: autoAction });
+    // After 2 consecutive missed turns, set player to sitting_out
+    if (player.missedTurns >= 2) {
+      logger.info('Player auto sitting out after 2 missed turns', { 
+        playerId: playerId.substring(0, 8),
+        missedTurns: player.missedTurns
+      });
+      player.status = 'sitting_out';
+      this.emit('player_sitting_out', { 
+        playerId, 
+        reason: 'missed_turns',
+        missedTurns: player.missedTurns 
+      });
+    }
+    
+    this.emit('timeout', { playerId, action: autoAction, missedTurns: player.missedTurns });
   }
   
   /**
@@ -1062,6 +1160,8 @@ export class PokerTable {
       isFolded: p.isFolded,
       isAllIn: p.isAllIn,
       isActive: p.status === 'active',
+      isSittingOut: p.status === 'sitting_out',
+      missedTurns: p.missedTurns || 0,
       hasCards: p.holeCards.length > 0,
       holeCards: [] // Hidden for public state
     }));
