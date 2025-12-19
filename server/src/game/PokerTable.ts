@@ -714,8 +714,10 @@ export class PokerTable {
     try {
       this.handNumber++;
       
-      // Move dealer button
-      this.dealerSeat = this.getNextActiveSeat(this.dealerSeat);
+      // NOTE: Do NOT move dealer button here!
+      // The engine's calculatePositions() handles dealer rotation internally
+      // Passing current dealerSeat and engine will find next active dealer
+      const previousDealerSeat = this.dealerSeat;
       
       // Reset players and VALIDATE stacks
       for (const player of this.players.values()) {
@@ -768,11 +770,15 @@ export class PokerTable {
         seatNumber: p.seatNumber,
         stack: p.stack,
         status: p.status as 'active' | 'sitting_out' | 'disconnected',
-        isDealer: p.seatNumber === this.dealerSeat
+        isDealer: false // Engine will calculate dealer position
       }));
       
       // Start new hand with engine v3 (may throw if validation fails)
-      const engineState = this.engine.startNewHand(enginePlayers, this.dealerSeat);
+      // Pass PREVIOUS dealer seat - engine will calculate next dealer
+      const engineState = this.engine.startNewHand(enginePlayers, previousDealerSeat);
+      
+      // Update local dealerSeat from engine calculation
+      this.dealerSeat = engineState.dealerSeat;
       
       // Map engine state to our HandState
       this.currentHand = {
