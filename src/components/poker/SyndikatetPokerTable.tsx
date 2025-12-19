@@ -41,6 +41,7 @@ import { PPPokerEnhancedCard, HandStrengthBadge } from './PPPokerEnhancedCard';
 import { PPPokerPlayerCards } from './PPPokerPlayerCards';
 import { PPPokerCompactCards } from './PPPokerCompactCards';
 import { PPPokerBetDisplay } from './PPPokerBetDisplay';
+import { SoundDemo } from './SoundDemo';
 
 // Syndikate branding
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
@@ -1449,6 +1450,7 @@ export function SyndikatetPokerTable({
   const [isCollectingPot, setIsCollectingPot] = useState(false);
   const [collectionBets, setCollectionBets] = useState<Array<{ seatPosition: { x: number; y: number }; amount: number }>>([]);
   const [winDistribution, setWinDistribution] = useState<{ winnerSeat: number; amount: number } | null>(null);
+  const [showSoundDemo, setShowSoundDemo] = useState(false);
   
   const [isMobile, setIsMobile] = useState(false);
   
@@ -2010,7 +2012,12 @@ export function SyndikatetPokerTable({
 
         {/* Side buttons - PPPoker style */}
         <div className="absolute left-3 z-25 flex flex-col gap-2" style={{ bottom: isMobile ? '100px' : '120px' }}>
-          <button className={cn("rounded-full bg-black/60 flex items-center justify-center text-white", isMobile ? "w-9 h-9" : "w-10 h-10")} onClick={() => setSoundEnabled(!soundEnabled)}>
+          <button 
+            className={cn("rounded-full bg-black/60 flex items-center justify-center text-white", isMobile ? "w-9 h-9" : "w-10 h-10")} 
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            onDoubleClick={() => setShowSoundDemo(true)}
+            title="Двойной клик - демо звуков"
+          >
             {soundEnabled ? <Volume2 className="h-4 w-4"/> : <VolumeX className="h-4 w-4"/>}
           </button>
         </div>
@@ -2139,6 +2146,9 @@ export function SyndikatetPokerTable({
             )}
           </DialogContent>
         </Dialog>
+        
+        {/* Sound Demo Panel */}
+        <SoundDemo isOpen={showSoundDemo} onClose={() => setShowSoundDemo(false)} />
       </div>
     </PokerErrorBoundary>
   );
