@@ -615,14 +615,14 @@ const PlayerSeat = memo(function PlayerSeat({
             if (isOnBottom) {
               cardStyle = { top: '-12px', right: '-10px' }; // Left bottom: cards top-right
             } else {
-              cardStyle = { bottom: '10px', right: '-10px' }; // Left top: cards bottom-right
+              cardStyle = { top: '-12px', right: '-10px' }; // Left top: same as bottom
             }
           } else {
             // Right side players - cards on left side of avatar (mirrored)
             if (isOnBottom) {
               cardStyle = { top: '-12px', left: '-10px' }; // Right bottom: cards top-left
             } else {
-              cardStyle = { bottom: '10px', left: '-10px' }; // Right top: cards bottom-left
+              cardStyle = { top: '-12px', left: '-10px' }; // Right top: same as bottom
             }
           }
           
