@@ -35,12 +35,12 @@ const SUITS_CLASSIC = {
   s: { symbol: '♠', color: '#1e293b' }
 };
 
-// Size configuration - PPPoker style cards
+// Size configuration - PPPoker style cards (increased by 15%)
 const SIZE_CONFIG = {
-  xs: { w: 22, h: 32, rank: 'text-[9px]', suit: 'text-[8px]', center: 'text-[12px]', overlap: -6 },
-  sm: { w: 28, h: 40, rank: 'text-[11px]', suit: 'text-[10px]', center: 'text-[16px]', overlap: -8 },
+  xs: { w: 25, h: 37, rank: 'text-[10px]', suit: 'text-[9px]', center: 'text-[14px]', overlap: -7 },
+  sm: { w: 32, h: 46, rank: 'text-[13px]', suit: 'text-[11px]', center: 'text-[18px]', overlap: -9 },
   // Showdown size - larger cards like in reference
-  showdown: { w: 36, h: 52, rank: 'text-[13px]', suit: 'text-[12px]', center: 'text-[20px]', overlap: -4 }
+  showdown: { w: 41, h: 60, rank: 'text-[15px]', suit: 'text-[14px]', center: 'text-[23px]', overlap: -5 }
 };
 
 // Helper function to generate pattern CSS
