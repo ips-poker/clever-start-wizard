@@ -477,7 +477,7 @@ const PlayerSeat = memo(function PlayerSeat({
               size="xs"
               position={position}
               handId={handId}
-              dealDelay={300 + seatIndex * 100} // Stagger deal by seat position
+              dealDelay={150 + seatIndex * 50} // Faster stagger deal by seat position
             />
           </div>
         );
