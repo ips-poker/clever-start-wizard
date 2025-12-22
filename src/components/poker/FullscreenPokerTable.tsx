@@ -45,7 +45,7 @@ const SUITS = {
 const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = {
   2: [
     { x: 46, y: 88 },   // Seat 0 - Hero (bottom center on rail)
-    { x: 50, y: 12 },   // Seat 1 - Top center on rail
+    { x: 46, y: 12 },   // Seat 1 - Top center on rail
   ],
   3: [
     { x: 46, y: 88 },   // Seat 0 - Hero (bottom center)
@@ -55,7 +55,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
   4: [
     { x: 46, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 26, y: 50 },   // Seat 1 - Left middle on rail
-    { x: 50, y: 12 },   // Seat 2 - Top center on rail
+    { x: 46, y: 12 },   // Seat 2 - Top center on rail
     { x: 74, y: 50 },   // Seat 3 - Right middle on rail
   ],
   5: [
@@ -69,7 +69,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
     { x: 46, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 26, y: 66 },   // Seat 1 - Left bottom on rail
     { x: 26, y: 34 },   // Seat 2 - Left top on rail
-    { x: 50, y: 12 },   // Seat 3 - Top center on rail
+    { x: 46, y: 12 },   // Seat 3 - Top center on rail
     { x: 74, y: 34 },   // Seat 4 - Right top on rail
     { x: 74, y: 66 },   // Seat 5 - Right bottom on rail
   ],
@@ -87,7 +87,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
     { x: 26, y: 70 },   // Seat 1 - Left bottom on rail
     { x: 26, y: 50 },   // Seat 2 - Left middle on rail
     { x: 26, y: 30 },   // Seat 3 - Left top on rail
-    { x: 50, y: 12 },   // Seat 4 - Top center on rail
+    { x: 46, y: 12 },   // Seat 4 - Top center on rail
     { x: 74, y: 30 },   // Seat 5 - Right top on rail
     { x: 74, y: 50 },   // Seat 6 - Right middle on rail
     { x: 74, y: 70 },   // Seat 7 - Right bottom on rail
@@ -96,11 +96,11 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
 
 // Fallback для 9-max (legacy)
 const SEAT_POSITIONS_9MAX = [
-  { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
+  { x: 46, y: 88 },   // Seat 0 - Hero (bottom center)
   { x: 26, y: 72 },   // Seat 1 - Left bottom on rail
   { x: 26, y: 50 },   // Seat 2 - Left middle on rail
   { x: 26, y: 28 },   // Seat 3 - Left top on rail
-  { x: 50, y: 12 },   // Seat 4 - Top center on rail
+  { x: 46, y: 12 },   // Seat 4 - Top center on rail
   { x: 74, y: 28 },   // Seat 5 - Right top on rail
   { x: 74, y: 50 },   // Seat 6 - Right middle on rail
   { x: 74, y: 72 },   // Seat 7 - Right bottom on rail
