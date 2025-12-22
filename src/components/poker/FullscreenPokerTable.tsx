@@ -359,16 +359,16 @@ const PlayerSeat = memo(function PlayerSeat({
   // Empty seat
   if (!player) {
     return (
-      <div
-        className="absolute -translate-x-1/2 -translate-y-1/2"
+      <motion.div
+        className="absolute -translate-x-1/2 -translate-y-1/2 z-10"
         style={{ left: `${position.x}%`, top: `${position.y}%` }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => canJoin && onSeatClick?.(seatNumber)}
       >
-        <motion.div 
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => canJoin && onSeatClick?.(seatNumber)}
+        <div 
           className={cn(
-            "w-14 h-14 rounded-full flex items-center justify-center transition-all",
+            "rounded-full flex items-center justify-center transition-all",
             canJoin ? "cursor-pointer" : "cursor-default"
           )}
           style={{
@@ -386,8 +386,8 @@ const PlayerSeat = memo(function PlayerSeat({
           )}>
             {canJoin ? 'Сесть' : ''}
           </span>
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
     );
   }
 
