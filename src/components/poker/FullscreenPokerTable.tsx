@@ -1144,8 +1144,9 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   wideMode = false
 }: FullscreenPokerTableProps) {
   // Use dynamic positions based on max seats
+  // wideMode prop explicitly indicates Telegram Mini App context
   const maxPlayers = maxSeats;
-  const positions = getSeatPositions(maxPlayers);
+  const positions = getSeatPositions(maxPlayers, wideMode);
   
   // Get personalization preferences
   const { preferences, currentTableTheme, currentCardBack } = usePokerPreferences();
