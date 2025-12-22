@@ -437,12 +437,33 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'playerDisconnected':
         case 'hand_started':
         case 'handStarted':  // Server sends camelCase
-          // Clear showdown when new hand starts (and invalidate pending showdown timers)
-          log('🎴 New hand started - clearing showdown');
+          // Clear showdown and ALL player cards when new hand starts
+          log('🎴 New hand started - clearing showdown and player cards');
           showdownTokenRef.current += 1;
           showdownStartTimeRef.current = 0;  // Reset showdown timestamp
           setShowdownResult(null);
+          // Clear all player hole cards immediately
+          setTableState((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              phase: 'waiting', // Reset phase
+              communityCards: [], // Clear community cards
+              players: prev.players.map((p) => ({
+                ...p,
+                holeCards: [], // Clear hole cards
+                isWinner: false,
+                handName: undefined,
+                winningCardIndices: [],
+                communityCardIndices: [],
+                betAmount: 0, // Reset bets
+                isFolded: false, // Reset fold status
+              })),
+            };
+          });
+          setMyCards([]); // Clear my cards
           // Fall through to process state
+          // eslint-disable-next-line no-fallthrough
           // eslint-disable-next-line no-fallthrough
         case 'phase_change':
         case 'phaseChange':
@@ -806,7 +827,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               communityCards,
             });
 
-            // Keep showdown highlight visible for 2 seconds (faster), then clear IF still the same showdown
+            // Keep showdown highlight visible for 3 seconds, then clear IF still the same showdown
             setTimeout(() => {
               if (showdownTokenRef.current !== thisShowdownToken) return;
               if (tableStateRef.current?.phase !== 'showdown') return;
@@ -828,7 +849,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                   })),
                 };
               });
-            }, 2000);
+            }, 3000);
           }
 
           if (shouldForceShowdown) {
