@@ -123,7 +123,7 @@ const TELEGRAM_SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: num
     { x: 46, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 6, y: 66 },    // Seat 1 - Left bottom
     { x: 6, y: 34 },    // Seat 2 - Left top
-    { x: 46, y: 6 },    // Seat 3 - Top center
+    { x: 44, y: 4 },    // Seat 3 - Top center
     { x: 82, y: 34 },   // Seat 4 - Right top
     { x: 82, y: 66 },   // Seat 5 - Right bottom
   ],
