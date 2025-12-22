@@ -70,7 +70,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
     { x: 26, y: 66 },   // Seat 1 - Left bottom on rail
     { x: 26, y: 34 },   // Seat 2 - Left top on rail
     { x: 46, y: 12 },   // Seat 3 - Top center on rail
-    { x: 74, y: 24 },   // Seat 4 - Right top on rail
+    { x: 74, y: 32 },   // Seat 4 - Right top on rail
     { x: 74, y: 66 },   // Seat 5 - Right bottom on rail
   ],
   7: [
