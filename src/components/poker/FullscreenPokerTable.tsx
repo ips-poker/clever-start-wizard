@@ -39,71 +39,71 @@ const SUITS = {
 // Позиции на самом бортике овального стола
 // x=18 и x=82 - левый/правый бортик (по центру рельса ~20%)
 // y=8 и y=90 - верхний/нижний бортик (по центру рельса между 6-10%)
-// Seat positions centered on the table rail (between outer 20% and felt 24% = center 22%)
-// x: 22% = left rail center, 78% = right rail center
-// y: 8% = top rail center, 92% = bottom rail center
+// Seat positions centered on the table rail
+// x: 24% = left rail center, 76% = right rail center
+// y: 10% = top rail center, 90% = bottom rail center
 const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = {
   2: [
-    { x: 50, y: 92 },   // Seat 0 - Hero (bottom center on rail)
-    { x: 50, y: 8 },    // Seat 1 - Top center on rail
+    { x: 50, y: 90 },   // Seat 0 - Hero (bottom center on rail)
+    { x: 50, y: 10 },   // Seat 1 - Top center on rail
   ],
   3: [
-    { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-    { x: 22, y: 50 },   // Seat 1 - Left center on rail
-    { x: 78, y: 50 },   // Seat 2 - Right center on rail
+    { x: 50, y: 90 },   // Seat 0 - Hero (bottom center)
+    { x: 24, y: 50 },   // Seat 1 - Left center on rail
+    { x: 76, y: 50 },   // Seat 2 - Right center on rail
   ],
   4: [
-    { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-    { x: 22, y: 50 },   // Seat 1 - Left middle on rail
-    { x: 50, y: 8 },    // Seat 2 - Top center on rail
-    { x: 78, y: 50 },   // Seat 3 - Right middle on rail
+    { x: 50, y: 90 },   // Seat 0 - Hero (bottom center)
+    { x: 24, y: 50 },   // Seat 1 - Left middle on rail
+    { x: 50, y: 10 },   // Seat 2 - Top center on rail
+    { x: 76, y: 50 },   // Seat 3 - Right middle on rail
   ],
   5: [
-    { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-    { x: 22, y: 66 },   // Seat 1 - Left bottom on rail
-    { x: 22, y: 34 },   // Seat 2 - Left top on rail
-    { x: 78, y: 34 },   // Seat 3 - Right top on rail
-    { x: 78, y: 66 },   // Seat 4 - Right bottom on rail
+    { x: 50, y: 90 },   // Seat 0 - Hero (bottom center)
+    { x: 24, y: 66 },   // Seat 1 - Left bottom on rail
+    { x: 24, y: 34 },   // Seat 2 - Left top on rail
+    { x: 76, y: 34 },   // Seat 3 - Right top on rail
+    { x: 76, y: 66 },   // Seat 4 - Right bottom on rail
   ],
   6: [
-    { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-    { x: 22, y: 66 },   // Seat 1 - Left bottom on rail
-    { x: 22, y: 34 },   // Seat 2 - Left top on rail
-    { x: 50, y: 8 },    // Seat 3 - Top center on rail
-    { x: 78, y: 34 },   // Seat 4 - Right top on rail
-    { x: 78, y: 66 },   // Seat 5 - Right bottom on rail
+    { x: 50, y: 90 },   // Seat 0 - Hero (bottom center)
+    { x: 24, y: 66 },   // Seat 1 - Left bottom on rail
+    { x: 24, y: 34 },   // Seat 2 - Left top on rail
+    { x: 50, y: 10 },   // Seat 3 - Top center on rail
+    { x: 76, y: 34 },   // Seat 4 - Right top on rail
+    { x: 76, y: 66 },   // Seat 5 - Right bottom on rail
   ],
   7: [
-    { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-    { x: 22, y: 70 },   // Seat 1 - Left bottom on rail
-    { x: 22, y: 50 },   // Seat 2 - Left middle on rail
-    { x: 22, y: 30 },   // Seat 3 - Left top on rail
-    { x: 78, y: 30 },   // Seat 4 - Right top on rail
-    { x: 78, y: 50 },   // Seat 5 - Right middle on rail
-    { x: 78, y: 70 },   // Seat 6 - Right bottom on rail
+    { x: 50, y: 90 },   // Seat 0 - Hero (bottom center)
+    { x: 24, y: 70 },   // Seat 1 - Left bottom on rail
+    { x: 24, y: 50 },   // Seat 2 - Left middle on rail
+    { x: 24, y: 30 },   // Seat 3 - Left top on rail
+    { x: 76, y: 30 },   // Seat 4 - Right top on rail
+    { x: 76, y: 50 },   // Seat 5 - Right middle on rail
+    { x: 76, y: 70 },   // Seat 6 - Right bottom on rail
   ],
   8: [
-    { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-    { x: 22, y: 70 },   // Seat 1 - Left bottom on rail
-    { x: 22, y: 50 },   // Seat 2 - Left middle on rail
-    { x: 22, y: 30 },   // Seat 3 - Left top on rail
-    { x: 50, y: 8 },    // Seat 4 - Top center on rail
-    { x: 78, y: 30 },   // Seat 5 - Right top on rail
-    { x: 78, y: 50 },   // Seat 6 - Right middle on rail
-    { x: 78, y: 70 },   // Seat 7 - Right bottom on rail
+    { x: 50, y: 90 },   // Seat 0 - Hero (bottom center)
+    { x: 24, y: 70 },   // Seat 1 - Left bottom on rail
+    { x: 24, y: 50 },   // Seat 2 - Left middle on rail
+    { x: 24, y: 30 },   // Seat 3 - Left top on rail
+    { x: 50, y: 10 },   // Seat 4 - Top center on rail
+    { x: 76, y: 30 },   // Seat 5 - Right top on rail
+    { x: 76, y: 50 },   // Seat 6 - Right middle on rail
+    { x: 76, y: 70 },   // Seat 7 - Right bottom on rail
   ],
 };
 
 // Fallback для 9-max (legacy)
 const SEAT_POSITIONS_9MAX = [
-  { x: 50, y: 92 },   // Seat 0 - Hero (bottom center)
-  { x: 22, y: 72 },   // Seat 1 - Left bottom on rail
-  { x: 22, y: 50 },   // Seat 2 - Left middle on rail
-  { x: 22, y: 28 },   // Seat 3 - Left top on rail
-  { x: 50, y: 8 },    // Seat 4 - Top center on rail
-  { x: 78, y: 28 },   // Seat 5 - Right top on rail
-  { x: 78, y: 50 },   // Seat 6 - Right middle on rail
-  { x: 78, y: 72 },   // Seat 7 - Right bottom on rail
+  { x: 50, y: 90 },   // Seat 0 - Hero (bottom center)
+  { x: 24, y: 72 },   // Seat 1 - Left bottom on rail
+  { x: 24, y: 50 },   // Seat 2 - Left middle on rail
+  { x: 24, y: 28 },   // Seat 3 - Left top on rail
+  { x: 50, y: 10 },   // Seat 4 - Top center on rail
+  { x: 76, y: 28 },   // Seat 5 - Right top on rail
+  { x: 76, y: 50 },   // Seat 6 - Right middle on rail
+  { x: 76, y: 72 },   // Seat 7 - Right bottom on rail
 ];
 
 // Legacy 6-max (используем новую систему)
