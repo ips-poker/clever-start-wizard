@@ -94,6 +94,60 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
   ],
 };
 
+// ============= TELEGRAM MINI APP - WIDER TABLE POSITIONS =============
+// Позиции для Telegram мини-аппа с более широким столом
+const TELEGRAM_SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = {
+  2: [
+    { x: 44, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 46, y: 6 },    // Seat 1 - Top center
+  ],
+  3: [
+    { x: 44, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 14, y: 50 },   // Seat 1 - Left center
+    { x: 78, y: 50 },   // Seat 2 - Right center
+  ],
+  4: [
+    { x: 44, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 14, y: 50 },   // Seat 1 - Left middle
+    { x: 46, y: 6 },    // Seat 2 - Top center
+    { x: 78, y: 50 },   // Seat 3 - Right middle
+  ],
+  5: [
+    { x: 44, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 14, y: 66 },   // Seat 1 - Left bottom
+    { x: 14, y: 34 },   // Seat 2 - Left top
+    { x: 78, y: 34 },   // Seat 3 - Right top
+    { x: 78, y: 66 },   // Seat 4 - Right bottom
+  ],
+  6: [
+    { x: 44, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 14, y: 66 },   // Seat 1 - Left bottom
+    { x: 14, y: 34 },   // Seat 2 - Left top
+    { x: 46, y: 6 },    // Seat 3 - Top center
+    { x: 78, y: 34 },   // Seat 4 - Right top
+    { x: 78, y: 66 },   // Seat 5 - Right bottom
+  ],
+  7: [
+    { x: 44, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 14, y: 70 },   // Seat 1 - Left bottom
+    { x: 14, y: 50 },   // Seat 2 - Left middle
+    { x: 14, y: 30 },   // Seat 3 - Left top
+    { x: 78, y: 30 },   // Seat 4 - Right top
+    { x: 78, y: 50 },   // Seat 5 - Right middle
+    { x: 78, y: 70 },   // Seat 6 - Right bottom
+  ],
+  8: [
+    { x: 44, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 14, y: 70 },   // Seat 1 - Left bottom
+    { x: 14, y: 50 },   // Seat 2 - Left middle
+    { x: 14, y: 30 },   // Seat 3 - Left top
+    { x: 46, y: 6 },    // Seat 4 - Top center
+    { x: 78, y: 30 },   // Seat 5 - Right top
+    { x: 78, y: 50 },   // Seat 6 - Right middle
+    { x: 78, y: 70 },   // Seat 7 - Right bottom
+  ],
+};
+
 // Fallback для 9-max (legacy)
 const SEAT_POSITIONS_9MAX = [
   { x: 46, y: 88 },   // Seat 0 - Hero (bottom center)
@@ -106,11 +160,35 @@ const SEAT_POSITIONS_9MAX = [
   { x: 74, y: 72 },   // Seat 7 - Right bottom on rail
 ];
 
+const TELEGRAM_SEAT_POSITIONS_9MAX = [
+  { x: 44, y: 88 },   // Seat 0 - Hero (bottom center)
+  { x: 14, y: 72 },   // Seat 1 - Left bottom
+  { x: 14, y: 50 },   // Seat 2 - Left middle
+  { x: 14, y: 28 },   // Seat 3 - Left top
+  { x: 46, y: 6 },    // Seat 4 - Top center
+  { x: 78, y: 28 },   // Seat 5 - Right top
+  { x: 78, y: 50 },   // Seat 6 - Right middle
+  { x: 78, y: 72 },   // Seat 7 - Right bottom
+];
+
 // Legacy 6-max (используем новую систему)
 const SEAT_POSITIONS_6MAX = SEAT_POSITIONS_BY_COUNT[6];
 
+// Определение контекста Telegram
+function isTelegramMiniApp(): boolean {
+  return !!(window as any).Telegram?.WebApp?.initData;
+}
+
 // Функция получения позиций по количеству игроков
-function getSeatPositions(playerCount: number): Array<{ x: number; y: number }> {
+function getSeatPositions(playerCount: number, forTelegram?: boolean): Array<{ x: number; y: number }> {
+  const isTelegram = forTelegram ?? isTelegramMiniApp();
+  
+  if (isTelegram) {
+    if (playerCount <= 2) return TELEGRAM_SEAT_POSITIONS_BY_COUNT[2];
+    if (playerCount >= 9) return TELEGRAM_SEAT_POSITIONS_9MAX;
+    return TELEGRAM_SEAT_POSITIONS_BY_COUNT[playerCount] || TELEGRAM_SEAT_POSITIONS_BY_COUNT[6];
+  }
+  
   if (playerCount <= 2) return SEAT_POSITIONS_BY_COUNT[2];
   if (playerCount >= 9) return SEAT_POSITIONS_9MAX;
   return SEAT_POSITIONS_BY_COUNT[playerCount] || SEAT_POSITIONS_BY_COUNT[6];
