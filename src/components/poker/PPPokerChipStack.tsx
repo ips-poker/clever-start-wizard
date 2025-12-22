@@ -70,7 +70,7 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     if (y <= 20) return { x: 8, y: 54 };
     
     // Bottom/hero position: bet goes up
-    return { x: 8, y: -54 };
+    return { x: 16, y: -54 };
   }, [seatPosition.x, seatPosition.y]);
 
   return (
