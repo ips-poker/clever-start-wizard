@@ -806,7 +806,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               communityCards,
             });
 
-            // Keep showdown highlight visible for 4 seconds, then clear IF still the same showdown
+            // Keep showdown highlight visible for 2 seconds (faster), then clear IF still the same showdown
             setTimeout(() => {
               if (showdownTokenRef.current !== thisShowdownToken) return;
               if (tableStateRef.current?.phase !== 'showdown') return;
@@ -828,7 +828,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                   })),
                 };
               });
-            }, 4000);
+            }, 2000);
           }
 
           if (shouldForceShowdown) {
