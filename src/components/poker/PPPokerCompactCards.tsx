@@ -458,13 +458,14 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
     return (idx - halfTotal) * baseAngle;
   };
 
-  // Calculate rotation to point cards towards table center (more clockwise)
+  // Calculate rotation to point cards towards table center
+  // Cards are now at BOTTOM corners, so rotation inverted
   const getContainerRotation = () => {
     if (isShowdown) return 0;
     if (isOnTop) return 45;
-    if (isOnBottom) return 5;
-    if (isOnRightSide) return -55; // Mirror of left side (55) towards table
-    return 55;
+    if (isOnBottom) return -5;
+    if (isOnRightSide) return 55;  // Right side: rotate towards center (up-left)
+    return -55; // Left side: rotate towards center (up-right)
   };
 
   // Don't render cards until dealt (for sync with deal sounds)

@@ -412,9 +412,15 @@ export const StablePlayerSeat = memo(function StablePlayerSeat({
         )}
       </AnimatePresence>
 
-      {/* Player cards - positioned above avatar - only show for opponents, hero cards shown at bottom */}
+      {/* Player cards - positioned at bottom corners of avatar */}
       {player.cards && player.cards.length > 0 && !player.isFolded && !isHero && (
-        <div className="absolute flex gap-1 -top-14 left-1/2 -translate-x-1/2">
+        <div 
+          className="absolute flex gap-1 z-5"
+          style={{
+            bottom: '-8px',
+            [position.x > 50 ? 'left' : 'right']: '-10px'
+          }}
+        >
           {player.cards.map((card, idx) => (
             <StablePokerCard
               key={`${player.id}-${idx}-${card}`}

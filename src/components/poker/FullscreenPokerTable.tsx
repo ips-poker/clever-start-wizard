@@ -599,31 +599,20 @@ const PlayerSeat = memo(function PlayerSeat({
             });
           }
           
-          // Position cards ON the avatar corner, pointing towards table center
+          // Position cards ON the avatar corner - BOTTOM LEFT or BOTTOM RIGHT
           const isOnRightSide = position.x > 50;
-          const isOnLeftSide = position.x <= 50;
-          const isOnBottom = position.y > 50;
-          const isOnTop = position.y <= 50;
           
-          // Cards overlaid on avatar corner (towards center of table)
-          // Left players: cards on RIGHT (towards table)
-          // Right players: cards on LEFT (mirrored, towards table)
+          // Cards positioned at bottom corners of avatar (towards table center)
+          // Left side players: cards bottom-right
+          // Right side players: cards bottom-left (mirrored)
           let cardStyle: React.CSSProperties = {};
           
-          if (isOnLeftSide) {
-            // Left side players - cards on right side of avatar
-            if (isOnBottom) {
-              cardStyle = { top: '-12px', right: '-10px' }; // Left bottom: cards top-right
-            } else {
-              cardStyle = { top: '-12px', right: '-10px' }; // Left top: same as bottom
-            }
+          if (isOnRightSide) {
+            // Right side players - cards on bottom-left of avatar
+            cardStyle = { bottom: '-8px', left: '-10px' };
           } else {
-            // Right side players - cards on left side of avatar (mirrored)
-            if (isOnBottom) {
-              cardStyle = { top: '-12px', left: '-10px' }; // Right bottom: cards top-left
-            } else {
-              cardStyle = { top: '-12px', left: '-10px' }; // Right top: same as bottom
-            }
+            // Left side players - cards on bottom-right of avatar
+            cardStyle = { bottom: '-8px', right: '-10px' };
           }
           
           return (
