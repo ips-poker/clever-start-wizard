@@ -44,29 +44,29 @@ const SUITS = {
 // y: 12% = top rail center, 88% = bottom rail center
 const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = {
   2: [
-    { x: 50, y: 88 },   // Seat 0 - Hero (bottom center on rail)
+    { x: 46, y: 88 },   // Seat 0 - Hero (bottom center on rail)
     { x: 50, y: 12 },   // Seat 1 - Top center on rail
   ],
   3: [
-    { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 46, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 26, y: 50 },   // Seat 1 - Left center on rail
     { x: 74, y: 50 },   // Seat 2 - Right center on rail
   ],
   4: [
-    { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 46, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 26, y: 50 },   // Seat 1 - Left middle on rail
     { x: 50, y: 12 },   // Seat 2 - Top center on rail
     { x: 74, y: 50 },   // Seat 3 - Right middle on rail
   ],
   5: [
-    { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 46, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 26, y: 66 },   // Seat 1 - Left bottom on rail
     { x: 26, y: 34 },   // Seat 2 - Left top on rail
     { x: 74, y: 34 },   // Seat 3 - Right top on rail
     { x: 74, y: 66 },   // Seat 4 - Right bottom on rail
   ],
   6: [
-    { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 46, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 26, y: 66 },   // Seat 1 - Left bottom on rail
     { x: 26, y: 34 },   // Seat 2 - Left top on rail
     { x: 50, y: 12 },   // Seat 3 - Top center on rail
@@ -74,7 +74,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
     { x: 74, y: 66 },   // Seat 5 - Right bottom on rail
   ],
   7: [
-    { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 46, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 26, y: 70 },   // Seat 1 - Left bottom on rail
     { x: 26, y: 50 },   // Seat 2 - Left middle on rail
     { x: 26, y: 30 },   // Seat 3 - Left top on rail
@@ -83,7 +83,7 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
     { x: 74, y: 70 },   // Seat 6 - Right bottom on rail
   ],
   8: [
-    { x: 50, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 46, y: 88 },   // Seat 0 - Hero (bottom center)
     { x: 26, y: 70 },   // Seat 1 - Left bottom on rail
     { x: 26, y: 50 },   // Seat 2 - Left middle on rail
     { x: 26, y: 30 },   // Seat 3 - Left top on rail
