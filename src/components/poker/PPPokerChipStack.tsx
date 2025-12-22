@@ -53,7 +53,7 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     // Left rail positions (x < 25)
     if (x <= 25) {
       // Left bottom (y > 50): bet goes right and slightly up
-      if (y > 50) return { x: 75, y: -6 };
+      if (y > 50) return { x: 75, y: -2 };
       // Left top (y <= 50): bet goes right and down
       return { x: 75, y: 29 };
     }
@@ -61,16 +61,16 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
     // Right rail positions (x > 70)
     if (x >= 70) {
       // Right bottom (y > 50): bet goes left and slightly up
-      if (y > 50) return { x: -75, y: -6 };
+      if (y > 50) return { x: -75, y: -2 };
       // Right top (y <= 50): bet goes left and down
       return { x: -75, y: 29 };
     }
     
     // Top center position (y < 20): bet goes down
-    if (y <= 20) return { x: 4, y: 54 };
+    if (y <= 20) return { x: 8, y: 54 };
     
     // Bottom/hero position: bet goes up
-    return { x: 4, y: -54 };
+    return { x: 8, y: -54 };
   }, [seatPosition.x, seatPosition.y]);
 
   return (
