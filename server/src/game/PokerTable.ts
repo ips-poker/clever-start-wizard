@@ -93,11 +93,84 @@ export class PokerTable {
     this.engine = new PokerEngineV3(gameType, engineConfig);
     this.seats = new Array(config.maxPlayers).fill(null);
     
+    // CRITICAL: Load existing players from database and sync state
+    this.loadPlayersFromDatabase();
+    
     logger.info('PokerTable initialized with Engine v3.0', {
       tableId: this.id,
       gameType,
       config: engineConfig
     });
+  }
+  
+  /**
+   * Load existing players from database on table initialization
+   * CRITICAL: This ensures server state matches database after restart
+   */
+  private async loadPlayersFromDatabase(): Promise<void> {
+    try {
+      const { data: dbPlayers, error } = await this.supabase
+        .from('poker_table_players')
+        .select('player_id, seat_number, stack, status')
+        .eq('table_id', this.id);
+      
+      if (error) {
+        logger.warn('Failed to load players from DB', { tableId: this.id, error: error.message });
+        return;
+      }
+      
+      if (!dbPlayers || dbPlayers.length === 0) {
+        logger.info('No existing players for table', { tableId: this.id });
+        return;
+      }
+      
+      // Fetch player names and avatars
+      const playerIds = dbPlayers.map(p => p.player_id);
+      const { data: playerProfiles } = await this.supabase
+        .from('players')
+        .select('id, name, avatar_url')
+        .in('id', playerIds);
+      
+      const profileMap = new Map(playerProfiles?.map(p => [p.id, p]) || []);
+      
+      for (const dbPlayer of dbPlayers) {
+        const profile = profileMap.get(dbPlayer.player_id);
+        
+        const player: Player = {
+          id: dbPlayer.player_id,
+          name: profile?.name || 'Player',
+          avatarUrl: profile?.avatar_url || undefined,
+          seatNumber: dbPlayer.seat_number,
+          stack: dbPlayer.stack,
+          status: dbPlayer.status === 'sitting_out' ? 'sitting_out' : 'active',
+          holeCards: [], // CRITICAL: No cards until hand starts
+          currentBet: 0, // CRITICAL: No bet until hand starts
+          isFolded: false,
+          isAllIn: false,
+          timeBank: this.config.timeBankSeconds,
+          lastActionTime: null,
+          missedTurns: 0
+        };
+        
+        this.players.set(dbPlayer.player_id, player);
+        this.seats[dbPlayer.seat_number] = dbPlayer.player_id;
+        
+        logger.info('Loaded player from DB', {
+          tableId: this.id,
+          playerId: dbPlayer.player_id.substring(0, 8),
+          name: player.name,
+          seatNumber: dbPlayer.seat_number,
+          stack: dbPlayer.stack
+        });
+      }
+      
+      logger.info('Players loaded from database', { 
+        tableId: this.id, 
+        count: dbPlayers.length 
+      });
+    } catch (err) {
+      logger.error('Error loading players from DB', { tableId: this.id, error: String(err) });
+    }
   }
   
   /**
@@ -1097,7 +1170,25 @@ export class PokerTable {
     // Save hand history
     await this.saveHandHistory();
     
+    // CRITICAL: Reset all player states for clean slate before next hand
+    // This prevents cards/bets from previous hand showing for new players
+    for (const player of this.players.values()) {
+      player.holeCards = [];
+      player.currentBet = 0;
+      player.isFolded = false;
+      player.isAllIn = false;
+    }
+    
     this.currentHand = null;
+    
+    // Emit state update to clear client displays
+    this.emit('state_update', {
+      pot: 0,
+      currentBet: 0,
+      currentPlayerSeat: null,
+      phase: 'waiting',
+      isHandActive: false
+    });
     
     // Check for next hand after showdown display time (5 seconds to give clients time to show results)
     setTimeout(() => this.checkStartHand(), 5000);
@@ -1151,26 +1242,34 @@ export class PokerTable {
   
   /**
    * Get public table state (visible to all players)
+   * CRITICAL: Only show cards when player is actually seated and hand is in progress
    */
   getPublicState(): object {
-    const players = Array.from(this.players.values()).map(p => ({
-      playerId: p.id,
-      id: p.id,
-      name: p.name,
-      avatarUrl: p.avatarUrl || null, // Include avatar URL from DB
-      seatNumber: p.seatNumber,
-      stack: p.stack,
-      status: p.status,
-      betAmount: p.currentBet,
-      currentBet: p.currentBet,
-      isFolded: p.isFolded,
-      isAllIn: p.isAllIn,
-      isActive: p.status === 'active',
-      isSittingOut: p.status === 'sitting_out',
-      missedTurns: p.missedTurns || 0,
-      hasCards: p.holeCards.length > 0,
-      holeCards: [] // Hidden for public state
-    }));
+    // Map players for display - be careful about what we show
+    const players = Array.from(this.players.values()).map(p => {
+      // CRITICAL: Only mark hasCards=true if there's an ACTIVE hand AND player has cards
+      const isInActiveHand = this.currentHand !== null && p.holeCards.length > 0;
+      
+      return {
+        playerId: p.id,
+        id: p.id,
+        name: p.name,
+        avatarUrl: p.avatarUrl || null,
+        seatNumber: p.seatNumber,
+        stack: p.stack,
+        status: p.status,
+        betAmount: p.currentBet,
+        currentBet: p.currentBet,
+        isFolded: p.isFolded,
+        isAllIn: p.isAllIn,
+        isActive: p.status === 'active',
+        isSittingOut: p.status === 'sitting_out',
+        missedTurns: p.missedTurns || 0,
+        // CRITICAL: hasCards should ONLY be true when in active hand
+        hasCards: isInActiveHand && !p.isFolded,
+        holeCards: [] // Hidden for public state
+      };
+    });
 
     return {
       tableId: this.id,
@@ -1183,11 +1282,11 @@ export class PokerTable {
       ante: this.config.ante,
       actionTimer: this.config.actionTimeSeconds,
       players,
-      // Hand state (flattened for easier client consumption)
+      // Hand state - CRITICAL: only show pot/bet when hand is active
       phase: this.currentHand?.phase || 'waiting',
-      pot: this.currentHand?.pot || 0,
+      pot: this.currentHand ? this.currentHand.pot : 0,
       communityCards: this.currentHand?.communityCards || [],
-      currentBet: this.currentHand?.currentBet || 0,
+      currentBet: this.currentHand ? this.currentHand.currentBet : 0,
       dealerSeat: this.currentHand?.dealerSeat ?? this.dealerSeat ?? 0,
       smallBlindSeat: this.currentHand?.smallBlindSeat ?? 0,
       bigBlindSeat: this.currentHand?.bigBlindSeat ?? 1,
@@ -1195,7 +1294,9 @@ export class PokerTable {
       minRaise: this.currentHand?.minRaise || this.config.bigBlind,
       handNumber: this.currentHand?.handNumber || 0,
       // Countdown info
-      playersNeeded: this.getPlayersNeededToStart()
+      playersNeeded: this.getPlayersNeededToStart(),
+      // CRITICAL: Explicitly indicate if hand is active for client
+      isHandActive: this.currentHand !== null
     };
   }
   
@@ -1288,17 +1389,37 @@ export class PokerTable {
   }
   
   /**
-   * Save table state
+   * Save table state to database
+   * CRITICAL: Also updates player stacks and clears stale data
    */
   async saveState(): Promise<void> {
-    await this.supabase
-      .from('poker_tables')
-      .update({
-        current_hand_id: this.currentHand?.id || null,
-        current_dealer_seat: this.dealerSeat,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', this.id);
+    try {
+      // Update table state
+      await this.supabase
+        .from('poker_tables')
+        .update({
+          current_hand_id: this.currentHand?.id || null,
+          current_dealer_seat: this.dealerSeat,
+          status: this.currentHand ? 'playing' : 'waiting',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', this.id);
+      
+      // Update all player stacks in database
+      for (const player of this.players.values()) {
+        await this.supabase
+          .from('poker_table_players')
+          .update({
+            stack: player.stack,
+            status: player.status,
+            last_action_at: new Date().toISOString()
+          })
+          .eq('table_id', this.id)
+          .eq('player_id', player.id);
+      }
+    } catch (err) {
+      logger.error('Failed to save table state', { tableId: this.id, error: String(err) });
+    }
   }
   
   // Utility methods

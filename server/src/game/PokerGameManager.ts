@@ -38,6 +38,9 @@ export class PokerGameManager {
    */
   private async loadActiveTables(): Promise<void> {
     try {
+      // CLEANUP: First, clean up any stale/phantom hands and reset table states
+      await this.cleanupStaleHands();
+      
       const { data: tables, error } = await this.supabase
         .from('poker_tables')
         .select('*')
@@ -71,6 +74,74 @@ export class PokerGameManager {
       logger.info(`Loaded ${this.tables.size} active tables`);
     } catch (err) {
       logger.error('Error loading tables', { error: String(err) });
+    }
+  }
+  
+  /**
+   * CRITICAL: Clean up stale/phantom hands on startup
+   * This fixes issues with orphaned current_hand_id references
+   */
+  private async cleanupStaleHands(): Promise<void> {
+    try {
+      logger.info('Cleaning up stale hands on startup...');
+      
+      // 1. Find tables with current_hand_id pointing to non-existent or completed hands
+      const { data: tables } = await this.supabase
+        .from('poker_tables')
+        .select('id, name, current_hand_id')
+        .not('current_hand_id', 'is', null);
+      
+      if (!tables || tables.length === 0) {
+        logger.info('No tables with current_hand_id to check');
+        return;
+      }
+      
+      for (const table of tables) {
+        // Check if the hand exists and is active
+        const { data: hand } = await this.supabase
+          .from('poker_hands')
+          .select('id, completed_at')
+          .eq('id', table.current_hand_id)
+          .maybeSingle();
+        
+        // If hand doesn't exist OR is completed, reset the table
+        if (!hand || hand.completed_at !== null) {
+          logger.warn('Cleaning up stale hand reference', {
+            tableId: table.id,
+            tableName: table.name,
+            phantomHandId: table.current_hand_id,
+            handExists: !!hand,
+            handCompleted: hand?.completed_at !== null
+          });
+          
+          await this.supabase
+            .from('poker_tables')
+            .update({ 
+              current_hand_id: null, 
+              status: 'waiting',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', table.id);
+        }
+      }
+      
+      // 2. Delete old completed hands (older than 1 hour) to prevent database bloat
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { error: deleteError } = await this.supabase
+        .from('poker_hands')
+        .delete()
+        .not('completed_at', 'is', null)
+        .lt('completed_at', oneHourAgo);
+      
+      if (deleteError) {
+        logger.warn('Failed to delete old hands', { error: deleteError.message });
+      } else {
+        logger.info('Cleaned up old completed hands');
+      }
+      
+      logger.info('Stale hands cleanup complete');
+    } catch (err) {
+      logger.error('Error during stale hands cleanup', { error: String(err) });
     }
   }
   
