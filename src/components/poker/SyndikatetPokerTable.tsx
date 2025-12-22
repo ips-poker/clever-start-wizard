@@ -136,7 +136,8 @@ const PlayerSeat = memo(function PlayerSeat({
   handStrength,
   communityCards = [],
   showdownPlayers,
-  handId
+  handId,
+  showdownWinners
 }: {
   player: PokerPlayer | null;
   position: { x: number; y: number };
@@ -161,9 +162,20 @@ const PlayerSeat = memo(function PlayerSeat({
   communityCards?: string[];
   showdownPlayers?: Array<{ playerId: string; seatNumber: number; holeCards: string[]; handName?: string }>;
   handId?: string;
+  showdownWinners?: Array<{ playerId: string; amount: number; handName?: string }>;
 }) {
   const avatarSize = isMobile ? (isHero ? 52 : 40) : (isHero ? 58 : 46);
   const showTurnTimer = isCurrentTurn && !player?.isFolded && !player?.isAllIn;
+  
+  // Check if this player is a winner from showdownWinners prop (more reliable than player.isWinner)
+  const isWinner = useMemo(() => {
+    if (!player) return false;
+    if (player.isWinner) return true;
+    if (showdownWinners && showdownWinners.length > 0) {
+      return showdownWinners.some(w => w.playerId === player.playerId);
+    }
+    return false;
+  }, [player, showdownWinners]);
   
   // Calculate bet position towards center of table
   const betOffset = useMemo(() => {
@@ -304,14 +316,14 @@ const PlayerSeat = memo(function PlayerSeat({
         style={{
           width: avatarSize,
           height: avatarSize,
-          border: player.isWinner
+          border: isWinner
             ? '4px solid #fbbf24'
             : isCurrentTurn && !player.isFolded
               ? '4px solid #22c55e'
               : player.isAllIn
                 ? '3px solid #ef4444'
                 : '2px solid rgba(100,100,100,0.8)',
-          boxShadow: player.isWinner
+          boxShadow: isWinner
             ? '0 0 30px rgba(251,191,36,0.9), 0 0 60px rgba(251,191,36,0.6), 0 0 90px rgba(251,191,36,0.3), inset 0 0 20px rgba(251,191,36,0.4)'
             : isCurrentTurn && !player.isFolded
               ? '0 0 25px rgba(34,197,94,0.8), 0 0 50px rgba(34,197,94,0.4), inset 0 0 15px rgba(34,197,94,0.3)'
@@ -319,7 +331,7 @@ const PlayerSeat = memo(function PlayerSeat({
                 ? '0 0 20px rgba(239,68,68,0.6)'
                 : '0 4px 15px rgba(0,0,0,0.5)',
           background: '#2a2a2a',
-          animation: player.isWinner 
+          animation: isWinner 
             ? 'winner-glow 1.5s ease-in-out infinite' 
             : isCurrentTurn && !player.isFolded 
               ? 'pulse-glow 1.5s ease-in-out infinite' 
@@ -347,6 +359,20 @@ const PlayerSeat = memo(function PlayerSeat({
             style={{ 
               border: '3px solid rgba(34,197,94,0.6)',
               boxShadow: 'inset 0 0 20px rgba(34,197,94,0.4)'
+            }}
+          />
+        )}
+        
+        {/* Winner glow overlay */}
+        {isWinner && (
+          <motion.div 
+            className="absolute inset-0 rounded-full pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0.4, 0.8, 0.4] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            style={{ 
+              border: '4px solid #fbbf24',
+              boxShadow: 'inset 0 0 30px rgba(251,191,36,0.6), 0 0 40px rgba(251,191,36,0.8)'
             }}
           />
         )}
@@ -512,6 +538,8 @@ const PlayerSeat = memo(function PlayerSeat({
   if (prev.handId !== next.handId) return false;
   if (JSON.stringify(prev.heroCards) !== JSON.stringify(next.heroCards)) return false;
   if (JSON.stringify(prev.showdownPlayers) !== JSON.stringify(next.showdownPlayers)) return false;
+  if (JSON.stringify(prev.showdownWinners) !== JSON.stringify(next.showdownWinners)) return false;
+  if (prev.player?.isWinner !== next.player?.isWinner) return false;
   return true;
 });
 
@@ -1911,6 +1939,7 @@ export function SyndikatetPokerTable({
                 communityCards={tableState?.communityCards || []}
                 showdownPlayers={showdownResult?.showdownPlayers}
                 handId={tableState?.handId}
+                showdownWinners={showdownResult?.winners}
               />
             );
           })}
@@ -1928,7 +1957,7 @@ export function SyndikatetPokerTable({
             }}
           />
           
-          {/* Win distribution animation - chips flying from pot to winner */}
+          {/* Win distribution animation - chips flying from pot to winner in cascade */}
           <AnimatePresence>
             {winDistribution && (() => {
               // Calculate winner position based on seat rotation
@@ -1936,85 +1965,113 @@ export function SyndikatetPokerTable({
               const visualPosition = (winDistribution.winnerSeat - heroSeat + 6) % 6;
               const targetPos = SEAT_POSITIONS[visualPosition];
               
-              // Pot is at top center (approximately 18-22% from top, 50% from left)
-              const potY = isMobile ? 18 : 22;
+              // Pot is above community cards (approximately 30-35% from top, 50% from left)
+              const potY = isMobile ? 30 : 35;
+              const potX = 50;
+              
+              // Calculate actual pixel offsets for proper animation
+              const deltaX = (targetPos.x - potX);
+              const deltaY = (targetPos.y - potY);
+              
+              // Generate cascade of 12 chips with staggered delays
+              const chipCount = 12;
               
               return (
                 <motion.div
                   key="win-distribution"
                   className="absolute inset-0 pointer-events-none z-50"
                   initial={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                  exit={{ opacity: 0, transition: { duration: 0.2 } }}
                 >
-                  {/* Flying chips from pot to winner */}
-                  {[...Array(8)].map((_, i) => (
-                    <motion.div
-                      key={`win-chip-${i}`}
-                      className="absolute"
-                      style={{ 
-                        left: '50%', 
-                        top: `${potY}%`,
-                        transform: 'translate(-50%, -50%)'
-                      }}
-                      initial={{ 
-                        x: 0, 
-                        y: 0, 
-                        scale: 1, 
-                        opacity: 1 
-                      }}
-                      animate={{ 
-                        x: `${(targetPos.x - 50) * (isMobile ? 3.5 : 4.5)}px`,
-                        y: `${(targetPos.y - potY) * (isMobile ? 5 : 6)}px`,
-                        scale: 0.6,
-                        opacity: [1, 1, 0.8, 0]
-                      }}
-                      transition={{
-                        duration: 0.6,
-                        delay: i * 0.05,
-                        ease: [0.4, 0, 0.2, 1]
-                      }}
-                      onAnimationComplete={() => {
-                        if (i === 7) {
-                          setTimeout(() => setWinDistribution(null), 100);
-                        }
-                      }}
-                    >
-                      {/* Chip stack visual */}
-                      <div className="relative">
-                        {[0, 1, 2].map((j) => (
-                          <div
-                            key={j}
-                            className="absolute rounded-full"
-                            style={{
-                              width: 20,
-                              height: 20,
-                              bottom: j * 2,
-                              left: '50%',
-                              transform: 'translateX(-50%)',
-                              background: j % 2 === 0 
-                                ? 'radial-gradient(circle at 30% 30%, #fbbf24 0%, #f59e0b 60%, #d97706 100%)'
-                                : 'radial-gradient(circle at 30% 30%, #22c55e 0%, #16a34a 60%, #15803d 100%)',
-                              border: '2px solid rgba(255,255,255,0.4)',
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.3)'
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </motion.div>
-                  ))}
+                  {/* Flying chips cascade from pot to winner */}
+                  {[...Array(chipCount)].map((_, i) => {
+                    // Randomize starting position slightly for natural effect
+                    const offsetX = (Math.random() - 0.5) * 15;
+                    const offsetY = (Math.random() - 0.5) * 10;
+                    
+                    // Chip colors - alternating gold/green/red
+                    const chipColors = [
+                      'radial-gradient(circle at 30% 30%, #fbbf24 0%, #f59e0b 60%, #d97706 100%)', // Gold
+                      'radial-gradient(circle at 30% 30%, #22c55e 0%, #16a34a 60%, #15803d 100%)', // Green
+                      'radial-gradient(circle at 30% 30%, #ef4444 0%, #dc2626 60%, #b91c1c 100%)', // Red
+                    ];
+                    
+                    return (
+                      <motion.div
+                        key={`win-chip-${i}`}
+                        className="absolute"
+                        style={{ 
+                          left: `${potX}%`, 
+                          top: `${potY}%`,
+                        }}
+                        initial={{ 
+                          x: offsetX, 
+                          y: offsetY, 
+                          scale: 1, 
+                          opacity: 1,
+                          rotate: 0
+                        }}
+                        animate={{ 
+                          x: `calc(${deltaX}vw + ${offsetX}px)`,
+                          y: `calc(${deltaY}vh + ${offsetY}px)`,
+                          scale: [1, 1.1, 0.8],
+                          opacity: [1, 1, 1, 0],
+                          rotate: (Math.random() - 0.5) * 180
+                        }}
+                        transition={{
+                          duration: 0.7,
+                          delay: i * 0.04, // Cascade effect - each chip slightly delayed
+                          ease: [0.25, 0.46, 0.45, 0.94] // Smooth arc
+                        }}
+                        onAnimationComplete={() => {
+                          if (i === chipCount - 1) {
+                            setTimeout(() => setWinDistribution(null), 200);
+                          }
+                        }}
+                      >
+                        {/* Individual chip with stacked effect */}
+                        <div className="relative" style={{ transform: 'translate(-50%, -50%)' }}>
+                          {[0, 1, 2].map((j) => (
+                            <div
+                              key={j}
+                              className="absolute rounded-full"
+                              style={{
+                                width: isMobile ? 16 : 22,
+                                height: isMobile ? 16 : 22,
+                                bottom: j * 2,
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                background: chipColors[(i + j) % 3],
+                                border: '2px solid rgba(255,255,255,0.5)',
+                                boxShadow: '0 2px 6px rgba(0,0,0,0.4), inset 0 1px 3px rgba(255,255,255,0.4)'
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                   
-                  {/* Win amount floating label */}
+                  {/* Golden trail effect */}
                   <motion.div
-                    className="absolute left-1/2 -translate-x-1/2"
-                    style={{ top: `${potY + 5}%` }}
-                    initial={{ opacity: 0, y: 0, scale: 0.8 }}
-                    animate={{ opacity: [0, 1, 1, 0], y: -20, scale: 1 }}
-                    transition={{ duration: 1, ease: 'easeOut' }}
-                  >
-                    <span className="text-lg font-bold text-yellow-400 drop-shadow-lg">
-                      +{winDistribution.amount.toLocaleString()}
-                    </span>
-                  </motion.div>
+                    className="absolute rounded-full"
+                    style={{ 
+                      left: `${potX}%`, 
+                      top: `${potY}%`,
+                      width: 60,
+                      height: 60,
+                      transform: 'translate(-50%, -50%)',
+                      background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, transparent 70%)'
+                    }}
+                    initial={{ scale: 1, opacity: 0.8 }}
+                    animate={{ 
+                      scale: [1, 2, 0.5],
+                      opacity: [0.8, 0.4, 0],
+                      x: `calc(${deltaX}vw)`,
+                      y: `calc(${deltaY}vh)`
+                    }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                  />
                 </motion.div>
               );
             })()}
