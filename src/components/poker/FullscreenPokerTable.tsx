@@ -176,7 +176,20 @@ const SEAT_POSITIONS_6MAX = SEAT_POSITIONS_BY_COUNT[6];
 
 // Определение контекста Telegram
 function isTelegramMiniApp(): boolean {
-  return !!(window as any).Telegram?.WebApp?.initData;
+  // В Telegram WebApp объект WebApp существует всегда, но initData иногда может быть пустым (особенно в dev/preview).
+  const hasWebAppObject = !!(window as any).Telegram?.WebApp;
+  if (hasWebAppObject) return true;
+
+  // Фоллбек по URL-параметрам/роутам (когда SDK прокидывает параметры без window.Telegram)
+  const href = window.location.href;
+  const path = window.location.pathname;
+  const looksLikeTelegramUrl =
+    href.includes('tgWebApp') ||
+    href.includes('tgWebAppData=') ||
+    path.startsWith('/telegram') ||
+    path.startsWith('/telegram-mini-app');
+
+  return looksLikeTelegramUrl;
 }
 
 // Функция получения позиций по количеству игроков
