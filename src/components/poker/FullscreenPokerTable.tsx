@@ -438,16 +438,12 @@ const PlayerSeat = memo(function PlayerSeat({
               ? '4px solid #fbbf24'
               : player.isAllIn
                 ? '3px solid #ef4444'
-                : isCurrentTurn && !player.isFolded
-                  ? '3px solid #22c55e'
-                  : '2px solid rgba(255,255,255,0.3)',
+                : '2px solid rgba(255,255,255,0.3)',
             boxShadow: isWinner
               ? '0 0 30px rgba(251,191,36,0.9), 0 0 60px rgba(251,191,36,0.6), 0 0 90px rgba(251,191,36,0.3)'
               : player.isAllIn
                 ? '0 0 20px rgba(239,68,68,0.5)'
-                : isCurrentTurn && !player.isFolded
-                  ? '0 0 25px rgba(34,197,94,0.8)'
-                  : '0 6px 20px rgba(0,0,0,0.5)',
+                : '0 6px 20px rgba(0,0,0,0.5)',
             animation: isWinner ? 'winner-glow 1.5s ease-in-out infinite' : undefined
           }}
         >
