@@ -282,6 +282,7 @@ interface PlayerSeatProps {
   onSeatClick?: (seatNumber: number) => void;
   lastAction?: string;
   showdownPlayers?: Array<{ playerId: string; seatNumber: number; holeCards: string[]; handName?: string }>;
+  showdownWinners?: Array<{ playerId: string; amount: number; handName?: string }>;
 }
 
 // ============= ACTION BADGE - PPPoker style status above player =============
@@ -339,10 +340,21 @@ const PlayerSeat = memo(function PlayerSeat({
   canJoin = false,
   onSeatClick,
   lastAction,
-  showdownPlayers
+  showdownPlayers,
+  showdownWinners
 }: PlayerSeatProps & { lastAction?: string }) {
   // Avatar sizes - same for all players
   const avatarSize = 56;
+  
+  // Check if this player is a winner from showdownWinners prop (more reliable than player.isWinner)
+  const isWinner = useMemo(() => {
+    if (!player) return false;
+    if ((player as any).isWinner) return true;
+    if (showdownWinners && showdownWinners.length > 0) {
+      return showdownWinners.some(w => w.playerId === player.playerId);
+    }
+    return false;
+  }, [player, showdownWinners]);
   
   // Empty seat
   if (!player) {
@@ -416,19 +428,27 @@ const PlayerSeat = memo(function PlayerSeat({
         
         <div 
           className={cn(
-            "rounded-full overflow-hidden transition-all",
+            "rounded-full overflow-hidden transition-all duration-200",
             player.isFolded && "opacity-50 grayscale"
           )}
           style={{
             width: avatarSize,
             height: avatarSize,
-            // Timer ring replaces active border - no double ring
-            border: player.isAllIn
-              ? '3px solid #ef4444'
-              : '2px solid rgba(255,255,255,0.3)',
-            boxShadow: player.isAllIn
-              ? '0 0 20px rgba(239,68,68,0.5)'
-              : '0 6px 20px rgba(0,0,0,0.5)'
+            border: isWinner
+              ? '4px solid #fbbf24'
+              : player.isAllIn
+                ? '3px solid #ef4444'
+                : isCurrentTurn && !player.isFolded
+                  ? '3px solid #22c55e'
+                  : '2px solid rgba(255,255,255,0.3)',
+            boxShadow: isWinner
+              ? '0 0 30px rgba(251,191,36,0.9), 0 0 60px rgba(251,191,36,0.6), 0 0 90px rgba(251,191,36,0.3)'
+              : player.isAllIn
+                ? '0 0 20px rgba(239,68,68,0.5)'
+                : isCurrentTurn && !player.isFolded
+                  ? '0 0 25px rgba(34,197,94,0.8)'
+                  : '0 6px 20px rgba(0,0,0,0.5)',
+            animation: isWinner ? 'winner-glow 1.5s ease-in-out infinite' : undefined
           }}
         >
           <img 
@@ -443,6 +463,19 @@ const PlayerSeat = memo(function PlayerSeat({
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
               <span className="text-white/80 text-[10px] font-bold">Fold</span>
             </div>
+          )}
+          
+          {/* Winner glow overlay */}
+          {isWinner && (
+            <motion.div 
+              className="absolute inset-0 rounded-full pointer-events-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.4, 0.8, 0.4] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              style={{ 
+                boxShadow: 'inset 0 0 30px rgba(251,191,36,0.6)'
+              }}
+            />
           )}
         </div>
         
@@ -1032,6 +1065,30 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   const [isCollectingBets, setIsCollectingBets] = useState(false);
   const [collectionBets, setCollectionBets] = useState<Array<{ seatPosition: { x: number; y: number }; amount: number }>>([]);
   
+  // Win distribution animation state
+  const [winDistribution, setWinDistribution] = useState<{ winnerSeat: number; amount: number } | null>(null);
+  
+  // Trigger win distribution animation when winners change
+  useEffect(() => {
+    if (winners && winners.length > 0 && phase === 'showdown') {
+      const winner = winners[0];
+      // Find winner's seat
+      const winnerPlayer = players.find(p => p.playerId === winner.playerId);
+      if (winnerPlayer) {
+        // Calculate visual position
+        let visualPos = 0;
+        if (heroSeat !== null) {
+          visualPos = (winnerPlayer.seatNumber - heroSeat + maxPlayers) % maxPlayers;
+        } else {
+          visualPos = (winnerPlayer.seatNumber + preferences.preferredSeatRotation) % maxPlayers;
+        }
+        setWinDistribution({ winnerSeat: visualPos, amount: winner.amount });
+      }
+    } else {
+      setWinDistribution(null);
+    }
+  }, [winners, phase, players, heroSeat, maxPlayers, preferences.preferredSeatRotation]);
+  
   
   // Detect phase change and trigger collection animation
   useEffect(() => {
@@ -1111,6 +1168,104 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         }}
       />
       
+      {/* Win distribution animation - chips flying from pot to winner in cascade */}
+      <AnimatePresence>
+        {winDistribution && (() => {
+          const targetPos = positions[winDistribution.winnerSeat];
+          const potY = 50; // Center of table
+          const potX = 50;
+          const deltaX = (targetPos.x - potX);
+          const deltaY = (targetPos.y - potY);
+          const chipCount = 12;
+          
+          return (
+            <motion.div
+              key="win-distribution"
+              className="absolute inset-0 pointer-events-none z-50"
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.2 } }}
+            >
+              {/* Flying chips cascade from pot to winner */}
+              {[...Array(chipCount)].map((_, i) => {
+                const offsetX = (Math.random() - 0.5) * 15;
+                const offsetY = (Math.random() - 0.5) * 10;
+                const chipColors = [
+                  'radial-gradient(circle at 30% 30%, #fbbf24 0%, #f59e0b 60%, #d97706 100%)',
+                  'radial-gradient(circle at 30% 30%, #22c55e 0%, #16a34a 60%, #15803d 100%)',
+                  'radial-gradient(circle at 30% 30%, #ef4444 0%, #dc2626 60%, #b91c1c 100%)',
+                ];
+                
+                return (
+                  <motion.div
+                    key={`win-chip-${i}`}
+                    className="absolute"
+                    style={{ left: `${potX}%`, top: `${potY}%` }}
+                    initial={{ x: offsetX, y: offsetY, scale: 1, opacity: 1, rotate: 0 }}
+                    animate={{ 
+                      x: `calc(${deltaX}vw + ${offsetX}px)`,
+                      y: `calc(${deltaY}vh + ${offsetY}px)`,
+                      scale: [1, 1.1, 0.8],
+                      opacity: [1, 1, 1, 0],
+                      rotate: (Math.random() - 0.5) * 180
+                    }}
+                    transition={{
+                      duration: 0.7,
+                      delay: i * 0.04,
+                      ease: [0.25, 0.46, 0.45, 0.94]
+                    }}
+                    onAnimationComplete={() => {
+                      if (i === chipCount - 1) {
+                        setTimeout(() => setWinDistribution(null), 200);
+                      }
+                    }}
+                  >
+                    <div className="relative" style={{ transform: 'translate(-50%, -50%)' }}>
+                      {[0, 1, 2].map((j) => (
+                        <div
+                          key={j}
+                          className="absolute rounded-full"
+                          style={{
+                            width: 18,
+                            height: 18,
+                            bottom: j * 2,
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            background: chipColors[(i + j) % 3],
+                            border: '2px solid rgba(255,255,255,0.5)',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                );
+              })}
+              
+              {/* Golden trail effect */}
+              <motion.div
+                className="absolute rounded-full"
+                style={{ 
+                  left: `${potX}%`, 
+                  top: `${potY}%`,
+                  width: 60,
+                  height: 60,
+                  transform: 'translate(-50%, -50%)',
+                  background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, transparent 70%)'
+                }}
+                initial={{ scale: 1, opacity: 0.8 }}
+                animate={{ 
+                  scale: [1, 2, 0.5],
+                  opacity: [0.8, 0.4, 0],
+                  x: `calc(${deltaX}vw)`,
+                  y: `calc(${deltaY}vh)`
+                }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              />
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+      
       {/* Center area - pot and community cards - vertically centered in table */}
       {(() => {
         const winnerPlayer = players.find(p => (p as any).isWinner);
@@ -1170,6 +1325,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               onSeatClick={onSeatClick}
               lastAction={(player as any)?.lastAction}
               showdownPlayers={showdownPlayers}
+              showdownWinners={winners}
             />
 
             {/* Bet amount - anchored to avatar center in table coordinates */}
