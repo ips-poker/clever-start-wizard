@@ -83,7 +83,7 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
         damping: 24,
         delay: 0.03
       }}
-      className="absolute flex items-center gap-1.5 z-20 pointer-events-none"
+      className="absolute flex flex-col items-center gap-0.5 z-20 pointer-events-none"
       style={{
         left: `calc(${seatPosition.x}% + ${betOffset.x}px)`,
         top: `calc(${seatPosition.y}% + ${betOffset.y}px)`,
@@ -98,7 +98,7 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
         animated={animated}
       />
 
-      {/* BB Amount text in rounded pill - PPPoker exact style */}
+      {/* BB Amount text below chips - PPPoker exact style */}
       <div 
         className="px-2 py-0.5 rounded-full flex items-center"
         style={{
