@@ -610,10 +610,10 @@ const PlayerSeat = memo(function PlayerSeat({
           
           if (isOnLeftSide) {
             // Left side players - cards on top-right of avatar
-            cardStyle = { top: '-12px', right: '-10px' };
+            cardStyle = { top: '-18px', right: '-10px' };
           } else {
             // Right side players - cards on top-left of avatar (mirrored)
-            cardStyle = { top: '-12px', left: '-10px' };
+            cardStyle = { top: '-18px', left: '-10px' };
           }
           
           return (
