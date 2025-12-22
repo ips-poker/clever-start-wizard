@@ -340,24 +340,40 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             if (stateData.myCards) {
               setMyCards(stateData.myCards as string[]);
             }
+            
+            // Try to get mySeat from direct field first
+            let foundMySeat = false;
             if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
               setMySeat(stateData.mySeat as number);
-              log('🎯 My seat set from state:', stateData.mySeat);
+              log('🎯 My seat set from state.mySeat:', stateData.mySeat);
+              foundMySeat = true;
             }
             
-            // Also check players array
+            // ALWAYS check players array for cards and seat (fallback for mySeat)
             const playersData = stateData.players as Record<string, unknown>[] | undefined;
             if (playersData && playerId) {
-              const myPlayerData = playersData.find((p) => p.playerId === playerId || p.id === playerId);
+              const myPlayerData = playersData.find((p) => 
+                p.playerId === playerId || p.id === playerId
+              );
               if (myPlayerData) {
+                // Get cards from player data
                 const cards = myPlayerData.holeCards as string[] | undefined;
                 if (cards && cards.length > 0) {
                   setMyCards(cards);
+                  log('🃏 My cards from player data:', cards);
                 }
-                if (myPlayerData.seatNumber !== undefined) {
-                  setMySeat(myPlayerData.seatNumber as number);
-                  log('🎯 My seat set from player data:', myPlayerData.seatNumber);
+                // IMPORTANT: Set seat from player data if not found in mySeat field
+                const seatNum = (myPlayerData.seatNumber ?? myPlayerData.seat_number ?? myPlayerData.seat) as number | undefined;
+                if (seatNum !== undefined && seatNum !== null) {
+                  if (!foundMySeat) {
+                    setMySeat(seatNum);
+                    log('🎯 My seat set from players array (fallback):', seatNum);
+                  }
+                } else {
+                  log('⚠️ Player found but no seatNumber:', myPlayerData);
                 }
+              } else {
+                log('⚠️ My player not found in players array, playerId:', playerId, 'players:', playersData.map(p => p.playerId || p.id));
               }
             }
           }
@@ -1246,21 +1262,42 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     });
   }, [tableId, playerId, sendMessage]);
 
-  // Check if it's my turn
+  // Check if it's my turn - also try to find seat from players if mySeat is null
   const isMyTurn = useMemo(() => {
-    if (!tableState || mySeat === null) {
-      log('⚠️ isMyTurn: false (no tableState or mySeat)', { tableState: !!tableState, mySeat });
+    if (!tableState) {
+      log('⚠️ isMyTurn: false (no tableState)');
       return false;
     }
-    const result = tableState.currentPlayerSeat === mySeat;
+    
+    // If mySeat is null, try to find it from players array
+    let effectiveSeat = mySeat;
+    if (effectiveSeat === null && playerId && tableState.players) {
+      const myPlayerFromState = tableState.players.find(p => p.playerId === playerId);
+      if (myPlayerFromState) {
+        effectiveSeat = myPlayerFromState.seatNumber;
+        log('🔍 Found my seat from players array:', effectiveSeat);
+        // Also update mySeat state for future use
+        setMySeat(effectiveSeat);
+      }
+    }
+    
+    if (effectiveSeat === null) {
+      log('⚠️ isMyTurn: false (mySeat is null)', { 
+        playerId, 
+        playersInState: tableState.players?.map(p => ({ id: p.playerId, seat: p.seatNumber }))
+      });
+      return false;
+    }
+    
+    const result = tableState.currentPlayerSeat === effectiveSeat;
     log('🎯 isMyTurn check:', { 
       result, 
       currentPlayerSeat: tableState.currentPlayerSeat, 
-      mySeat,
+      mySeat: effectiveSeat,
       phase: tableState.phase
     });
     return result;
-  }, [tableState, mySeat]);
+  }, [tableState, mySeat, playerId]);
 
   // Get my player data
   const myPlayer = useMemo(() => {
