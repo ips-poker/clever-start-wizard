@@ -185,51 +185,26 @@ const PlayerCards = memo(function PlayerCards({
   cards,
   playerId,
   isHero,
-  showCards,
-  position
+  showCards
 }: {
   cards: string[];
   playerId: string;
   isHero: boolean;
   showCards: boolean;
-  position: { x: number; y: number };
 }) {
   if (!cards || cards.length === 0) return null;
   
-  // Hero cards at top, opponent cards at bottom corners
-  if (isHero) {
-    return (
-      <div className="absolute flex gap-0.5 -top-[72px] left-1/2 -translate-x-1/2">
-        {cards.map((card, idx) => (
-          <StablePokerCard
-            key={`${playerId}-${idx}-${card}`}
-            card={card}
-            faceDown={false}
-            size="md"
-            dealDelay={idx}
-          />
-        ))}
-      </div>
-    );
-  }
-  
-  // Opponent cards - bottom-left or bottom-right based on position
-  const isOnRightSide = position.x > 50;
-  
   return (
-    <div 
-      className="absolute flex gap-0.5 z-5"
-      style={{
-        bottom: '-8px',
-        [isOnRightSide ? 'left' : 'right']: '-10px'
-      }}
-    >
+    <div className={cn(
+      'absolute flex gap-0.5',
+      isHero ? '-top-[72px] left-1/2 -translate-x-1/2' : '-top-12 left-1/2 -translate-x-1/2'
+    )}>
       {cards.map((card, idx) => (
         <StablePokerCard
           key={`${playerId}-${idx}-${card}`}
           card={card}
-          faceDown={!showCards}
-          size="sm"
+          faceDown={!showCards && !isHero}
+          size={isHero ? 'md' : 'sm'}
           dealDelay={idx}
         />
       ))}
@@ -238,8 +213,7 @@ const PlayerCards = memo(function PlayerCards({
 }, (prev, next) => 
   JSON.stringify(prev.cards) === JSON.stringify(next.cards) &&
   prev.showCards === next.showCards &&
-  prev.isHero === next.isHero &&
-  prev.position.x === next.position.x
+  prev.isHero === next.isHero
 );
 
 // ==========================================
@@ -396,7 +370,6 @@ export const OptimizedPlayerSeat = memo(function OptimizedPlayerSeat({
           playerId={player.id}
           isHero={isHero}
           showCards={showCards}
-          position={position}
         />
       </div>
     </>
