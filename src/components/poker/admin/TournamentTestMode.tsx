@@ -7,10 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 import { 
   FlaskConical, 
   Play, 
+  Pause,
   Users, 
   UserPlus, 
   Trash2, 
@@ -24,7 +26,12 @@ import {
   ArrowRight,
   Eye,
   Download,
-  Table as TableIcon
+  Table as TableIcon,
+  Wifi,
+  WifiOff,
+  Bot,
+  Zap,
+  SkipForward
 } from 'lucide-react';
 import {
   Table,
@@ -34,19 +41,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 
 interface LogEntry {
   id: string;
   timestamp: Date;
-  type: 'info' | 'success' | 'error' | 'warning' | 'action';
+  type: 'info' | 'success' | 'error' | 'warning' | 'action' | 'ws' | 'bot';
   message: string;
   details?: any;
 }
@@ -66,6 +66,7 @@ interface TournamentTable {
   name: string;
   status: string;
   max_players: number;
+  current_hand_id?: string;
   players: Array<{
     player_id: string;
     player_name: string;
@@ -75,11 +76,75 @@ interface TournamentTable {
   }>;
 }
 
+interface BotConnection {
+  playerId: string;
+  playerName: string;
+  tableId: string;
+  ws: WebSocket | null;
+  connected: boolean;
+  isMyTurn: boolean;
+  holeCards: string[];
+  currentBet: number;
+  stack: number;
+  seatNumber: number;
+}
+
 interface TournamentTestModeProps {
   tournamentId: string;
   tournamentName: string;
   onClose: () => void;
 }
+
+// Bot AI decision making
+const makeBotDecision = (
+  canCheck: boolean,
+  callAmount: number,
+  stack: number,
+  pot: number,
+  holeCards: string[],
+  phase: string
+): { action: string; amount?: number } => {
+  const random = Math.random();
+  
+  // Simple bot logic
+  if (random < 0.15) {
+    // 15% chance to fold (if there's a bet)
+    if (!canCheck && callAmount > 0) {
+      return { action: 'fold' };
+    }
+  }
+  
+  if (random < 0.6) {
+    // 60% chance to check/call
+    if (canCheck) {
+      return { action: 'check' };
+    } else {
+      return { action: 'call' };
+    }
+  }
+  
+  if (random < 0.85) {
+    // 25% chance to raise
+    const minRaise = callAmount * 2 || pot * 0.5;
+    const raiseAmount = Math.min(
+      Math.floor(minRaise + Math.random() * pot),
+      stack
+    );
+    if (raiseAmount > callAmount && raiseAmount < stack) {
+      return { action: 'raise', amount: raiseAmount };
+    } else if (raiseAmount >= stack) {
+      return { action: 'allin' };
+    }
+  }
+  
+  // 15% chance to go all-in
+  if (random > 0.85 || stack <= callAmount) {
+    return { action: 'allin' };
+  }
+  
+  // Default to call
+  return canCheck ? { action: 'check' } : { action: 'call' };
+};
 
 export function TournamentTestMode({ tournamentId, tournamentName, onClose }: TournamentTestModeProps) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -90,7 +155,25 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
   const [loading, setLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [testPlayerCount, setTestPlayerCount] = useState(6);
+  
+  // Bot mode state
+  const [botMode, setBotMode] = useState(false);
+  const [botConnections, setBotConnections] = useState<Map<string, BotConnection>>(new Map());
+  const [botSpeed, setBotSpeed] = useState(1000); // ms delay before bot action
+  const [connectedBots, setConnectedBots] = useState(0);
+  const [handsPlayed, setHandsPlayed] = useState(0);
+  
   const logScrollRef = useRef<HTMLDivElement>(null);
+  const botConnectionsRef = useRef<Map<string, BotConnection>>(new Map());
+
+  // WebSocket URL for poker server
+  const getWsUrl = (tableId: string, playerId: string) => {
+    const isLocalhost = window.location.hostname === 'localhost';
+    const base = isLocalhost 
+      ? 'ws://89.104.74.121:3001'
+      : 'wss://89.104.74.121';
+    return `${base}/ws/poker?tableId=${tableId}&playerId=${playerId}`;
+  };
 
   // Add log entry
   const addLog = useCallback((type: LogEntry['type'], message: string, details?: any) => {
@@ -103,7 +186,6 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
     };
     setLogs(prev => [...prev, entry]);
     
-    // Auto scroll to bottom
     setTimeout(() => {
       if (logScrollRef.current) {
         logScrollRef.current.scrollTop = logScrollRef.current.scrollHeight;
@@ -113,9 +195,6 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
 
   // Load tournament data
   const loadTournamentData = useCallback(async () => {
-    addLog('info', 'Загрузка данных турнира...');
-    
-    // Load tournament
     const { data: tournamentData, error: tournamentError } = await supabase
       .from('online_poker_tournaments')
       .select('*')
@@ -127,49 +206,30 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
       return;
     }
     setTournament(tournamentData);
-    addLog('success', `Турнир: ${tournamentData.name}, Статус: ${tournamentData.status}`);
 
-    // Load participants
-    const { data: participantsData, error: participantsError } = await supabase
+    const { data: participantsData } = await supabase
       .from('online_poker_tournament_participants')
-      .select(`
-        *,
-        players!inner(id, name)
-      `)
+      .select(`*, players!inner(id, name)`)
       .eq('tournament_id', tournamentId)
       .order('chips', { ascending: false });
 
-    if (participantsError) {
-      addLog('error', 'Ошибка загрузки участников', participantsError);
-    } else {
-      const formattedParticipants = participantsData?.map(p => ({
-        ...p,
-        player_name: (p.players as any)?.name || 'Unknown'
-      })) || [];
-      setParticipants(formattedParticipants);
-      addLog('info', `Участников: ${formattedParticipants.length}`);
-    }
+    const formattedParticipants = participantsData?.map(p => ({
+      ...p,
+      player_name: (p.players as any)?.name || 'Unknown'
+    })) || [];
+    setParticipants(formattedParticipants);
 
-    // Load tables
-    const { data: tablesData, error: tablesError } = await supabase
+    const { data: tablesData } = await supabase
       .from('poker_tables')
       .select('*')
       .eq('tournament_id', tournamentId);
 
-    if (tablesError) {
-      addLog('error', 'Ошибка загрузки столов', tablesError);
-    } else if (tablesData && tablesData.length > 0) {
-      addLog('info', `Столов турнира: ${tablesData.length}`);
-      
-      // Load players for each table
+    if (tablesData && tablesData.length > 0) {
       const tablesWithPlayers = await Promise.all(
         tablesData.map(async (table) => {
           const { data: tablePlayers } = await supabase
             .from('poker_table_players')
-            .select(`
-              *,
-              players!inner(id, name)
-            `)
+            .select(`*, players!inner(id, name)`)
             .eq('table_id', table.id);
 
           return {
@@ -184,20 +244,13 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
           };
         })
       );
-      
       setTournamentTables(tablesWithPlayers);
-      
-      // Log table details
-      tablesWithPlayers.forEach(table => {
-        addLog('info', `Стол "${table.name}": ${table.players.length}/${table.max_players} игроков`, {
-          tableId: table.id,
-          players: table.players.map(p => `${p.player_name} (место ${p.seat_number})`)
-        });
-      });
+    } else {
+      setTournamentTables([]);
     }
   }, [tournamentId, addLog]);
 
-  // Load existing test players
+  // Load test players
   const loadTestPlayers = useCallback(async () => {
     const { data, error } = await supabase
       .from('players')
@@ -210,7 +263,6 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
       return;
     }
 
-    // Check which are registered
     const { data: registered } = await supabase
       .from('online_poker_tournament_participants')
       .select('player_id, chips, seat_number, table_id, status')
@@ -229,7 +281,7 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
     })) || [];
 
     setTestPlayers(players);
-    addLog('info', `Найдено тестовых игроков: ${players.length}, зарегистрировано: ${players.filter(p => p.registered).length}`);
+    addLog('info', `Тестовых игроков: ${players.length}, зарег: ${players.filter(p => p.registered).length}`);
   }, [tournamentId, addLog]);
 
   // Create test players
@@ -238,30 +290,21 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
     addLog('action', `Создание ${testPlayerCount} тестовых игроков...`);
 
     try {
-      const newPlayers = [];
       for (let i = 1; i <= testPlayerCount; i++) {
         const name = `TestBot_${Date.now()}_${i}`;
-        
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('players')
-          .insert({ name, elo_rating: 1000 })
-          .select()
-          .single();
+          .insert({ name, elo_rating: 1000 });
 
         if (error) {
           addLog('error', `Ошибка создания игрока ${i}`, error);
-        } else {
-          newPlayers.push(data);
-          addLog('success', `Создан: ${name}`);
         }
       }
-
       await loadTestPlayers();
-      addLog('success', `Создано ${newPlayers.length} тестовых игроков`);
+      addLog('success', `Создано ${testPlayerCount} игроков`);
     } catch (err) {
-      addLog('error', 'Ошибка создания игроков', err);
+      addLog('error', 'Ошибка создания', err);
     }
-
     setLoading(false);
   };
 
@@ -269,11 +312,11 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
   const registerAllTestPlayers = async () => {
     setLoading(true);
     const unregistered = testPlayers.filter(p => !p.registered);
-    addLog('action', `Регистрация ${unregistered.length} игроков в турнире...`);
+    addLog('action', `Регистрация ${unregistered.length} игроков...`);
 
     try {
       for (const player of unregistered) {
-        const { error } = await supabase
+        await supabase
           .from('online_poker_tournament_participants')
           .insert({
             tournament_id: tournamentId,
@@ -281,27 +324,20 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
             status: 'registered',
             chips: tournament?.starting_chips || 5000
           });
-
-        if (error) {
-          addLog('error', `Ошибка регистрации ${player.name}`, error);
-        } else {
-          addLog('success', `Зарегистрирован: ${player.name}`);
-        }
       }
-
       await loadTestPlayers();
       await loadTournamentData();
+      addLog('success', 'Все игроки зарегистрированы');
     } catch (err) {
       addLog('error', 'Ошибка регистрации', err);
     }
-
     setLoading(false);
   };
 
-  // Start tournament with seating
+  // Start tournament
   const startTournament = async () => {
     setLoading(true);
-    addLog('action', '🚀 ЗАПУСК ТУРНИРА С РАССАДКОЙ...');
+    addLog('action', '🚀 ЗАПУСК ТУРНИРА...');
 
     try {
       const { data, error } = await supabase.rpc('start_online_tournament_with_seating', {
@@ -309,33 +345,224 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
       });
 
       if (error) {
-        addLog('error', 'Ошибка запуска турнира', error);
-        toast.error('Ошибка запуска: ' + error.message);
+        addLog('error', 'Ошибка запуска', error);
+        toast.error('Ошибка: ' + error.message);
       } else {
         const result = data as any;
         if (result.success) {
-          addLog('success', `✅ Турнир запущен!`, result);
-          addLog('info', `Создано столов: ${result.tables_created}`);
-          addLog('info', `Рассажено игроков: ${result.total_participants}`);
-          toast.success(`Турнир запущен! Столов: ${result.tables_created}`);
+          addLog('success', `✅ Турнир запущен! Столов: ${result.tables_created}`, result);
+          toast.success(`Запущен! Столов: ${result.tables_created}`);
         } else {
-          addLog('error', `Ошибка: ${result.error}`, result);
-          toast.error(result.error);
+          addLog('error', result.error, result);
         }
       }
-
       await loadTournamentData();
       await loadTestPlayers();
     } catch (err) {
-      addLog('error', 'Критическая ошибка запуска', err);
+      addLog('error', 'Критическая ошибка', err);
     }
-
     setLoading(false);
   };
 
+  // Connect bot to WebSocket
+  const connectBot = useCallback((playerId: string, playerName: string, tableId: string, seatNumber: number) => {
+    const wsUrl = getWsUrl(tableId, playerId);
+    addLog('ws', `🔌 Подключение ${playerName} к столу...`);
+    
+    const ws = new WebSocket(wsUrl);
+    
+    const connection: BotConnection = {
+      playerId,
+      playerName,
+      tableId,
+      ws,
+      connected: false,
+      isMyTurn: false,
+      holeCards: [],
+      currentBet: 0,
+      stack: 0,
+      seatNumber
+    };
+    
+    ws.onopen = () => {
+      connection.connected = true;
+      botConnectionsRef.current.set(playerId, connection);
+      setBotConnections(new Map(botConnectionsRef.current));
+      setConnectedBots(prev => prev + 1);
+      addLog('ws', `✅ ${playerName} подключен`);
+      
+      // Subscribe to table
+      ws.send(JSON.stringify({
+        type: 'subscribe',
+        tableId,
+        playerId
+      }));
+    };
+    
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        handleBotMessage(playerId, playerName, message);
+      } catch (err) {
+        console.error('Bot message parse error:', err);
+      }
+    };
+    
+    ws.onclose = () => {
+      connection.connected = false;
+      botConnectionsRef.current.delete(playerId);
+      setBotConnections(new Map(botConnectionsRef.current));
+      setConnectedBots(prev => Math.max(0, prev - 1));
+      addLog('ws', `🔴 ${playerName} отключен`);
+    };
+    
+    ws.onerror = (err) => {
+      addLog('error', `WebSocket ошибка ${playerName}`, err);
+    };
+    
+    botConnectionsRef.current.set(playerId, connection);
+    setBotConnections(new Map(botConnectionsRef.current));
+  }, [addLog]);
+
+  // Handle bot WebSocket messages
+  const handleBotMessage = useCallback((playerId: string, playerName: string, message: any) => {
+    const connection = botConnectionsRef.current.get(playerId);
+    if (!connection) return;
+    
+    switch (message.type) {
+      case 'game_state':
+        // Update bot state from game state
+        const myPlayer = message.data?.players?.find((p: any) => p.id === playerId);
+        if (myPlayer) {
+          connection.stack = myPlayer.stack;
+          connection.seatNumber = myPlayer.seatNumber;
+        }
+        connection.holeCards = message.data?.myCards || [];
+        botConnectionsRef.current.set(playerId, connection);
+        break;
+        
+      case 'hand_start':
+        addLog('bot', `🃏 Новая раздача на столе ${connection.tableId.slice(0, 8)}...`);
+        setHandsPlayed(prev => prev + 1);
+        break;
+        
+      case 'hole_cards':
+        connection.holeCards = message.data?.cards || [];
+        addLog('bot', `${playerName} получил карты: ${connection.holeCards.join(' ')}`);
+        botConnectionsRef.current.set(playerId, connection);
+        break;
+        
+      case 'turn_update':
+      case 'your_turn':
+        const currentSeat = message.data?.currentPlayerSeat;
+        connection.isMyTurn = currentSeat === connection.seatNumber;
+        connection.currentBet = message.data?.currentBet || 0;
+        
+        if (connection.isMyTurn && botMode) {
+          addLog('bot', `🎯 Ход ${playerName}...`);
+          
+          // Make decision with delay
+          setTimeout(() => {
+            if (!connection.ws || connection.ws.readyState !== WebSocket.OPEN) return;
+            
+            const decision = makeBotDecision(
+              message.data?.canCheck || connection.currentBet === 0,
+              message.data?.callAmount || connection.currentBet,
+              connection.stack,
+              message.data?.pot || 0,
+              connection.holeCards,
+              message.data?.phase || 'preflop'
+            );
+            
+            addLog('bot', `${playerName}: ${decision.action}${decision.amount ? ` ${decision.amount}` : ''}`);
+            
+            connection.ws?.send(JSON.stringify({
+              type: 'action',
+              tableId: connection.tableId,
+              playerId,
+              actionType: decision.action,
+              amount: decision.amount || 0
+            }));
+          }, botSpeed);
+        }
+        botConnectionsRef.current.set(playerId, connection);
+        break;
+        
+      case 'hand_complete':
+      case 'hand_result':
+        addLog('info', `Рука завершена. Победители: ${JSON.stringify(message.data?.winners || [])}`);
+        break;
+        
+      case 'player_eliminated':
+        if (message.data?.playerId === playerId) {
+          addLog('warning', `💀 ${playerName} выбыл из турнира`);
+        }
+        break;
+        
+      case 'error':
+        addLog('error', `Ошибка ${playerName}: ${message.data?.message || message.message}`);
+        break;
+    }
+  }, [botMode, botSpeed, addLog]);
+
+  // Connect all bots
+  const connectAllBots = useCallback(async () => {
+    addLog('action', '🤖 Подключение ботов к покерному движку...');
+    
+    // Get all playing participants
+    const playingParticipants = participants.filter(p => p.status === 'playing' && p.table_id);
+    
+    if (playingParticipants.length === 0) {
+      addLog('warning', 'Нет активных игроков для подключения');
+      return;
+    }
+    
+    addLog('info', `Подключение ${playingParticipants.length} ботов...`);
+    
+    for (const participant of playingParticipants) {
+      if (!botConnectionsRef.current.has(participant.player_id)) {
+        connectBot(
+          participant.player_id,
+          participant.player_name,
+          participant.table_id,
+          participant.seat_number
+        );
+        // Small delay between connections
+        await new Promise(r => setTimeout(r, 100));
+      }
+    }
+  }, [participants, connectBot, addLog]);
+
+  // Disconnect all bots
+  const disconnectAllBots = useCallback(() => {
+    addLog('action', 'Отключение всех ботов...');
+    
+    botConnectionsRef.current.forEach((connection, playerId) => {
+      if (connection.ws) {
+        connection.ws.close();
+      }
+    });
+    
+    botConnectionsRef.current.clear();
+    setBotConnections(new Map());
+    setConnectedBots(0);
+    addLog('info', 'Все боты отключены');
+  }, [addLog]);
+
+  // Toggle bot mode
+  const toggleBotMode = useCallback(async () => {
+    if (!botMode) {
+      setBotMode(true);
+      await connectAllBots();
+    } else {
+      setBotMode(false);
+      disconnectAllBots();
+    }
+  }, [botMode, connectAllBots, disconnectAllBots]);
+
   // Eliminate player
   const eliminatePlayer = async (playerId: string, playerName: string) => {
-    addLog('action', `Выбывание игрока ${playerName}...`);
+    addLog('action', `Выбывание ${playerName}...`);
 
     try {
       const { data, error } = await supabase.rpc('eliminate_online_tournament_player', {
@@ -344,36 +571,35 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
       });
 
       if (error) {
-        addLog('error', `Ошибка выбывания ${playerName}`, error);
+        addLog('error', `Ошибка выбывания`, error);
       } else {
         const result = data as any;
-        addLog('success', `${playerName} выбыл на месте ${result.finish_position}`, result);
+        addLog('success', `${playerName} выбыл на ${result.finish_position} месте`, result);
         
-        if (result.tables_balanced) {
-          addLog('info', '🔄 Столы перебалансированы');
+        // Disconnect bot if connected
+        const connection = botConnectionsRef.current.get(playerId);
+        if (connection?.ws) {
+          connection.ws.close();
         }
-        if (result.tables_consolidated) {
-          addLog('info', '📦 Столы объединены');
-        }
+        
         if (result.tournament_completed) {
           addLog('success', '🏆 ТУРНИР ЗАВЕРШЁН!');
+          setBotMode(false);
+          disconnectAllBots();
         }
       }
-
       await loadTournamentData();
-      await loadTestPlayers();
     } catch (err) {
-      addLog('error', 'Ошибка выбывания', err);
+      addLog('error', 'Ошибка', err);
     }
   };
 
-  // Clear all test players
+  // Clear test players
   const clearTestPlayers = async () => {
     setLoading(true);
-    addLog('action', 'Удаление всех тестовых игроков...');
-
+    disconnectAllBots();
+    
     try {
-      // Remove from tournament first
       for (const player of testPlayers) {
         await supabase
           .from('online_poker_tournament_participants')
@@ -382,24 +608,17 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
           .eq('tournament_id', tournamentId);
       }
 
-      // Delete test players
-      const { error } = await supabase
+      await supabase
         .from('players')
         .delete()
         .like('name', 'TestBot_%');
 
-      if (error) {
-        addLog('error', 'Ошибка удаления игроков', error);
-      } else {
-        addLog('success', 'Все тестовые игроки удалены');
-      }
-
       setTestPlayers([]);
       await loadTournamentData();
+      addLog('success', 'Все тестовые игроки удалены');
     } catch (err) {
       addLog('error', 'Ошибка очистки', err);
     }
-
     setLoading(false);
   };
 
@@ -416,26 +635,23 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
     a.download = `tournament_test_${tournamentId}_${Date.now()}.log`;
     a.click();
     URL.revokeObjectURL(url);
-    
-    addLog('info', 'Логи экспортированы');
   };
 
   // Initial load
   useEffect(() => {
-    addLog('info', `=== Тестовый режим турнира "${tournamentName}" ===`);
-    addLog('info', `ID: ${tournamentId}`);
+    addLog('info', `=== Тестовый режим "${tournamentName}" ===`);
     loadTournamentData();
     loadTestPlayers();
-  }, [tournamentId, tournamentName, loadTournamentData, loadTestPlayers, addLog]);
+    
+    return () => {
+      disconnectAllBots();
+    };
+  }, [tournamentId]);
 
   // Auto refresh
   useEffect(() => {
     if (!autoRefresh) return;
-    
-    const interval = setInterval(() => {
-      loadTournamentData();
-    }, 5000);
-
+    const interval = setInterval(loadTournamentData, 5000);
     return () => clearInterval(interval);
   }, [autoRefresh, loadTournamentData]);
 
@@ -445,6 +661,8 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
       case 'error': return <XCircle className="h-3 w-3 text-red-500" />;
       case 'warning': return <AlertCircle className="h-3 w-3 text-amber-500" />;
       case 'action': return <ArrowRight className="h-3 w-3 text-blue-500" />;
+      case 'ws': return <Wifi className="h-3 w-3 text-purple-500" />;
+      case 'bot': return <Bot className="h-3 w-3 text-cyan-500" />;
       default: return <Terminal className="h-3 w-3 text-muted-foreground" />;
     }
   };
@@ -458,26 +676,40 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
             <FlaskConical className="h-5 w-5 text-amber-500" />
           </div>
           <div>
-            <h2 className="text-lg font-bold">Тестовый режим</h2>
+            <h2 className="text-lg font-bold">Тестовый режим + Покерный движок</h2>
             <p className="text-sm text-muted-foreground">{tournamentName}</p>
           </div>
           <Badge variant={tournament?.status === 'running' ? 'default' : 'secondary'}>
             {tournament?.status || 'loading'}
           </Badge>
+          {botMode && (
+            <Badge variant="outline" className="bg-cyan-500/10 text-cyan-500 border-cyan-500/30">
+              <Bot className="h-3 w-3 mr-1" />
+              Боты активны
+            </Badge>
+          )}
         </div>
         
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Wifi className="h-4 w-4" />
+            <span>{connectedBots} ботов</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <Zap className="h-4 w-4" />
+            <span>{handsPlayed} рук</span>
+          </div>
+          <Separator orientation="vertical" className="h-6" />
           <div className="flex items-center gap-2">
             <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
-            <Label className="text-sm">Авто-обновление</Label>
+            <Label className="text-sm">Авто</Label>
           </div>
           <Button variant="outline" size="sm" onClick={loadTournamentData}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Обновить
           </Button>
           <Button variant="outline" size="sm" onClick={exportLogs}>
             <Download className="h-4 w-4 mr-2" />
-            Экспорт логов
+            Логи
           </Button>
           <Button variant="ghost" size="sm" onClick={onClose}>
             Закрыть
@@ -489,6 +721,59 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
       <div className="flex-1 flex overflow-hidden">
         {/* Left panel - Controls */}
         <div className="w-80 border-r p-4 flex flex-col gap-4 overflow-y-auto">
+          {/* Bot Mode Controls */}
+          <Card className={botMode ? 'border-cyan-500/50 bg-cyan-500/5' : ''}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Bot className="h-4 w-4" />
+                Режим ботов (WebSocket)
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Подключение к покерному движку
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button 
+                className="w-full"
+                variant={botMode ? 'destructive' : 'default'}
+                onClick={toggleBotMode}
+                disabled={tournament?.status !== 'running'}
+              >
+                {botMode ? (
+                  <>
+                    <WifiOff className="h-4 w-4 mr-2" />
+                    Отключить ботов
+                  </>
+                ) : (
+                  <>
+                    <Wifi className="h-4 w-4 mr-2" />
+                    Подключить ботов
+                  </>
+                )}
+              </Button>
+              
+              {botMode && (
+                <>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Скорость (мс): {botSpeed}</Label>
+                    <Slider
+                      value={[botSpeed]}
+                      onValueChange={([v]) => setBotSpeed(v)}
+                      min={200}
+                      max={3000}
+                      step={100}
+                    />
+                  </div>
+                  
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <div>Подключено: {connectedBots}</div>
+                    <div>Сыграно рук: {handsPlayed}</div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Test Players */}
           <Card>
             <CardHeader className="pb-2">
@@ -514,20 +799,18 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
               </div>
 
               <div className="text-xs text-muted-foreground">
-                Найдено: {testPlayers.length} | Зарегистрировано: {testPlayers.filter(p => p.registered).length}
+                Найдено: {testPlayers.length} | Зарег: {testPlayers.filter(p => p.registered).length}
               </div>
 
-              <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={registerAllTestPlayers} 
-                  disabled={loading || testPlayers.filter(p => !p.registered).length === 0}
-                >
-                  Зарегистрировать всех
-                </Button>
-              </div>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="w-full"
+                onClick={registerAllTestPlayers} 
+                disabled={loading || testPlayers.filter(p => !p.registered).length === 0}
+              >
+                Зарегистрировать всех
+              </Button>
 
               <Button 
                 size="sm" 
@@ -547,7 +830,7 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Play className="h-4 w-4" />
-                Управление турниром
+                Турнир
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -564,7 +847,7 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
                 disabled={loading || tournament?.status !== 'registration' || participants.length < (tournament?.min_players || 2)}
               >
                 <Play className="h-4 w-4 mr-2" />
-                Запустить турнир
+                Запустить
               </Button>
             </CardContent>
           </Card>
@@ -574,45 +857,53 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Eye className="h-4 w-4" />
-                Активные игроки
+                Активные ({participants.filter(p => p.status === 'playing').length})
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto">
               <div className="space-y-1">
                 {participants
                   .filter(p => p.status === 'playing' || p.status === 'registered')
-                  .map(p => (
-                    <div key={p.id} className="flex items-center justify-between text-xs p-1.5 rounded bg-muted/50">
-                      <div>
-                        <div className="font-medium">{p.player_name}</div>
-                        <div className="text-muted-foreground">
-                          {p.chips?.toLocaleString()} фишек
-                          {p.seat_number !== null && ` • Место ${p.seat_number}`}
+                  .map(p => {
+                    const connection = botConnectionsRef.current.get(p.player_id);
+                    return (
+                      <div key={p.id} className="flex items-center justify-between text-xs p-1.5 rounded bg-muted/50">
+                        <div>
+                          <div className="font-medium flex items-center gap-1">
+                            {connection?.connected && (
+                              <Wifi className="h-2.5 w-2.5 text-green-500" />
+                            )}
+                            {p.player_name}
+                          </div>
+                          <div className="text-muted-foreground">
+                            {p.chips?.toLocaleString()} 
+                            {p.seat_number !== null && ` • #${p.seat_number}`}
+                          </div>
                         </div>
+                        {p.status === 'playing' && (
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="h-6 w-6 text-red-500"
+                            onClick={() => eliminatePlayer(p.player_id, p.player_name)}
+                          >
+                            <XCircle className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
-                      {p.status === 'playing' && (
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          className="h-6 w-6 text-red-500 hover:text-red-600"
-                          onClick={() => eliminatePlayer(p.player_id, p.player_name)}
-                        >
-                          <XCircle className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Center panel - Tables view */}
+        {/* Center panel - Tables */}
         <div className="flex-1 p-4 overflow-y-auto">
           <div className="mb-4">
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <TableIcon className="h-4 w-4" />
-              Столы турнира ({tournamentTables.length})
+              Столы ({tournamentTables.length})
             </h3>
           </div>
 
@@ -622,48 +913,66 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
                 <CardHeader className="pb-2 bg-muted/30">
                   <CardTitle className="text-sm flex items-center justify-between">
                     <span>{table.name}</span>
-                    <Badge variant="outline">{table.players.length}/{table.max_players}</Badge>
+                    <div className="flex items-center gap-2">
+                      {table.current_hand_id && (
+                        <Badge variant="outline" className="text-xs bg-green-500/10">
+                          <Zap className="h-2.5 w-2.5 mr-1" />
+                          Игра
+                        </Badge>
+                      )}
+                      <Badge variant="outline">{table.players.length}/{table.max_players}</Badge>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-3">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-12">Место</TableHead>
+                        <TableHead className="w-10">#</TableHead>
                         <TableHead>Игрок</TableHead>
                         <TableHead className="text-right">Фишки</TableHead>
-                        <TableHead className="w-12"></TableHead>
+                        <TableHead className="w-10"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {table.players.map(player => (
-                        <TableRow key={player.player_id}>
-                          <TableCell className="font-mono">{player.seat_number}</TableCell>
-                          <TableCell>{player.player_name}</TableCell>
-                          <TableCell className="text-right font-mono">{player.chips.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-6 w-6 text-red-500"
-                              onClick={() => eliminatePlayer(player.player_id, player.player_name)}
-                            >
-                              <XCircle className="h-3 w-3" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {table.players.map(player => {
+                        const connection = botConnectionsRef.current.get(player.player_id);
+                        return (
+                          <TableRow key={player.player_id} className={connection?.isMyTurn ? 'bg-amber-500/10' : ''}>
+                            <TableCell className="font-mono">{player.seat_number}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                {connection?.connected && (
+                                  <Wifi className="h-3 w-3 text-green-500" />
+                                )}
+                                {player.player_name}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right font-mono">{player.chips.toLocaleString()}</TableCell>
+                            <TableCell>
+                              <Button 
+                                size="icon" 
+                                variant="ghost" 
+                                className="h-6 w-6 text-red-500"
+                                onClick={() => eliminatePlayer(player.player_id, player.player_name)}
+                              >
+                                <XCircle className="h-3 w-3" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </CardContent>
               </Card>
             ))}
 
-            {tournamentTables.length === 0 && tournament?.status === 'registration' && (
+            {tournamentTables.length === 0 && (
               <Card className="col-span-2 py-12">
                 <CardContent className="text-center text-muted-foreground">
                   <Layers className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                  <p>Столы будут созданы при запуске турнира</p>
+                  <p>Столы создаются при запуске турнира</p>
                 </CardContent>
               </Card>
             )}
@@ -697,6 +1006,8 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
                     log.type === 'success' ? 'bg-green-500/10' :
                     log.type === 'action' ? 'bg-blue-500/10' :
                     log.type === 'warning' ? 'bg-amber-500/10' :
+                    log.type === 'ws' ? 'bg-purple-500/10' :
+                    log.type === 'bot' ? 'bg-cyan-500/10' :
                     'bg-muted/30'
                   }`}
                 >
