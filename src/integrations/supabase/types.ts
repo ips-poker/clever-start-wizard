@@ -2339,6 +2339,10 @@ export type Database = {
         Args: { p_player_id: string; p_rank: string }
         Returns: Json
       }
+      balance_tournament_tables: {
+        Args: { p_tournament_id: string }
+        Returns: Json
+      }
       calculate_final_positions: {
         Args: { tournament_id_param: string }
         Returns: undefined
@@ -2363,6 +2367,10 @@ export type Database = {
       complete_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
+      }
+      consolidate_tournament_tables: {
+        Args: { p_tournament_id: string }
+        Returns: Json
       }
       convert_amount_to_rps: {
         Args: { amount_rubles: number }
@@ -2463,6 +2471,10 @@ export type Database = {
           user_id: string
           wins: number
         }[]
+      }
+      get_player_tournament_table: {
+        Args: { p_player_id: string; p_tournament_id: string }
+        Returns: Json
       }
       get_players_count: { Args: never; Returns: number }
       get_players_public: {
@@ -2583,6 +2595,10 @@ export type Database = {
       resume_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
+      }
+      start_online_tournament_with_seating: {
+        Args: { p_tournament_id: string }
+        Returns: Json
       }
       start_tournament: {
         Args: { tournament_id_param: string }

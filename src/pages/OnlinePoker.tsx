@@ -179,24 +179,29 @@ export default function OnlinePoker() {
   };
 
   const handleJoinTournament = (tournamentId: string) => {
+    // This is now just for legacy compatibility - actual table join happens via handleJoinTournamentTable
+    console.log('Tournament registration:', tournamentId);
+  };
+
+  // Join a specific tournament table (after seating is done)
+  const handleJoinTournamentTable = (tableId: string) => {
     const isDesktop = window.innerWidth > 768;
     
     if (isDesktop) {
-      // Vertical layout for multi-tabling
       const width = 420;
       const height = 900;
       const left = window.screenX + (window.outerWidth - width) / 2;
       const top = window.screenY + (window.outerHeight - height) / 2;
       
-      const tableUrl = `/table/${tournamentId}?playerId=${playerId}&buyIn=0&tournament=true`;
+      const tableUrl = `/table/${tableId}?playerId=${playerId}&buyIn=0&tournament=true`;
       
       window.open(
         tableUrl,
-        `poker_tournament_${tournamentId}`,
+        `poker_table_${tableId}`,
         `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
       );
     } else {
-      setActiveTable({ id: tournamentId, buyIn: 0, isTournament: true });
+      setActiveTable({ id: tableId, buyIn: 0, isTournament: true });
     }
   };
 
@@ -392,6 +397,7 @@ export default function OnlinePoker() {
                   playerId={playerId}
                   playerBalance={playerBalance}
                   onJoinTournament={handleJoinTournament}
+                  onJoinTable={handleJoinTournamentTable}
                 />
               </TabsContent>
 

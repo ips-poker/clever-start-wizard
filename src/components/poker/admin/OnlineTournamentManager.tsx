@@ -407,32 +407,25 @@ export function OnlineTournamentManager() {
       return;
     }
 
-    // Calculate level end time
-    const levelEndAt = new Date(Date.now() + (tournament.level_duration || 300) * 1000).toISOString();
-
-    const { error } = await supabase
-      .from('online_poker_tournaments')
-      .update({
-        status: 'running',
-        started_at: new Date().toISOString(),
-        current_level: 1,
-        level_end_at: levelEndAt
-      })
-      .eq('id', tournament.id);
+    // Use the new seating function that creates tables and seats players
+    const { data, error } = await supabase.rpc('start_online_tournament_with_seating', {
+      p_tournament_id: tournament.id
+    });
 
     if (error) {
-      toast.error('Ошибка запуска турнира');
+      toast.error('Ошибка запуска турнира: ' + error.message);
+      console.error('Start tournament error:', error);
       return;
     }
 
-    // Update all registered participants to playing status
-    await supabase
-      .from('online_poker_tournament_participants')
-      .update({ status: 'playing', chips: tournament.starting_chips })
-      .eq('tournament_id', tournament.id)
-      .eq('status', 'registered');
+    const result = data as { success: boolean; error?: string; tables_created?: number; total_participants?: number };
+    
+    if (!result.success) {
+      toast.error(result.error || 'Ошибка запуска турнира');
+      return;
+    }
 
-    toast.success('Турнир запущен!');
+    toast.success(`Турнир запущен! Создано столов: ${result.tables_created}, игроков: ${result.total_participants}`);
     loadTournaments();
   };
 

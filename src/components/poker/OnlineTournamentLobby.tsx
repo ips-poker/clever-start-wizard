@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { CreateTournamentModal } from './CreateTournamentModal';
 import { TournamentDetailsModal } from './TournamentDetailsModal';
+import { ActiveTournamentAssignments } from './TournamentTableAssignment';
 
 interface OnlineTournament {
   id: string;
@@ -44,9 +45,10 @@ interface OnlineTournamentLobbyProps {
   playerId: string;
   playerBalance: number;
   onJoinTournament: (tournamentId: string) => void;
+  onJoinTable?: (tableId: string) => void;
 }
 
-export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournament }: OnlineTournamentLobbyProps) {
+export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournament, onJoinTable }: OnlineTournamentLobbyProps) {
   const [tournaments, setTournaments] = useState<OnlineTournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -366,7 +368,15 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-4">
+        <TabsContent value={activeTab} className="mt-4 space-y-4">
+          {/* Show active tournament assignments at the top of "My" tab */}
+          {activeTab === 'my' && onJoinTable && (
+            <ActiveTournamentAssignments
+              playerId={playerId}
+              onJoinTable={onJoinTable}
+            />
+          )}
+          
           <AnimatePresence mode="popLayout">
             {filteredTournaments.length === 0 ? (
               <Card>
