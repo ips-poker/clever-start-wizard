@@ -797,17 +797,36 @@ export class PokerWebSocketHandler {
     
     switch (type) {
       case 'tournament_start':
-        actionResult = this.tournamentManager.startTournament(tournamentId);
-        if (actionResult.success) {
-          // Update database
-          await this.supabase
-            .from('online_poker_tournaments')
-            .update({ 
-              status: 'running', 
-              started_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', tournamentId);
+        // Use database function to create tables and seat players
+        try {
+          const { data: startResult, error: startError } = await this.supabase.rpc(
+            'start_online_tournament_with_seating',
+            { p_tournament_id: tournamentId }
+          );
+          
+          if (startError) {
+            logger.error('Tournament start failed (DB)', { error: startError.message });
+            actionResult = { success: false, error: startError.message };
+          } else if (startResult && (startResult as any).success) {
+            const resultData = startResult as any;
+            logger.info('Tournament started with seating', {
+              tournamentId,
+              tablesCreated: resultData.tables_created,
+              participants: resultData.total_participants,
+              playersPerTable: resultData.players_per_table
+            });
+            
+            // Also update local TournamentManager for WebSocket state
+            this.tournamentManager.startTournament(tournamentId);
+            actionResult = { success: true };
+          } else {
+            const errorMsg = (startResult as any)?.error || 'Unknown error';
+            logger.warn('Tournament start failed', { tournamentId, error: errorMsg });
+            actionResult = { success: false, error: errorMsg };
+          }
+        } catch (err) {
+          logger.error('Tournament start exception', { error: String(err) });
+          actionResult = { success: false, error: 'Internal error starting tournament' };
         }
         break;
       
@@ -944,31 +963,38 @@ export class PokerWebSocketHandler {
   
   /**
    * Handle player elimination in tournament
+   * Uses database function for proper table balancing and consolidation
    */
   async handleTournamentElimination(tournamentId: string, playerId: string, eliminatedBy?: string): Promise<void> {
-    const result = this.tournamentManager.eliminatePlayer(tournamentId, playerId, eliminatedBy);
-    
-    if (result.success) {
-      // Update database
-      await this.supabase
-        .from('online_poker_tournament_participants')
-        .update({
-          status: 'eliminated',
-          finish_position: result.position,
-          eliminated_at: new Date().toISOString(),
-          eliminated_by: eliminatedBy,
-          prize_amount: result.prize || 0,
-          chips: 0
-        })
-        .eq('tournament_id', tournamentId)
-        .eq('player_id', playerId);
+    try {
+      // Call database function which handles everything:
+      // - Updates participant status
+      // - Balances tables
+      // - Consolidates tables when needed
+      // - Awards prizes on completion
+      const { data: dbResult, error: dbError } = await this.supabase.rpc(
+        'eliminate_online_tournament_player',
+        { 
+          p_tournament_id: tournamentId, 
+          p_player_id: playerId,
+          p_eliminated_by: eliminatedBy || null
+        }
+      );
       
-      // Call database function to record result and RPS
-      await this.supabase.rpc('record_online_tournament_result', {
-        p_tournament_id: tournamentId,
-        p_player_id: playerId,
-        p_position: result.position
-      });
+      if (dbError) {
+        logger.error('Tournament elimination failed (DB)', { error: dbError.message });
+        return;
+      }
+      
+      const result = dbResult as any;
+      
+      if (!result?.success) {
+        logger.warn('Tournament elimination unsuccessful', { result });
+        return;
+      }
+      
+      // Also update local TournamentManager for WebSocket state consistency
+      this.tournamentManager.eliminatePlayer(tournamentId, playerId, eliminatedBy);
       
       // Broadcast elimination event
       const subscribers = this.tournamentSubscribers.get(tournamentId);
@@ -978,7 +1004,9 @@ export class PokerWebSocketHandler {
           tournamentId,
           playerId,
           position: result.position,
-          prize: result.prize,
+          prize: result.prize_amount || 0,
+          remainingPlayers: result.remaining_players,
+          tournamentCompleted: result.tournament_completed,
           timestamp: Date.now()
         };
         
@@ -994,8 +1022,13 @@ export class PokerWebSocketHandler {
         tournamentId, 
         playerId, 
         position: result.position,
-        prize: result.prize
+        prize: result.prize_amount,
+        remainingPlayers: result.remaining_players,
+        tournamentCompleted: result.tournament_completed
       });
+      
+    } catch (err) {
+      logger.error('Tournament elimination exception', { error: String(err) });
     }
   }
   

@@ -92,6 +92,17 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
     { x: 74, y: 50 },   // Seat 6 - Right middle on rail
     { x: 74, y: 70 },   // Seat 7 - Right bottom on rail
   ],
+  9: [
+    { x: 46, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 22, y: 76 },   // Seat 1 - Left bottom on rail
+    { x: 22, y: 54 },   // Seat 2 - Left middle-bottom on rail
+    { x: 22, y: 32 },   // Seat 3 - Left middle-top on rail
+    { x: 38, y: 12 },   // Seat 4 - Top left on rail
+    { x: 54, y: 12 },   // Seat 5 - Top right on rail
+    { x: 78, y: 32 },   // Seat 6 - Right middle-top on rail
+    { x: 78, y: 54 },   // Seat 7 - Right middle-bottom on rail
+    { x: 78, y: 76 },   // Seat 8 - Right bottom on rail
+  ],
 };
 
 // ============= TELEGRAM MINI APP - WIDER TABLE POSITIONS =============
@@ -146,30 +157,22 @@ const TELEGRAM_SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: num
     { x: 78, y: 50 },   // Seat 6 - Right middle
     { x: 78, y: 70 },   // Seat 7 - Right bottom
   ],
+  9: [
+    { x: 44, y: 88 },   // Seat 0 - Hero (bottom center)
+    { x: 10, y: 76 },   // Seat 1 - Left bottom
+    { x: 10, y: 54 },   // Seat 2 - Left middle-bottom
+    { x: 10, y: 32 },   // Seat 3 - Left middle-top
+    { x: 34, y: 6 },    // Seat 4 - Top left
+    { x: 58, y: 6 },    // Seat 5 - Top right
+    { x: 82, y: 32 },   // Seat 6 - Right middle-top
+    { x: 82, y: 54 },   // Seat 7 - Right middle-bottom
+    { x: 82, y: 76 },   // Seat 8 - Right bottom
+  ],
 };
 
-// Fallback для 9-max (legacy)
-const SEAT_POSITIONS_9MAX = [
-  { x: 46, y: 88 },   // Seat 0 - Hero (bottom center)
-  { x: 26, y: 72 },   // Seat 1 - Left bottom on rail
-  { x: 26, y: 50 },   // Seat 2 - Left middle on rail
-  { x: 26, y: 28 },   // Seat 3 - Left top on rail
-  { x: 46, y: 12 },   // Seat 4 - Top center on rail
-  { x: 74, y: 28 },   // Seat 5 - Right top on rail
-  { x: 74, y: 50 },   // Seat 6 - Right middle on rail
-  { x: 74, y: 72 },   // Seat 7 - Right bottom on rail
-];
-
-const TELEGRAM_SEAT_POSITIONS_9MAX = [
-  { x: 44, y: 88 },   // Seat 0 - Hero (bottom center)
-  { x: 14, y: 72 },   // Seat 1 - Left bottom
-  { x: 14, y: 50 },   // Seat 2 - Left middle
-  { x: 14, y: 28 },   // Seat 3 - Left top
-  { x: 46, y: 6 },    // Seat 4 - Top center
-  { x: 78, y: 28 },   // Seat 5 - Right top
-  { x: 78, y: 50 },   // Seat 6 - Right middle
-  { x: 78, y: 72 },   // Seat 7 - Right bottom
-];
+// Legacy aliases - using new 9-position arrays
+const SEAT_POSITIONS_9MAX = SEAT_POSITIONS_BY_COUNT[9];
+const TELEGRAM_SEAT_POSITIONS_9MAX = TELEGRAM_SEAT_POSITIONS_BY_COUNT[9];
 
 // Legacy 6-max (используем новую систему)
 const SEAT_POSITIONS_6MAX = SEAT_POSITIONS_BY_COUNT[6];
