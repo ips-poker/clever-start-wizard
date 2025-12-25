@@ -32,7 +32,8 @@ import {
   Ticket,
   Gift,
   Layers,
-  Calendar
+  Calendar,
+  DoorOpen
 } from 'lucide-react';
 import {
   Dialog,
@@ -502,20 +503,55 @@ export function OnlineTournamentManager() {
   };
 
   const handleIssueTickets = async (tournament: Tournament) => {
+    // Структура входов в зависимости от места: 1 место = 3 входа, 2 = 2, 3 = 1
+    const entriesPerPosition = getEntriesStructure(tournament.tickets_for_top || 3);
+    
     const { data, error } = await supabase.rpc('issue_offline_tickets_for_winners', {
       p_tournament_id: tournament.id,
-      p_ticket_value: tournament.ticket_value || 1000,
-      p_top_positions: tournament.tickets_for_top || 3
+      p_top_positions: tournament.tickets_for_top || 3,
+      p_entries_per_position: entriesPerPosition
     });
 
     if (error) {
-      toast.error('Ошибка выдачи билетов');
+      toast.error('Ошибка выдачи входов');
       console.error(error);
       return;
     }
 
     const result = data as any;
-    toast.success(`Выдано ${result?.tickets_issued || 0} билетов (${tournament.ticket_value || 1000}₽) на офлайн турнир`);
+    toast.success(`Выдано ${result?.total_entries || 0} входов для ${result?.tickets_issued || 0} победителей`);
+  };
+
+  // Генерация структуры входов для призовых мест
+  const getEntriesStructure = (topPositions: number): number[] => {
+    const structures: { [key: number]: number[] } = {
+      1: [1],
+      2: [2, 1],
+      3: [3, 2, 1],
+      4: [4, 3, 2, 1],
+      5: [5, 4, 3, 2, 1],
+      6: [5, 4, 3, 2, 1, 1]
+    };
+    return structures[topPositions] || structures[3];
+  };
+
+  // Генерация структуры призов автоматически
+  const handleGeneratePayoutStructure = async (tournamentId: string) => {
+    const { data, error } = await supabase.rpc('generate_online_tournament_payout_structure', {
+      p_tournament_id: tournamentId
+    });
+
+    if (error) {
+      toast.error('Ошибка генерации призовой структуры');
+      console.error(error);
+      return;
+    }
+
+    const result = data as any;
+    if (result?.success) {
+      toast.success(`Сгенерирована призовая структура для ${result.participants_count} участников`);
+      loadTournaments();
+    }
   };
 
   const handleDeleteTournament = async () => {
@@ -1188,28 +1224,74 @@ export function OnlineTournamentManager() {
             <TabsContent value="prizes" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Билеты для топ N мест</Label>
-                  <Input
-                    type="number"
-                    value={newTournament.tickets_for_top}
-                    onChange={(e) => setNewTournament(prev => ({ ...prev, tickets_for_top: parseInt(e.target.value) || 3 }))}
-                  />
+                  <Label>Входы для топ N мест</Label>
+                  <Select
+                    value={String(newTournament.tickets_for_top)}
+                    onValueChange={(v) => setNewTournament(prev => ({ ...prev, tickets_for_top: parseInt(v) }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Топ-1 (только победитель)</SelectItem>
+                      <SelectItem value="2">Топ-2</SelectItem>
+                      <SelectItem value="3">Топ-3</SelectItem>
+                      <SelectItem value="4">Топ-4</SelectItem>
+                      <SelectItem value="5">Топ-5</SelectItem>
+                      <SelectItem value="6">Топ-6</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Номинал билета (₽)</Label>
+                  <Label>Гарантированный призовой фонд 💎</Label>
                   <Input
                     type="number"
-                    value={newTournament.ticket_value}
-                    onChange={(e) => setNewTournament(prev => ({ ...prev, ticket_value: parseInt(e.target.value) || 1000 }))}
+                    value={newTournament.guaranteed_prize_pool}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, guaranteed_prize_pool: parseInt(e.target.value) || 0 }))}
                   />
                 </div>
+              </div>
+
+              {/* Entries Structure Preview */}
+              <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-4">
+                <h4 className="font-semibold text-purple-400 mb-3 flex items-center gap-2">
+                  <DoorOpen className="h-4 w-4" />
+                  Структура входов на офлайн
+                </h4>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  {Array.from({ length: newTournament.tickets_for_top }, (_, i) => {
+                    const entriesMap: { [key: number]: number[] } = {
+                      1: [1],
+                      2: [2, 1],
+                      3: [3, 2, 1],
+                      4: [4, 3, 2, 1],
+                      5: [5, 4, 3, 2, 1],
+                      6: [5, 4, 3, 2, 1, 1]
+                    };
+                    const entries = entriesMap[newTournament.tickets_for_top] || [1];
+                    return (
+                      <div key={i} className="flex items-center justify-between p-2 rounded bg-background/50">
+                        <span className="flex items-center gap-1">
+                          <Trophy className="h-3 w-3 text-amber-500" />
+                          {i + 1} место
+                        </span>
+                        <Badge variant="outline" className="text-purple-400 border-purple-400/50">
+                          {entries[i]} {entries[i] === 1 ? 'вход' : entries[i] < 5 ? 'входа' : 'входов'}
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Каждый вход = 1 участие в любом офлайн турнире. Входы действительны 90 дней.
+                </p>
               </div>
 
               {/* Prize Info */}
               <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
                 <h4 className="font-semibold text-amber-500 mb-3 flex items-center gap-2">
                   <Gift className="h-4 w-4" />
-                  Система призов
+                  Автоматическая система призов
                 </h4>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between items-center p-2 rounded bg-background/50">
@@ -1221,15 +1303,34 @@ export function OnlineTournamentManager() {
                   <div className="flex justify-between items-center p-2 rounded bg-background/50">
                     <span className="text-muted-foreground">Призы за места:</span>
                     <span className="text-amber-400 flex items-center gap-1 font-medium">
-                      <Award className="h-4 w-4" /> RPS рейтинговые очки
+                      <Award className="h-4 w-4" /> RPS очки (автоматически)
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 rounded bg-background/50">
+                    <span className="text-muted-foreground">Расчёт RPS пула:</span>
+                    <span className="text-green-400 font-medium">
+                      1000₽ = 100 RPS
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-2 rounded bg-background/50">
                     <span className="text-muted-foreground">Топ-{newTournament.tickets_for_top} получают:</span>
                     <span className="text-purple-400 flex items-center gap-1 font-medium">
-                      <Ticket className="h-4 w-4" /> Билеты на офлайн ({newTournament.ticket_value}₽)
+                      <DoorOpen className="h-4 w-4" /> Входы на офлайн турниры
                     </span>
                   </div>
+                </div>
+                <div className="mt-3 p-3 rounded bg-green-500/10 border border-green-500/20">
+                  <p className="text-xs text-green-400">
+                    <strong>Автоматический расчёт:</strong> Призовая структура (% RPS за каждое место) 
+                    автоматически рассчитывается при старте турнира в зависимости от количества участников:
+                  </p>
+                  <ul className="text-xs text-muted-foreground mt-2 space-y-1">
+                    <li>• 2-9 игроков: 1 призовое место (100%)</li>
+                    <li>• 10-19 игроков: 2 места (60% / 40%)</li>
+                    <li>• 20-29 игроков: 3 места (50% / 30% / 20%)</li>
+                    <li>• 30-49 игроков: 4 места (40% / 30% / 20% / 10%)</li>
+                    <li>• 50+ игроков: 6 мест (35% / 25% / 15% / 10% / 8% / 7%)</li>
+                  </ul>
                 </div>
                 <p className="text-xs text-muted-foreground mt-3">
                   Денежных выплат нет. Алмазы на деньги не меняются. Легальный формат.

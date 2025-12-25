@@ -262,53 +262,188 @@ export function useOnlineTournamentRPS() {
   }, []);
 
   /**
+   * Генерировать структуру призов автоматически на основе кол-ва участников
+   */
+  const generatePayoutStructure = useCallback(async (tournamentId: string): Promise<{
+    success: boolean;
+    participants_count?: number;
+    prize_pool?: number;
+    rps_pool?: number;
+    payout_places?: number;
+    entries_structure?: number[];
+    error?: string;
+  }> => {
+    try {
+      const { data, error } = await supabase.rpc('generate_online_tournament_payout_structure', {
+        p_tournament_id: tournamentId
+      });
+
+      if (error) {
+        console.error('Error generating payout structure:', error);
+        return { success: false, error: error.message };
+      }
+
+      const result = data as any;
+      if (result?.success) {
+        toast.success(`Сгенерирована структура призов для ${result.participants_count} участников`);
+      }
+
+      return result;
+    } catch (err: any) {
+      console.error('Error in generatePayoutStructure:', err);
+      return { success: false, error: err.message };
+    }
+  }, []);
+
+  /**
+   * Выдать билеты/входы победителям
+   */
+  const issueOfflineEntries = useCallback(async (
+    tournamentId: string,
+    topPositions: number = 3,
+    entriesPerPosition: number[] = [3, 2, 1]
+  ): Promise<{
+    success: boolean;
+    tickets_issued?: number;
+    total_entries?: number;
+    tournament_name?: string;
+    error?: string;
+  }> => {
+    try {
+      const { data, error } = await supabase.rpc('issue_offline_tickets_for_winners', {
+        p_tournament_id: tournamentId,
+        p_top_positions: topPositions,
+        p_entries_per_position: entriesPerPosition
+      });
+
+      if (error) {
+        console.error('Error issuing tickets:', error);
+        return { success: false, error: error.message };
+      }
+
+      const result = data as any;
+      if (result?.success) {
+        toast.success(`Выдано ${result.total_entries} входов для ${result.tickets_issued} победителей`);
+      }
+
+      return result;
+    } catch (err: any) {
+      console.error('Error in issueOfflineEntries:', err);
+      return { success: false, error: err.message };
+    }
+  }, []);
+
+  /**
+   * Получить количество доступных входов игрока
+   */
+  const getPlayerAvailableEntries = useCallback(async (playerId: string): Promise<number> => {
+    try {
+      const { data, error } = await supabase.rpc('get_player_available_entries', {
+        p_player_id: playerId
+      });
+
+      if (error) {
+        console.error('Error getting player entries:', error);
+        return 0;
+      }
+
+      return data as number;
+    } catch (err) {
+      console.error('Error in getPlayerAvailableEntries:', err);
+      return 0;
+    }
+  }, []);
+
+  /**
+   * Использовать вход игрока для офлайн турнира
+   */
+  const useOfflineEntry = useCallback(async (
+    playerId: string,
+    offlineTournamentId: string
+  ): Promise<{
+    success: boolean;
+    ticket_id?: string;
+    remaining_entries?: number;
+    error?: string;
+  }> => {
+    try {
+      const { data, error } = await supabase.rpc('use_offline_entry', {
+        p_player_id: playerId,
+        p_offline_tournament_id: offlineTournamentId
+      });
+
+      if (error) {
+        console.error('Error using entry:', error);
+        return { success: false, error: error.message };
+      }
+
+      const result = data as any;
+      if (result?.success) {
+        toast.success(`Вход использован! Осталось: ${result.remaining_entries}`);
+      }
+
+      return result;
+    } catch (err: any) {
+      console.error('Error in useOfflineEntry:', err);
+      return { success: false, error: err.message };
+    }
+  }, []);
+
+  /**
    * Получить структуру выплат RPS
    */
   const getRPSPayoutStructure = useCallback((participantCount: number, totalRPSPool: number) => {
     let structure: { position: number; percentage: number; rpsPoints: number }[] = [];
 
-    if (participantCount <= 6) {
+    if (participantCount < 10) {
       structure = [
-        { position: 1, percentage: 65, rpsPoints: Math.round(totalRPSPool * 0.65) },
-        { position: 2, percentage: 35, rpsPoints: Math.round(totalRPSPool * 0.35) }
+        { position: 1, percentage: 100, rpsPoints: totalRPSPool }
       ];
-    } else if (participantCount <= 18) {
+    } else if (participantCount < 20) {
+      structure = [
+        { position: 1, percentage: 60, rpsPoints: Math.round(totalRPSPool * 0.60) },
+        { position: 2, percentage: 40, rpsPoints: Math.round(totalRPSPool * 0.40) }
+      ];
+    } else if (participantCount < 30) {
       structure = [
         { position: 1, percentage: 50, rpsPoints: Math.round(totalRPSPool * 0.50) },
         { position: 2, percentage: 30, rpsPoints: Math.round(totalRPSPool * 0.30) },
         { position: 3, percentage: 20, rpsPoints: Math.round(totalRPSPool * 0.20) }
       ];
-    } else if (participantCount <= 30) {
+    } else if (participantCount < 50) {
       structure = [
         { position: 1, percentage: 40, rpsPoints: Math.round(totalRPSPool * 0.40) },
-        { position: 2, percentage: 25, rpsPoints: Math.round(totalRPSPool * 0.25) },
-        { position: 3, percentage: 15, rpsPoints: Math.round(totalRPSPool * 0.15) },
-        { position: 4, percentage: 12, rpsPoints: Math.round(totalRPSPool * 0.12) },
-        { position: 5, percentage: 8, rpsPoints: Math.round(totalRPSPool * 0.08) }
-      ];
-    } else if (participantCount <= 50) {
-      structure = [
-        { position: 1, percentage: 34, rpsPoints: Math.round(totalRPSPool * 0.34) },
-        { position: 2, percentage: 23, rpsPoints: Math.round(totalRPSPool * 0.23) },
-        { position: 3, percentage: 16.5, rpsPoints: Math.round(totalRPSPool * 0.165) },
-        { position: 4, percentage: 11.9, rpsPoints: Math.round(totalRPSPool * 0.119) },
-        { position: 5, percentage: 8, rpsPoints: Math.round(totalRPSPool * 0.08) },
-        { position: 6, percentage: 6.6, rpsPoints: Math.round(totalRPSPool * 0.066) }
+        { position: 2, percentage: 30, rpsPoints: Math.round(totalRPSPool * 0.30) },
+        { position: 3, percentage: 20, rpsPoints: Math.round(totalRPSPool * 0.20) },
+        { position: 4, percentage: 10, rpsPoints: Math.round(totalRPSPool * 0.10) }
       ];
     } else {
       structure = [
-        { position: 1, percentage: 31.7, rpsPoints: Math.round(totalRPSPool * 0.317) },
-        { position: 2, percentage: 20.7, rpsPoints: Math.round(totalRPSPool * 0.207) },
-        { position: 3, percentage: 15.3, rpsPoints: Math.round(totalRPSPool * 0.153) },
-        { position: 4, percentage: 10.8, rpsPoints: Math.round(totalRPSPool * 0.108) },
-        { position: 5, percentage: 7.2, rpsPoints: Math.round(totalRPSPool * 0.072) },
-        { position: 6, percentage: 5.8, rpsPoints: Math.round(totalRPSPool * 0.058) },
-        { position: 7, percentage: 4.6, rpsPoints: Math.round(totalRPSPool * 0.046) },
-        { position: 8, percentage: 3.9, rpsPoints: Math.round(totalRPSPool * 0.039) }
+        { position: 1, percentage: 35, rpsPoints: Math.round(totalRPSPool * 0.35) },
+        { position: 2, percentage: 25, rpsPoints: Math.round(totalRPSPool * 0.25) },
+        { position: 3, percentage: 15, rpsPoints: Math.round(totalRPSPool * 0.15) },
+        { position: 4, percentage: 10, rpsPoints: Math.round(totalRPSPool * 0.10) },
+        { position: 5, percentage: 8, rpsPoints: Math.round(totalRPSPool * 0.08) },
+        { position: 6, percentage: 7, rpsPoints: Math.round(totalRPSPool * 0.07) }
       ];
     }
 
     return structure;
+  }, []);
+
+  /**
+   * Получить структуру входов для призовых мест
+   */
+  const getEntriesStructure = useCallback((topPositions: number): number[] => {
+    const structures: { [key: number]: number[] } = {
+      1: [1],
+      2: [2, 1],
+      3: [3, 2, 1],
+      4: [4, 3, 2, 1],
+      5: [5, 4, 3, 2, 1],
+      6: [5, 4, 3, 2, 1, 1]
+    };
+    return structures[topPositions] || structures[3];
   }, []);
 
   return {
@@ -319,6 +454,11 @@ export function useOnlineTournamentRPS() {
     processAddon,
     calculateRPSPool,
     calculatePrizePool,
-    getRPSPayoutStructure
+    generatePayoutStructure,
+    issueOfflineEntries,
+    getPlayerAvailableEntries,
+    useOfflineEntry,
+    getRPSPayoutStructure,
+    getEntriesStructure
   };
 }

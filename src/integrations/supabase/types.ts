@@ -1673,6 +1673,8 @@ export type Database = {
       tournament_tickets: {
         Row: {
           created_at: string
+          entry_count: number | null
+          entry_type: string | null
           expires_at: string | null
           finish_position: number
           id: string
@@ -1687,6 +1689,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          entry_count?: number | null
+          entry_type?: string | null
           expires_at?: string | null
           finish_position: number
           id?: string
@@ -1701,6 +1705,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          entry_count?: number | null
+          entry_type?: string | null
           expires_at?: string | null
           finish_position?: number
           id?: string
@@ -2431,9 +2437,17 @@ export type Database = {
       }
       ensure_diamond_wallet: { Args: { p_player_id: string }; Returns: number }
       ensure_player_balance: { Args: { p_player_id: string }; Returns: number }
+      generate_online_tournament_payout_structure: {
+        Args: { p_tournament_id: string }
+        Returns: Json
+      }
       generate_tournament_payouts: {
         Args: { tournament_id_param: string }
         Returns: undefined
+      }
+      get_player_available_entries: {
+        Args: { p_player_id: string }
+        Returns: number
       }
       get_player_safe: {
         Args: { player_id_param: string }
@@ -2500,14 +2514,23 @@ export type Database = {
         Returns: Json
       }
       is_admin: { Args: { user_uuid: string }; Returns: boolean }
-      issue_offline_tickets_for_winners: {
-        Args: {
-          p_ticket_value?: number
-          p_top_positions?: number
-          p_tournament_id: string
-        }
-        Returns: Json
-      }
+      issue_offline_tickets_for_winners:
+        | {
+            Args: {
+              p_ticket_value?: number
+              p_top_positions?: number
+              p_tournament_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_entries_per_position?: number[]
+              p_top_positions?: number
+              p_tournament_id: string
+            }
+            Returns: Json
+          }
       link_players_to_profiles: { Args: never; Returns: undefined }
       merge_player_profiles: {
         Args: {
@@ -2631,6 +2654,10 @@ export type Database = {
           tournament_id_param: string
         }
         Returns: undefined
+      }
+      use_offline_entry: {
+        Args: { p_offline_tournament_id: string; p_player_id: string }
+        Returns: Json
       }
     }
     Enums: {
