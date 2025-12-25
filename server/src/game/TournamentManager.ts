@@ -411,6 +411,81 @@ export function generatePayoutStructure(
 }
 
 // ==========================================
+// RPS POOL CALCULATION
+// ==========================================
+
+/**
+ * Calculate RPS pool from tournament entries
+ * Formula: 1000₽ = 100 RPS points
+ * Same as offline tournaments
+ */
+export function calculateRPSPool(
+  participantCount: number,
+  buyIn: number,
+  totalRebuys: number = 0,
+  rebuyCost: number = 0,
+  totalAddons: number = 0,
+  addonCost: number = 0
+): number {
+  const basePool = participantCount * buyIn;
+  const rebuyPool = totalRebuys * rebuyCost;
+  const addonPool = totalAddons * addonCost;
+  const totalPool = basePool + rebuyPool + addonPool;
+  
+  // 1000₽ = 100 RPS points (divide by 10)
+  return Math.round(totalPool / 10);
+}
+
+/**
+ * Calculate prize pool with guaranteed minimum
+ */
+export function calculatePrizePool(
+  participantCount: number,
+  buyIn: number,
+  totalRebuys: number = 0,
+  rebuyCost: number = 0,
+  totalAddons: number = 0,
+  addonCost: number = 0,
+  guaranteedPrizePool: number = 0
+): number {
+  const basePool = participantCount * buyIn;
+  const rebuyPool = totalRebuys * rebuyCost;
+  const addonPool = totalAddons * addonCost;
+  const collectedPool = basePool + rebuyPool + addonPool;
+  
+  // Use guaranteed if it's higher
+  return Math.max(collectedPool, guaranteedPrizePool);
+}
+
+/**
+ * Generate RPS payout structure based on player count
+ */
+export function generateRPSPayoutStructure(
+  playerCount: number,
+  totalRPSPool: number
+): { position: number; percentage: number; rpsPoints: number }[] {
+  let percentages: number[];
+  
+  if (playerCount <= 6) {
+    percentages = [65, 35];
+  } else if (playerCount <= 18) {
+    percentages = [50, 30, 20];
+  } else if (playerCount <= 30) {
+    percentages = [40, 25, 15, 12, 8];
+  } else if (playerCount <= 50) {
+    percentages = [34, 23, 16.5, 11.9, 8, 6.6];
+  } else {
+    percentages = [31.7, 20.7, 15.3, 10.8, 7.2, 5.8, 4.6, 3.9];
+  }
+  
+  return percentages.map((percentage, i) => ({
+    position: i + 1,
+    percentage,
+    rpsPoints: Math.round(totalRPSPool * percentage / 100)
+  }));
+}
+
+// ==========================================
 // REBUY/ADDON MANAGEMENT
 // ==========================================
 

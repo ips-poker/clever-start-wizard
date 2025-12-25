@@ -699,6 +699,7 @@ export type Database = {
       }
       online_poker_tournament_participants: {
         Row: {
+          addons_count: number | null
           chips: number | null
           eliminated_at: string | null
           eliminated_by: string | null
@@ -706,6 +707,7 @@ export type Database = {
           id: string
           player_id: string
           prize_amount: number | null
+          rebuys_count: number | null
           registered_at: string
           seat_number: number | null
           status: string
@@ -713,6 +715,7 @@ export type Database = {
           tournament_id: string
         }
         Insert: {
+          addons_count?: number | null
           chips?: number | null
           eliminated_at?: string | null
           eliminated_by?: string | null
@@ -720,6 +723,7 @@ export type Database = {
           id?: string
           player_id: string
           prize_amount?: number | null
+          rebuys_count?: number | null
           registered_at?: string
           seat_number?: number | null
           status?: string
@@ -727,6 +731,7 @@ export type Database = {
           tournament_id: string
         }
         Update: {
+          addons_count?: number | null
           chips?: number | null
           eliminated_at?: string | null
           eliminated_by?: string | null
@@ -734,6 +739,7 @@ export type Database = {
           id?: string
           player_id?: string
           prize_amount?: number | null
+          rebuys_count?: number | null
           registered_at?: string
           seat_number?: number | null
           status?: string
@@ -2335,6 +2341,10 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: number
       }
+      calculate_online_tournament_rps_pool: {
+        Args: { tournament_id_param: string }
+        Returns: number
+      }
       calculate_tournament_rps_pool: {
         Args: { tournament_id_param: string }
         Returns: number
@@ -2510,6 +2520,14 @@ export type Database = {
       pause_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
+      }
+      process_online_tournament_addon: {
+        Args: { p_player_id: string; p_tournament_id: string }
+        Returns: Json
+      }
+      process_online_tournament_rebuy: {
+        Args: { p_player_id: string; p_tournament_id: string }
+        Returns: Json
       }
       publish_tournament: {
         Args: { tournament_id_param: string }
