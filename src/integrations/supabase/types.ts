@@ -2431,6 +2431,7 @@ export type Database = {
         }
         Returns: Json
       }
+      current_telegram_id: { Args: never; Returns: string }
       delete_tournament_safe: {
         Args: { p_tournament_id: string }
         Returns: undefined
