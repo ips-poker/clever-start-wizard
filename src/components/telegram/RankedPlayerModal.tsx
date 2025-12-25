@@ -33,10 +33,6 @@ interface GameResult {
   elo_after: number;
   elo_change: number;
   created_at: string;
-  tournaments?: {
-    name: string;
-    start_time: string;
-  };
 }
 
 interface RankedPlayerModalProps {
@@ -70,13 +66,7 @@ export const RankedPlayerModal: React.FC<RankedPlayerModalProps> = ({ player, on
     try {
       const { data: results, error } = await supabase
         .from('game_results')
-        .select(`
-          *,
-          tournaments:tournament_id (
-            name,
-            start_time
-          )
-        `)
+        .select('*')
         .eq('player_id', player.id)
         .order('created_at', { ascending: false });
 
@@ -385,7 +375,7 @@ export const RankedPlayerModal: React.FC<RankedPlayerModalProps> = ({ player, on
                           <div className="flex items-start justify-between mb-2">
                             <div>
                               <h4 className="font-display text-sm">
-                                {result.tournaments?.name || 'Турнир'}
+                                Турнир #{result.tournament_id.slice(0, 8)}
                               </h4>
                               <p className="text-xs text-muted-foreground">
                                 {new Date(result.created_at).toLocaleDateString('ru-RU', {

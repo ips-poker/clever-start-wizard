@@ -57,7 +57,7 @@ export function useOnlineTournamentRPS() {
         return { success: false, error: error.message };
       }
 
-      const result = data as RPSResult;
+      const result = data as unknown as RPSResult;
       
       if (result.success && result.elo_change) {
         const changeText = result.elo_change > 0 ? `+${result.elo_change}` : result.elo_change;
@@ -91,7 +91,7 @@ export function useOnlineTournamentRPS() {
         return { success: false, error: error.message };
       }
 
-      const result = data as EliminationResult;
+      const result = data as unknown as EliminationResult;
       
       if (result.success) {
         console.log(`Player eliminated: position ${result.finish_position}, ${result.remaining_players} remaining`);
@@ -120,7 +120,7 @@ export function useOnlineTournamentRPS() {
         return { success: false, error: error.message };
       }
 
-      const result = data as LevelAdvanceResult;
+      const result = data as unknown as LevelAdvanceResult;
       
       if (result.success) {
         if (result.is_break) {

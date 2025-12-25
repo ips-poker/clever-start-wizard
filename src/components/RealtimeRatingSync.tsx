@@ -81,13 +81,13 @@ export default function RealtimeRatingSync() {
         .from('game_results')
         .select(`
           id,
+          tournament_id,
           elo_before,
           elo_after,
           elo_change,
           position,
           created_at,
-          players!inner(name),
-          tournaments!inner(name)
+          players!inner(name)
         `)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -108,7 +108,7 @@ export default function RealtimeRatingSync() {
       // Format recent updates
       const formattedUpdates = recentData?.map(update => ({
         id: update.id,
-        tournament_name: update.tournaments?.name || 'Неизвестный турнир',
+        tournament_name: 'Турнир',
         player_name: update.players?.name || 'Неизвестный игрок',
         elo_before: update.elo_before,
         elo_after: update.elo_after,

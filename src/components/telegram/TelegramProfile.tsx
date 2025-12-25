@@ -63,15 +63,12 @@ interface Player {
 
 interface GameResult {
   id: string;
+  tournament_id: string;
   position: number;
   elo_change: number;
   elo_after: number;
   elo_before: number;
   created_at: string;
-  tournament: { 
-    name: string;
-    participation_fee: number;
-  };
 }
 
 interface Tournament {
@@ -243,10 +240,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
     try {
       const { data, error } = await supabase
         .from('game_results')
-        .select(`
-          *,
-          tournament:tournaments(name, participation_fee)
-        `)
+        .select('*')
         .eq('player_id', player.id)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -503,21 +497,14 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
   // Calculate total RPS earned from game results (last tournament)
   const lastTournamentRPS = gameResults.length > 0 ? (() => {
     const lastResult = gameResults[0];
-    // RPS calculation: position 1 = 50% of pool, 2 = 30%, 3 = 20%
-    const poolRPS = convertFeeToRPS(lastResult.tournament.participation_fee);
-    if (lastResult.position === 1) return Math.round(poolRPS * 5 * 0.5); // Примерно 5 игроков
-    if (lastResult.position === 2) return Math.round(poolRPS * 5 * 0.3);
-    if (lastResult.position === 3) return Math.round(poolRPS * 5 * 0.2);
-    return 0;
+    // RPS calculation based on elo_change (simplified)
+    return lastResult.elo_change > 0 ? lastResult.elo_change : 0;
   })() : 0;
   
   // Total RPS earned from all games
   const totalRPSEarned = gameResults.reduce((sum, result) => {
-    const poolRPS = convertFeeToRPS(result.tournament.participation_fee);
-    if (result.position === 1) return sum + Math.round(poolRPS * 5 * 0.5);
-    if (result.position === 2) return sum + Math.round(poolRPS * 5 * 0.3);
-    if (result.position === 3) return sum + Math.round(poolRPS * 5 * 0.2);
-    return sum;
+    // Use elo_change as RPS indicator
+    return sum + (result.elo_change > 0 ? result.elo_change : 0);
   }, 0);
   
   const recentForm = gameResults.slice(0, 5).map(r => r.position <= 3 ? '✅' : '❌').join('');
@@ -992,7 +979,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                       {getPositionIcon(result.position)}
                     </div>
                     <div>
-                      <p className="text-foreground text-xs font-bold uppercase tracking-wide">{result.tournament.name}</p>
+                      <p className="text-foreground text-xs font-bold uppercase tracking-wide">Турнир #{result.tournament_id?.slice(0, 8) || 'N/A'}</p>
                       <p className="text-muted-foreground text-xs">{formatDate(result.created_at)}</p>
                     </div>
                   </div>

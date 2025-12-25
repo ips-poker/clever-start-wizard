@@ -110,14 +110,19 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
         .from('game_results')
         .select(`
           *,
-          players(name),
-          tournaments(name, buy_in)
+          players(name)
         `)
         .eq('tournament_id', selectedTournament.id)
         .order('position');
 
       if (error) throw error;
-      setResults(data || []);
+      // Add tournament info from selectedTournament
+      const resultsWithTournament = (data || []).map(r => ({
+        ...r,
+        tournament_name: selectedTournament.name,
+        tournament_buy_in: selectedTournament.buy_in
+      }));
+      setResults(resultsWithTournament);
     } catch (error) {
       console.error('Error loading results:', error);
     } finally {
@@ -473,8 +478,8 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{game.tournaments.name}</div>
-                          <div className="text-sm text-poker-text-muted">{game.tournaments.buy_in}₽</div>
+                          <div className="font-medium">{game.tournament_name || 'Турнир'}</div>
+                          <div className="text-sm text-poker-text-muted">{game.tournament_buy_in || 0}₽</div>
                         </div>
                       </TableCell>
                       <TableCell>{getRankIcon(game.position)}</TableCell>
