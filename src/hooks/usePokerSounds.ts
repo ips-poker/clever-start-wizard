@@ -1,40 +1,61 @@
 import { useCallback, useRef, useEffect } from 'react';
 
 // =====================================================
-// POKER SOUND SYSTEM - CARD DEAL + CHIP SOUNDS
+// POKER SOUND SYSTEM - FULL IMPLEMENTATION
 // =====================================================
+
+interface SoundConfig {
+  src: string;
+  volume: number;
+  playbackRate?: number;
+}
+
+const SOUNDS: Record<string, SoundConfig> = {
+  deal: { src: '/sounds/card-deal.mp3', volume: 0.35, playbackRate: 1.3 },
+  cardFlip: { src: '/sounds/card-flip.mp3', volume: 0.4 },
+  shuffle: { src: '/sounds/card-shuffle.mp3', volume: 0.3 },
+  check: { src: '/sounds/check.mp3', volume: 0.5 },
+  fold: { src: '/sounds/fold.mp3', volume: 0.4 },
+  chip: { src: '/sounds/chip-bet.mp3', volume: 0.5 },
+  allIn: { src: '/sounds/chip-allin.mp3', volume: 0.6 },
+  win: { src: '/sounds/chip-win.mp3', volume: 0.5 },
+};
 
 export function usePokerSounds() {
   const enabledRef = useRef(true);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const dealSoundRef = useRef<HTMLAudioElement | null>(null);
-  const chipSoundRef = useRef<HTMLAudioElement | null>(null);
-  const checkSoundRef = useRef<HTMLAudioElement | null>(null);
+  const audioCache = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const audioContextRef = useRef<AudioContext | null>(null);
 
-  // Preload sounds
+  // Preload all sounds
   useEffect(() => {
-    dealSoundRef.current = new Audio('/sounds/card-deal.mp3');
-    dealSoundRef.current.volume = 0.35;
-    dealSoundRef.current.preload = 'auto';
-    
-    chipSoundRef.current = new Audio('/sounds/chip-bet.mp3');
-    chipSoundRef.current.volume = 0.5;
-    chipSoundRef.current.preload = 'auto';
-    
-    checkSoundRef.current = new Audio('/sounds/check.mp3');
-    checkSoundRef.current.volume = 0.5;
-    checkSoundRef.current.preload = 'auto';
+    Object.entries(SOUNDS).forEach(([key, config]) => {
+      const audio = new Audio(config.src);
+      audio.volume = config.volume;
+      audio.preload = 'auto';
+      audioCache.current.set(key, audio);
+    });
+
+    return () => {
+      audioCache.current.forEach(audio => {
+        audio.pause();
+        audio.src = '';
+      });
+      audioCache.current.clear();
+    };
   }, []);
 
-  // Card deal sound
-  const playDeal = useCallback(() => {
+  // Play sound utility
+  const playSound = useCallback((key: string, options?: { volume?: number; playbackRate?: number }) => {
     if (!enabledRef.current) return;
-    
+
     try {
-      if (dealSoundRef.current) {
-        const sound = dealSoundRef.current.cloneNode() as HTMLAudioElement;
-        sound.volume = 0.35;
-        sound.playbackRate = 1.3;
+      const cached = audioCache.current.get(key);
+      if (cached) {
+        const sound = cached.cloneNode() as HTMLAudioElement;
+        const config = SOUNDS[key];
+        sound.volume = options?.volume ?? config.volume;
+        sound.playbackRate = options?.playbackRate ?? config.playbackRate ?? 1;
         sound.play().catch(() => {});
       }
     } catch (e) {
@@ -42,67 +63,104 @@ export function usePokerSounds() {
     }
   }, []);
 
-  // Chip sound for call/raise/bet
-  const playChipSound = useCallback(() => {
+  // Generate beep using Web Audio API for timer warnings
+  const playBeep = useCallback((frequency: number, duration: number, volume: number = 0.3) => {
     if (!enabledRef.current) return;
-    
+
     try {
-      if (chipSoundRef.current) {
-        const sound = chipSoundRef.current.cloneNode() as HTMLAudioElement;
-        sound.volume = 0.5;
-        sound.play().catch(() => {});
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext();
       }
+      const ctx = audioContextRef.current;
+      
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      oscillator.frequency.value = frequency;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+      
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + duration);
     } catch (e) {
-      console.warn('Audio not available:', e);
+      console.warn('Web Audio not available:', e);
     }
   }, []);
 
-  const playCall = useCallback(() => playChipSound(), [playChipSound]);
-  const playBet = useCallback(() => playChipSound(), [playChipSound]);
-  const playRaise = useCallback(() => playChipSound(), [playChipSound]);
+  // Card sounds
+  const playDeal = useCallback(() => playSound('deal'), [playSound]);
+  const playCardFlip = useCallback(() => playSound('cardFlip'), [playSound]);
+  const playShuffle = useCallback(() => playSound('shuffle'), [playSound]);
 
-  // All other sounds - silent
-  const playFold = useCallback(() => {}, []);
-  const playCheck = useCallback(() => {
-    if (!enabledRef.current) return;
+  // Action sounds
+  const playFold = useCallback(() => playSound('fold'), [playSound]);
+  const playCheck = useCallback(() => playSound('check'), [playSound]);
+  const playCall = useCallback(() => playSound('chip'), [playSound]);
+  const playBet = useCallback(() => playSound('chip'), [playSound]);
+  const playRaise = useCallback(() => playSound('chip', { volume: 0.55 }), [playSound]);
+  const playAllIn = useCallback(() => playSound('allIn'), [playSound]);
+
+  // Win/Lose sounds
+  const playWin = useCallback(() => playSound('win'), [playSound]);
+  const playPotWin = useCallback(() => playSound('win', { volume: 0.6 }), [playSound]);
+  const playLose = useCallback(() => {}, []); // Silent - no negative feedback
+
+  // Chip sounds
+  const playChipSingle = useCallback(() => playSound('chip', { volume: 0.3 }), [playSound]);
+  const playChipStack = useCallback(() => playSound('chip', { volume: 0.5 }), [playSound]);
+  const playChipSlide = useCallback(() => playSound('chip', { volume: 0.4 }), [playSound]);
+
+  // Timer sounds
+  const playTimerTick = useCallback(() => playBeep(800, 0.1, 0.15), [playBeep]);
+  const playTimerWarning = useCallback(() => playBeep(600, 0.15, 0.25), [playBeep]);
+  const playTimerCritical = useCallback(() => playBeep(400, 0.2, 0.35), [playBeep]);
+  const playTimerExpired = useCallback(() => playBeep(300, 0.3, 0.4), [playBeep]);
+
+  // Start timer warning beeps
+  const startTimerWarning = useCallback((secondsRemaining: number) => {
+    stopTimerWarning();
     
-    try {
-      if (checkSoundRef.current) {
-        const sound = checkSoundRef.current.cloneNode() as HTMLAudioElement;
-        sound.volume = 0.5;
-        sound.play().catch(() => {});
-      }
-    } catch (e) {
-      console.warn('Audio not available:', e);
+    if (secondsRemaining <= 10 && secondsRemaining > 5) {
+      timerIntervalRef.current = setInterval(() => {
+        playTimerWarning();
+      }, 1000);
+    } else if (secondsRemaining <= 5) {
+      timerIntervalRef.current = setInterval(() => {
+        playTimerCritical();
+      }, 500);
     }
-  }, []);
-  const playAllIn = useCallback(() => {}, []);
-  const playWin = useCallback(() => {}, []);
-  const playLose = useCallback(() => {}, []);
-  const playCardFlip = useCallback(() => {}, []);
-  const playShuffle = useCallback(() => {}, []);
-  const playChipSingle = useCallback(() => {}, []);
-  const playChipStack = useCallback(() => {}, []);
-  const playChipSlide = useCallback(() => {}, []);
-  const playPotWin = useCallback(() => {}, []);
-  const playTimerTick = useCallback(() => {}, []);
-  const playTimerWarning = useCallback(() => {}, []);
-  const playTimerCritical = useCallback(() => {}, []);
-  const playTimerExpired = useCallback(() => {}, []);
-  const startTimerWarning = useCallback((secondsRemaining: number) => {}, []);
+  }, [playTimerWarning, playTimerCritical]);
+
   const stopTimerWarning = useCallback(() => {
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
     }
   }, []);
-  const playTurn = useCallback(() => {}, []);
-  const playMyTurn = useCallback(() => {}, []);
-  const playChat = useCallback(() => {}, []);
-  const playNotification = useCallback(() => {}, []);
-  const playButtonClick = useCallback(() => {}, []);
-  const playShowdown = useCallback(() => {}, []);
-  const playReveal = useCallback(() => {}, []);
+
+  // UI sounds
+  const playTurn = useCallback(() => playBeep(1000, 0.1, 0.2), [playBeep]);
+  const playMyTurn = useCallback(() => {
+    playBeep(800, 0.1, 0.3);
+    setTimeout(() => playBeep(1000, 0.15, 0.3), 150);
+  }, [playBeep]);
+  const playChat = useCallback(() => playBeep(600, 0.05, 0.1), [playBeep]);
+  const playNotification = useCallback(() => playBeep(900, 0.15, 0.25), [playBeep]);
+  const playButtonClick = useCallback(() => playBeep(700, 0.05, 0.1), [playBeep]);
+
+  // Showdown sounds
+  const playShowdown = useCallback(() => {
+    // Dramatic reveal sequence
+    playShuffle();
+    setTimeout(() => playCardFlip(), 200);
+  }, [playShuffle, playCardFlip]);
+
+  const playReveal = useCallback(() => playCardFlip(), [playCardFlip]);
 
   const setEnabled = useCallback((enabled: boolean) => {
     enabledRef.current = enabled;
@@ -112,6 +170,9 @@ export function usePokerSounds() {
   useEffect(() => {
     return () => {
       stopTimerWarning();
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
     };
   }, [stopTimerWarning]);
 
