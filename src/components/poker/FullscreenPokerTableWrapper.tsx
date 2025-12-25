@@ -3,7 +3,7 @@
 // ============================================
 import React, { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Volume2, VolumeX, Settings2, Menu, X, LogOut, Palette, RotateCcw, RotateCw, Eye } from 'lucide-react';
+import { ArrowLeft, Volume2, VolumeX, Settings2, Menu, X, LogOut, Palette, RotateCcw, RotateCw, Eye, Plus, Diamond } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -18,6 +18,7 @@ import { PersonalSettingsPanel } from './PersonalSettingsPanel';
 import { FullscreenPokerTable } from './FullscreenPokerTable';
 import { ProActionPanel } from './ProActionPanel';
 import { BuyInDialog } from './BuyInDialog';
+import { RebuyDialog } from './RebuyDialog';
 import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
 
 
@@ -59,6 +60,7 @@ export function FullscreenPokerTableWrapper({
   const [showSettings, setShowSettings] = useState(false);
   const [showPersonalSettings, setShowPersonalSettings] = useState(false);
   const [showBuyInDialog, setShowBuyInDialog] = useState(false);
+  const [showRebuyDialog, setShowRebuyDialog] = useState(false);
   const [selectedSeatForJoin, setSelectedSeatForJoin] = useState<number | null>(null);
   const [isProcessingCashout, setIsProcessingCashout] = useState(false);
   const [actualBuyIn, setActualBuyIn] = useState<number>(buyIn);
@@ -73,7 +75,7 @@ export function FullscreenPokerTableWrapper({
   
   const {
     isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
-    connect, disconnect, joinTable, fold, check, call, raise, allIn
+    connect, disconnect, joinTable, fold, check, call, raise, allIn, addChips
   } = pokerTable;
   
   // Check if player can join (not yet seated)
@@ -297,6 +299,54 @@ export function FullscreenPokerTableWrapper({
     }
   }, [playerId, tableId, joinTable, onBalanceUpdate]);
 
+  // Handle rebuy - add chips when not in active hand
+  const handleRebuyConfirm = useCallback(async (seatNumber: number, rebuyAmount: number) => {
+    setShowRebuyDialog(false);
+    
+    // Can only rebuy when not in active hand
+    const phase = tableState?.phase;
+    if (phase && phase !== 'waiting' && phase !== 'showdown') {
+      toast.error('Докупка доступна только между раздачами');
+      return;
+    }
+    
+    try {
+      // Deduct diamonds from wallet first
+      const { data, error: rebuyError } = await supabase.functions.invoke('poker-cashout', {
+        body: {
+          playerId,
+          tableId,
+          amount: rebuyAmount,
+          action: 'buy_in' // Same action as buy_in for wallet deduction
+        }
+      });
+
+      if (rebuyError || data?.error) {
+        toast.error(data?.error || 'Недостаточно алмазов');
+        return;
+      }
+      
+      // Send add_chips to server
+      const success = addChips(rebuyAmount);
+      if (success) {
+        toast.success(`Докупка +${rebuyAmount.toLocaleString()} 💎`);
+        onBalanceUpdate?.();
+      } else {
+        toast.error('Докупка недоступна во время раздачи');
+      }
+    } catch (err) {
+      console.error('Rebuy failed:', err);
+      toast.error('Ошибка докупки');
+    }
+  }, [playerId, tableId, tableState?.phase, addChips, onBalanceUpdate]);
+
+  // Check if rebuy is available (not in active hand)
+  const canRebuy = useMemo(() => {
+    if (!myPlayer) return false;
+    const phase = tableState?.phase;
+    return !phase || phase === 'waiting' || phase === 'showdown';
+  }, [myPlayer, tableState?.phase]);
+
   const handleSettingsSave = useCallback((settings: any) => {
     console.log('Saving settings:', settings);
     setShowSettings(false);
@@ -519,6 +569,19 @@ export function FullscreenPokerTableWrapper({
           maxSeats={maxSeats}
         />
 
+        {/* Rebuy Dialog */}
+        <RebuyDialog
+          isOpen={showRebuyDialog}
+          onClose={() => setShowRebuyDialog(false)}
+          onConfirm={handleRebuyConfirm}
+          currentSeat={mySeat ?? 0}
+          currentStack={myPlayer?.stack ?? 0}
+          minBuyIn={minBuyIn}
+          maxBuyIn={maxBuyIn}
+          playerBalance={playerBalance}
+          bigBlind={tableState?.bigBlindAmount || 20}
+        />
+
         {/* Side menu */}
         <AnimatePresence>
           {showMenu && (
@@ -537,6 +600,18 @@ export function FullscreenPokerTableWrapper({
                   {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
                   Звук {soundEnabled ? 'вкл' : 'выкл'}
                 </Button>
+                
+                {/* Rebuy button - only when seated and not in active hand */}
+                {myPlayer && canRebuy && (
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-3 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+                    onClick={() => { setShowMenu(false); setShowRebuyDialog(true); }}
+                  >
+                    <Plus className="h-5 w-5" />
+                    Докупить фишки
+                  </Button>
+                )}
                 
                 <Button
                   variant="ghost"
