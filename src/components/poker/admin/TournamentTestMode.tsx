@@ -182,11 +182,18 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
     }
     setTournament(tournamentData);
 
-    const { data: participantsData } = await supabase
+    const { data: participantsData, error: participantsError } = await supabase
       .from('online_poker_tournament_participants')
       .select(`*, players!inner(id, name)`)
       .eq('tournament_id', tournamentId)
       .order('chips', { ascending: false });
+
+    if (participantsError) {
+      console.error('Error loading participants:', participantsError);
+      addLog('error', 'Ошибка загрузки участников', participantsError);
+    } else {
+      console.log('Participants loaded:', participantsData?.length);
+    }
 
     const formattedParticipants = participantsData?.map(p => ({
       ...p,
