@@ -21,6 +21,7 @@ import { ClanManagementPanel } from "@/components/clan/ClanManagementPanel";
 import { ClanInvitationsPanel } from "@/components/clan/ClanInvitationsPanel";
 import { ProfileClanBadge } from "@/components/clan/ProfileClanBadge";
 import { useClanSystem } from "@/hooks/useClanSystem";
+import { PlayerTickets } from "@/components/poker/PlayerTickets";
 import { motion } from "framer-motion";
 
 interface Player {
@@ -411,7 +412,10 @@ export default function Profile() {
                 <ClanManagementPanel />
               </TabsContent>
 
-              <TabsContent value="tournaments" className="mt-6">
+              <TabsContent value="tournaments" className="mt-6 space-y-6">
+                {/* Offline Tournament Entries */}
+                {player && <PlayerTickets playerId={player.id} />}
+                
                 <ProfileTournaments playerId={player?.id} />
               </TabsContent>
 
