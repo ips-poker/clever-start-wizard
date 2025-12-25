@@ -71,7 +71,8 @@ import { HandDetailsViewer } from './admin/HandDetailsViewer';
 import { CreatePlayerWithBalance } from './admin/CreatePlayerWithBalance';
 import { StatsExport } from './admin/StatsExport';
 import { DiamondManagement } from './admin/DiamondManagement';
-import { Gem } from 'lucide-react';
+import { OnlineTournamentManager } from './admin/OnlineTournamentManager';
+import { Gem, Trophy } from 'lucide-react';
 
 interface PlayerBalance {
   id: string;
@@ -687,10 +688,14 @@ export function OnlinePokerManagement() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="monitor" className="gap-1">
             <Eye className="h-4 w-4" />
             <span className="hidden lg:inline">Мониторинг</span>
+          </TabsTrigger>
+          <TabsTrigger value="tournaments" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-600">
+            <Trophy className="h-4 w-4" />
+            <span className="hidden lg:inline">Турниры</span>
           </TabsTrigger>
           <TabsTrigger value="diamonds" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600">
             <Gem className="h-4 w-4" />
@@ -721,6 +726,11 @@ export function OnlinePokerManagement() {
             <span className="hidden lg:inline">Инструменты</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* Tournaments Tab */}
+        <TabsContent value="tournaments">
+          <OnlineTournamentManager />
+        </TabsContent>
 
         {/* Diamonds Tab */}
         <TabsContent value="diamonds">
