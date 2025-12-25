@@ -29,7 +29,8 @@ import {
   Timer,
   AlertTriangle,
   Mic,
-  Volume2
+  Volume2,
+  Gamepad2
 } from "lucide-react";
 
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -889,6 +890,10 @@ const TournamentDirector = () => {
                 <TabsTrigger value="rating-settings" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
                   <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>Настройки RPS</span>
+                </TabsTrigger>
+                <TabsTrigger value="online-poker" className="flex items-center gap-1 sm:gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm py-2 px-2 sm:px-3 hidden lg:flex">
+                  <Gamepad2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>Онлайн покер</span>
                 </TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-8 animate-fade-in">
