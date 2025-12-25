@@ -839,75 +839,138 @@ export type Database = {
       }
       online_poker_tournaments: {
         Row: {
+          action_time_seconds: number | null
+          addon_chips: number | null
+          addon_cost: number | null
+          addon_enabled: boolean | null
+          addon_level: number | null
           ante: number | null
+          auto_start: boolean | null
           big_blind: number | null
+          break_duration: number | null
+          break_interval: number | null
           buy_in: number
           created_at: string
           created_by: string | null
           current_level: number | null
           description: string | null
           finished_at: string | null
+          guaranteed_prize_pool: number | null
           id: string
+          late_registration_enabled: boolean | null
+          late_registration_level: number | null
           level_duration: number | null
           level_end_at: string | null
           max_players: number
           min_players: number
           name: string
           prize_pool: number | null
+          rebuy_chips: number | null
+          rebuy_cost: number | null
+          rebuy_enabled: boolean | null
+          rebuy_end_level: number | null
           registration_end: string | null
           registration_start: string | null
+          scheduled_start_at: string | null
           small_blind: number | null
           started_at: string | null
           starting_chips: number
           status: string
+          ticket_value: number | null
+          tickets_for_top: number | null
+          time_bank_initial: number | null
+          time_bank_per_level: number | null
+          tournament_format: string | null
           updated_at: string
         }
         Insert: {
+          action_time_seconds?: number | null
+          addon_chips?: number | null
+          addon_cost?: number | null
+          addon_enabled?: boolean | null
+          addon_level?: number | null
           ante?: number | null
+          auto_start?: boolean | null
           big_blind?: number | null
+          break_duration?: number | null
+          break_interval?: number | null
           buy_in?: number
           created_at?: string
           created_by?: string | null
           current_level?: number | null
           description?: string | null
           finished_at?: string | null
+          guaranteed_prize_pool?: number | null
           id?: string
+          late_registration_enabled?: boolean | null
+          late_registration_level?: number | null
           level_duration?: number | null
           level_end_at?: string | null
           max_players?: number
           min_players?: number
           name: string
           prize_pool?: number | null
+          rebuy_chips?: number | null
+          rebuy_cost?: number | null
+          rebuy_enabled?: boolean | null
+          rebuy_end_level?: number | null
           registration_end?: string | null
           registration_start?: string | null
+          scheduled_start_at?: string | null
           small_blind?: number | null
           started_at?: string | null
           starting_chips?: number
           status?: string
+          ticket_value?: number | null
+          tickets_for_top?: number | null
+          time_bank_initial?: number | null
+          time_bank_per_level?: number | null
+          tournament_format?: string | null
           updated_at?: string
         }
         Update: {
+          action_time_seconds?: number | null
+          addon_chips?: number | null
+          addon_cost?: number | null
+          addon_enabled?: boolean | null
+          addon_level?: number | null
           ante?: number | null
+          auto_start?: boolean | null
           big_blind?: number | null
+          break_duration?: number | null
+          break_interval?: number | null
           buy_in?: number
           created_at?: string
           created_by?: string | null
           current_level?: number | null
           description?: string | null
           finished_at?: string | null
+          guaranteed_prize_pool?: number | null
           id?: string
+          late_registration_enabled?: boolean | null
+          late_registration_level?: number | null
           level_duration?: number | null
           level_end_at?: string | null
           max_players?: number
           min_players?: number
           name?: string
           prize_pool?: number | null
+          rebuy_chips?: number | null
+          rebuy_cost?: number | null
+          rebuy_enabled?: boolean | null
+          rebuy_end_level?: number | null
           registration_end?: string | null
           registration_start?: string | null
+          scheduled_start_at?: string | null
           small_blind?: number | null
           started_at?: string | null
           starting_chips?: number
           status?: string
+          ticket_value?: number | null
+          tickets_for_top?: number | null
+          time_bank_initial?: number | null
+          time_bank_per_level?: number | null
+          tournament_format?: string | null
           updated_at?: string
         }
         Relationships: [
