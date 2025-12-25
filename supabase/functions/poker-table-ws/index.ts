@@ -382,6 +382,42 @@ serve(async (req) => {
           break;
         }
 
+        case 'add_chips': {
+          const { tableId, playerId, data } = message;
+          if (!tableId || !playerId || !data?.amount) {
+            socket.send(JSON.stringify({ type: 'error', message: 'Missing tableId, playerId or amount' }));
+            return;
+          }
+
+          // Call engine to add chips
+          const { data: addResult, error } = await supabase.functions.invoke('poker-game-engine', {
+            body: { action: 'add_chips', tableId, playerId, amount: data.amount }
+          });
+
+          if (error || !addResult?.success) {
+            socket.send(JSON.stringify({ 
+              type: 'error', 
+              message: addResult?.error || 'Failed to add chips' 
+            }));
+            return;
+          }
+
+          // Send result to player
+          socket.send(JSON.stringify({
+            type: 'chips_added',
+            playerId,
+            amount: addResult.amount,
+            newStack: addResult.newStack,
+            walletBalance: addResult.walletBalance
+          }));
+
+          // Broadcast updated state to all
+          await broadcastTableStateToAll(supabase, tableId);
+
+          console.log(`💎 Player ${playerId} added ${data.amount} chips`);
+          break;
+        }
+
         case 'get_state':
         case 'subscribe': {
           const { tableId, playerId } = message;
@@ -436,6 +472,71 @@ serve(async (req) => {
       
       // Unsubscribe from broadcast
       unsubscribeFromBroadcast(currentTableId, currentPlayerId);
+
+      // Check if player is in active hand and should auto-fold
+      try {
+        const { data: table } = await supabase
+          .from('poker_tables')
+          .select('current_hand_id')
+          .eq('id', currentTableId)
+          .single();
+
+        if (table?.current_hand_id) {
+          // Check if disconnected player is in the hand
+          const { data: handPlayer } = await supabase
+            .from('poker_hand_players')
+            .select('id, is_folded, seat_number')
+            .eq('hand_id', table.current_hand_id)
+            .eq('player_id', currentPlayerId)
+            .single();
+
+          if (handPlayer && !handPlayer.is_folded) {
+            // Get current hand to check if it's this player's turn
+            const { data: hand } = await supabase
+              .from('poker_hands')
+              .select('current_player_seat')
+              .eq('id', table.current_hand_id)
+              .single();
+
+            // If it's this player's turn, auto-fold immediately
+            if (hand?.current_player_seat === handPlayer.seat_number) {
+              console.log(`🚨 Disconnected player ${currentPlayerId} is current player, auto-folding`);
+              
+              const { data: foldResult } = await supabase.functions.invoke('poker-game-engine', {
+                body: { action: 'auto_fold_disconnected', tableId: currentTableId, playerId: currentPlayerId }
+              });
+
+              if (foldResult?.success) {
+                // Broadcast the fold action
+                await broadcastToAllInstances(currentTableId, {
+                  type: 'player_action',
+                  playerId: currentPlayerId,
+                  action: 'fold',
+                  amount: 0,
+                  result: foldResult,
+                  reason: 'disconnected'
+                });
+
+                // Broadcast updated state
+                await broadcastTableStateToAll(supabase, currentTableId);
+
+                if (foldResult.handComplete) {
+                  await broadcastToAllInstances(currentTableId, {
+                    type: 'hand_complete',
+                    winners: [{ playerId: foldResult.winner, amount: foldResult.winAmount }],
+                    reason: 'all_folded'
+                  });
+                }
+              }
+            } else {
+              // Not current player, mark as disconnected for timeout handling
+              console.log(`🔌 Disconnected player ${currentPlayerId} is in hand but not current player`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error handling disconnect auto-fold:', error);
+      }
 
       // Notify all instances that player disconnected
       await broadcastToAllInstances(currentTableId, {
