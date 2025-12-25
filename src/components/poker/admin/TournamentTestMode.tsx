@@ -265,21 +265,34 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
     addLog('action', `Создание ${testPlayerCount} тестовых игроков...`);
 
     try {
-      for (let i = 1; i <= testPlayerCount; i++) {
-        const name = `TestBot_${Date.now()}_${i}`;
-        const { error } = await supabase
-          .from('players')
-          .insert({ name, elo_rating: 1000 });
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const userId = userData?.user?.id || null;
 
-        if (error) {
-          addLog('error', `Ошибка создания игрока ${i}`, error);
-        }
+      if (userError || !userId) {
+        addLog('error', 'Нужна авторизация администратора для создания TestBot', userError);
+        toast.error('Нет авторизации');
+        setLoading(false);
+        return;
       }
-      await loadTestPlayers();
-      addLog('success', `Создано ${testPlayerCount} игроков`);
+
+      const rows = Array.from({ length: testPlayerCount }, (_, idx) => ({
+        name: `TestBot_${Date.now()}_${idx + 1}`,
+        elo_rating: 1000,
+        user_id: userId,
+      }));
+
+      const { error } = await supabase.from('players').insert(rows);
+      if (error) {
+        addLog('error', 'Ошибка создания тестовых игроков', error);
+        toast.error('Ошибка создания игроков: ' + error.message);
+      } else {
+        await loadTestPlayers();
+        addLog('success', `Создано ${testPlayerCount} игроков`);
+      }
     } catch (err) {
       addLog('error', 'Ошибка создания', err);
     }
+
     setLoading(false);
   };
 
@@ -290,22 +303,66 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
     addLog('action', `Регистрация ${unregistered.length} игроков...`);
 
     try {
-      for (const player of unregistered) {
-        await supabase
-          .from('online_poker_tournament_participants')
-          .insert({
-            tournament_id: tournamentId,
-            player_id: player.id,
-            status: 'registered',
-            chips: tournament?.starting_chips || 5000
-          });
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const userId = userData?.user?.id || null;
+
+      if (userError || !userId) {
+        addLog('error', 'Нужна авторизация администратора для регистрации участников', userError);
+        toast.error('Нет авторизации');
+        setLoading(false);
+        return;
       }
-      await loadTestPlayers();
-      await loadTournamentData();
-      addLog('success', 'Все игроки зарегистрированы');
+
+      // IMPORTANT: RLS policy for participants INSERT requires the player to be owned by the current user
+      // (players.user_id = auth.uid()) OR have telegram set. For test mode we bind TestBot_* to the current admin.
+      if (unregistered.length > 0) {
+        const { error: bindError } = await supabase
+          .from('players')
+          .update({ user_id: userId })
+          .in('id', unregistered.map(p => p.id));
+
+        if (bindError) {
+          addLog('error', 'Не удалось привязать тестовых игроков к текущему пользователю', bindError);
+          toast.error('Ошибка подготовки игроков: ' + bindError.message);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const rows = unregistered.map(player => ({
+        tournament_id: tournamentId,
+        player_id: player.id,
+        status: 'registered',
+        chips: tournament?.starting_chips || 5000,
+      }));
+
+      const { error } = await supabase
+        .from('online_poker_tournament_participants')
+        .insert(rows);
+
+      if (error) {
+        addLog('error', 'Ошибка регистрации участников (RLS/валидаторы)', error);
+        toast.error('Ошибка регистрации: ' + error.message);
+      } else {
+        await loadTestPlayers();
+        await loadTournamentData();
+
+        const { count } = await supabase
+          .from('online_poker_tournament_participants')
+          .select('*', { count: 'exact', head: true })
+          .eq('tournament_id', tournamentId);
+
+        addLog('success', `Все игроки зарегистрированы (всего участников: ${count ?? '—'})`);
+        if (!count) {
+          addLog('warning', 'После регистрации участников по-прежнему 0 — проверь RLS/права или что выбран правильный турнир', {
+            hint: 'Если вы не админ (is_admin=false), добавление участников будет блокироваться политиками.'
+          });
+        }
+      }
     } catch (err) {
       addLog('error', 'Ошибка регистрации', err);
     }
+
     setLoading(false);
   };
 

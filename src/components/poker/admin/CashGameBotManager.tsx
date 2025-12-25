@@ -293,7 +293,7 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
     // Check bot diamond balance
     const { data: wallet } = await supabase
       .from('diamond_wallets')
-      .select('balance')
+      .select('id, balance')
       .eq('player_id', botId)
       .single();
 
@@ -334,17 +334,21 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
       }
 
       // Record transaction
-      await supabase
+      const { error: txError } = await supabase
         .from('diamond_transactions')
         .insert({
           player_id: botId,
-          wallet_id: (await supabase.from('diamond_wallets').select('id').eq('player_id', botId).single()).data?.id,
+          wallet_id: wallet.id,
           amount: -buyInAmount,
           balance_before: wallet.balance,
           balance_after: wallet.balance - buyInAmount,
           transaction_type: 'cash_game_buyin',
           description: `Бай-ин кэш-стол ${table.name}`
         });
+
+      if (txError) {
+        addLog('warning', 'Не удалось записать транзакцию бай-ина (не критично)', txError);
+      }
 
       // Sit at table
       const { error: sitError } = await supabase
