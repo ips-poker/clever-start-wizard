@@ -25,7 +25,11 @@ import {
   Coins,
   Timer,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Diamond,
+  Award,
+  Ticket,
+  Gift
 } from 'lucide-react';
 import {
   Dialog,
@@ -61,6 +65,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { convertFeeToRPS, formatRPSPoints } from '@/utils/rpsCalculations';
 
 interface Tournament {
   id: string;
@@ -372,6 +377,23 @@ export function OnlineTournamentManager() {
     loadTournaments();
   };
 
+  const handleIssueTickets = async (tournament: Tournament) => {
+    const { data, error } = await supabase.rpc('issue_offline_tickets_for_winners', {
+      p_tournament_id: tournament.id,
+      p_ticket_value: 1000, // 1000 руб вход на офлайн турнир
+      p_top_positions: 3 // Топ 3 получают билеты
+    });
+
+    if (error) {
+      toast.error('Ошибка выдачи билетов');
+      console.error(error);
+      return;
+    }
+
+    const result = data as any;
+    toast.success(`Выдано ${result?.tickets_issued || 0} билетов на офлайн турнир`);
+  };
+
   const handleDeleteTournament = async () => {
     if (!tournamentToDelete) return;
 
@@ -505,12 +527,12 @@ export function OnlineTournamentManager() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
+        <Card className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border-cyan-500/20">
           <CardContent className="pt-3 pb-2">
             <div className="flex items-center gap-2">
-              <Coins className="h-4 w-4 text-purple-500" />
+              <Diamond className="h-4 w-4 text-cyan-500" />
               <div>
-                <p className="text-xs text-muted-foreground">Призовой фонд</p>
+                <p className="text-xs text-muted-foreground">Призовой фонд 💎</p>
                 <p className="text-lg font-bold">{tournaments.reduce((sum, t) => sum + (t.prize_pool || 0), 0).toLocaleString()}</p>
               </div>
             </div>
@@ -531,7 +553,8 @@ export function OnlineTournamentManager() {
                   <TableHead>Название</TableHead>
                   <TableHead>Статус</TableHead>
                   <TableHead>Игроки</TableHead>
-                  <TableHead>Buy-in</TableHead>
+                  <TableHead>Buy-in 💎</TableHead>
+                  <TableHead>RPS приз</TableHead>
                   <TableHead>Уровень</TableHead>
                   <TableHead>Блайнды</TableHead>
                   <TableHead className="text-right">Действия</TableHead>
@@ -551,7 +574,18 @@ export function OnlineTournamentManager() {
                       <span className="font-medium">{tournament.participants_count}</span>
                       <span className="text-muted-foreground">/{tournament.max_players}</span>
                     </TableCell>
-                    <TableCell>{tournament.buy_in.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Diamond className="h-3 w-3 text-cyan-400" />
+                        {tournament.buy_in.toLocaleString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-amber-500">
+                        <Award className="h-3 w-3" />
+                        {formatRPSPoints(convertFeeToRPS((tournament.participants_count || 0) * tournament.buy_in))}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {tournament.current_level || '-'}
                     </TableCell>
@@ -632,6 +666,17 @@ export function OnlineTournamentManager() {
                         >
                           <Settings className="h-4 w-4" />
                         </Button>
+                        {tournament.status === 'completed' && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-amber-500"
+                            onClick={() => handleIssueTickets(tournament)}
+                            title="Выдать билеты победителям"
+                          >
+                            <Ticket className="h-4 w-4" />
+                          </Button>
+                        )}
                         {(tournament.status === 'running' || tournament.status === 'paused') && (
                           <Button
                             size="icon"
@@ -663,7 +708,7 @@ export function OnlineTournamentManager() {
                 ))}
                 {tournaments.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                       Нет турниров
                     </TableCell>
                   </TableRow>
@@ -702,12 +747,18 @@ export function OnlineTournamentManager() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Buy-in (алмазы)</Label>
+                <Label className="flex items-center gap-1">
+                  <Diamond className="h-3 w-3 text-cyan-400" />
+                  Buy-in (алмазы)
+                </Label>
                 <Input
                   type="number"
                   value={newTournament.buy_in}
                   onChange={(e) => setNewTournament(prev => ({ ...prev, buy_in: parseInt(e.target.value) || 0 }))}
                 />
+                <p className="text-xs text-muted-foreground">
+                  = {formatRPSPoints(convertFeeToRPS(newTournament.buy_in))} за 1 место
+                </p>
               </div>
               <div className="space-y-2">
                 <Label>Стартовые фишки</Label>
@@ -742,6 +793,34 @@ export function OnlineTournamentManager() {
                   value={newTournament.level_duration}
                   onChange={(e) => setNewTournament(prev => ({ ...prev, level_duration: parseInt(e.target.value) || 300 }))}
                 />
+              </div>
+            </div>
+            
+            {/* Prize Info */}
+            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+              <h4 className="font-semibold text-amber-500 mb-2 flex items-center gap-2">
+                <Gift className="h-4 w-4" />
+                Система призов
+              </h4>
+              <div className="text-sm space-y-1 text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Валюта входа:</span>
+                  <span className="text-cyan-400 flex items-center gap-1">
+                    <Diamond className="h-3 w-3" /> Алмазы
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Призы:</span>
+                  <span className="text-amber-400 flex items-center gap-1">
+                    <Award className="h-3 w-3" /> RPS рейтинговые очки
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Топ-3:</span>
+                  <span className="text-purple-400 flex items-center gap-1">
+                    <Ticket className="h-3 w-3" /> Билеты на офлайн (1000₽)
+                  </span>
+                </div>
               </div>
             </div>
           </div>

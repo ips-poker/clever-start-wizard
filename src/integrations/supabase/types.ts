@@ -1601,6 +1601,87 @@ export type Database = {
           },
         ]
       }
+      tournament_tickets: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          finish_position: number
+          id: string
+          issued_at: string
+          offline_tournament_id: string | null
+          player_id: string
+          status: string
+          ticket_value: number
+          updated_at: string
+          used_at: string | null
+          won_from_tournament_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          finish_position: number
+          id?: string
+          issued_at?: string
+          offline_tournament_id?: string | null
+          player_id: string
+          status?: string
+          ticket_value?: number
+          updated_at?: string
+          used_at?: string | null
+          won_from_tournament_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          finish_position?: number
+          id?: string
+          issued_at?: string
+          offline_tournament_id?: string | null
+          player_id?: string
+          status?: string
+          ticket_value?: number
+          updated_at?: string
+          used_at?: string | null
+          won_from_tournament_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_tickets_offline_tournament_id_fkey"
+            columns: ["offline_tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_tickets_offline_tournament_id_fkey"
+            columns: ["offline_tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments_display"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_tickets_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_tickets_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_tickets_won_from_tournament_id_fkey"
+            columns: ["won_from_tournament_id"]
+            isOneToOne: false
+            referencedRelation: "online_poker_tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournaments: {
         Row: {
           additional_chips: number | null
@@ -2346,6 +2427,14 @@ export type Database = {
         Returns: Json
       }
       is_admin: { Args: { user_uuid: string }; Returns: boolean }
+      issue_offline_tickets_for_winners: {
+        Args: {
+          p_ticket_value?: number
+          p_top_positions?: number
+          p_tournament_id: string
+        }
+        Returns: Json
+      }
       link_players_to_profiles: { Args: never; Returns: undefined }
       merge_player_profiles: {
         Args: {
@@ -2378,6 +2467,10 @@ export type Database = {
       redistribute_chips_on_elimination: {
         Args: { eliminated_player_id: string; tournament_id_param: string }
         Returns: undefined
+      }
+      register_online_tournament_with_diamonds: {
+        Args: { p_player_id: string; p_tournament_id: string }
+        Returns: Json
       }
       register_tournament_safe: {
         Args: { p_player_id: string; p_tournament_id: string }
