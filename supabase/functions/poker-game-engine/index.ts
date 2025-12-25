@@ -38,7 +38,7 @@ const ACTION_TIME_SECONDS = 30;
 
 // Zod schema for action request validation
 const ActionRequestSchema = z.object({
-  action: z.enum(['join', 'join_table', 'leave', 'leave_table', 'start_hand', 'fold', 'check', 'call', 'raise', 'all_in', 'check_timeout']),
+  action: z.enum(['join', 'join_table', 'leave', 'leave_table', 'start_hand', 'fold', 'check', 'call', 'raise', 'all_in', 'check_timeout', 'add_chips', 'auto_fold_disconnected']),
   tableId: z.string().uuid('Invalid table ID'),
   playerId: z.string().uuid('Invalid player ID'),
   amount: z.number().int().min(0).max(1000000000).optional(),
@@ -483,6 +483,190 @@ serve(async (req) => {
             pot: sbAmount + bbAmount,
             actionTime: ACTION_TIME_SECONDS,
           };
+        }
+      }
+    }
+
+    // ==========================================
+    // ACTION: ADD_CHIPS (Rebuy)
+    // ==========================================
+    else if (action === 'add_chips') {
+      const playerAtTable = tablePlayers?.find(p => p.player_id === playerId);
+      
+      if (!playerAtTable) {
+        result = { success: false, error: 'Player not at table' };
+      } else if (table.current_hand_id) {
+        // Check if player is in active hand
+        const { data: handPlayer } = await supabase
+          .from('poker_hand_players')
+          .select('id')
+          .eq('hand_id', table.current_hand_id)
+          .eq('player_id', playerId)
+          .maybeSingle();
+        
+        if (handPlayer) {
+          result = { success: false, error: 'Cannot add chips during active hand' };
+        } else {
+          // Player is not in hand, can add chips
+          const addAmount = amount || 0;
+          if (addAmount <= 0) {
+            result = { success: false, error: 'Invalid amount' };
+          } else {
+            // Get wallet balance
+            const { data: wallet } = await supabase
+              .from('diamond_wallets')
+              .select('balance')
+              .eq('player_id', playerId)
+              .single();
+            
+            if (!wallet || wallet.balance < addAmount) {
+              result = { success: false, error: 'Insufficient balance', balance: wallet?.balance || 0 };
+            } else {
+              const newStack = playerAtTable.stack + addAmount;
+              const maxAllowed = table.max_buy_in;
+              
+              if (newStack > maxAllowed) {
+                result = { success: false, error: `Cannot exceed max buy-in of ${maxAllowed}`, maxAllowed };
+              } else {
+                // Deduct from wallet
+                await supabase
+                  .from('diamond_wallets')
+                  .update({ balance: wallet.balance - addAmount })
+                  .eq('player_id', playerId);
+                
+                // Add to stack
+                await supabase
+                  .from('poker_table_players')
+                  .update({ stack: newStack })
+                  .eq('id', playerAtTable.id);
+                
+                console.log(`[Engine] Player added ${addAmount} chips, new stack: ${newStack}`);
+                result = { success: true, action: 'add_chips', amount: addAmount, newStack, walletBalance: wallet.balance - addAmount };
+              }
+            }
+          }
+        }
+      } else {
+        // No active hand, can freely add chips
+        const addAmount = amount || 0;
+        if (addAmount <= 0) {
+          result = { success: false, error: 'Invalid amount' };
+        } else {
+          const { data: wallet } = await supabase
+            .from('diamond_wallets')
+            .select('balance')
+            .eq('player_id', playerId)
+            .single();
+          
+          if (!wallet || wallet.balance < addAmount) {
+            result = { success: false, error: 'Insufficient balance', balance: wallet?.balance || 0 };
+          } else {
+            const newStack = playerAtTable.stack + addAmount;
+            const maxAllowed = table.max_buy_in;
+            
+            if (newStack > maxAllowed) {
+              result = { success: false, error: `Cannot exceed max buy-in of ${maxAllowed}`, maxAllowed };
+            } else {
+              await supabase
+                .from('diamond_wallets')
+                .update({ balance: wallet.balance - addAmount })
+                .eq('player_id', playerId);
+              
+              await supabase
+                .from('poker_table_players')
+                .update({ stack: newStack })
+                .eq('id', playerAtTable.id);
+              
+              console.log(`[Engine] Player added ${addAmount} chips (no hand), new stack: ${newStack}`);
+              result = { success: true, action: 'add_chips', amount: addAmount, newStack, walletBalance: wallet.balance - addAmount };
+            }
+          }
+        }
+      }
+    }
+
+    // ==========================================
+    // ACTION: AUTO_FOLD_DISCONNECTED
+    // ==========================================
+    else if (action === 'auto_fold_disconnected') {
+      if (!table.current_hand_id) {
+        result = { success: false, error: 'No active hand' };
+      } else {
+        const { data: hand } = await supabase
+          .from('poker_hands')
+          .select('*')
+          .eq('id', table.current_hand_id)
+          .single();
+
+        if (!hand) {
+          result = { success: false, error: 'Hand not found' };
+        } else {
+          // Check if disconnected player is current player
+          const { data: hp } = await supabase
+            .from('poker_hand_players')
+            .select('*')
+            .eq('hand_id', hand.id)
+            .eq('player_id', playerId)
+            .single();
+
+          if (!hp || hp.is_folded) {
+            result = { success: false, error: 'Player not in hand or already folded' };
+          } else {
+            // Force fold this player
+            await supabase.from('poker_hand_players').update({ is_folded: true }).eq('id', hp.id);
+
+            const { count } = await supabase.from('poker_actions').select('*', { count: 'exact' }).eq('hand_id', hand.id);
+            await supabase.from('poker_actions').insert({
+              hand_id: hand.id,
+              player_id: playerId,
+              seat_number: hp.seat_number,
+              action_type: 'fold',
+              amount: 0,
+              phase: hand.phase,
+              action_order: (count || 0) + 1,
+            });
+
+            const { data: allHp } = await supabase.from('poker_hand_players').select('*').eq('hand_id', hand.id);
+            const remaining = allHp?.filter(p => !p.is_folded) || [];
+
+            if (remaining.length === 1) {
+              // Winner by fold
+              const winner = remaining[0];
+              const { data: winnerTp } = await supabase
+                .from('poker_table_players')
+                .select('stack')
+                .eq('player_id', winner.player_id)
+                .eq('table_id', tableId)
+                .single();
+
+              await supabase.from('poker_table_players')
+                .update({ stack: (winnerTp?.stack || 0) + hand.pot })
+                .eq('player_id', winner.player_id)
+                .eq('table_id', tableId);
+
+              await supabase.from('poker_hands').update({
+                pot: 0, phase: 'showdown',
+                completed_at: new Date().toISOString(),
+                winners: JSON.stringify([{ playerId: winner.player_id, amount: hand.pot }]),
+              }).eq('id', hand.id);
+
+              await supabase.from('poker_tables').update({ current_hand_id: null, status: 'waiting' }).eq('id', tableId);
+
+              console.log(`[Engine] Disconnected player ${playerId} auto-folded, ${winner.player_id} wins ${hand.pot}`);
+              result = { success: true, action: 'auto_fold', handComplete: true, winner: winner.player_id, winAmount: hand.pot };
+            } else {
+              // Find next player
+              const next = findNextActivePlayer(remaining, hp.seat_number, playerId);
+
+              await supabase.from('poker_hands').update({
+                current_player_seat: next?.seat_number,
+                action_started_at: new Date().toISOString()
+              }).eq('id', hand.id);
+
+              console.log(`[Engine] Disconnected player ${playerId} auto-folded, next player: seat ${next?.seat_number}`);
+              result = { success: true, action: 'auto_fold', foldedPlayerId: playerId, nextPlayerSeat: next?.seat_number };
+            }
+          }
         }
       }
     }

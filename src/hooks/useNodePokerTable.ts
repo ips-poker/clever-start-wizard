@@ -560,6 +560,29 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           log('✅ Action accepted:', data.actionType, data.amount);
           break;
 
+        case 'chips_added':
+          // Handle chips added response
+          log('💎 Chips added:', data);
+          {
+            const chipsData = data as Record<string, unknown>;
+            // Update player stack in table state
+            if (chipsData.playerId === playerId && chipsData.newStack !== undefined) {
+              setTableState(prev => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  players: prev.players.map(p => 
+                    p.playerId === playerId 
+                      ? { ...p, stack: chipsData.newStack as number }
+                      : p
+                  )
+                };
+              });
+              log('💎 Updated my stack to:', chipsData.newStack);
+            }
+          }
+          break;
+
         case 'action':
         case 'player_action':
           setLastAction({
@@ -1274,7 +1297,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
   // Add chips (rebuy) - only when not in active hand
   const addChips = useCallback((amount: number) => {
-    if (!tableId || !playerId) return;
+    if (!tableId || !playerId) return false;
     
     // Check if we're in an active hand
     const phase = tableStateRef.current?.phase;
@@ -1288,7 +1311,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       type: 'add_chips',
       tableId,
       playerId,
-      amount
+      data: { amount }  // Server expects data.amount format
     });
     return true;
   }, [tableId, playerId, sendMessage]);
@@ -1375,9 +1398,30 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       const timeoutId = setTimeout(() => {
         connect();
       }, 100);
+
+      // Handle window close/refresh - try to disconnect gracefully
+      const handleBeforeUnload = () => {
+        log('🚨 Window closing - disconnecting...');
+        // Try to send leave message before disconnect
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          try {
+            wsRef.current.send(JSON.stringify({
+              type: 'leave_table',
+              tableId,
+              playerId
+            }));
+          } catch (e) {
+            // Ignore - window is closing anyway
+          }
+        }
+        disconnect();
+      };
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
       
       return () => {
         clearTimeout(timeoutId);
+        window.removeEventListener('beforeunload', handleBeforeUnload);
         mountedRef.current = false;
         disconnect();
       };
