@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Trophy,
   Users,
@@ -29,7 +30,9 @@ import {
   Diamond,
   Award,
   Ticket,
-  Gift
+  Gift,
+  Layers,
+  Calendar
 } from 'lucide-react';
 import {
   Dialog,
@@ -66,6 +69,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { convertFeeToRPS, formatRPSPoints } from '@/utils/rpsCalculations';
+import { OnlineBlindStructureEditor, OnlineBlindLevel } from './OnlineBlindStructureEditor';
 
 interface Tournament {
   id: string;
@@ -146,6 +150,8 @@ export function OnlineTournamentManager() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [tournamentToDelete, setTournamentToDelete] = useState<Tournament | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const [createTab, setCreateTab] = useState('basic');
+  const [newBlindLevels, setNewBlindLevels] = useState<OnlineBlindLevel[]>([]);
 
   const [newTournament, setNewTournament] = useState({
     name: '',
@@ -287,7 +293,13 @@ export function OnlineTournamentManager() {
       return;
     }
 
-    const { error } = await supabase
+    if (newBlindLevels.length === 0) {
+      toast.error('Настройте структуру блайндов');
+      setCreateTab('structure');
+      return;
+    }
+
+    const { data: tournamentData, error } = await supabase
       .from('online_poker_tournaments')
       .insert({
         name: newTournament.name,
@@ -320,16 +332,41 @@ export function OnlineTournamentManager() {
         action_time_seconds: newTournament.action_time_seconds,
         scheduled_start_at: newTournament.scheduled_start_at || null,
         auto_start: newTournament.auto_start
-      });
+      })
+      .select('id')
+      .single();
 
-    if (error) {
+    if (error || !tournamentData) {
       toast.error('Ошибка создания турнира');
       console.error(error);
       return;
     }
 
-    toast.success('Турнир создан');
+    // Create blind levels
+    const blindLevelsToInsert = newBlindLevels.map(level => ({
+      tournament_id: tournamentData.id,
+      level: level.level,
+      small_blind: level.small_blind,
+      big_blind: level.big_blind,
+      ante: level.ante,
+      duration: level.duration,
+      is_break: level.is_break
+    }));
+
+    const { error: levelsError } = await supabase
+      .from('online_poker_tournament_levels')
+      .insert(blindLevelsToInsert);
+
+    if (levelsError) {
+      console.error('Error creating blind levels:', levelsError);
+      toast.error('Турнир создан, но ошибка создания структуры блайндов');
+    } else {
+      toast.success('Турнир создан со структурой блайндов');
+    }
+
     setShowCreateDialog(false);
+    setNewBlindLevels([]);
+    setCreateTab('basic');
     setNewTournament({
       name: '',
       description: '',
@@ -808,27 +845,42 @@ export function OnlineTournamentManager() {
 
       {/* Create Tournament Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-amber-500" />
               Создать онлайн турнир
             </DialogTitle>
             <DialogDescription>
-              Широкие настройки турнира для онлайн покера
+              Полная настройка турнира с структурой блайндов
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-6">
-            {/* Basic Info */}
-            <div className="space-y-4">
-              <h4 className="font-semibold flex items-center gap-2 text-sm border-b pb-2">
-                <Settings className="h-4 w-4" />
-                Основные настройки
-              </h4>
+          <Tabs value={createTab} onValueChange={setCreateTab}>
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="basic" className="text-xs">
+                <Settings className="h-3 w-3 mr-1" />
+                Основное
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="text-xs">
+                <Users className="h-3 w-3 mr-1" />
+                Настройки
+              </TabsTrigger>
+              <TabsTrigger value="structure" className="text-xs">
+                <Layers className="h-3 w-3 mr-1" />
+                Структура
+              </TabsTrigger>
+              <TabsTrigger value="prizes" className="text-xs">
+                <Award className="h-3 w-3 mr-1" />
+                Призы
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Tab: Basic */}
+            <TabsContent value="basic" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-2">
-                  <Label>Название</Label>
+                  <Label>Название турнира</Label>
                   <Input
                     placeholder="Вечерний турнир 💎"
                     value={newTournament.name}
@@ -861,7 +913,10 @@ export function OnlineTournamentManager() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Планируемый старт</Label>
+                  <Label className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    Планируемый старт
+                  </Label>
                   <Input
                     type="datetime-local"
                     value={newTournament.scheduled_start_at}
@@ -869,14 +924,7 @@ export function OnlineTournamentManager() {
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Buy-in & Chips */}
-            <div className="space-y-4">
-              <h4 className="font-semibold flex items-center gap-2 text-sm border-b pb-2">
-                <Diamond className="h-4 w-4 text-cyan-400" />
-                Вход и фишки
-              </h4>
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1">
@@ -901,7 +949,7 @@ export function OnlineTournamentManager() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Гарант. призовой</Label>
+                  <Label>Гарант. призовой 💎</Label>
                   <Input
                     type="number"
                     value={newTournament.guaranteed_prize_pool}
@@ -909,14 +957,23 @@ export function OnlineTournamentManager() {
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Players & Timing */}
-            <div className="space-y-4">
-              <h4 className="font-semibold flex items-center gap-2 text-sm border-b pb-2">
-                <Users className="h-4 w-4" />
-                Игроки и таймеры
-              </h4>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <input
+                  type="checkbox"
+                  checked={newTournament.auto_start}
+                  onChange={(e) => setNewTournament(prev => ({ ...prev, auto_start: e.target.checked }))}
+                  className="h-4 w-4 rounded"
+                />
+                <div>
+                  <Label>Автостарт при минимуме игроков</Label>
+                  <p className="text-xs text-muted-foreground">Турнир начнется автоматически</p>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Tab: Settings */}
+            <TabsContent value="settings" className="space-y-4 mt-4">
               <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label>Мин. игроков</Label>
@@ -951,6 +1008,7 @@ export function OnlineTournamentManager() {
                   />
                 </div>
               </div>
+
               <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label>Тайм-банк старт</Label>
@@ -986,14 +1044,8 @@ export function OnlineTournamentManager() {
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Rebuy & Addon */}
-            <div className="space-y-4">
-              <h4 className="font-semibold flex items-center gap-2 text-sm border-b pb-2">
-                <RefreshCw className="h-4 w-4" />
-                Ребай и Аддон
-              </h4>
+              {/* Rebuy & Addon */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-3 p-3 rounded-lg border">
                   <div className="flex items-center justify-between">
@@ -1084,15 +1136,9 @@ export function OnlineTournamentManager() {
                   )}
                 </div>
               </div>
-            </div>
 
-            {/* Late Registration */}
-            <div className="space-y-4">
-              <h4 className="font-semibold flex items-center gap-2 text-sm border-b pb-2">
-                <Clock className="h-4 w-4" />
-                Поздняя регистрация
-              </h4>
-              <div className="grid grid-cols-2 gap-4">
+              {/* Late Registration */}
+              <div className="grid grid-cols-2 gap-4 p-3 rounded-lg border">
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
@@ -1104,23 +1150,42 @@ export function OnlineTournamentManager() {
                 </div>
                 {newTournament.late_registration_enabled && (
                   <div className="space-y-2">
-                    <Label>До уровня</Label>
+                    <Label className="text-xs">До уровня</Label>
                     <Input
                       type="number"
+                      className="h-8"
                       value={newTournament.late_registration_level}
                       onChange={(e) => setNewTournament(prev => ({ ...prev, late_registration_level: parseInt(e.target.value) || 6 }))}
                     />
                   </div>
                 )}
               </div>
-            </div>
+            </TabsContent>
 
-            {/* Prizes */}
-            <div className="space-y-4">
-              <h4 className="font-semibold flex items-center gap-2 text-sm border-b pb-2">
-                <Ticket className="h-4 w-4 text-purple-400" />
-                Билеты на офлайн турнир
-              </h4>
+            {/* Tab: Structure */}
+            <TabsContent value="structure" className="mt-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Layers className="h-4 w-4" />
+                    Структура блайндов
+                  </CardTitle>
+                  <CardDescription>
+                    Настройте уровни блайндов для турнира. Выберите шаблон или создайте свою структуру.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <OnlineBlindStructureEditor
+                    blindLevels={newBlindLevels}
+                    onBlindLevelsChange={setNewBlindLevels}
+                    levelDuration={newTournament.level_duration}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Tab: Prizes */}
+            <TabsContent value="prizes" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Билеты для топ N мест</Label>
@@ -1139,52 +1204,41 @@ export function OnlineTournamentManager() {
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Auto Start */}
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              <input
-                type="checkbox"
-                checked={newTournament.auto_start}
-                onChange={(e) => setNewTournament(prev => ({ ...prev, auto_start: e.target.checked }))}
-                className="h-4 w-4 rounded"
-              />
-              <div>
-                <Label>Автостарт при минимуме игроков</Label>
-                <p className="text-xs text-muted-foreground">Турнир начнется автоматически</p>
+              {/* Prize Info */}
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
+                <h4 className="font-semibold text-amber-500 mb-3 flex items-center gap-2">
+                  <Gift className="h-4 w-4" />
+                  Система призов
+                </h4>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between items-center p-2 rounded bg-background/50">
+                    <span className="text-muted-foreground">Валюта входа:</span>
+                    <span className="text-cyan-400 flex items-center gap-1 font-medium">
+                      <Diamond className="h-4 w-4" /> Алмазы ({newTournament.buy_in.toLocaleString()} 💎)
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 rounded bg-background/50">
+                    <span className="text-muted-foreground">Призы за места:</span>
+                    <span className="text-amber-400 flex items-center gap-1 font-medium">
+                      <Award className="h-4 w-4" /> RPS рейтинговые очки
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 rounded bg-background/50">
+                    <span className="text-muted-foreground">Топ-{newTournament.tickets_for_top} получают:</span>
+                    <span className="text-purple-400 flex items-center gap-1 font-medium">
+                      <Ticket className="h-4 w-4" /> Билеты на офлайн ({newTournament.ticket_value}₽)
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Денежных выплат нет. Алмазы на деньги не меняются. Легальный формат.
+                </p>
               </div>
-            </div>
+            </TabsContent>
+          </Tabs>
 
-            {/* Prize Info */}
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-              <h4 className="font-semibold text-amber-500 mb-2 flex items-center gap-2">
-                <Gift className="h-4 w-4" />
-                Система призов
-              </h4>
-              <div className="text-sm space-y-1 text-muted-foreground">
-                <div className="flex justify-between">
-                  <span>Валюта входа:</span>
-                  <span className="text-cyan-400 flex items-center gap-1">
-                    <Diamond className="h-3 w-3" /> Алмазы
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Призы:</span>
-                  <span className="text-amber-400 flex items-center gap-1">
-                    <Award className="h-3 w-3" /> RPS рейтинговые очки
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Топ-{newTournament.tickets_for_top}:</span>
-                  <span className="text-purple-400 flex items-center gap-1">
-                    <Ticket className="h-3 w-3" /> Билеты на офлайн ({newTournament.ticket_value}₽)
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
+          <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Отмена</Button>
             <Button onClick={handleCreateTournament}>
               <Trophy className="h-4 w-4 mr-2" />
