@@ -1272,6 +1272,27 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     });
   }, [tableId, playerId, sendMessage]);
 
+  // Add chips (rebuy) - only when not in active hand
+  const addChips = useCallback((amount: number) => {
+    if (!tableId || !playerId) return;
+    
+    // Check if we're in an active hand
+    const phase = tableStateRef.current?.phase;
+    if (phase && phase !== 'waiting' && phase !== 'showdown') {
+      log('⚠️ Cannot add chips during active hand, phase:', phase);
+      return false;
+    }
+    
+    log('💎 Adding chips:', amount);
+    sendMessage({
+      type: 'add_chips',
+      tableId,
+      playerId,
+      amount
+    });
+    return true;
+  }, [tableId, playerId, sendMessage]);
+
   // Send chat message
   const sendChatMessage = useCallback((text: string) => {
     if (!tableId || !playerId) return;
@@ -1401,6 +1422,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     allIn,
     sitOut,
     sitIn,
+    addChips,
     sendChatMessage
   };
 }
