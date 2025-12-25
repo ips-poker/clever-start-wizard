@@ -1,5 +1,6 @@
 /**
  * WebSocket Handler for Poker Games
+ * With Tournament Support
  */
 
 import { WebSocket, WebSocketServer } from 'ws';
@@ -7,6 +8,7 @@ import { IncomingMessage } from 'http';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { PokerGameManager } from '../game/PokerGameManager.js';
 import { PokerTable, TableEvent } from '../game/PokerTable.js';
+import { TournamentManager, TournamentState, TournamentClock } from '../game/TournamentManager.js';
 import { logger } from '../utils/logger.js';
 import { z } from 'zod';
 
@@ -52,32 +54,60 @@ const SubscribeSchema = z.object({
   playerId: z.string().uuid().optional()
 });
 
+// Tournament message schemas
+const TournamentSubscribeSchema = z.object({
+  type: z.literal('tournament_subscribe'),
+  tournamentId: z.string().uuid()
+});
+
+const TournamentActionSchema = z.object({
+  type: z.enum(['tournament_start', 'tournament_pause', 'tournament_resume', 'tournament_rebuy', 'tournament_addon']),
+  tournamentId: z.string().uuid(),
+  playerId: z.string().uuid().optional()
+});
+
 interface ClientConnection {
   ws: WebSocket;
   playerId: string | null;
   subscribedTables: Set<string>;
+  subscribedTournaments: Set<string>;
   lastPing: number;
 }
 
 export class PokerWebSocketHandler {
   private clients: Map<WebSocket, ClientConnection> = new Map();
   private tableSubscribers: Map<string, Set<WebSocket>> = new Map();
+  private tournamentSubscribers: Map<string, Set<WebSocket>> = new Map();
   private tablesWithListeners: Set<string> = new Set();
   private gameManager: PokerGameManager;
+  private tournamentManager: TournamentManager;
   private supabase: SupabaseClient;
   private pingInterval: NodeJS.Timeout;
+  private tournamentTimerInterval: NodeJS.Timeout | null = null;
   
-  constructor(wss: WebSocketServer, gameManager: PokerGameManager, supabase: SupabaseClient) {
+  constructor(
+    wss: WebSocketServer, 
+    gameManager: PokerGameManager, 
+    supabase: SupabaseClient,
+    tournamentManager?: TournamentManager
+  ) {
     this.gameManager = gameManager;
     this.supabase = supabase;
+    this.tournamentManager = tournamentManager || new TournamentManager();
     
     // Start ping interval
     this.pingInterval = setInterval(() => this.pingClients(), 30000);
+    
+    // Start tournament timer broadcast (every second)
+    this.tournamentTimerInterval = setInterval(() => this.broadcastTournamentTimers(), 1000);
     
     // Setup table event listeners for existing tables
     for (const table of gameManager.getAllTables()) {
       this.setupTableListeners(table);
     }
+    
+    // Load active tournaments from database
+    this.loadActiveTournaments();
   }
   
   /**
@@ -195,6 +225,23 @@ export class PokerWebSocketHandler {
         
         case 'ping':
           this.send(ws, { type: 'pong', timestamp: Date.now() });
+          break;
+        
+        // Tournament messages
+        case 'tournament_subscribe':
+          await this.handleTournamentSubscribe(ws, message);
+          break;
+        
+        case 'tournament_start':
+        case 'tournament_pause':
+        case 'tournament_resume':
+        case 'tournament_rebuy':
+        case 'tournament_addon':
+          await this.handleTournamentAction(ws, message);
+          break;
+        
+        case 'get_tournament_state':
+          await this.handleGetTournamentState(ws, message);
           break;
         
         default:
@@ -611,10 +658,296 @@ export class PokerWebSocketHandler {
   }
   
   /**
+   * Load active tournaments from database
+   */
+  private async loadActiveTournaments(): Promise<void> {
+    try {
+      const { data: tournaments, error } = await this.supabase
+        .from('online_poker_tournaments')
+        .select('*')
+        .in('status', ['registration', 'running', 'paused']);
+      
+      if (error) {
+        logger.error('Failed to load tournaments', { error: error.message });
+        return;
+      }
+      
+      logger.info(`Loaded ${tournaments?.length || 0} active tournaments from database`);
+    } catch (err) {
+      logger.error('Error loading tournaments', { error: String(err) });
+    }
+  }
+  
+  /**
+   * Handle tournament subscribe
+   */
+  private async handleTournamentSubscribe(ws: WebSocket, message: unknown): Promise<void> {
+    const result = TournamentSubscribeSchema.safeParse(message);
+    if (!result.success) {
+      this.sendError(ws, 'Invalid tournament subscribe request');
+      return;
+    }
+    
+    const { tournamentId } = result.data;
+    
+    // Add to subscribers
+    if (!this.tournamentSubscribers.has(tournamentId)) {
+      this.tournamentSubscribers.set(tournamentId, new Set());
+    }
+    this.tournamentSubscribers.get(tournamentId)!.add(ws);
+    
+    const connection = this.clients.get(ws);
+    if (connection) {
+      connection.subscribedTournaments.add(tournamentId);
+    }
+    
+    // Get tournament state from database
+    const { data: tournament } = await this.supabase
+      .from('online_poker_tournaments')
+      .select(`
+        *,
+        participants:online_poker_tournament_participants(*),
+        levels:online_poker_tournament_levels(*)
+      `)
+      .eq('id', tournamentId)
+      .single();
+    
+    this.send(ws, { 
+      type: 'tournament_subscribed', 
+      tournamentId,
+      tournament,
+      timestamp: Date.now()
+    });
+    
+    logger.info('Client subscribed to tournament', { tournamentId });
+  }
+  
+  /**
+   * Handle tournament actions
+   */
+  private async handleTournamentAction(ws: WebSocket, message: unknown): Promise<void> {
+    const result = TournamentActionSchema.safeParse(message);
+    if (!result.success) {
+      this.sendError(ws, 'Invalid tournament action');
+      return;
+    }
+    
+    const { type, tournamentId, playerId } = result.data;
+    
+    let actionResult: { success: boolean; error?: string } = { success: false };
+    
+    switch (type) {
+      case 'tournament_start':
+        actionResult = this.tournamentManager.startTournament(tournamentId);
+        if (actionResult.success) {
+          // Update database
+          await this.supabase
+            .from('online_poker_tournaments')
+            .update({ 
+              status: 'running', 
+              started_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', tournamentId);
+        }
+        break;
+      
+      case 'tournament_pause':
+        actionResult = this.tournamentManager.pauseTournament(tournamentId);
+        if (actionResult.success) {
+          await this.supabase
+            .from('online_poker_tournaments')
+            .update({ status: 'paused', updated_at: new Date().toISOString() })
+            .eq('id', tournamentId);
+        }
+        break;
+      
+      case 'tournament_resume':
+        actionResult = this.tournamentManager.resumeTournament(tournamentId);
+        if (actionResult.success) {
+          await this.supabase
+            .from('online_poker_tournaments')
+            .update({ status: 'running', updated_at: new Date().toISOString() })
+            .eq('id', tournamentId);
+        }
+        break;
+      
+      case 'tournament_rebuy':
+        if (playerId) {
+          actionResult = this.tournamentManager.processRebuy(tournamentId, playerId);
+        } else {
+          actionResult = { success: false, error: 'Player ID required' };
+        }
+        break;
+      
+      case 'tournament_addon':
+        if (playerId) {
+          actionResult = this.tournamentManager.processAddon(tournamentId, playerId);
+        } else {
+          actionResult = { success: false, error: 'Player ID required' };
+        }
+        break;
+    }
+    
+    if (actionResult.success) {
+      this.send(ws, { 
+        type: `${type}_success`, 
+        tournamentId,
+        timestamp: Date.now()
+      });
+      
+      // Broadcast tournament update to all subscribers
+      this.broadcastTournamentUpdate(tournamentId);
+    } else {
+      this.sendError(ws, actionResult.error || 'Tournament action failed');
+    }
+  }
+  
+  /**
+   * Handle get tournament state
+   */
+  private async handleGetTournamentState(ws: WebSocket, message: { tournamentId: string }): Promise<void> {
+    const { tournamentId } = message;
+    
+    const state = this.tournamentManager.getTournament(tournamentId);
+    const clock = this.tournamentManager.getClock(tournamentId);
+    const stats = this.tournamentManager.getStats(tournamentId);
+    
+    // Also get from database for full data
+    const { data: dbTournament } = await this.supabase
+      .from('online_poker_tournaments')
+      .select(`
+        *,
+        participants:online_poker_tournament_participants(*),
+        levels:online_poker_tournament_levels(*)
+      `)
+      .eq('id', tournamentId)
+      .single();
+    
+    this.send(ws, {
+      type: 'tournament_state',
+      tournamentId,
+      state,
+      clock,
+      stats,
+      dbData: dbTournament,
+      timestamp: Date.now()
+    });
+  }
+  
+  /**
+   * Broadcast tournament update to subscribers
+   */
+  private broadcastTournamentUpdate(tournamentId: string): void {
+    const subscribers = this.tournamentSubscribers.get(tournamentId);
+    if (!subscribers || subscribers.size === 0) return;
+    
+    const state = this.tournamentManager.getTournament(tournamentId);
+    const clock = this.tournamentManager.getClock(tournamentId);
+    const stats = this.tournamentManager.getStats(tournamentId);
+    
+    const message = {
+      type: 'tournament_update',
+      tournamentId,
+      state,
+      clock,
+      stats,
+      timestamp: Date.now()
+    };
+    
+    for (const ws of subscribers) {
+      this.send(ws, message);
+    }
+  }
+  
+  /**
+   * Broadcast tournament timers (called every second)
+   */
+  private broadcastTournamentTimers(): void {
+    for (const [tournamentId, subscribers] of this.tournamentSubscribers) {
+      if (subscribers.size === 0) continue;
+      
+      const clock = this.tournamentManager.getClock(tournamentId);
+      if (!clock) continue;
+      
+      const message = {
+        type: 'tournament_timer',
+        tournamentId,
+        clock,
+        timestamp: Date.now()
+      };
+      
+      for (const ws of subscribers) {
+        this.send(ws, message);
+      }
+    }
+  }
+  
+  /**
+   * Handle player elimination in tournament
+   */
+  async handleTournamentElimination(tournamentId: string, playerId: string, eliminatedBy?: string): Promise<void> {
+    const result = this.tournamentManager.eliminatePlayer(tournamentId, playerId, eliminatedBy);
+    
+    if (result.success) {
+      // Update database
+      await this.supabase
+        .from('online_poker_tournament_participants')
+        .update({
+          status: 'eliminated',
+          finish_position: result.position,
+          eliminated_at: new Date().toISOString(),
+          eliminated_by: eliminatedBy,
+          prize_amount: result.prize || 0,
+          chips: 0
+        })
+        .eq('tournament_id', tournamentId)
+        .eq('player_id', playerId);
+      
+      // Call database function to record result and RPS
+      await this.supabase.rpc('record_online_tournament_result', {
+        p_tournament_id: tournamentId,
+        p_player_id: playerId,
+        p_position: result.position
+      });
+      
+      // Broadcast elimination event
+      const subscribers = this.tournamentSubscribers.get(tournamentId);
+      if (subscribers) {
+        const message = {
+          type: 'tournament_elimination',
+          tournamentId,
+          playerId,
+          position: result.position,
+          prize: result.prize,
+          timestamp: Date.now()
+        };
+        
+        for (const ws of subscribers) {
+          this.send(ws, message);
+        }
+      }
+      
+      // Broadcast updated tournament state
+      this.broadcastTournamentUpdate(tournamentId);
+      
+      logger.info('Player eliminated from tournament', { 
+        tournamentId, 
+        playerId, 
+        position: result.position,
+        prize: result.prize
+      });
+    }
+  }
+  
+  /**
    * Cleanup on shutdown
    */
   shutdown(): void {
     clearInterval(this.pingInterval);
+    if (this.tournamentTimerInterval) {
+      clearInterval(this.tournamentTimerInterval);
+    }
     
     for (const ws of this.clients.keys()) {
       ws.close(1001, 'Server shutting down');
@@ -622,5 +955,6 @@ export class PokerWebSocketHandler {
     
     this.clients.clear();
     this.tableSubscribers.clear();
+    this.tournamentSubscribers.clear();
   }
 }
