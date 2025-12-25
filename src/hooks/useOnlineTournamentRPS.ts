@@ -6,11 +6,13 @@ interface RPSResult {
   success: boolean;
   position?: number;
   rps_earned?: number;
+  rps_pool?: number;
   elo_before?: number;
   elo_after?: number;
   elo_change?: number;
   prize_amount?: number;
   payout_percentage?: number;
+  paid_places?: number;
   error?: string;
 }
 
@@ -33,8 +35,25 @@ interface LevelAdvanceResult {
   error?: string;
 }
 
+interface RebuyResult {
+  success: boolean;
+  new_chips?: number;
+  rebuy_cost?: number;
+  new_balance?: number;
+  error?: string;
+}
+
+interface AddonResult {
+  success: boolean;
+  new_chips?: number;
+  addon_cost?: number;
+  new_balance?: number;
+  error?: string;
+}
+
 /**
  * Хук для интеграции онлайн турниров с RPS рейтинговой системой
+ * RPS пул рассчитывается аналогично офлайн турнирам: 1000₽ = 100 RPS баллов
  */
 export function useOnlineTournamentRPS() {
   /**
@@ -61,7 +80,7 @@ export function useOnlineTournamentRPS() {
       
       if (result.success && result.elo_change) {
         const changeText = result.elo_change > 0 ? `+${result.elo_change}` : result.elo_change;
-        toast.success(`Позиция ${result.position}: RPS ${changeText}`);
+        toast.success(`Позиция ${result.position}: RPS ${changeText} (из пула ${result.rps_pool} RPS)`);
       }
 
       return result;
@@ -138,11 +157,108 @@ export function useOnlineTournamentRPS() {
   }, []);
 
   /**
-   * Получить RPS пул турнира
+   * Обработать ребай игрока
    */
-  const calculateRPSPool = useCallback((prizePool: number): number => {
-    // 1000₽ = 100 RPS баллов (делим на 10)
-    return Math.round(prizePool / 10);
+  const processRebuy = useCallback(async (
+    tournamentId: string,
+    playerId: string
+  ): Promise<RebuyResult> => {
+    try {
+      const { data, error } = await supabase.rpc('process_online_tournament_rebuy', {
+        p_tournament_id: tournamentId,
+        p_player_id: playerId
+      });
+
+      if (error) {
+        console.error('Error processing rebuy:', error);
+        return { success: false, error: error.message };
+      }
+
+      const result = data as unknown as RebuyResult;
+      
+      if (result.success) {
+        toast.success(`Ребай выполнен! +${result.new_chips} фишек`);
+      }
+
+      return result;
+    } catch (err: any) {
+      console.error('Error in processRebuy:', err);
+      return { success: false, error: err.message };
+    }
+  }, []);
+
+  /**
+   * Обработать аддон игрока
+   */
+  const processAddon = useCallback(async (
+    tournamentId: string,
+    playerId: string
+  ): Promise<AddonResult> => {
+    try {
+      const { data, error } = await supabase.rpc('process_online_tournament_addon', {
+        p_tournament_id: tournamentId,
+        p_player_id: playerId
+      });
+
+      if (error) {
+        console.error('Error processing addon:', error);
+        return { success: false, error: error.message };
+      }
+
+      const result = data as unknown as AddonResult;
+      
+      if (result.success) {
+        toast.success(`Аддон выполнен! +${result.new_chips} фишек`);
+      }
+
+      return result;
+    } catch (err: any) {
+      console.error('Error in processAddon:', err);
+      return { success: false, error: err.message };
+    }
+  }, []);
+
+  /**
+   * Рассчитать RPS пул турнира на основе входов (аналогично офлайн)
+   * 1000₽ = 100 RPS баллов
+   */
+  const calculateRPSPool = useCallback(async (tournamentId: string): Promise<number> => {
+    try {
+      const { data, error } = await supabase.rpc('calculate_online_tournament_rps_pool', {
+        tournament_id_param: tournamentId
+      });
+
+      if (error) {
+        console.error('Error calculating RPS pool:', error);
+        return 0;
+      }
+
+      return data as number;
+    } catch (err) {
+      console.error('Error in calculateRPSPool:', err);
+      return 0;
+    }
+  }, []);
+
+  /**
+   * Рассчитать призовой пул турнира (включая ребаи и аддоны)
+   */
+  const calculatePrizePool = useCallback(async (tournamentId: string): Promise<number> => {
+    try {
+      const { data, error } = await supabase.rpc('calculate_online_tournament_prize_pool', {
+        tournament_id_param: tournamentId
+      });
+
+      if (error) {
+        console.error('Error calculating prize pool:', error);
+        return 0;
+      }
+
+      return data as number;
+    } catch (err) {
+      console.error('Error in calculatePrizePool:', err);
+      return 0;
+    }
   }, []);
 
   /**
@@ -162,13 +278,33 @@ export function useOnlineTournamentRPS() {
         { position: 2, percentage: 30, rpsPoints: Math.round(totalRPSPool * 0.30) },
         { position: 3, percentage: 20, rpsPoints: Math.round(totalRPSPool * 0.20) }
       ];
-    } else {
+    } else if (participantCount <= 30) {
       structure = [
         { position: 1, percentage: 40, rpsPoints: Math.round(totalRPSPool * 0.40) },
         { position: 2, percentage: 25, rpsPoints: Math.round(totalRPSPool * 0.25) },
         { position: 3, percentage: 15, rpsPoints: Math.round(totalRPSPool * 0.15) },
         { position: 4, percentage: 12, rpsPoints: Math.round(totalRPSPool * 0.12) },
         { position: 5, percentage: 8, rpsPoints: Math.round(totalRPSPool * 0.08) }
+      ];
+    } else if (participantCount <= 50) {
+      structure = [
+        { position: 1, percentage: 34, rpsPoints: Math.round(totalRPSPool * 0.34) },
+        { position: 2, percentage: 23, rpsPoints: Math.round(totalRPSPool * 0.23) },
+        { position: 3, percentage: 16.5, rpsPoints: Math.round(totalRPSPool * 0.165) },
+        { position: 4, percentage: 11.9, rpsPoints: Math.round(totalRPSPool * 0.119) },
+        { position: 5, percentage: 8, rpsPoints: Math.round(totalRPSPool * 0.08) },
+        { position: 6, percentage: 6.6, rpsPoints: Math.round(totalRPSPool * 0.066) }
+      ];
+    } else {
+      structure = [
+        { position: 1, percentage: 31.7, rpsPoints: Math.round(totalRPSPool * 0.317) },
+        { position: 2, percentage: 20.7, rpsPoints: Math.round(totalRPSPool * 0.207) },
+        { position: 3, percentage: 15.3, rpsPoints: Math.round(totalRPSPool * 0.153) },
+        { position: 4, percentage: 10.8, rpsPoints: Math.round(totalRPSPool * 0.108) },
+        { position: 5, percentage: 7.2, rpsPoints: Math.round(totalRPSPool * 0.072) },
+        { position: 6, percentage: 5.8, rpsPoints: Math.round(totalRPSPool * 0.058) },
+        { position: 7, percentage: 4.6, rpsPoints: Math.round(totalRPSPool * 0.046) },
+        { position: 8, percentage: 3.9, rpsPoints: Math.round(totalRPSPool * 0.039) }
       ];
     }
 
@@ -179,7 +315,10 @@ export function useOnlineTournamentRPS() {
     recordResult,
     eliminatePlayer,
     advanceLevel,
+    processRebuy,
+    processAddon,
     calculateRPSPool,
+    calculatePrizePool,
     getRPSPayoutStructure
   };
 }
