@@ -144,10 +144,13 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
   // WebSocket URL for poker server
   const getWsUrl = (tableId: string, playerId: string) => {
     const isLocalhost = window.location.hostname === 'localhost';
+    // VPS poker server - порт 3001 для WebSocket
     const base = isLocalhost 
       ? 'ws://89.104.74.121:3001'
-      : 'wss://89.104.74.121';
-    return `${base}/ws/poker?tableId=${tableId}&playerId=${playerId}`;
+      : 'wss://poker-engine.syndicate-poker.ru'; // Используйте ваш домен или IP:port
+    const url = `${base}/ws/poker?tableId=${tableId}&playerId=${playerId}`;
+    console.log('WebSocket URL:', url);
+    return url;
   };
 
   // Add log entry
