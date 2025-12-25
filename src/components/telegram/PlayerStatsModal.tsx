@@ -22,10 +22,6 @@ interface GameResult {
   elo_after: number;
   elo_change: number;
   created_at: string;
-  tournaments?: {
-    name: string;
-    start_time: string;
-  };
 }
 
 interface Achievement {
@@ -56,16 +52,10 @@ export const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ player, onCl
   const fetchPlayerStats = async () => {
     setLoading(true);
     try {
-      // Fetch game results with tournament info
+      // Fetch game results
       const { data: results, error } = await supabase
         .from('game_results')
-        .select(`
-          *,
-          tournaments:tournament_id (
-            name,
-            start_time
-          )
-        `)
+        .select('*')
         .eq('player_id', player.id)
         .order('created_at', { ascending: false });
 
@@ -399,7 +389,7 @@ export const PlayerStatsModal: React.FC<PlayerStatsModalProps> = ({ player, onCl
                           <div className="flex items-start justify-between mb-2">
                             <div>
                               <h4 className="font-display text-sm">
-                                {result.tournaments?.name || 'Tournament'}
+                                Турнир #{result.tournament_id.slice(0, 8)}
                               </h4>
                               <p className="text-xs text-syndikate-concrete">
                                 {new Date(result.created_at).toLocaleDateString('ru-RU', {

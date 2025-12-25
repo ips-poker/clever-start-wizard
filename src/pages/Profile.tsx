@@ -36,12 +36,12 @@ interface Player {
 
 interface GameResult {
   id: string;
+  tournament_id: string;
   position: number;
   elo_change: number;
   elo_after: number;
   elo_before: number;
   created_at: string;
-  tournament: { name: string };
 }
 
 export default function Profile() {
@@ -144,10 +144,7 @@ export default function Profile() {
     try {
       const { data, error } = await supabase
         .from('game_results')
-        .select(`
-          *,
-          tournament:tournaments(name)
-        `)
+        .select('*')
         .eq('player_id', player.id)
         .order('created_at', { ascending: false })
         .limit(20);

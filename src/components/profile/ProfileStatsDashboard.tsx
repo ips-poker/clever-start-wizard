@@ -10,12 +10,12 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 interface GameResult {
   id: string;
+  tournament_id?: string;
   position: number;
   elo_change: number;
   elo_after: number;
   elo_before: number;
   created_at: string;
-  tournament: { name: string };
 }
 
 interface ProfileStatsDashboardProps {

@@ -66,22 +66,7 @@ export function useAdvancedRatingSystem() {
       // Получаем последние результаты игрока
       const { data: gameResults } = await supabase
         .from('game_results')
-        .select(`
-          position,
-          elo_change,
-          tournament_id,
-          tournaments (
-            name,
-            buy_in,
-            max_players,
-            tournament_registrations (
-              player_id,
-              players (
-                elo_rating
-              )
-            )
-          )
-        `)
+        .select('position, elo_change, tournament_id')
         .eq('player_id', playerId)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -92,43 +77,18 @@ export function useAdvancedRatingSystem() {
       const recentResults = gameResults.slice(0, 20).map(r => r.position);
       const varianceHistory = gameResults.map(r => r.elo_change);
       
-      // Средние рейтинги оппонентов
-      const opponentRatings: number[] = [];
-      gameResults.forEach(result => {
-        if (result.tournaments?.tournament_registrations) {
-          const opponents = result.tournaments.tournament_registrations
-            .filter(reg => reg.player_id !== playerId)
-            .map(reg => reg.players?.elo_rating || 1500);
-          
-          if (opponents.length > 0) {
-            const avgOpponentRating = opponents.reduce((sum, rating) => sum + rating, 0) / opponents.length;
-            opponentRatings.push(avgOpponentRating);
-          }
-        }
-      });
-
       const wins = gameResults.filter(r => r.position === 1).length;
-      const totalBuyIns = gameResults.reduce((sum, r) => sum + (r.tournaments?.buy_in || 0), 0);
-      const totalPrizes = gameResults.reduce((sum, r) => {
-        // Примерный расчет призовых на основе позиции
-        const maxPlayers = r.tournaments?.max_players || 100;
-        const buyIn = r.tournaments?.buy_in || 0;
-        if (r.position <= Math.ceil(maxPlayers * 0.15)) { // ITM
-          return sum + buyIn * 2; // Упрощенный расчет
-        }
-        return sum;
-      }, 0);
 
       const history: PlayerHistory = {
         playerId,
         recentResults,
         varianceHistory,
-        opponentRatings,
+        opponentRatings: [],
         gamesPlayed: gameResults.length,
         winRate: wins / gameResults.length,
-        roi: totalBuyIns > 0 ? (totalPrizes - totalBuyIns) / totalBuyIns : 0,
-        avgFieldSize: gameResults.reduce((sum, r) => sum + (r.tournaments?.max_players || 0), 0) / gameResults.length,
-        avgBuyIn: totalBuyIns / gameResults.length
+        roi: 0,
+        avgFieldSize: 9,
+        avgBuyIn: 1000
       };
 
       setPlayerHistories(prev => new Map(prev).set(playerId, history));

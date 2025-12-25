@@ -6,12 +6,12 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface GameResult {
   id: string;
+  tournament_id?: string;
   position: number;
   elo_change: number;
   elo_after: number;
   elo_before: number;
   created_at: string;
-  tournament: { name: string };
 }
 
 interface ProfileGameHistoryProps {
@@ -139,7 +139,7 @@ export function ProfileGameHistory({ gameResults }: ProfileGameHistoryProps) {
                     <p className={`font-bold text-base group-hover:text-primary transition-colors truncate ${
                       result.position <= 3 ? 'text-foreground' : 'text-foreground/80'
                     }`}>
-                      {result.tournament.name}
+                      Турнир #{result.tournament_id?.slice(0, 8) || 'N/A'}
                     </p>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                       <span className="flex items-center gap-1">
