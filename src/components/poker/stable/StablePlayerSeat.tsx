@@ -135,13 +135,33 @@ const EmptySeat = memo(function EmptySeat({
 // Bet display component - positioned between player and table center
 const BetDisplay = memo(function BetDisplay({ 
   amount, 
-  seatIndex
+  seatIndex,
+  maxSeats = 6
 }: { 
   amount: number;
   seatIndex: number;
+  maxSeats?: number;
 }) {
   // Calculate bet position based on seat - move towards table center
+  // Supports 6-max and 9-max tables with different positioning
   const getBetOffset = () => {
+    if (maxSeats === 9) {
+      // 9-max table positions
+      switch (seatIndex) {
+        case 0: return { x: 0, y: -45 };     // Hero (bottom center) - bet above
+        case 1: return { x: 35, y: -20 };    // Left bottom - bet right & up
+        case 2: return { x: 40, y: 0 };      // Left middle-bottom - bet right
+        case 3: return { x: 40, y: 10 };     // Left middle-top - bet right
+        case 4: return { x: 15, y: 35 };     // Top left - bet below
+        case 5: return { x: -15, y: 35 };    // Top right - bet below
+        case 6: return { x: -40, y: 10 };    // Right middle-top - bet left
+        case 7: return { x: -40, y: 0 };     // Right middle-bottom - bet left
+        case 8: return { x: -35, y: -20 };   // Right bottom - bet left & up
+        default: return { x: 0, y: -35 };
+      }
+    }
+    
+    // 6-max table positions (default)
     switch (seatIndex) {
       case 0: return { x: 0, y: -45 };     // Hero (bottom) - bet above
       case 1: return { x: 35, y: -15 };    // Left middle - bet right & up
