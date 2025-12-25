@@ -226,7 +226,7 @@ export function OnlineTournamentManager() {
       .from('online_poker_tournament_participants')
       .select(`
         *,
-        players!inner(name)
+        players:players!online_poker_tournament_participants_player_id_fkey(name)
       `)
       .eq('tournament_id', tournamentId)
       .order('chips', { ascending: false });
