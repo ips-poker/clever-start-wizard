@@ -1,6 +1,7 @@
 // Telegram Online Poker Table - Uses Fullscreen table
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FullscreenPokerTableWrapper } from '@/components/poker/FullscreenPokerTableWrapper';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OnlinePokerTableProps {
   tableId: string;
@@ -27,6 +28,25 @@ export function OnlinePokerTable({
   onLeave,
   onBalanceUpdate
 }: OnlinePokerTableProps) {
+  const [maxSeats, setMaxSeats] = useState(6);
+  
+  // Fetch max_players from table
+  useEffect(() => {
+    const fetchTableConfig = async () => {
+      const { data } = await supabase
+        .from('poker_tables')
+        .select('max_players')
+        .eq('id', tableId)
+        .single();
+      
+      if (data?.max_players) {
+        setMaxSeats(data.max_players);
+      }
+    };
+    
+    fetchTableConfig();
+  }, [tableId]);
+  
   if (!playerId) {
     return (
       <div className="flex items-center justify-center min-h-[400px] bg-background text-foreground">
@@ -45,7 +65,7 @@ export function OnlinePokerTable({
       playerBalance={playerBalance}
       onLeave={onLeave}
       onBalanceUpdate={onBalanceUpdate}
-      maxSeats={6}
+      maxSeats={maxSeats}
       wideMode={true} // Telegram Mini App uses wider table
     />
   );

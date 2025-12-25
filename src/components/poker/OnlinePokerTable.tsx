@@ -1,6 +1,7 @@
 // Syndikate Poker Table - Clean wrapper
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FullscreenPokerTableWrapper } from './FullscreenPokerTableWrapper';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OnlinePokerTableProps {
   tableId: string;
@@ -29,6 +30,25 @@ export function OnlinePokerTable({
   onLeave,
   onBalanceUpdate
 }: OnlinePokerTableProps) {
+  const [maxSeats, setMaxSeats] = useState(6);
+  
+  // Fetch max_players from table
+  useEffect(() => {
+    const fetchTableConfig = async () => {
+      const { data } = await supabase
+        .from('poker_tables')
+        .select('max_players')
+        .eq('id', tableId)
+        .single();
+      
+      if (data?.max_players) {
+        setMaxSeats(data.max_players);
+      }
+    };
+    
+    fetchTableConfig();
+  }, [tableId]);
+  
   return (
     <FullscreenPokerTableWrapper
       tableId={tableId}
@@ -41,7 +61,7 @@ export function OnlinePokerTable({
       tournamentId={tournamentId}
       onLeave={onLeave}
       onBalanceUpdate={onBalanceUpdate}
-      maxSeats={6}
+      maxSeats={maxSeats}
     />
   );
 }
