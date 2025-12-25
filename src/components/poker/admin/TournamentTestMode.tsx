@@ -31,7 +31,10 @@ import {
   WifiOff,
   Bot,
   Zap,
-  SkipForward
+  SkipForward,
+  Brain,
+  TrendingUp,
+  Target
 } from 'lucide-react';
 import {
   Table,
@@ -42,6 +45,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
+import {
+  makeProDecision,
+  analyzeHand,
+  evaluateMadeHand,
+  getPosition,
+  getBotPersonality,
+  type BotDecision,
+  type Position
+} from '@/utils/pokerBotAI';
 
 interface LogEntry {
   id: string;
@@ -87,6 +99,19 @@ interface BotConnection {
   currentBet: number;
   stack: number;
   seatNumber: number;
+  position: Position;
+  aggression: number; // 0-100, randomized per bot
+  stats: BotStats;
+}
+
+interface BotStats {
+  handsPlayed: number;
+  handsFolded: number;
+  handsWon: number;
+  totalBet: number;
+  biggestPot: number;
+  vpip: number; // Voluntarily Put $ In Pot %
+  pfr: number;  // Pre-Flop Raise %
 }
 
 interface TournamentTestModeProps {
@@ -94,57 +119,6 @@ interface TournamentTestModeProps {
   tournamentName: string;
   onClose: () => void;
 }
-
-// Bot AI decision making
-const makeBotDecision = (
-  canCheck: boolean,
-  callAmount: number,
-  stack: number,
-  pot: number,
-  holeCards: string[],
-  phase: string
-): { action: string; amount?: number } => {
-  const random = Math.random();
-  
-  // Simple bot logic
-  if (random < 0.15) {
-    // 15% chance to fold (if there's a bet)
-    if (!canCheck && callAmount > 0) {
-      return { action: 'fold' };
-    }
-  }
-  
-  if (random < 0.6) {
-    // 60% chance to check/call
-    if (canCheck) {
-      return { action: 'check' };
-    } else {
-      return { action: 'call' };
-    }
-  }
-  
-  if (random < 0.85) {
-    // 25% chance to raise
-    const minRaise = callAmount * 2 || pot * 0.5;
-    const raiseAmount = Math.min(
-      Math.floor(minRaise + Math.random() * pot),
-      stack
-    );
-    if (raiseAmount > callAmount && raiseAmount < stack) {
-      return { action: 'raise', amount: raiseAmount };
-    } else if (raiseAmount >= stack) {
-      return { action: 'allin' };
-    }
-  }
-  
-  // 15% chance to go all-in
-  if (random > 0.85 || stack <= callAmount) {
-    return { action: 'allin' };
-  }
-  
-  // Default to call
-  return canCheck ? { action: 'check' } : { action: 'call' };
-};
 
 export function TournamentTestMode({ tournamentId, tournamentName, onClose }: TournamentTestModeProps) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -159,9 +133,10 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
   // Bot mode state
   const [botMode, setBotMode] = useState(false);
   const [botConnections, setBotConnections] = useState<Map<string, BotConnection>>(new Map());
-  const [botSpeed, setBotSpeed] = useState(1000); // ms delay before bot action
+  const [botSpeed, setBotSpeed] = useState(1000);
   const [connectedBots, setConnectedBots] = useState(0);
   const [handsPlayed, setHandsPlayed] = useState(0);
+  const [showBotStats, setShowBotStats] = useState(false);
   
   const logScrollRef = useRef<HTMLDivElement>(null);
   const botConnectionsRef = useRef<Map<string, BotConnection>>(new Map());
@@ -365,11 +340,15 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
   };
 
   // Connect bot to WebSocket
-  const connectBot = useCallback((playerId: string, playerName: string, tableId: string, seatNumber: number) => {
+  const connectBot = useCallback((playerId: string, playerName: string, tableId: string, seatNumber: number, totalPlayers: number, dealerSeat: number) => {
     const wsUrl = getWsUrl(tableId, playerId);
     addLog('ws', `🔌 Подключение ${playerName} к столу...`);
     
     const ws = new WebSocket(wsUrl);
+    
+    // Generate random aggression for bot personality
+    const aggression = 30 + Math.random() * 50; // 30-80 range
+    const personality = getBotPersonality(aggression);
     
     const connection: BotConnection = {
       playerId,
@@ -381,8 +360,21 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
       holeCards: [],
       currentBet: 0,
       stack: 0,
-      seatNumber
+      seatNumber,
+      position: getPosition(seatNumber, dealerSeat, totalPlayers),
+      aggression,
+      stats: {
+        handsPlayed: 0,
+        handsFolded: 0,
+        handsWon: 0,
+        totalBet: 0,
+        biggestPot: 0,
+        vpip: 0,
+        pfr: 0
+      }
     };
+    
+    addLog('bot', `${playerName} - ${personality} (агрессия: ${aggression.toFixed(0)}%)`);
     
     ws.onopen = () => {
       connection.connected = true;
@@ -437,18 +429,27 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
           connection.stack = myPlayer.stack;
           connection.seatNumber = myPlayer.seatNumber;
         }
+        // Update position if dealer changed
+        if (message.data?.dealerSeat !== undefined) {
+          const totalPlayers = message.data?.players?.length || 6;
+          connection.position = getPosition(connection.seatNumber, message.data.dealerSeat, totalPlayers);
+        }
         connection.holeCards = message.data?.myCards || [];
         botConnectionsRef.current.set(playerId, connection);
         break;
         
       case 'hand_start':
-        addLog('bot', `🃏 Новая раздача на столе ${connection.tableId.slice(0, 8)}...`);
+        connection.stats.handsPlayed++;
+        connection.holeCards = [];
+        addLog('bot', `🃏 Новая раздача - ${playerName} на позиции ${connection.position}`);
         setHandsPlayed(prev => prev + 1);
+        botConnectionsRef.current.set(playerId, connection);
         break;
         
       case 'hole_cards':
         connection.holeCards = message.data?.cards || [];
-        addLog('bot', `${playerName} получил карты: ${connection.holeCards.join(' ')}`);
+        const handAnalysis = analyzeHand(connection.holeCards);
+        addLog('bot', `${playerName}: ${connection.holeCards.join(' ')} [${handAnalysis.category}, сила: ${handAnalysis.strength}]`);
         botConnectionsRef.current.set(playerId, connection);
         break;
         
@@ -459,22 +460,49 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
         connection.currentBet = message.data?.currentBet || 0;
         
         if (connection.isMyTurn && botMode) {
-          addLog('bot', `🎯 Ход ${playerName}...`);
+          const communityCards = message.data?.communityCards || [];
+          const phase = message.data?.phase || 'preflop';
+          const pot = message.data?.pot || 0;
+          const callAmount = message.data?.callAmount || connection.currentBet;
+          const myBet = message.data?.myBet || 0;
+          const playersInHand = message.data?.playersInHand || 2;
+          const isRaised = message.data?.isRaised || callAmount > 0;
           
-          // Make decision with delay
+          // Pro decision with delay
           setTimeout(() => {
             if (!connection.ws || connection.ws.readyState !== WebSocket.OPEN) return;
             
-            const decision = makeBotDecision(
-              message.data?.canCheck || connection.currentBet === 0,
-              message.data?.callAmount || connection.currentBet,
-              connection.stack,
-              message.data?.pot || 0,
+            const decision = makeProDecision(
               connection.holeCards,
-              message.data?.phase || 'preflop'
+              communityCards,
+              pot,
+              connection.currentBet,
+              myBet,
+              connection.stack,
+              phase,
+              connection.position,
+              playersInHand,
+              isRaised,
+              connection.aggression
             );
             
-            addLog('bot', `${playerName}: ${decision.action}${decision.amount ? ` ${decision.amount}` : ''}`);
+            // Update stats
+            if (decision.action === 'fold') {
+              connection.stats.handsFolded++;
+            }
+            if (decision.amount) {
+              connection.stats.totalBet += decision.amount;
+            }
+            
+            const madeHand = communityCards.length > 0 
+              ? evaluateMadeHand(connection.holeCards, communityCards) 
+              : null;
+            
+            const logMsg = madeHand 
+              ? `${playerName} [${madeHand.name}]: ${decision.action}${decision.amount ? ` $${decision.amount}` : ''} (${decision.confidence}% уверенность)`
+              : `${playerName}: ${decision.action}${decision.amount ? ` $${decision.amount}` : ''} - ${decision.reasoning}`;
+            
+            addLog('bot', logMsg);
             
             connection.ws?.send(JSON.stringify({
               type: 'action',
@@ -483,14 +511,31 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
               actionType: decision.action,
               amount: decision.amount || 0
             }));
+            
+            botConnectionsRef.current.set(playerId, connection);
           }, botSpeed);
         }
-        botConnectionsRef.current.set(playerId, connection);
         break;
         
       case 'hand_complete':
       case 'hand_result':
-        addLog('info', `Рука завершена. Победители: ${JSON.stringify(message.data?.winners || [])}`);
+        const winners = message.data?.winners || [];
+        const isWinner = winners.some((w: any) => w.playerId === playerId);
+        if (isWinner) {
+          connection.stats.handsWon++;
+          const wonAmount = winners.find((w: any) => w.playerId === playerId)?.amount || 0;
+          if (wonAmount > connection.stats.biggestPot) {
+            connection.stats.biggestPot = wonAmount;
+          }
+          addLog('success', `🏆 ${playerName} выиграл ${wonAmount}!`);
+        }
+        // Update VPIP/PFR
+        if (connection.stats.handsPlayed > 0) {
+          const voluntaryActions = connection.stats.handsPlayed - connection.stats.handsFolded;
+          connection.stats.vpip = (voluntaryActions / connection.stats.handsPlayed) * 100;
+        }
+        botConnectionsRef.current.set(playerId, connection);
+        addLog('info', `Рука завершена. Победители: ${winners.map((w: any) => w.playerName || w.playerId).join(', ')}`);
         break;
         
       case 'player_eliminated':
@@ -521,17 +566,23 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
     
     for (const participant of playingParticipants) {
       if (!botConnectionsRef.current.has(participant.player_id)) {
+        // Get table info for dealer position
+        const table = tournamentTables.find(t => t.id === participant.table_id);
+        const totalPlayers = table?.players.length || 6;
+        const dealerSeat = 0; // Will be updated from game state
+        
         connectBot(
           participant.player_id,
           participant.player_name,
           participant.table_id,
-          participant.seat_number
+          participant.seat_number,
+          totalPlayers,
+          dealerSeat
         );
-        // Small delay between connections
         await new Promise(r => setTimeout(r, 100));
       }
     }
-  }, [participants, connectBot, addLog]);
+  }, [participants, tournamentTables, connectBot, addLog]);
 
   // Disconnect all bots
   const disconnectAllBots = useCallback(() => {
