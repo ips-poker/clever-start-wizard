@@ -8,7 +8,7 @@ import { IncomingMessage } from 'http';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { PokerGameManager } from '../game/PokerGameManager.js';
 import { PokerTable, TableEvent } from '../game/PokerTable.js';
-import { TournamentManager, TournamentState, TournamentClock, createConfigFromDatabase } from '../game/TournamentManager.js';
+import { TournamentManager, TournamentState, TournamentClock, createConfigFromDatabase, TournamentBlindLevel } from '../game/TournamentManager.js';
 import { logger } from '../utils/logger.js';
 import { z } from 'zod';
 
@@ -74,6 +74,16 @@ interface ClientConnection {
   lastPing: number;
 }
 
+// Interface for DB blind level
+interface DBBlindLevel {
+  level: number;
+  small_blind: number;
+  big_blind: number;
+  ante: number | null;
+  duration: number | null;
+  is_break: boolean | null;
+}
+
 export class PokerWebSocketHandler {
   private clients: Map<WebSocket, ClientConnection> = new Map();
   private tableSubscribers: Map<string, Set<WebSocket>> = new Map();
@@ -130,6 +140,7 @@ export class PokerWebSocketHandler {
       ws,
       playerId: playerId,
       subscribedTables: new Set(),
+      subscribedTournaments: new Set(),
       lastPing: Date.now()
     };
     
@@ -666,7 +677,8 @@ export class PokerWebSocketHandler {
         .from('online_poker_tournaments')
         .select(`
           *,
-          participants:online_poker_tournament_participants(*)
+          participants:online_poker_tournament_participants(*),
+          levels:online_poker_tournament_levels(*)
         `)
         .in('status', ['registration', 'running', 'paused']);
       
@@ -677,8 +689,23 @@ export class PokerWebSocketHandler {
       
       if (tournaments && tournaments.length > 0) {
         for (const dbTournament of tournaments) {
-          // Create tournament in manager from DB data
-          const state = this.tournamentManager.createFromDatabase(dbTournament);
+          // Load blind levels from database
+          const blindLevels = (dbTournament.levels as DBBlindLevel[] || [])
+            .sort((a, b) => a.level - b.level)
+            .map(l => ({
+              level: l.level,
+              smallBlind: l.small_blind,
+              bigBlind: l.big_blind,
+              ante: l.ante || 0,
+              duration: l.duration || 300,
+              isBreak: l.is_break || false
+            }));
+          
+          // Create tournament in manager from DB data with proper blind levels
+          const state = this.tournamentManager.createFromDatabaseWithLevels(
+            dbTournament, 
+            blindLevels.length > 0 ? blindLevels : undefined
+          );
           
           // Load existing participants
           if (dbTournament.participants) {
@@ -698,6 +725,7 @@ export class PokerWebSocketHandler {
             name: dbTournament.name,
             status: dbTournament.status,
             format: dbTournament.tournament_format,
+            blindLevels: blindLevels.length,
             participants: (dbTournament.participants as any[])?.length || 0
           });
         }
