@@ -87,6 +87,28 @@ interface Tournament {
   finished_at: string | null;
   created_at: string;
   participants_count?: number;
+  // Extended settings
+  tournament_format?: string;
+  rebuy_enabled?: boolean;
+  rebuy_cost?: number;
+  rebuy_chips?: number;
+  rebuy_end_level?: number;
+  addon_enabled?: boolean;
+  addon_cost?: number;
+  addon_chips?: number;
+  addon_level?: number;
+  late_registration_enabled?: boolean;
+  late_registration_level?: number;
+  tickets_for_top?: number;
+  ticket_value?: number;
+  break_interval?: number;
+  break_duration?: number;
+  guaranteed_prize_pool?: number;
+  time_bank_initial?: number;
+  time_bank_per_level?: number;
+  action_time_seconds?: number;
+  scheduled_start_at?: string;
+  auto_start?: boolean;
 }
 
 interface Participant {
@@ -132,7 +154,29 @@ export function OnlineTournamentManager() {
     starting_chips: 5000,
     max_players: 9,
     min_players: 2,
-    level_duration: 300
+    level_duration: 300,
+    // Extended settings
+    tournament_format: 'freezeout',
+    rebuy_enabled: false,
+    rebuy_cost: 1000,
+    rebuy_chips: 5000,
+    rebuy_end_level: 6,
+    addon_enabled: false,
+    addon_cost: 1000,
+    addon_chips: 10000,
+    addon_level: 6,
+    late_registration_enabled: true,
+    late_registration_level: 6,
+    tickets_for_top: 3,
+    ticket_value: 1000,
+    break_interval: 0,
+    break_duration: 300,
+    guaranteed_prize_pool: 0,
+    time_bank_initial: 30,
+    time_bank_per_level: 5,
+    action_time_seconds: 30,
+    scheduled_start_at: '',
+    auto_start: false
   });
 
   const loadTournaments = useCallback(async () => {
@@ -253,7 +297,29 @@ export function OnlineTournamentManager() {
         max_players: newTournament.max_players,
         min_players: newTournament.min_players,
         level_duration: newTournament.level_duration,
-        status: 'registration'
+        status: 'registration',
+        // Extended settings
+        tournament_format: newTournament.tournament_format,
+        rebuy_enabled: newTournament.rebuy_enabled,
+        rebuy_cost: newTournament.rebuy_cost,
+        rebuy_chips: newTournament.rebuy_chips,
+        rebuy_end_level: newTournament.rebuy_end_level,
+        addon_enabled: newTournament.addon_enabled,
+        addon_cost: newTournament.addon_cost,
+        addon_chips: newTournament.addon_chips,
+        addon_level: newTournament.addon_level,
+        late_registration_enabled: newTournament.late_registration_enabled,
+        late_registration_level: newTournament.late_registration_level,
+        tickets_for_top: newTournament.tickets_for_top,
+        ticket_value: newTournament.ticket_value,
+        break_interval: newTournament.break_interval,
+        break_duration: newTournament.break_duration,
+        guaranteed_prize_pool: newTournament.guaranteed_prize_pool,
+        time_bank_initial: newTournament.time_bank_initial,
+        time_bank_per_level: newTournament.time_bank_per_level,
+        action_time_seconds: newTournament.action_time_seconds,
+        scheduled_start_at: newTournament.scheduled_start_at || null,
+        auto_start: newTournament.auto_start
       });
 
     if (error) {
@@ -271,7 +337,28 @@ export function OnlineTournamentManager() {
       starting_chips: 5000,
       max_players: 9,
       min_players: 2,
-      level_duration: 300
+      level_duration: 300,
+      tournament_format: 'freezeout',
+      rebuy_enabled: false,
+      rebuy_cost: 1000,
+      rebuy_chips: 5000,
+      rebuy_end_level: 6,
+      addon_enabled: false,
+      addon_cost: 1000,
+      addon_chips: 10000,
+      addon_level: 6,
+      late_registration_enabled: true,
+      late_registration_level: 6,
+      tickets_for_top: 3,
+      ticket_value: 1000,
+      break_interval: 0,
+      break_duration: 300,
+      guaranteed_prize_pool: 0,
+      time_bank_initial: 30,
+      time_bank_per_level: 5,
+      action_time_seconds: 30,
+      scheduled_start_at: '',
+      auto_start: false
     });
     loadTournaments();
   };
@@ -380,8 +467,8 @@ export function OnlineTournamentManager() {
   const handleIssueTickets = async (tournament: Tournament) => {
     const { data, error } = await supabase.rpc('issue_offline_tickets_for_winners', {
       p_tournament_id: tournament.id,
-      p_ticket_value: 1000, // 1000 руб вход на офлайн турнир
-      p_top_positions: 3 // Топ 3 получают билеты
+      p_ticket_value: tournament.ticket_value || 1000,
+      p_top_positions: tournament.tickets_for_top || 3
     });
 
     if (error) {
@@ -391,7 +478,7 @@ export function OnlineTournamentManager() {
     }
 
     const result = data as any;
-    toast.success(`Выдано ${result?.tickets_issued || 0} билетов на офлайн турнир`);
+    toast.success(`Выдано ${result?.tickets_issued || 0} билетов (${tournament.ticket_value || 1000}₽) на офлайн турнир`);
   };
 
   const handleDeleteTournament = async () => {
@@ -721,81 +808,353 @@ export function OnlineTournamentManager() {
 
       {/* Create Tournament Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-amber-500" />
               Создать онлайн турнир
             </DialogTitle>
+            <DialogDescription>
+              Широкие настройки турнира для онлайн покера
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Название</Label>
-              <Input
-                placeholder="Вечерний турнир"
-                value={newTournament.name}
-                onChange={(e) => setNewTournament(prev => ({ ...prev, name: e.target.value }))}
+          
+          <div className="space-y-6">
+            {/* Basic Info */}
+            <div className="space-y-4">
+              <h4 className="font-semibold flex items-center gap-2 text-sm border-b pb-2">
+                <Settings className="h-4 w-4" />
+                Основные настройки
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2 col-span-2">
+                  <Label>Название</Label>
+                  <Input
+                    placeholder="Вечерний турнир 💎"
+                    value={newTournament.name}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label>Описание</Label>
+                  <Textarea
+                    placeholder="Описание турнира..."
+                    value={newTournament.description}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, description: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Формат турнира</Label>
+                  <Select
+                    value={newTournament.tournament_format}
+                    onValueChange={(v) => setNewTournament(prev => ({ ...prev, tournament_format: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="freezeout">Freezeout (без ребаев)</SelectItem>
+                      <SelectItem value="rebuy">Rebuy (с ребаями)</SelectItem>
+                      <SelectItem value="knockout">Knockout (с нокаутами)</SelectItem>
+                      <SelectItem value="bounty">Bounty (с баунти)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Планируемый старт</Label>
+                  <Input
+                    type="datetime-local"
+                    value={newTournament.scheduled_start_at}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, scheduled_start_at: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Buy-in & Chips */}
+            <div className="space-y-4">
+              <h4 className="font-semibold flex items-center gap-2 text-sm border-b pb-2">
+                <Diamond className="h-4 w-4 text-cyan-400" />
+                Вход и фишки
+              </h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1">
+                    <Diamond className="h-3 w-3 text-cyan-400" />
+                    Buy-in (алмазы)
+                  </Label>
+                  <Input
+                    type="number"
+                    value={newTournament.buy_in}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, buy_in: parseInt(e.target.value) || 0 }))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    = {formatRPSPoints(convertFeeToRPS(newTournament.buy_in))} RPS
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Стартовые фишки</Label>
+                  <Input
+                    type="number"
+                    value={newTournament.starting_chips}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, starting_chips: parseInt(e.target.value) || 0 }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Гарант. призовой</Label>
+                  <Input
+                    type="number"
+                    value={newTournament.guaranteed_prize_pool}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, guaranteed_prize_pool: parseInt(e.target.value) || 0 }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Players & Timing */}
+            <div className="space-y-4">
+              <h4 className="font-semibold flex items-center gap-2 text-sm border-b pb-2">
+                <Users className="h-4 w-4" />
+                Игроки и таймеры
+              </h4>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>Мин. игроков</Label>
+                  <Input
+                    type="number"
+                    value={newTournament.min_players}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, min_players: parseInt(e.target.value) || 2 }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Макс. игроков</Label>
+                  <Input
+                    type="number"
+                    value={newTournament.max_players}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, max_players: parseInt(e.target.value) || 9 }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Уровень (сек)</Label>
+                  <Input
+                    type="number"
+                    value={newTournament.level_duration}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, level_duration: parseInt(e.target.value) || 300 }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Время хода (сек)</Label>
+                  <Input
+                    type="number"
+                    value={newTournament.action_time_seconds}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, action_time_seconds: parseInt(e.target.value) || 30 }))}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>Тайм-банк старт</Label>
+                  <Input
+                    type="number"
+                    value={newTournament.time_bank_initial}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, time_bank_initial: parseInt(e.target.value) || 30 }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Тайм-банк +уровень</Label>
+                  <Input
+                    type="number"
+                    value={newTournament.time_bank_per_level}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, time_bank_per_level: parseInt(e.target.value) || 5 }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Перерыв каждые N ур.</Label>
+                  <Input
+                    type="number"
+                    placeholder="0 = нет"
+                    value={newTournament.break_interval}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, break_interval: parseInt(e.target.value) || 0 }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Перерыв (сек)</Label>
+                  <Input
+                    type="number"
+                    value={newTournament.break_duration}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, break_duration: parseInt(e.target.value) || 300 }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Rebuy & Addon */}
+            <div className="space-y-4">
+              <h4 className="font-semibold flex items-center gap-2 text-sm border-b pb-2">
+                <RefreshCw className="h-4 w-4" />
+                Ребай и Аддон
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-3 p-3 rounded-lg border">
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newTournament.rebuy_enabled}
+                        onChange={(e) => setNewTournament(prev => ({ ...prev, rebuy_enabled: e.target.checked }))}
+                        className="h-4 w-4 rounded"
+                      />
+                      Ребай включен
+                    </Label>
+                  </div>
+                  {newTournament.rebuy_enabled && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Цена 💎</Label>
+                        <Input
+                          type="number"
+                          className="h-8"
+                          value={newTournament.rebuy_cost}
+                          onChange={(e) => setNewTournament(prev => ({ ...prev, rebuy_cost: parseInt(e.target.value) || 0 }))}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Фишки</Label>
+                        <Input
+                          type="number"
+                          className="h-8"
+                          value={newTournament.rebuy_chips}
+                          onChange={(e) => setNewTournament(prev => ({ ...prev, rebuy_chips: parseInt(e.target.value) || 0 }))}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">До уровня</Label>
+                        <Input
+                          type="number"
+                          className="h-8"
+                          value={newTournament.rebuy_end_level}
+                          onChange={(e) => setNewTournament(prev => ({ ...prev, rebuy_end_level: parseInt(e.target.value) || 0 }))}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-3 p-3 rounded-lg border">
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={newTournament.addon_enabled}
+                        onChange={(e) => setNewTournament(prev => ({ ...prev, addon_enabled: e.target.checked }))}
+                        className="h-4 w-4 rounded"
+                      />
+                      Аддон включен
+                    </Label>
+                  </div>
+                  {newTournament.addon_enabled && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Цена 💎</Label>
+                        <Input
+                          type="number"
+                          className="h-8"
+                          value={newTournament.addon_cost}
+                          onChange={(e) => setNewTournament(prev => ({ ...prev, addon_cost: parseInt(e.target.value) || 0 }))}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Фишки</Label>
+                        <Input
+                          type="number"
+                          className="h-8"
+                          value={newTournament.addon_chips}
+                          onChange={(e) => setNewTournament(prev => ({ ...prev, addon_chips: parseInt(e.target.value) || 0 }))}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">На уровне</Label>
+                        <Input
+                          type="number"
+                          className="h-8"
+                          value={newTournament.addon_level}
+                          onChange={(e) => setNewTournament(prev => ({ ...prev, addon_level: parseInt(e.target.value) || 0 }))}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Late Registration */}
+            <div className="space-y-4">
+              <h4 className="font-semibold flex items-center gap-2 text-sm border-b pb-2">
+                <Clock className="h-4 w-4" />
+                Поздняя регистрация
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={newTournament.late_registration_enabled}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, late_registration_enabled: e.target.checked }))}
+                    className="h-4 w-4 rounded"
+                  />
+                  <Label>Поздняя регистрация</Label>
+                </div>
+                {newTournament.late_registration_enabled && (
+                  <div className="space-y-2">
+                    <Label>До уровня</Label>
+                    <Input
+                      type="number"
+                      value={newTournament.late_registration_level}
+                      onChange={(e) => setNewTournament(prev => ({ ...prev, late_registration_level: parseInt(e.target.value) || 6 }))}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Prizes */}
+            <div className="space-y-4">
+              <h4 className="font-semibold flex items-center gap-2 text-sm border-b pb-2">
+                <Ticket className="h-4 w-4 text-purple-400" />
+                Билеты на офлайн турнир
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Билеты для топ N мест</Label>
+                  <Input
+                    type="number"
+                    value={newTournament.tickets_for_top}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, tickets_for_top: parseInt(e.target.value) || 3 }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Номинал билета (₽)</Label>
+                  <Input
+                    type="number"
+                    value={newTournament.ticket_value}
+                    onChange={(e) => setNewTournament(prev => ({ ...prev, ticket_value: parseInt(e.target.value) || 1000 }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Auto Start */}
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+              <input
+                type="checkbox"
+                checked={newTournament.auto_start}
+                onChange={(e) => setNewTournament(prev => ({ ...prev, auto_start: e.target.checked }))}
+                className="h-4 w-4 rounded"
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Описание</Label>
-              <Textarea
-                placeholder="Описание турнира..."
-                value={newTournament.description}
-                onChange={(e) => setNewTournament(prev => ({ ...prev, description: e.target.value }))}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1">
-                  <Diamond className="h-3 w-3 text-cyan-400" />
-                  Buy-in (алмазы)
-                </Label>
-                <Input
-                  type="number"
-                  value={newTournament.buy_in}
-                  onChange={(e) => setNewTournament(prev => ({ ...prev, buy_in: parseInt(e.target.value) || 0 }))}
-                />
-                <p className="text-xs text-muted-foreground">
-                  = {formatRPSPoints(convertFeeToRPS(newTournament.buy_in))} за 1 место
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Стартовые фишки</Label>
-                <Input
-                  type="number"
-                  value={newTournament.starting_chips}
-                  onChange={(e) => setNewTournament(prev => ({ ...prev, starting_chips: parseInt(e.target.value) || 0 }))}
-                />
+              <div>
+                <Label>Автостарт при минимуме игроков</Label>
+                <p className="text-xs text-muted-foreground">Турнир начнется автоматически</p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Мин. игроков</Label>
-                <Input
-                  type="number"
-                  value={newTournament.min_players}
-                  onChange={(e) => setNewTournament(prev => ({ ...prev, min_players: parseInt(e.target.value) || 2 }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Макс. игроков</Label>
-                <Input
-                  type="number"
-                  value={newTournament.max_players}
-                  onChange={(e) => setNewTournament(prev => ({ ...prev, max_players: parseInt(e.target.value) || 9 }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Уровень (сек)</Label>
-                <Input
-                  type="number"
-                  value={newTournament.level_duration}
-                  onChange={(e) => setNewTournament(prev => ({ ...prev, level_duration: parseInt(e.target.value) || 300 }))}
-                />
-              </div>
-            </div>
-            
+
             {/* Prize Info */}
             <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
               <h4 className="font-semibold text-amber-500 mb-2 flex items-center gap-2">
@@ -816,17 +1175,21 @@ export function OnlineTournamentManager() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Топ-3:</span>
+                  <span>Топ-{newTournament.tickets_for_top}:</span>
                   <span className="text-purple-400 flex items-center gap-1">
-                    <Ticket className="h-3 w-3" /> Билеты на офлайн (1000₽)
+                    <Ticket className="h-3 w-3" /> Билеты на офлайн ({newTournament.ticket_value}₽)
                   </span>
                 </div>
               </div>
             </div>
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Отмена</Button>
-            <Button onClick={handleCreateTournament}>Создать</Button>
+            <Button onClick={handleCreateTournament}>
+              <Trophy className="h-4 w-4 mr-2" />
+              Создать турнир
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
