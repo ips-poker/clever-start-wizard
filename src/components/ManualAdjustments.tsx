@@ -56,9 +56,7 @@ interface GameResult {
   players: {
     name: string;
   };
-  tournaments: {
-    name: string;
-  };
+  tournament_name?: string;
 }
 
 interface Tournament {
