@@ -654,20 +654,6 @@ export type Database = {
             referencedRelation: "players_public_safe"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "game_results_tournament_id_fkey"
-            columns: ["tournament_id"]
-            isOneToOne: false
-            referencedRelation: "tournaments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "game_results_tournament_id_fkey"
-            columns: ["tournament_id"]
-            isOneToOne: false
-            referencedRelation: "tournaments_display"
-            referencedColumns: ["id"]
-          },
         ]
       }
       online_poker_tournament_levels: {
@@ -723,6 +709,7 @@ export type Database = {
           registered_at: string
           seat_number: number | null
           status: string
+          table_id: string | null
           tournament_id: string
         }
         Insert: {
@@ -736,6 +723,7 @@ export type Database = {
           registered_at?: string
           seat_number?: number | null
           status?: string
+          table_id?: string | null
           tournament_id: string
         }
         Update: {
@@ -749,6 +737,7 @@ export type Database = {
           registered_at?: string
           seat_number?: number | null
           status?: string
+          table_id?: string | null
           tournament_id?: string
         }
         Relationships: [
@@ -778,6 +767,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players_public_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_poker_tournament_participants_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "poker_tables"
             referencedColumns: ["id"]
           },
           {
@@ -853,6 +849,7 @@ export type Database = {
           finished_at: string | null
           id: string
           level_duration: number | null
+          level_end_at: string | null
           max_players: number
           min_players: number
           name: string
@@ -876,6 +873,7 @@ export type Database = {
           finished_at?: string | null
           id?: string
           level_duration?: number | null
+          level_end_at?: string | null
           max_players?: number
           min_players?: number
           name: string
@@ -899,6 +897,7 @@ export type Database = {
           finished_at?: string | null
           id?: string
           level_duration?: number | null
+          level_end_at?: string | null
           max_players?: number
           min_players?: number
           name?: string
@@ -1237,6 +1236,7 @@ export type Database = {
           stack: number
           status: string
           table_id: string
+          time_bank_remaining: number | null
         }
         Insert: {
           id?: string
@@ -1248,6 +1248,7 @@ export type Database = {
           stack?: number
           status?: string
           table_id: string
+          time_bank_remaining?: number | null
         }
         Update: {
           id?: string
@@ -1259,6 +1260,7 @@ export type Database = {
           stack?: number
           status?: string
           table_id?: string
+          time_bank_remaining?: number | null
         }
         Relationships: [
           {
@@ -1321,6 +1323,7 @@ export type Database = {
           straddle_enabled: boolean | null
           table_type: string
           time_bank_seconds: number | null
+          tournament_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1359,6 +1362,7 @@ export type Database = {
           straddle_enabled?: boolean | null
           table_type?: string
           time_bank_seconds?: number | null
+          tournament_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1397,6 +1401,7 @@ export type Database = {
           straddle_enabled?: boolean | null
           table_type?: string
           time_bank_seconds?: number | null
+          tournament_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1412,6 +1417,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "players_public_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poker_tables_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "online_poker_tournaments"
             referencedColumns: ["id"]
           },
         ]
@@ -2159,6 +2171,10 @@ export type Database = {
         }
         Returns: Json
       }
+      advance_online_tournament_level: {
+        Args: { p_tournament_id: string }
+        Returns: Json
+      }
       archive_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
@@ -2251,6 +2267,14 @@ export type Database = {
         Args: { p_tournament_id: string }
         Returns: undefined
       }
+      eliminate_online_tournament_player: {
+        Args: {
+          p_eliminated_by?: string
+          p_player_id: string
+          p_tournament_id: string
+        }
+        Returns: Json
+      }
       ensure_diamond_wallet: { Args: { p_player_id: string }; Returns: number }
       ensure_player_balance: { Args: { p_player_id: string }; Returns: number }
       generate_tournament_payouts: {
@@ -2341,6 +2365,14 @@ export type Database = {
       }
       purchase_diamonds: {
         Args: { p_player_id: string; p_rubles: number }
+        Returns: Json
+      }
+      record_online_tournament_result: {
+        Args: {
+          p_player_id: string
+          p_position: number
+          p_tournament_id: string
+        }
         Returns: Json
       }
       redistribute_chips_on_elimination: {

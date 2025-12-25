@@ -40,10 +40,8 @@ interface GameResult {
   players: {
     name: string;
   };
-  tournaments: {
-    name: string;
-    buy_in: number;
-  };
+  tournament_name?: string;
+  tournament_buy_in?: number;
 }
 
 interface PlayerStats {
