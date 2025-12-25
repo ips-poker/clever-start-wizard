@@ -33,8 +33,10 @@ import {
   Gift,
   Layers,
   Calendar,
-  DoorOpen
+  DoorOpen,
+  FlaskConical
 } from 'lucide-react';
+import { TournamentTestMode } from './TournamentTestMode';
 import {
   Dialog,
   DialogContent,
@@ -153,6 +155,8 @@ export function OnlineTournamentManager() {
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [createTab, setCreateTab] = useState('basic');
   const [newBlindLevels, setNewBlindLevels] = useState<OnlineBlindLevel[]>([]);
+  const [showTestMode, setShowTestMode] = useState(false);
+  const [testModeTournament, setTestModeTournament] = useState<Tournament | null>(null);
 
   const [newTournament, setNewTournament] = useState({
     name: '',
@@ -819,6 +823,18 @@ export function OnlineTournamentManager() {
                         >
                           <Settings className="h-4 w-4" />
                         </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-amber-500 hover:text-amber-600"
+                          onClick={() => {
+                            setTestModeTournament(tournament);
+                            setShowTestMode(true);
+                          }}
+                          title="Тестовый режим"
+                        >
+                          <FlaskConical className="h-4 w-4" />
+                        </Button>
                         {tournament.status === 'completed' && (
                           <Button
                             size="icon"
@@ -1471,6 +1487,19 @@ export function OnlineTournamentManager() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Tournament Test Mode */}
+      {showTestMode && testModeTournament && (
+        <TournamentTestMode
+          tournamentId={testModeTournament.id}
+          tournamentName={testModeTournament.name}
+          onClose={() => {
+            setShowTestMode(false);
+            setTestModeTournament(null);
+            loadTournaments();
+          }}
+        />
+      )}
     </div>
   );
 }
