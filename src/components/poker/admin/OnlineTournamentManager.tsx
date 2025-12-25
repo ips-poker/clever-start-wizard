@@ -34,9 +34,11 @@ import {
   Layers,
   Calendar,
   DoorOpen,
-  FlaskConical
+  FlaskConical,
+  Bot
 } from 'lucide-react';
 import { TournamentTestMode } from './TournamentTestMode';
+import { CashGameBotManager } from './CashGameBotManager';
 import {
   Dialog,
   DialogContent,
@@ -157,6 +159,7 @@ export function OnlineTournamentManager() {
   const [newBlindLevels, setNewBlindLevels] = useState<OnlineBlindLevel[]>([]);
   const [showTestMode, setShowTestMode] = useState(false);
   const [testModeTournament, setTestModeTournament] = useState<Tournament | null>(null);
+  const [showCashBotManager, setShowCashBotManager] = useState(false);
 
   const [newTournament, setNewTournament] = useState({
     name: '',
@@ -638,6 +641,10 @@ export function OnlineTournamentManager() {
           <p className="text-sm text-muted-foreground">Создание и управление турнирами</p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={() => setShowCashBotManager(true)} variant="outline" size="sm">
+            <Bot className="h-4 w-4 mr-2" />
+            Кэш-боты
+          </Button>
           <Button onClick={loadTournaments} variant="outline" size="sm" disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Обновить
@@ -1497,6 +1504,15 @@ export function OnlineTournamentManager() {
             setShowTestMode(false);
             setTestModeTournament(null);
             loadTournaments();
+          }}
+        />
+      )}
+
+      {/* Cash Game Bot Manager */}
+      {showCashBotManager && (
+        <CashGameBotManager
+          onClose={() => {
+            setShowCashBotManager(false);
           }}
         />
       )}
