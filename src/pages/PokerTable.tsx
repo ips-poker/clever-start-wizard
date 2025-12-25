@@ -16,6 +16,7 @@ export default function PokerTable() {
   
   const [playerBalance, setPlayerBalance] = useState(0);
   const [tableName, setTableName] = useState('');
+  const [tournamentId, setTournamentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Fetch table info and player balance
@@ -26,15 +27,16 @@ export default function PokerTable() {
         return;
       }
 
-      // Fetch table name
+      // Fetch table name and tournament_id
       const { data: tableData } = await supabase
         .from('poker_tables')
-        .select('name')
+        .select('name, tournament_id')
         .eq('id', tableId)
         .single();
       
       if (tableData) {
         setTableName(tableData.name);
+        setTournamentId(tableData.tournament_id);
         document.title = `${tableData.name} - Syndikate Poker`;
       }
 
@@ -122,8 +124,8 @@ export default function PokerTable() {
           playerId={playerId}
           buyIn={buyIn}
           playerBalance={playerBalance}
-          isTournament={isTournament}
-          tournamentId={isTournament ? tableId : undefined}
+          isTournament={isTournament || !!tournamentId}
+          tournamentId={tournamentId || undefined}
           onLeave={handleLeaveTable}
           onBalanceUpdate={() => {
             // Refresh balance

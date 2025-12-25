@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { GlitchText } from '@/components/ui/glitch-text';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OnlinePokerTable as OnlinePokerTableComponent } from './OnlinePokerTable';
+import { ActiveTournamentAssignments } from '@/components/poker/TournamentTableAssignment';
 
 interface OnlinePokerTable {
   id: string;
@@ -240,6 +241,12 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
     }
   };
 
+  // Handle joining a tournament table by ID (from ActiveTournamentAssignments)
+  const handleJoinTournamentTable = (tableId: string) => {
+    setActiveTableId(tableId);
+    setActiveBuyIn(0); // Tournament tables don't use buy-in
+  };
+
   const handleJoinTournament = async (tournament: OnlineTournament) => {
     if (!playerId) {
       toast.error('Необходимо войти в систему');
@@ -457,6 +464,14 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
 
         {/* Tournaments Tab */}
         <TabsContent value="tournaments" className="mt-4 space-y-3">
+          {/* Show active tournament assignments first */}
+          {playerId && (
+            <ActiveTournamentAssignments
+              playerId={playerId}
+              onJoinTable={handleJoinTournamentTable}
+            />
+          )}
+          
           <AnimatePresence mode="popLayout">
             {filteredTournaments.length === 0 ? (
               <motion.div
