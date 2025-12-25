@@ -8,7 +8,7 @@ import { IncomingMessage } from 'http';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { PokerGameManager } from '../game/PokerGameManager.js';
 import { PokerTable, TableEvent } from '../game/PokerTable.js';
-import { TournamentManager, TournamentState, TournamentClock } from '../game/TournamentManager.js';
+import { TournamentManager, TournamentState, TournamentClock, createConfigFromDatabase } from '../game/TournamentManager.js';
 import { logger } from '../utils/logger.js';
 import { z } from 'zod';
 
@@ -658,18 +658,49 @@ export class PokerWebSocketHandler {
   }
   
   /**
-   * Load active tournaments from database
+   * Load active tournaments from database and initialize in TournamentManager
    */
   private async loadActiveTournaments(): Promise<void> {
     try {
       const { data: tournaments, error } = await this.supabase
         .from('online_poker_tournaments')
-        .select('*')
+        .select(`
+          *,
+          participants:online_poker_tournament_participants(*)
+        `)
         .in('status', ['registration', 'running', 'paused']);
       
       if (error) {
         logger.error('Failed to load tournaments', { error: error.message });
         return;
+      }
+      
+      if (tournaments && tournaments.length > 0) {
+        for (const dbTournament of tournaments) {
+          // Create tournament in manager from DB data
+          const state = this.tournamentManager.createFromDatabase(dbTournament);
+          
+          // Load existing participants
+          if (dbTournament.participants) {
+            for (const p of dbTournament.participants as any[]) {
+              if (p.status !== 'cancelled') {
+                this.tournamentManager.registerPlayer(
+                  dbTournament.id,
+                  p.player_id,
+                  p.player_id // Name will be fetched later
+                );
+              }
+            }
+          }
+          
+          logger.info('Loaded tournament from DB', { 
+            id: dbTournament.id, 
+            name: dbTournament.name,
+            status: dbTournament.status,
+            format: dbTournament.tournament_format,
+            participants: (dbTournament.participants as any[])?.length || 0
+          });
+        }
       }
       
       logger.info(`Loaded ${tournaments?.length || 0} active tournaments from database`);

@@ -22,21 +22,34 @@ export interface TournamentConfig {
   maxPlayers: number;
   minPlayers: number;
   buyIn: number;
+  // Rebuy settings
   rebuyAllowed: boolean;
   rebuyEndLevel: number;
   rebuyChips: number;
   rebuyCost: number;
+  // Addon settings
   addonAllowed: boolean;
   addonLevel: number;
   addonChips: number;
   addonCost: number;
+  // Tournament structure
   blindStructure: TournamentBlindLevel[];
   payoutStructure: { position: number; percentage: number }[];
   lateRegistrationLevel: number;
   actionTimeSeconds: number;
   timeBankSeconds: number;
+  timeBankPerLevel: number;
   tablesCount: number;
   playersPerTable: number;
+  // Extended settings (new fields from database)
+  tournamentFormat: 'freezeout' | 'rebuy' | 'knockout' | 'bounty';
+  ticketsForTop: number;
+  ticketValue: number;
+  breakInterval: number;
+  breakDuration: number;
+  guaranteedPrizePool: number;
+  scheduledStartAt: string | null;
+  autoStart: boolean;
 }
 
 export interface TournamentState {
@@ -636,6 +649,85 @@ export function calculateTournamentStats(state: TournamentState): TournamentStat
 }
 
 // ==========================================
+// DATABASE TO CONFIG CONVERTER
+// ==========================================
+
+/**
+ * Create TournamentConfig from database record
+ */
+export function createConfigFromDatabase(dbTournament: {
+  id: string;
+  name: string;
+  buy_in: number;
+  starting_chips: number;
+  max_players: number;
+  min_players: number;
+  level_duration: number | null;
+  tournament_format?: string;
+  rebuy_enabled?: boolean;
+  rebuy_cost?: number;
+  rebuy_chips?: number;
+  rebuy_end_level?: number;
+  addon_enabled?: boolean;
+  addon_cost?: number;
+  addon_chips?: number;
+  addon_level?: number;
+  late_registration_enabled?: boolean;
+  late_registration_level?: number;
+  tickets_for_top?: number;
+  ticket_value?: number;
+  break_interval?: number;
+  break_duration?: number;
+  guaranteed_prize_pool?: number;
+  time_bank_initial?: number;
+  time_bank_per_level?: number;
+  action_time_seconds?: number;
+  scheduled_start_at?: string | null;
+  auto_start?: boolean;
+}): TournamentConfig {
+  const levelDuration = dbTournament.level_duration || 300;
+  const breakInterval = dbTournament.break_interval || 0;
+  
+  return {
+    id: dbTournament.id,
+    name: dbTournament.name,
+    gameType: 'texas_holdem' as PokerGameType,
+    startingChips: dbTournament.starting_chips,
+    maxPlayers: dbTournament.max_players,
+    minPlayers: dbTournament.min_players,
+    buyIn: dbTournament.buy_in,
+    // Rebuy settings
+    rebuyAllowed: dbTournament.rebuy_enabled || false,
+    rebuyEndLevel: dbTournament.rebuy_end_level || 0,
+    rebuyChips: dbTournament.rebuy_chips || 0,
+    rebuyCost: dbTournament.rebuy_cost || 0,
+    // Addon settings
+    addonAllowed: dbTournament.addon_enabled || false,
+    addonLevel: dbTournament.addon_level || 0,
+    addonChips: dbTournament.addon_chips || 0,
+    addonCost: dbTournament.addon_cost || 0,
+    // Structure
+    blindStructure: generateBlindStructure(50, 20, levelDuration, true, breakInterval),
+    payoutStructure: [],
+    lateRegistrationLevel: dbTournament.late_registration_level || 6,
+    actionTimeSeconds: dbTournament.action_time_seconds || 30,
+    timeBankSeconds: dbTournament.time_bank_initial || 30,
+    timeBankPerLevel: dbTournament.time_bank_per_level || 5,
+    tablesCount: Math.ceil(dbTournament.max_players / 9),
+    playersPerTable: Math.min(9, dbTournament.max_players),
+    // Extended
+    tournamentFormat: (dbTournament.tournament_format || 'freezeout') as 'freezeout' | 'rebuy' | 'knockout' | 'bounty',
+    ticketsForTop: dbTournament.tickets_for_top || 3,
+    ticketValue: dbTournament.ticket_value || 1000,
+    breakInterval: dbTournament.break_interval || 0,
+    breakDuration: dbTournament.break_duration || 300,
+    guaranteedPrizePool: dbTournament.guaranteed_prize_pool || 0,
+    scheduledStartAt: dbTournament.scheduled_start_at || null,
+    autoStart: dbTournament.auto_start || false
+  };
+}
+
+// ==========================================
 // TOURNAMENT MANAGER CLASS
 // ==========================================
 
@@ -643,7 +735,18 @@ export class TournamentManager {
   private tournaments: Map<string, TournamentState> = new Map();
   private timerIntervals: Map<string, NodeJS.Timeout> = new Map();
   
+  /**
+   * Create tournament from database record
+   */
+  createFromDatabase(dbTournament: Parameters<typeof createConfigFromDatabase>[0]): TournamentState {
+    const config = createConfigFromDatabase(dbTournament);
+    return this.createTournament(config);
+  }
+  
   createTournament(config: TournamentConfig): TournamentState {
+    // Apply guaranteed prize pool if set
+    const initialPrizePool = config.guaranteedPrizePool || 0;
+    
     const state: TournamentState = {
       config,
       status: 'registering',
@@ -652,7 +755,7 @@ export class TournamentManager {
       timeRemaining: config.blindStructure[0]?.duration || 900,
       players: [],
       tables: [],
-      prizePool: 0,
+      prizePool: initialPrizePool,
       totalRebuys: 0,
       totalAddons: 0,
       startedAt: null,
@@ -662,7 +765,14 @@ export class TournamentManager {
     };
     
     this.tournaments.set(config.id, state);
-    logger.info('Tournament created', { tournamentId: config.id, name: config.name });
+    logger.info('Tournament created', { 
+      tournamentId: config.id, 
+      name: config.name,
+      format: config.tournamentFormat,
+      ticketsForTop: config.ticketsForTop,
+      ticketValue: config.ticketValue,
+      guaranteedPool: config.guaranteedPrizePool
+    });
     
     return state;
   }
