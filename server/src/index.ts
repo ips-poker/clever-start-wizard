@@ -15,6 +15,7 @@ import { config } from './config.js';
 import { PokerWebSocketHandler } from './websocket/PokerWebSocketHandler.js';
 import { PokerGameManager } from './game/PokerGameManager.js';
 import { PokerEngine } from './game/PokerEngine.js';
+import { TournamentManager } from './game/TournamentManager.js';
 import { createSupabaseClient } from './db/supabase.js';
 import { setupRoutes } from './routes/index.js';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
@@ -75,6 +76,9 @@ const supabase = createSupabaseClient();
 // Initialize game manager
 const gameManager = new PokerGameManager(supabase);
 
+// Initialize tournament manager
+const tournamentManager = new TournamentManager();
+
 // Setup API routes
 setupRoutes(app, gameManager, supabase);
 
@@ -85,8 +89,8 @@ const wss = new WebSocketServer({
   maxPayload: 1024 * 1024 // 1MB max message size
 });
 
-// Initialize WebSocket handler
-const wsHandler = new PokerWebSocketHandler(wss, gameManager, supabase);
+// Initialize WebSocket handler with tournament manager
+const wsHandler = new PokerWebSocketHandler(wss, gameManager, supabase, tournamentManager);
 
 // Connection rate limiting for WebSocket
 const wsRateLimiter = new RateLimiterMemory({
@@ -114,6 +118,9 @@ const gracefulShutdown = async () => {
   wss.clients.forEach(client => {
     client.close(1001, 'Server shutting down');
   });
+  
+  // Shutdown tournament manager
+  tournamentManager.shutdown();
   
   // Save game states
   await gameManager.saveAllGames();
@@ -150,6 +157,7 @@ server.listen(config.port, () => {
   logger.info(`Poker server running on port ${config.port}`);
   logger.info(`WebSocket endpoint: ws://localhost:${config.port}/ws/poker`);
   logger.info(`Environment: ${config.nodeEnv}`);
+  logger.info(`Tournament manager initialized`);
 });
 
-export { app, server, wss };
+export { app, server, wss, tournamentManager };
