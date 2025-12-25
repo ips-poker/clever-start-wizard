@@ -11,6 +11,9 @@
 import { PokerGameType, TournamentBlindLevel } from './PokerEngineV3.js';
 import { logger } from '../utils/logger.js';
 
+// Re-export TournamentBlindLevel for external use
+export { TournamentBlindLevel };
+
 // ==========================================
 // TOURNAMENT TYPES
 // ==========================================
@@ -740,6 +743,28 @@ export class TournamentManager {
    */
   createFromDatabase(dbTournament: Parameters<typeof createConfigFromDatabase>[0]): TournamentState {
     const config = createConfigFromDatabase(dbTournament);
+    return this.createTournament(config);
+  }
+  
+  /**
+   * Create tournament from database record with custom blind levels from DB
+   */
+  createFromDatabaseWithLevels(
+    dbTournament: Parameters<typeof createConfigFromDatabase>[0],
+    blindLevels?: TournamentBlindLevel[]
+  ): TournamentState {
+    const config = createConfigFromDatabase(dbTournament);
+    
+    // Override blind structure if provided from database
+    if (blindLevels && blindLevels.length > 0) {
+      config.blindStructure = blindLevels;
+      logger.info('Using custom blind structure from DB', {
+        tournamentId: config.id,
+        levels: blindLevels.length,
+        firstLevel: blindLevels[0]
+      });
+    }
+    
     return this.createTournament(config);
   }
   

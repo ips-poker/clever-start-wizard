@@ -168,6 +168,38 @@ serve(async (req) => {
       });
     }
 
+    // Get tournament data if this is a tournament table
+    let tournament: any = null;
+    let currentBlindLevel: { small_blind: number; big_blind: number; ante: number } | null = null;
+    
+    if (table.tournament_id) {
+      const { data: tournamentData } = await supabase
+        .from('online_poker_tournaments')
+        .select('*, levels:online_poker_tournament_levels(*)')
+        .eq('id', table.tournament_id)
+        .single();
+      
+      tournament = tournamentData;
+      
+      // Get current blind level for tournament
+      if (tournament && tournament.levels && tournament.current_level) {
+        const level = tournament.levels.find((l: any) => l.level === tournament.current_level);
+        if (level) {
+          currentBlindLevel = {
+            small_blind: level.small_blind,
+            big_blind: level.big_blind,
+            ante: level.ante || 0
+          };
+          console.log(`[Engine] Tournament level ${tournament.current_level}: SB=${level.small_blind} BB=${level.big_blind} Ante=${level.ante || 0}`);
+        }
+      }
+    }
+
+    // Use tournament blinds if available, otherwise table blinds
+    const effectiveSmallBlind = currentBlindLevel?.small_blind ?? table.small_blind;
+    const effectiveBigBlind = currentBlindLevel?.big_blind ?? table.big_blind;
+    const effectiveAnte = currentBlindLevel?.ante ?? table.ante ?? 0;
+
     const { data: tablePlayers } = await supabase
       .from('poker_table_players')
       .select('*, players(name, avatar_url)')
@@ -411,8 +443,21 @@ serve(async (req) => {
         const sbPlayer = sortedPlayers[sbIndex];
         const bbPlayer = sortedPlayers[bbIndex];
 
-        const sbAmount = Math.min(table.small_blind, sbPlayer.stack);
-        const bbAmount = Math.min(table.big_blind, bbPlayer.stack);
+        // Use effective blinds (from tournament level or table settings)
+        const sbAmount = Math.min(effectiveSmallBlind, sbPlayer.stack);
+        const bbAmount = Math.min(effectiveBigBlind, bbPlayer.stack);
+        
+        // Calculate total ante if in tournament with antes
+        let totalAnte = 0;
+        const anteAmounts: Map<string, number> = new Map();
+        if (effectiveAnte > 0) {
+          for (const player of sortedPlayers) {
+            const playerAnte = Math.min(effectiveAnte, player.stack);
+            anteAmounts.set(player.player_id, playerAnte);
+            totalAnte += playerAnte;
+          }
+          console.log(`[Engine] Collecting antes: ${effectiveAnte} x ${sortedPlayers.length} players = ${totalAnte} total`);
+        }
 
         const { data: hand, error: handError } = await supabase
           .from('poker_hands')
@@ -422,7 +467,7 @@ serve(async (req) => {
             small_blind_seat: sbPlayer.seat_number,
             big_blind_seat: bbPlayer.seat_number,
             phase: 'preflop',
-            pot: sbAmount + bbAmount,
+            pot: sbAmount + bbAmount + totalAnte,
             current_bet: bbAmount,
             deck_state: JSON.stringify(deck),
             side_pots: JSON.stringify([])
@@ -441,6 +486,8 @@ serve(async (req) => {
             const isSB = player.seat_number === sbPlayer.seat_number;
             const isBB = player.seat_number === bbPlayer.seat_number;
             const blindAmount = isSB ? sbAmount : isBB ? bbAmount : 0;
+            const playerAnte = anteAmounts.get(player.player_id) || 0;
+            const totalBetAmount = blindAmount + playerAnte;
 
             handPlayers.push({
               hand_id: hand.id,
@@ -448,14 +495,27 @@ serve(async (req) => {
               seat_number: player.seat_number,
               stack_start: player.stack,
               hole_cards: holeCards,
-              bet_amount: blindAmount,
-              is_all_in: blindAmount >= player.stack,
+              bet_amount: totalBetAmount,
+              is_all_in: totalBetAmount >= player.stack,
             });
           }
 
           await supabase.from('poker_hand_players').insert(handPlayers);
-          await supabase.from('poker_table_players').update({ stack: sbPlayer.stack - sbAmount }).eq('id', sbPlayer.id);
-          await supabase.from('poker_table_players').update({ stack: bbPlayer.stack - bbAmount }).eq('id', bbPlayer.id);
+          
+          // Update stacks: deduct blinds and antes
+          for (const player of sortedPlayers) {
+            const isSB = player.player_id === sbPlayer.player_id;
+            const isBB = player.player_id === bbPlayer.player_id;
+            const blindAmount = isSB ? sbAmount : isBB ? bbAmount : 0;
+            const playerAnte = anteAmounts.get(player.player_id) || 0;
+            const totalDeduction = blindAmount + playerAnte;
+            
+            if (totalDeduction > 0) {
+              await supabase.from('poker_table_players')
+                .update({ stack: player.stack - totalDeduction })
+                .eq('id', player.id);
+            }
+          }
 
           const firstToActIndex = isHeadsUp ? sbIndex : (bbIndex + 1) % sortedPlayers.length;
           const firstToActSeat = sortedPlayers[firstToActIndex].seat_number;
@@ -471,7 +531,7 @@ serve(async (req) => {
             action_started_at: new Date().toISOString()
           }).eq('id', hand.id);
 
-          console.log(`[Engine] Hand started: dealer=${dealerSeat}, SB=${sbPlayer.seat_number}(${sbAmount}), BB=${bbPlayer.seat_number}(${bbAmount}), first=${firstToActSeat}`);
+          console.log(`[Engine] Hand started: dealer=${dealerSeat}, SB=${sbPlayer.seat_number}(${sbAmount}), BB=${bbPlayer.seat_number}(${bbAmount}), ante=${effectiveAnte}, pot=${sbAmount + bbAmount + totalAnte}, first=${firstToActSeat}`);
 
           result = {
             success: true,
@@ -480,8 +540,10 @@ serve(async (req) => {
             smallBlindSeat: sbPlayer.seat_number,
             bigBlindSeat: bbPlayer.seat_number,
             currentPlayerSeat: firstToActSeat,
-            pot: sbAmount + bbAmount,
-            actionTime: ACTION_TIME_SECONDS,
+            pot: sbAmount + bbAmount + totalAnte,
+            actionTime: table.action_time_seconds || ACTION_TIME_SECONDS,
+            isTournament: !!tournament,
+            tournamentLevel: tournament?.current_level || null,
           };
         }
       }
