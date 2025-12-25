@@ -47,6 +47,7 @@ import { getRankProfileStyle } from './RankProfileStyles';
 import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
 import { TelegramClanPanel } from './TelegramClanPanel';
 import { DiamondWallet } from '@/components/profile/DiamondWallet';
+import { PlayerTickets } from '@/components/poker/PlayerTickets';
 
 interface Player {
   id: string;
@@ -722,6 +723,9 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
 
       {/* Diamond Wallet Section */}
       <DiamondWallet playerId={player.id} playerName={player.name} />
+
+      {/* Offline Tournament Entries */}
+      <PlayerTickets playerId={player.id} />
 
       {/* Advanced Statistics */}
       <div className="grid grid-cols-2 gap-3">
