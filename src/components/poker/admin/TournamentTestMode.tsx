@@ -187,7 +187,7 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
 
     const { data: participantsData, error: participantsError } = await supabase
       .from('online_poker_tournament_participants')
-      .select(`*, players!inner(id, name)`)
+      .select(`*, players:players!online_poker_tournament_participants_player_id_fkey(id, name)`)
       .eq('tournament_id', tournamentId)
       .order('chips', { ascending: false });
 
@@ -467,12 +467,13 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
       }
     };
     
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       connection.connected = false;
       botConnectionsRef.current.delete(playerId);
       setBotConnections(new Map(botConnectionsRef.current));
       setConnectedBots(prev => Math.max(0, prev - 1));
-      addLog('ws', `🔴 ${playerName} отключен`);
+      const reason = event.reason ? `: ${event.reason}` : '';
+      addLog('ws', `🔴 ${playerName} отключен (code ${event.code}${reason})`);
     };
     
     ws.onerror = (err) => {
