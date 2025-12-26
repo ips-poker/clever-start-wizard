@@ -1,10 +1,22 @@
 /**
- * Anti-Cheat System
- * Detects suspicious behavior, collusion, and bot activity
+ * Anti-Cheat System v2.0
+ * Professional-grade detection of suspicious behavior, collusion, and bot activity
+ * Features:
+ * - Real-time action analysis
+ * - Collusion detection via chip flow patterns
+ * - Bot detection via timing analysis
+ * - IP collision detection
+ * - Integration with Prometheus metrics
  */
 
 import { logger } from './logger.js';
-import { metrics } from './prometheus-metrics.js';
+import { prometheusRegistry } from './prometheus-metrics.js';
+
+// Register anti-cheat specific metrics
+prometheusRegistry.incCounter('poker_anticheat_flags_total', 0, { type: 'suspicious' });
+prometheusRegistry.incCounter('poker_anticheat_flags_total', 0, { type: 'collusion' });
+prometheusRegistry.incCounter('poker_anticheat_flags_total', 0, { type: 'bot' });
+prometheusRegistry.incCounter('poker_anticheat_scans_total', 0);
 
 // Detection thresholds
 const THRESHOLDS = {
@@ -199,8 +211,20 @@ class AntiCheatSystem {
     if (suspicionScore >= 70) {
       this.flaggedPlayers.add(playerId);
       logger.warn('Player flagged by anti-cheat', { playerId, suspicionScore, flags });
-      // Anti-cheat flag recorded
+      
+      // Record metrics
+      prometheusRegistry.incCounter('poker_anticheat_flags_total', 1, { type: 'suspicious' });
+      
+      if (collusionAnalysis.suspicious) {
+        prometheusRegistry.incCounter('poker_anticheat_flags_total', 1, { type: 'collusion' });
+      }
+      if (botAnalysis.isSuspicious) {
+        prometheusRegistry.incCounter('poker_anticheat_flags_total', 1, { type: 'bot' });
+      }
     }
+    
+    // Record scan metric
+    prometheusRegistry.incCounter('poker_anticheat_scans_total', 1);
 
     return {
       suspicionScore,
