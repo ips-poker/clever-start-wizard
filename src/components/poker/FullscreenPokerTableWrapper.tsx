@@ -17,6 +17,7 @@ import { TableSettingsPanel } from './TableSettingsPanel';
 import { PersonalSettingsPanel } from './PersonalSettingsPanel';
 import { FullscreenPokerTable } from './FullscreenPokerTable';
 import { ProActionPanel } from './ProActionPanel';
+import { TournamentHUD } from './TournamentHUD';
 import { BuyInDialog } from './BuyInDialog';
 import { RebuyDialog } from './RebuyDialog';
 import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
@@ -492,6 +493,15 @@ export function FullscreenPokerTableWrapper({
             </Button>
           </div>
         </div>
+
+        {/* Tournament HUD - only show for tournament tables */}
+        {isTournament && tournamentId && (
+          <TournamentHUD 
+            tournamentId={tournamentId} 
+            compact={true}
+            className="top-16"
+          />
+        )}
 
         {/* Main poker table - optimized spacing for all UI elements */}
         {/* Dynamic top padding for header + safe area, pb-40: space for action panel + hero cards */}

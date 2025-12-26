@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { PokerTableLobby } from '@/components/poker/PokerTableLobby';
@@ -7,6 +7,7 @@ import { PlayerBalanceCard } from '@/components/poker/PlayerBalanceCard';
 import { OnlineTournamentLobby } from '@/components/poker/OnlineTournamentLobby';
 import { FullHandHistory } from '@/components/poker/FullHandHistory';
 import { PokerCraftDashboard } from '@/components/poker/PokerCraftDashboard';
+import { TournamentMoveNotification } from '@/components/poker/TournamentMoveNotification';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,9 +28,18 @@ export default function OnlinePoker() {
   const [playerName, setPlayerName] = useState('');
   const [playerAvatar, setPlayerAvatar] = useState<string | null>(null);
   const [playerBalance, setPlayerBalance] = useState(0);
-  const [activeTable, setActiveTable] = useState<{ id: string; buyIn: number; isTournament?: boolean } | null>(null);
+  const [activeTable, setActiveTable] = useState<{ id: string; buyIn: number; isTournament?: boolean; tournamentId?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [lobbyTab, setLobbyTab] = useState('cash');
+  const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
+
+  // Handle table move during tournament (from balancing)
+  const handleTableMove = useCallback((newTableId: string) => {
+    if (activeTable?.isTournament) {
+      setActiveTable(prev => prev ? { ...prev, id: newTableId } : null);
+      toast.success('Вы перемещены на новый стол');
+    }
+  }, [activeTable?.isTournament]);
 
   // Check for existing player - prioritize authenticated user
   useEffect(() => {
@@ -179,7 +189,8 @@ export default function OnlinePoker() {
   };
 
   const handleJoinTournament = (tournamentId: string) => {
-    // This is now just for legacy compatibility - actual table join happens via handleJoinTournamentTable
+    // Store active tournament ID for move notifications
+    setActiveTournamentId(tournamentId);
     console.log('Tournament registration:', tournamentId);
   };
 
@@ -290,6 +301,15 @@ export default function OnlinePoker() {
         ) : (
           // Lobby with Cash Games and Tournaments tabs + Draggable Table Window
           <>
+            {/* Tournament Move Notification */}
+            {playerId && activeTournamentId && (
+              <TournamentMoveNotification
+                playerId={playerId}
+                tournamentId={activeTournamentId}
+                onJoinNewTable={handleTableMove}
+              />
+            )}
+
             {/* Draggable Table Window */}
             {activeTable && playerId && (
               <motion.div
