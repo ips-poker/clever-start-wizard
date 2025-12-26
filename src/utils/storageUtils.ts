@@ -4,9 +4,10 @@
  */
 
 import { resolveAvatarUrl } from './avatarResolver';
+import { getSupabaseBaseUrl } from '@/integrations/supabase/urls';
 
-// Используем кастомный домен api.syndicate-poker.ru для Storage
-const STORAGE_API_URL = 'https://api.syndicate-poker.ru';
+// По умолчанию используем прямой Supabase URL (прокси часто падает под нагрузкой)
+const STORAGE_API_URL = getSupabaseBaseUrl();
 
 /**
  * Исправляет URL изображения из Supabase Storage

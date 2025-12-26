@@ -201,8 +201,12 @@ export class VoiceTournamentInterface {
       this.audioContext = new AudioContext({ sampleRate: 24000 });
       this.audioQueue = new AudioQueue(this.audioContext);
 
-      // Connect to WebSocket through Cloudflare Supabase proxy
-      this.ws = new WebSocket('wss://api.syndicate-poker.ru/functions/v1/realtime-voice-tournament');
+      // Connect to Supabase Edge Function WebSocket (direct by default)
+      // To force proxy: localStorage.setItem('SUPABASE_MODE', 'proxy') and reload.
+      const { getFunctionsWsUrl } = await import('@/integrations/supabase/urls');
+      const wsUrl = getFunctionsWsUrl('/functions/v1/realtime-voice-tournament');
+      console.log('Voice WS URL:', wsUrl);
+      this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
         console.log('WebSocket connected');
