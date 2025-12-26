@@ -47,6 +47,8 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
 
   // Fetch tournament data
   useEffect(() => {
+    if (!tournamentId) return;
+
     const fetchTournament = async () => {
       const { data, error } = await supabase
         .from('online_poker_tournaments')
@@ -62,7 +64,7 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
           .from('online_poker_tournament_levels')
           .select('*')
           .eq('tournament_id', tournamentId)
-          .eq('level', data.current_level)
+          .eq('level', data.current_level || 1)
           .single();
         
         if (currentLevelData) {
@@ -72,13 +74,13 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
     };
 
     const fetchNextLevel = async () => {
-      if (!tournament) return;
+      if (!tournament?.current_level) return;
       
       const { data } = await supabase
         .from('online_poker_tournament_levels')
         .select('*')
         .eq('tournament_id', tournamentId)
-        .eq('level', (tournament.current_level || 1) + 1)
+        .eq('level', tournament.current_level + 1)
         .single();
 
       if (data) {
@@ -102,6 +104,11 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
     fetchTournament();
     fetchParticipants();
 
+    // Fetch next level when tournament loads
+    if (tournament?.current_level) {
+      fetchNextLevel();
+    }
+
     // Real-time subscription
     const channel = supabase
       .channel(`tournament-hud-${tournamentId}`)
@@ -112,7 +119,6 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
         filter: `id=eq.${tournamentId}`
       }, () => {
         fetchTournament();
-        fetchNextLevel();
       })
       .on('postgres_changes', {
         event: '*',
@@ -249,11 +255,11 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
           {!isBreak && (
             <div className="flex items-center gap-2">
               <div className="text-amber-400 font-bold text-lg">
-                {tournament.small_blind.toLocaleString()}/{tournament.big_blind.toLocaleString()}
+                {(tournament.small_blind || 0).toLocaleString()}/{(tournament.big_blind || 0).toLocaleString()}
               </div>
-              {tournament.ante > 0 && (
+              {(tournament.ante || 0) > 0 && (
                 <span className="text-white/50 text-xs">
-                  анте {tournament.ante.toLocaleString()}
+                  анте {(tournament.ante || 0).toLocaleString()}
                 </span>
               )}
             </div>

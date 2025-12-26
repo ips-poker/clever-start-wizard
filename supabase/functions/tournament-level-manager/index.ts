@@ -41,19 +41,29 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     const results: ProcessResult[] = [];
     const now = new Date();
+    console.log(`Tournament level manager running at ${now.toISOString()}`);
 
     // 1. Получаем все активные турниры с истекшим временем уровня
     const { data: expiredTournaments, error: fetchError } = await supabase
       .from('online_poker_tournaments')
-      .select('id, name, current_level, level_duration, level_end_at, status')
+      .select('id, name, current_level, level_duration, level_end_at, status, small_blind, big_blind, ante')
       .in('status', ['running', 'break'])
+      .not('level_end_at', 'is', null)
       .lt('level_end_at', now.toISOString());
 
     if (fetchError) {
@@ -62,6 +72,7 @@ Deno.serve(async (req) => {
     }
 
     if (!expiredTournaments || expiredTournaments.length === 0) {
+      console.log('No tournaments need level advancement');
       return new Response(
         JSON.stringify({ 
           success: true, 
