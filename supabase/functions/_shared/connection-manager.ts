@@ -30,7 +30,7 @@ export interface TableConnections {
 // Configuration
 const CONFIG = {
   MAX_TABLES: 200,                    // Maximum tables in memory
-  MAX_CONNECTIONS_PER_TABLE: 12,      // Maximum players per table
+  MAX_CONNECTIONS_PER_TABLE: 9,       // Maximum 9 players per table (poker standard)
   STALE_CONNECTION_MS: 60000,         // 60 seconds without pong = stale
   CLEANUP_INTERVAL_MS: 30000,         // Cleanup every 30 seconds
   MAX_MISSED_PINGS: 3,                // Disconnect after 3 missed pings
