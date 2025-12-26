@@ -96,30 +96,41 @@ export function useClanSystem(options: UseClanSystemOptions = {}) {
     // Иначе используем user_id из Supabase auth
     if (!user?.id) return null;
 
-    const { data, error } = await supabase
+    // Важно: user_id в таблице players исторически мог дублироваться (например, при импортах).
+    // maybeSingle()/single() в таком случае падают с PGRST116 и ломают Mini App.
+    // Поэтому берём самый свежий профиль.
+    const { data: players, error } = await supabase
       .from('players')
       .select('*')
       .eq('user_id', user.id)
-      .maybeSingle();
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error loading player:', error);
       return null;
     }
 
-    setPlayerData(data);
-    
+    if (players && players.length > 1) {
+      console.warn('⚠️ Multiple players found for user_id, using the newest one:', {
+        userId: user.id,
+        count: players.length,
+      });
+    }
+
+    const player = players?.[0] ?? null;
+    setPlayerData(player);
+
     // Проверяем, является ли игрок Доном по рангу (don или patriarch), учитываем manual_rank
-    if (data) {
+    if (player) {
       const { rank } = getEffectiveMafiaRank(
-        { gamesPlayed: data.games_played, wins: data.wins, rating: data.elo_rating },
-        data.manual_rank
+        { gamesPlayed: player.games_played, wins: player.wins, rating: player.elo_rating },
+        player.manual_rank
       );
       const isDonRank = rank.id === 'don' || rank.id === 'patriarch';
       setIsDon(isDonRank);
     }
 
-    return data;
+    return player;
   }, [user?.id, telegramPlayerId]);
 
   // Загрузить клан игрока (если он Дон или член клана)
