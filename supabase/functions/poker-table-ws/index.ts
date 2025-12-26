@@ -1,13 +1,28 @@
+/**
+ * Poker Table WebSocket Handler v3.0
+ * Production-grade with connection management and health checks
+ */
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { 
+  addConnection, 
+  removeConnection, 
+  getTableConnections,
+  broadcastToTable,
+  sendToPlayer,
+  recordPong,
+  recordMessage,
+  pingAllConnections,
+  initConnectionManager,
+  stopConnectionManager,
+  getStats,
+  getTotalConnections,
+} from "../_shared/connection-manager.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// Local connections for this Edge Function instance
-const localConnections = new Map<string, Map<string, WebSocket>>();
 
 interface WSMessage {
   type: string;
@@ -21,6 +36,9 @@ interface WSMessage {
 // Supabase client for broadcast between instances
 let supabaseAdmin: any = null;
 const broadcastChannels = new Map<string, any>();
+
+// Ping interval handle
+let pingIntervalId: number | null = null;
 
 function getSupabase() {
   if (!supabaseAdmin) {
@@ -37,6 +55,41 @@ function getSupabase() {
   return supabaseAdmin;
 }
 
+// Initialize connection manager and ping loop
+initConnectionManager();
+
+// Start ping loop (every 15 seconds)
+pingIntervalId = setInterval(() => {
+  const stale = pingAllConnections();
+  if (stale.length > 0) {
+    console.log(`🔌 Cleaned up ${stale.length} stale connections`);
+  }
+}, 15000);
+
+// Register shutdown handlers
+onShutdown('stop-ping-loop', () => {
+  if (pingIntervalId) {
+    clearInterval(pingIntervalId);
+    pingIntervalId = null;
+  }
+}, 10);
+
+onShutdown('cleanup-connections', () => {
+  stopConnectionManager();
+}, 20);
+
+onShutdown('cleanup-channels', async () => {
+  // Cleanup all broadcast channels
+  for (const [channelKey, channel] of broadcastChannels) {
+    try {
+      await getSupabase().removeChannel(channel);
+    } catch (e) {
+      console.error(`Error removing channel ${channelKey}:`, e);
+    }
+  }
+  broadcastChannels.clear();
+}, 30);
+
 // Subscribe to broadcast channel for a table (for cross-instance communication)
 function subscribeToBroadcast(tableId: string, currentPlayerId: string) {
   const channelKey = `${tableId}_${currentPlayerId}`;
@@ -48,17 +101,11 @@ function subscribeToBroadcast(tableId: string, currentPlayerId: string) {
     .on('broadcast', { event: 'table_update' }, (payload: any) => {
       console.log(`📡 Broadcast received for table ${tableId}:`, payload.payload?.type);
       
-      // Send to local connection for this player
-      const connections = localConnections.get(tableId);
-      if (connections) {
-        const playerSocket = connections.get(currentPlayerId);
-        if (playerSocket && playerSocket.readyState === WebSocket.OPEN) {
-          try {
-            playerSocket.send(JSON.stringify(payload.payload));
-          } catch (e) {
-            console.error('Error forwarding broadcast to local socket:', e);
-          }
-        }
+      // Send to player via connection manager
+      try {
+        sendToPlayer(tableId, currentPlayerId, payload.payload);
+      } catch (e) {
+        console.error('Error forwarding broadcast:', e);
       }
     })
     .subscribe((status: string) => {
@@ -66,7 +113,6 @@ function subscribeToBroadcast(tableId: string, currentPlayerId: string) {
     });
   
   broadcastChannels.set(channelKey, channel);
-  console.log(`📡 Subscribed to broadcast channel for table ${tableId}, player ${currentPlayerId}`);
 }
 
 // Unsubscribe from broadcast channel
@@ -76,7 +122,6 @@ function unsubscribeFromBroadcast(tableId: string, playerId: string) {
   if (channel) {
     getSupabase().removeChannel(channel);
     broadcastChannels.delete(channelKey);
-    console.log(`📡 Unsubscribed from broadcast channel for ${tableId}, player ${playerId}`);
   }
 }
 
@@ -90,50 +135,46 @@ async function broadcastToAllInstances(tableId: string, message: any) {
       event: 'table_update',
       payload: message
     });
-    console.log(`📢 Broadcasted to table ${tableId}:`, message.type);
   } catch (e) {
     console.error('Broadcast error:', e);
   }
   
-  // Also send to local connections directly
-  const connections = localConnections.get(tableId);
-  if (connections) {
-    const payload = JSON.stringify(message);
-    for (const [, socket] of connections) {
-      if (socket.readyState === WebSocket.OPEN) {
-        try {
-          socket.send(payload);
-        } catch (e) {
-          console.error('Error sending to local socket:', e);
-        }
-      }
-    }
-  }
-}
-
-// Send message to specific local player
-function sendToLocalPlayer(tableId: string, playerId: string, message: any) {
-  const connections = localConnections.get(tableId);
-  if (!connections) return false;
-
-  const socket = connections.get(playerId);
-  if (socket && socket.readyState === WebSocket.OPEN) {
-    try {
-      socket.send(JSON.stringify(message));
-      return true;
-    } catch (e) {
-      console.error(`Error sending to ${playerId}:`, e);
-    }
-  }
-  return false;
+  // Also send to local connections directly via connection manager
+  broadcastToTable(tableId, message);
 }
 
 serve(async (req) => {
   const url = new URL(req.url);
   
+  // Health check endpoint
+  if (url.pathname === '/health' || url.searchParams.get('health') === 'true') {
+    const stats = getStats();
+    return new Response(JSON.stringify({
+      status: 'healthy',
+      timestamp: Date.now(),
+      connections: getTotalConnections(),
+      tables: stats.tables,
+      broadcastChannels: broadcastChannels.size,
+      messagesTotal: stats.totalMessagesProcessed,
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Check server capacity
+  if (getTotalConnections() >= 1800) { // 200 tables * 9 players
+    return new Response(JSON.stringify({ 
+      error: 'Server at capacity',
+      retryAfter: 5
+    }), { 
+      status: 503, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '5' } 
+    });
   }
 
   // Check for WebSocket upgrade
@@ -166,7 +207,11 @@ serve(async (req) => {
   socket.onmessage = async (event) => {
     try {
       const message: WSMessage = JSON.parse(event.data);
-      console.log(`📨 Received message: ${message.type}`);
+      
+      // Record message for connection tracking
+      if (currentTableId && currentPlayerId) {
+        recordMessage(currentTableId, currentPlayerId);
+      }
 
       switch (message.type) {
         case 'join_table': {
@@ -179,11 +224,12 @@ serve(async (req) => {
           currentTableId = tableId;
           currentPlayerId = playerId;
 
-          // Add to local connections
-          if (!localConnections.has(tableId)) {
-            localConnections.set(tableId, new Map());
+          // Add to connection manager
+          const addResult = addConnection(tableId, playerId, socket, playerName);
+          if (!addResult.success) {
+            socket.send(JSON.stringify({ type: 'error', message: addResult.error || 'Connection failed' }));
+            return;
           }
-          localConnections.get(tableId)!.set(playerId, socket);
           
           // Subscribe to broadcast channel for cross-instance updates
           subscribeToBroadcast(tableId, playerId);
@@ -219,7 +265,7 @@ serve(async (req) => {
             tableState: await fetchTableState(supabase, tableId, playerId)
           });
 
-          console.log(`✅ Player ${playerName} (${playerId}) joined table ${tableId} at seat ${joinResult?.seatNumber}`);
+          console.log(`✅ Player ${playerName} (${playerId?.slice(0,8)}) joined table ${tableId?.slice(0,8)} at seat ${joinResult?.seatNumber}`);
           
           // Auto-start hand if conditions met
           if (joinResult?.autoStarting) {
@@ -252,11 +298,8 @@ serve(async (req) => {
             body: { action: 'leave', tableId, playerId }
           });
 
-          // Remove from local connections
-          localConnections.get(tableId)?.delete(playerId);
-          if (localConnections.get(tableId)?.size === 0) {
-            localConnections.delete(tableId);
-          }
+          // Remove from connection manager
+          removeConnection(tableId, playerId);
           
           // Unsubscribe from broadcast
           unsubscribeFromBroadcast(tableId, playerId);
@@ -268,7 +311,7 @@ serve(async (req) => {
             tableState: await fetchTableState(supabase, tableId, '')
           });
 
-          console.log(`🚪 Player ${playerId} left table ${tableId}`);
+          console.log(`🚪 Player ${playerId?.slice(0,8)} left table ${tableId?.slice(0,8)}`);
           break;
         }
 
@@ -292,7 +335,7 @@ serve(async (req) => {
           // Broadcast updated state to all instances
           await broadcastTableStateToAll(supabase, tableId);
 
-          console.log(`🃏 Hand started at table ${tableId}`);
+          console.log(`🃏 Hand started at table ${tableId?.slice(0,8)}`);
           break;
         }
 
@@ -342,7 +385,7 @@ serve(async (req) => {
 
           // If hand complete (showdown), broadcast special event with all cards
           if (actionResult?.handComplete) {
-            console.log(`🏆 Hand complete, broadcasting showdown to table ${tableId}`);
+            console.log(`🏆 Hand complete, broadcasting showdown to table ${tableId?.slice(0,8)}`);
             
             // Fetch showdown data from database
             const showdownData = await fetchShowdownData(supabase, tableId, actionResult);
@@ -382,6 +425,14 @@ serve(async (req) => {
           break;
         }
 
+        case 'pong': {
+          // Record pong response for connection health
+          if (currentTableId && currentPlayerId) {
+            recordPong(currentTableId, currentPlayerId);
+          }
+          break;
+        }
+
         case 'add_chips': {
           const { tableId, playerId, data } = message;
           if (!tableId || !playerId || !data?.amount) {
@@ -414,7 +465,7 @@ serve(async (req) => {
           // Broadcast updated state to all
           await broadcastTableStateToAll(supabase, tableId);
 
-          console.log(`💎 Player ${playerId} added ${data.amount} chips`);
+          console.log(`💎 Player ${playerId?.slice(0,8)} added ${data.amount} chips`);
           break;
         }
 
@@ -429,16 +480,13 @@ serve(async (req) => {
           currentTableId = tableId;
           currentPlayerId = playerId;
 
-          // Add to local connections
-          if (!localConnections.has(tableId)) {
-            localConnections.set(tableId, new Map());
-          }
-          localConnections.get(tableId)!.set(playerId, socket);
+          // Add to connection manager
+          addConnection(tableId, playerId, socket);
           
           // Subscribe to broadcast channel
           subscribeToBroadcast(tableId, playerId);
           
-          console.log(`📡 Player ${playerId} subscribed to table ${tableId}`);
+          console.log(`📡 Player ${playerId?.slice(0,8)} subscribed to table ${tableId?.slice(0,8)}`);
 
           const tableState = await fetchTableState(supabase, tableId, playerId);
           
@@ -464,11 +512,8 @@ serve(async (req) => {
     console.log('🔌 WebSocket connection closed');
     
     if (currentTableId && currentPlayerId) {
-      // Remove from local connections
-      localConnections.get(currentTableId)?.delete(currentPlayerId);
-      if (localConnections.get(currentTableId)?.size === 0) {
-        localConnections.delete(currentTableId);
-      }
+      // Remove from connection manager
+      removeConnection(currentTableId, currentPlayerId);
       
       // Unsubscribe from broadcast
       unsubscribeFromBroadcast(currentTableId, currentPlayerId);
@@ -500,7 +545,7 @@ serve(async (req) => {
 
             // If it's this player's turn, auto-fold immediately
             if (hand?.current_player_seat === handPlayer.seat_number) {
-              console.log(`🚨 Disconnected player ${currentPlayerId} is current player, auto-folding`);
+              console.log(`🚨 Disconnected player ${currentPlayerId?.slice(0,8)} is current player, auto-folding`);
               
               const { data: foldResult } = await supabase.functions.invoke('poker-game-engine', {
                 body: { action: 'auto_fold_disconnected', tableId: currentTableId, playerId: currentPlayerId }
@@ -528,9 +573,6 @@ serve(async (req) => {
                   });
                 }
               }
-            } else {
-              // Not current player, mark as disconnected for timeout handling
-              console.log(`🔌 Disconnected player ${currentPlayerId} is in hand but not current player`);
             }
           }
         }
@@ -677,34 +719,21 @@ async function broadcastTableStateToAll(supabase: any, tableId: string) {
     });
   }
   
-  // Also send to local connections
-  const connections = localConnections.get(tableId);
+  // Also send to local connections via connection manager
+  const connections = getTableConnections(tableId);
   if (connections) {
-    for (const [playerId, socket] of connections) {
-      if (socket.readyState === WebSocket.OPEN) {
-        const state = await fetchTableState(supabase, tableId, playerId);
-        try {
-          socket.send(JSON.stringify({
-            type: 'table_state',
-            ...state
-          }));
-        } catch (e) {
-          console.error(`Error broadcasting to ${playerId}:`, e);
-        }
-      }
+    for (const [playerId] of connections) {
+      const state = await fetchTableState(supabase, tableId, playerId);
+      sendToPlayer(tableId, playerId, {
+        type: 'table_state',
+        ...state
+      });
     }
   }
 }
 
 // Fetch showdown data with all players' cards
 async function fetchShowdownData(supabase: any, tableId: string, actionResult: any) {
-  // Get the latest completed hand
-  const { data: table } = await supabase
-    .from('poker_tables')
-    .select('current_dealer_seat')
-    .eq('id', tableId)
-    .single();
-    
   // Find the most recent completed hand for this table
   const { data: hand } = await supabase
     .from('poker_hands')
