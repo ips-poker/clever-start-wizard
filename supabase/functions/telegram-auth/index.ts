@@ -1,14 +1,38 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from '../_shared/cors.ts'
 import { crypto } from 'https://deno.land/std@0.177.0/crypto/mod.ts'
 import { encode as hexEncode } from 'https://deno.land/std@0.177.0/encoding/hex.ts'
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
-import { 
-  checkRateLimit, 
-  getClientIdentifier, 
-  createRateLimitResponse,
-  RATE_LIMIT_PRESETS 
-} from '../_shared/rate-limiter.ts'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Simple in-memory rate limiting
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(clientId: string, limit: number = 5, windowMs: number = 60000): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const entry = rateLimitMap.get(clientId);
+  
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(clientId, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, remaining: limit - 1 };
+  }
+  
+  if (entry.count >= limit) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  entry.count++;
+  return { allowed: true, remaining: limit - entry.count };
+}
+
+function getClientId(req: Request): string {
+  return req.headers.get('x-forwarded-for') || 
+         req.headers.get('x-real-ip') || 
+         'unknown';
+}
 
 // Zod схема для валидации входных данных
 const TelegramAuthSchema = z.object({
@@ -157,12 +181,15 @@ Deno.serve(async (req) => {
   }
 
   // Rate limiting - 5 requests per minute per IP for auth
-  const clientId = getClientIdentifier(req, 'telegram-auth');
-  const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_PRESETS.auth);
+  const clientId = getClientId(req);
+  const rateLimitResult = checkRateLimit(clientId, 5, 60000);
   
   if (!rateLimitResult.allowed) {
     console.warn(`⚠️ Rate limit exceeded for ${clientId}`);
-    return createRateLimitResponse(rateLimitResult, corsHeaders);
+    return new Response(
+      JSON.stringify({ error: 'Too many requests', retryAfter: 60 }),
+      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
