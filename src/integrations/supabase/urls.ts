@@ -11,25 +11,21 @@ export const PROXY_FUNCTIONS_WS_BASE = 'wss://api.syndicate-poker.ru';
 
 type SupabaseMode = 'direct' | 'proxy';
 
-function safeGetLocalStorage(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
+// NOTE:
+// Прокси-домен api.syndicate-poker.ru сейчас нестабилен (503), поэтому
+// для API/Functions всегда используем прямые supabase.co endpoints.
+// Если в базе/состоянии у игроков остались ссылки на storage через прокси,
+// они будут переписаны на direct в avatarResolver.
 export function getSupabaseMode(): SupabaseMode {
-  const mode = safeGetLocalStorage('SUPABASE_MODE');
-  return mode === 'proxy' ? 'proxy' : 'direct';
+  return 'direct';
 }
 
 export function getSupabaseBaseUrl(): string {
-  return getSupabaseMode() === 'proxy' ? PROXY_SUPABASE_URL : DIRECT_SUPABASE_URL;
+  return DIRECT_SUPABASE_URL;
 }
 
 export function getFunctionsWsUrl(path: string): string {
-  const base = getSupabaseMode() === 'proxy' ? PROXY_FUNCTIONS_WS_BASE : DIRECT_FUNCTIONS_WS_BASE;
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  return `${base}${normalizedPath}`;
+  return `${DIRECT_FUNCTIONS_WS_BASE}${normalizedPath}`;
 }
+

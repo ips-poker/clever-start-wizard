@@ -1,6 +1,8 @@
 // Avatar resolver utility - maps database avatar URLs to actual imported assets
 // This is needed because Vite hashes asset paths, so we need to use ES6 imports
 
+import { DIRECT_SUPABASE_URL, PROXY_SUPABASE_URL } from '@/integrations/supabase/urls';
+
 import pokerAvatar1 from "@/assets/avatars/poker-avatar-1.png";
 import pokerAvatar2 from "@/assets/avatars/poker-avatar-2.png";
 import pokerAvatar3 from "@/assets/avatars/poker-avatar-3.png";
@@ -25,6 +27,7 @@ import pokerAvatar21 from "@/assets/avatars/poker-avatar-21.png";
 import pokerAvatar22 from "@/assets/avatars/poker-avatar-22.png";
 import pokerAvatar23 from "@/assets/avatars/poker-avatar-23.png";
 import pokerAvatar24 from "@/assets/avatars/poker-avatar-24.png";
+
 
 // Map of avatar number to imported asset
 const AVATAR_MAP: Record<number, string> = {
@@ -69,10 +72,16 @@ export function resolveAvatarUrl(avatarUrl: string | null | undefined, fallbackP
   
   // If it's a full external URL (Supabase storage, Telegram, etc.), use it directly
   // This handles:
-  // - https://api.syndicate-poker.ru/storage/... (Supabase storage)
+  // - https://<project>.supabase.co/storage/... (Supabase storage)
+  // - https://api.syndicate-poker.ru/storage/... (proxy storage; will be rewritten to direct)
   // - https://t.me/i/userpic/... (Telegram avatars)
   // - Any other absolute URLs
   if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+    const proxyStoragePrefix = `${PROXY_SUPABASE_URL}/storage/v1/`;
+    if (avatarUrl.startsWith(proxyStoragePrefix)) {
+      return `${DIRECT_SUPABASE_URL}/storage/v1/${avatarUrl.slice(proxyStoragePrefix.length)}`;
+    }
+
     return avatarUrl;
   }
   
