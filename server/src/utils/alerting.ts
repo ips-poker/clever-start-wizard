@@ -246,7 +246,7 @@ class AlertManager {
       try {
         await this.sendWebhook(webhook, message, alert.rule.severity);
       } catch (error) {
-        logger.error(`Failed to send alert to ${webhook.type}:`, error);
+        logger.error(`Failed to send alert to ${webhook.type}:`, { error: String(error) });
       }
     }
   }
@@ -264,7 +264,7 @@ class AlertManager {
       try {
         await this.sendWebhook(webhook, message, 'resolved');
       } catch (error) {
-        logger.error(`Failed to send resolution to ${webhook.type}:`, error);
+        logger.error(`Failed to send resolution to ${webhook.type}:`, { error: String(error) });
       }
     }
   }

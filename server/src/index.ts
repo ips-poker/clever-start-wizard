@@ -87,8 +87,15 @@ app.get('/health', (req, res) => {
   // Update prometheus gauges
   metrics.setActiveTables(stats.activeTables);
   metrics.setActivePlayers(stats.totalPlayers);
-  metrics.setLoadLevel(loadStatus.level === 'normal' ? 0 : loadStatus.level === 'high' ? 1 : 2);
-  metrics.setCircuitBreakerState('supabase', cbStatus.state === 'CLOSED' ? 0 : cbStatus.state === 'OPEN' ? 1 : 2);
+  
+  // Map LoadLevel enum to numeric value
+  const loadLevelMap: Record<string, number> = { 'NORMAL': 0, 'ELEVATED': 1, 'HIGH': 2, 'CRITICAL': 3 };
+  metrics.setLoadLevel(loadLevelMap[loadStatus.level] ?? 0);
+  
+  // Map CircuitState from read breaker to numeric value
+  const readState = cbStatus.read?.state;
+  const cbStateMap: Record<string, number> = { 'CLOSED': 0, 'OPEN': 1, 'HALF_OPEN': 2 };
+  metrics.setCircuitBreakerState('supabase', cbStateMap[readState] ?? 0);
   metrics.setMessageQueueSize(queueStats.size);
   
   res.json({
@@ -110,7 +117,7 @@ app.get('/health', (req, res) => {
       activeTables: stats.activeTables, 
       totalPlayers: stats.totalPlayers, 
       activeHands: stats.activeHands,
-      activeTournaments: tournamentManager.getActiveTournaments?.()?.length || 0
+      activeTournaments: tournamentManager.getTournamentCount?.() || 0
     },
     alerts: {
       active: activeAlerts.length,
@@ -189,7 +196,7 @@ setInterval(() => {
   // Update prometheus metrics
   metrics.setActiveTables(stats.activeTables);
   metrics.setActivePlayers(stats.totalPlayers);
-  metrics.setActiveTournaments(tournamentManager.getActiveTournaments?.()?.length || 0);
+  metrics.setActiveTournaments(tournamentManager.getTournamentCount?.() || 0);
   
   logger.info('Server stats', {
     activeConnections: wss.clients.size,

@@ -727,7 +727,7 @@ export class PokerWebSocketHandler {
     });
     
     // Update metrics for tournaments
-    const tournamentCount = this.tournamentManager.getActiveTournamentCount?.() || 0;
+    const tournamentCount = this.tournamentManager.getActiveTournamentCount() || 0;
     metrics.setActiveTournaments(tournamentCount, poolStats.totalConnections);
   }
   
@@ -1068,7 +1068,7 @@ export class PokerWebSocketHandler {
    * Broadcast tournament timers (called every second)
    */
   private broadcastTournamentTimers(): void {
-    for (const tournamentId of this.tournamentManager.getActiveTournamentIds?.() || []) {
+    for (const tournamentId of this.tournamentManager.getActiveTournamentIds() || []) {
       const subscribers = this.connectionPool.getTournamentSubscribers(tournamentId);
       if (subscribers.size === 0) continue;
       
