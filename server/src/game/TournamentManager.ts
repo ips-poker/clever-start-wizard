@@ -1257,6 +1257,39 @@ export class TournamentManager {
     return getTournamentClock(state);
   }
   
+  /**
+   * Get count of active tournaments
+   */
+  getTournamentCount(): number {
+    return this.tournaments.size;
+  }
+  
+  /**
+   * Get count of active (running) tournaments
+   */
+  getActiveTournamentCount(): number {
+    let count = 0;
+    for (const state of this.tournaments.values()) {
+      if (state.status === 'running' || state.status === 'break' || state.status === 'final_table' || state.status === 'heads_up') {
+        count++;
+      }
+    }
+    return count;
+  }
+  
+  /**
+   * Get IDs of active tournaments
+   */
+  getActiveTournamentIds(): string[] {
+    const ids: string[] = [];
+    for (const [id, state] of this.tournaments.entries()) {
+      if (state.status === 'running' || state.status === 'break' || state.status === 'final_table' || state.status === 'heads_up') {
+        ids.push(id);
+      }
+    }
+    return ids;
+  }
+  
   shutdown(): void {
     for (const interval of this.timerIntervals.values()) {
       clearInterval(interval);
