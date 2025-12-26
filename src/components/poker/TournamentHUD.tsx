@@ -1,15 +1,16 @@
 /**
  * Tournament HUD - Displays tournament info overlay on poker table
- * Shows: Current level, blinds, ante, time remaining, players left, avg stack
+ * Shows: Current level, blinds, ante, time remaining, players left, avg stack, BB count
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { Trophy, Clock, Users, TrendingUp, Layers, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trophy, Clock, Users, TrendingUp, Layers, ChevronUp, ChevronDown, Target, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TournamentHUDProps {
   tournamentId: string;
+  currentPlayerId?: string;
   className?: string;
   compact?: boolean;
 }
@@ -36,7 +37,19 @@ interface LevelInfo {
   is_break: boolean;
 }
 
-export function TournamentHUD({ tournamentId, className, compact = false }: TournamentHUDProps) {
+interface PlayerRanking {
+  position: number;
+  totalPlayers: number;
+  stack: number;
+  bbCount: number;
+}
+
+export function TournamentHUD({ 
+  tournamentId, 
+  currentPlayerId,
+  className, 
+  compact = false 
+}: TournamentHUDProps) {
   const [tournament, setTournament] = useState<TournamentInfo | null>(null);
   const [nextLevel, setNextLevel] = useState<LevelInfo | null>(null);
   const [playersRemaining, setPlayersRemaining] = useState(0);
@@ -44,6 +57,7 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [expanded, setExpanded] = useState(!compact);
   const [isBreak, setIsBreak] = useState(false);
+  const [playerRanking, setPlayerRanking] = useState<PlayerRanking | null>(null);
 
   // Fetch tournament data
   useEffect(() => {
@@ -91,13 +105,29 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
     const fetchParticipants = async () => {
       const { data, count } = await supabase
         .from('online_poker_tournament_participants')
-        .select('chips', { count: 'exact' })
+        .select('player_id, chips', { count: 'exact' })
         .eq('tournament_id', tournamentId)
         .eq('status', 'playing');
 
       if (data) {
         setPlayersRemaining(count || 0);
         setTotalChips(data.reduce((sum, p) => sum + (p.chips || 0), 0));
+        
+        // Calculate current player ranking
+        if (currentPlayerId) {
+          const sortedByChips = [...data].sort((a, b) => (b.chips || 0) - (a.chips || 0));
+          const playerIndex = sortedByChips.findIndex(p => p.player_id === currentPlayerId);
+          
+          if (playerIndex !== -1) {
+            const playerData = sortedByChips[playerIndex];
+            setPlayerRanking({
+              position: playerIndex + 1,
+              totalPlayers: count || 0,
+              stack: playerData.chips || 0,
+              bbCount: tournament?.big_blind ? Math.floor((playerData.chips || 0) / tournament.big_blind) : 0,
+            });
+          }
+        }
       }
     };
 
@@ -133,7 +163,7 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tournamentId, tournament?.current_level]);
+  }, [tournamentId, tournament?.current_level, currentPlayerId, tournament?.big_blind]);
 
   // Timer countdown
   useEffect(() => {
@@ -161,11 +191,25 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
     return Math.round(totalChips / playersRemaining);
   }, [totalChips, playersRemaining]);
 
+  // Calculate average BB
+  const avgBB = useMemo(() => {
+    if (!tournament?.big_blind || tournament.big_blind === 0) return 0;
+    return Math.round(avgStack / tournament.big_blind);
+  }, [avgStack, tournament?.big_blind]);
+
   // Format time
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Get BB indicator color
+  const getBBColor = (bb: number) => {
+    if (bb >= 30) return 'text-green-400';
+    if (bb >= 15) return 'text-amber-400';
+    if (bb >= 10) return 'text-orange-400';
+    return 'text-red-400';
   };
 
   if (!tournament || tournament.status === 'registration') {
@@ -188,10 +232,15 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
           className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm border border-amber-500/30 text-white/90 text-xs font-medium hover:bg-black/80 transition-colors"
         >
           <Trophy className="h-3.5 w-3.5 text-amber-500" />
-          <span>Уровень {tournament.current_level}</span>
+          <span>Ур.{tournament.current_level}</span>
           <span className="text-amber-400">
-            {tournament.small_blind}/{tournament.big_blind}
+            {(tournament.small_blind || 0).toLocaleString()}/{(tournament.big_blind || 0).toLocaleString()}
           </span>
+          {playerRanking && (
+            <span className={cn("font-mono", getBBColor(playerRanking.bbCount))}>
+              {playerRanking.bbCount}BB
+            </span>
+          )}
           {timeRemaining !== null && (
             <span className={cn(
               "font-mono",
@@ -215,12 +264,12 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
         className
       )}
     >
-      <div className="bg-gradient-to-br from-black/80 to-black/60 backdrop-blur-md rounded-xl border border-amber-500/30 overflow-hidden min-w-[200px]">
+      <div className="bg-gradient-to-br from-black/80 to-black/60 backdrop-blur-md rounded-xl border border-amber-500/30 overflow-hidden min-w-[220px]">
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-2 bg-amber-500/10 border-b border-amber-500/20">
           <div className="flex items-center gap-2">
             <Trophy className="h-4 w-4 text-amber-500" />
-            <span className="text-white font-semibold text-sm truncate max-w-[120px]">
+            <span className="text-white font-semibold text-sm truncate max-w-[140px]">
               {tournament.name}
             </span>
           </div>
@@ -243,7 +292,7 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
             {timeRemaining !== null && (
               <div className={cn(
                 "flex items-center gap-1 text-xs font-mono",
-                timeRemaining <= 60 ? "text-red-400" : 
+                timeRemaining <= 60 ? "text-red-400 animate-pulse" : 
                 timeRemaining <= 120 ? "text-amber-400" : "text-white/80"
               )}>
                 <Clock className="h-3 w-3" />
@@ -272,15 +321,37 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
           )}
         </div>
 
+        {/* Current Player Stats */}
+        {playerRanking && !isBreak && (
+          <div className="px-3 py-2 bg-gradient-to-r from-amber-500/10 to-transparent border-b border-white/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="h-3.5 w-3.5 text-amber-400" />
+                <span className="text-white/80 text-xs">Ваша позиция:</span>
+                <span className="text-amber-400 font-bold">
+                  #{playerRanking.position}/{playerRanking.totalPlayers}
+                </span>
+              </div>
+              <div className={cn(
+                "flex items-center gap-1 font-bold text-sm",
+                getBBColor(playerRanking.bbCount)
+              )}>
+                <Coins className="h-3.5 w-3.5" />
+                {playerRanking.bbCount} BB
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Next Level Preview */}
         {nextLevel && !isBreak && (
           <div className="px-3 py-1.5 bg-white/5 border-b border-white/10">
             <div className="flex items-center justify-between text-xs">
               <span className="text-white/50">
-                {nextLevel.is_break ? 'След: Перерыв' : `След: ${nextLevel.small_blind}/${nextLevel.big_blind}`}
+                {nextLevel.is_break ? 'След: Перерыв' : `След: ${nextLevel.small_blind.toLocaleString()}/${nextLevel.big_blind.toLocaleString()}`}
               </span>
               {nextLevel.ante && nextLevel.ante > 0 && (
-                <span className="text-white/40">анте {nextLevel.ante}</span>
+                <span className="text-white/40">анте {nextLevel.ante.toLocaleString()}</span>
               )}
             </div>
           </div>
@@ -300,7 +371,9 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
             <TrendingUp className="h-3.5 w-3.5 text-green-400" />
             <div className="text-xs">
               <span className="text-white font-medium">{avgStack.toLocaleString()}</span>
-              <span className="text-white/50 ml-1">средний</span>
+              <span className={cn("ml-1 font-medium", getBBColor(avgBB))}>
+                ({avgBB}BB)
+              </span>
             </div>
           </div>
 
@@ -308,7 +381,7 @@ export function TournamentHUD({ tournamentId, className, compact = false }: Tour
             <Layers className="h-3.5 w-3.5 text-amber-400" />
             <div className="text-xs">
               <span className="text-amber-400 font-medium">
-                {tournament.prize_pool?.toLocaleString() || 0}
+                {(tournament.prize_pool || 0).toLocaleString()}
               </span>
               <span className="text-white/50 ml-1">💎 призовой фонд</span>
             </div>

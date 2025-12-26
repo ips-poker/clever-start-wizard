@@ -4,8 +4,10 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { OnlinePokerTable } from '@/components/poker/OnlinePokerTable';
 import { TournamentHUD } from '@/components/poker/TournamentHUD';
 import { TournamentMoveNotification } from '@/components/poker/TournamentMoveNotification';
+import { TournamentEliminationModal } from '@/components/poker/TournamentEliminationModal';
+import { useTournamentReconnect } from '@/hooks/useTournamentReconnect';
 import { supabase } from '@/integrations/supabase/client';
-import { X } from 'lucide-react';
+import { X, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function PokerTable() {
@@ -22,6 +24,16 @@ export default function PokerTable() {
   const [tournamentId, setTournamentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentTableId, setCurrentTableId] = useState<string | null>(tableId || null);
+
+  // Tournament reconnect logic
+  const {
+    isReconnecting,
+    wasDisconnected,
+    recoveredSession,
+    attemptReconnect,
+    startHeartbeat,
+    clearSession,
+  } = useTournamentReconnect(playerId);
 
   // Fetch table info and player balance
   useEffect(() => {
@@ -71,15 +83,24 @@ export default function PokerTable() {
   }, [navigate, searchParams]);
 
   const handleLeaveTable = () => {
+    clearSession();
     window.close();
   };
 
-  const handleMinimize = () => {
-    // Can't truly minimize browser window, but can resize
-    window.resizeTo(300, 200);
-  };
-
   const activeTableId = currentTableId || tableId;
+
+  // Start reconnect heartbeat when table loads
+  useEffect(() => {
+    if (activeTableId && playerId && tournamentId) {
+      startHeartbeat({
+        tournamentId,
+        tableId: activeTableId,
+        playerId,
+        seatNumber: 0,
+        stack: 0,
+      });
+    }
+  }, [activeTableId, playerId, tournamentId, startHeartbeat]);
 
   if (!activeTableId) {
     return (
@@ -111,7 +132,11 @@ export default function PokerTable() {
       
       {/* Tournament HUD */}
       {tournamentId && (
-        <TournamentHUD tournamentId={tournamentId} compact={true} />
+        <TournamentHUD 
+          tournamentId={tournamentId} 
+          currentPlayerId={playerId}
+          compact={true} 
+        />
       )}
 
       {/* Tournament Move Notification */}
@@ -120,6 +145,14 @@ export default function PokerTable() {
           playerId={playerId}
           tournamentId={tournamentId}
           onJoinNewTable={handleJoinNewTable}
+        />
+      )}
+
+      {/* Tournament Elimination Modal */}
+      {tournamentId && playerId && (
+        <TournamentEliminationModal
+          playerId={playerId}
+          tournamentId={tournamentId}
         />
       )}
 
