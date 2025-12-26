@@ -1,9 +1,9 @@
 /**
- * Syndikatet Poker Server v3.3
+ * Syndikatet Poker Server v3.4
  * Professional Poker Engine with tournament-grade security
  * Full integration: ConnectionPool, MessageQueue, Metrics, CircuitBreaker, LoadManager
  * Prometheus metrics, Alerting system
- * NEW: Tournament state caching, Message batching, Parallel showdown processing
+ * Phase 4: Prize payouts, Spectator mode, Hand-for-hand
  */
 
 import express from 'express';
@@ -31,6 +31,9 @@ import { messageBatcher } from './utils/message-batcher.js';
 import { showdownProcessor } from './utils/parallel-showdown.js';
 import { shutdownWorkerPools, getHandEvaluatorPool } from './utils/worker-pool.js';
 import { redisManager } from './utils/redis-manager.js';
+import { prizePayoutSystem } from './utils/prize-payout.js';
+import { handForHandManager } from './utils/hand-for-hand.js';
+import { spectatorManager } from './utils/spectator-manager.js';
 
 // Process-level error handlers
 process.on('uncaughtException', (error) => {
@@ -107,8 +110,8 @@ app.get('/health', (req, res) => {
   res.json({
     status: fullMetrics.health,
     timestamp: new Date().toISOString(),
-    version: '3.3.0',
-    engine: 'Professional Poker Engine v3.3',
+    version: '3.4.0',
+    engine: 'Professional Poker Engine v3.4',
     uptime: fullMetrics.system.uptime,
     memory: { 
       heapUsedMB: fullMetrics.system.heapUsedMB, 
@@ -130,6 +133,9 @@ app.get('/health', (req, res) => {
     showdown: showdownProcessor.getStats(),
     workerPool: getHandEvaluatorPool().getStats(),
     redis: redisManager.getStats(),
+    // Phase 4: Professional features stats
+    handForHand: handForHandManager.getStats(),
+    spectators: spectatorManager.getStats(),
     alerts: {
       active: activeAlerts.length,
       critical: activeAlerts.filter(a => a.rule.severity === 'critical').length,
@@ -138,7 +144,8 @@ app.get('/health', (req, res) => {
     capacity: { 
       maxTables: 300, 
       maxPlayers: 2700, 
-      maxConnections: 5000 
+      maxConnections: 5000,
+      maxSpectators: 5000
     }
   });
 });
@@ -253,6 +260,12 @@ const gracefulShutdown = async () => {
   // Stop alert manager
   alertManager.stop();
   
+  // Shutdown spectator manager
+  spectatorManager.shutdown();
+  
+  // Shutdown hand-for-hand manager
+  handForHandManager.shutdown();
+  
   // Shutdown message queue
   messageQueue.shutdown();
   
@@ -308,14 +321,17 @@ if (!validation.passed) {
 
 // Start server
 server.listen(config.port, () => {
-  logger.info(`🚀 Poker Server v3.2 running on port ${config.port}`);
+  logger.info(`🚀 Poker Server v3.4 running on port ${config.port}`);
   logger.info(`📡 WebSocket endpoint: ws://localhost:${config.port}/ws/poker`);
   logger.info(`📊 Metrics endpoint: http://localhost:${config.port}/metrics`);
   logger.info(`❤️ Health endpoint: http://localhost:${config.port}/health`);
   logger.info(`🔔 Alert manager started with ${alertManager.getActiveAlerts().length} active alerts`);
   logger.info(`⚙️ Environment: ${config.nodeEnv}`);
   logger.info(`🎰 Tournament manager initialized`);
-  logger.info(`✅ Server ready for 300+ tables, 2700+ players`);
+  logger.info(`👁️ Spectator mode enabled (30s card delay)`);
+  logger.info(`🃏 Hand-for-hand system ready`);
+  logger.info(`💎 Prize payout system ready`);
+  logger.info(`✅ Server ready for 300+ tables, 2700+ players, 5000+ spectators`);
   
   // Send PM2 ready signal
   if (process.send) {
@@ -323,4 +339,4 @@ server.listen(config.port, () => {
   }
 });
 
-export { app, server, wss, tournamentManager };
+export { app, server, wss, tournamentManager, prizePayoutSystem, handForHandManager, spectatorManager };
