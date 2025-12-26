@@ -1,7 +1,8 @@
 /**
- * Syndikatet Poker Server v3.1
+ * Syndikatet Poker Server v3.2
  * Professional Poker Engine with tournament-grade security
  * Full integration: ConnectionPool, MessageQueue, Metrics, CircuitBreaker, LoadManager
+ * Prometheus metrics, Alerting system
  */
 
 import express from 'express';
@@ -18,20 +19,24 @@ import { createSupabaseClient } from './db/supabase.js';
 import { setupRoutes } from './routes/index.js';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { logger } from './utils/logger.js';
-import { metrics, memoryLeakDetector } from './utils/metrics.js';
+import { metrics as legacyMetrics, memoryLeakDetector } from './utils/metrics.js';
 import { messageQueue } from './utils/message-queue.js';
 import { supabaseCircuitBreaker } from './utils/circuit-breaker.js';
 import { loadManager } from './utils/load-manager.js';
+import { metrics, prometheusRegistry } from './utils/prometheus-metrics.js';
+import { alertManager } from './utils/alerting.js';
 
 // Process-level error handlers
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception - keeping server alive', { error: String(error), stack: error.stack });
-  metrics.recordError();
+  legacyMetrics.recordError();
+  metrics.incWsErrors();
 });
 
 process.on('unhandledRejection', (reason) => {
   logger.error('Unhandled Rejection - keeping server alive', { reason: String(reason) });
-  metrics.recordError();
+  legacyMetrics.recordError();
+  metrics.incWsErrors();
 });
 
 const app = express();
@@ -58,54 +63,6 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Health check with full metrics
-app.get('/health', (req, res) => {
-  const fullMetrics = metrics.getMetrics();
-  const stats = gameManager.getStats();
-  const loadStatus = loadManager.getStatus();
-  const cbStatus = supabaseCircuitBreaker.getStatus();
-  const queueStats = messageQueue.getStats();
-  
-  res.json({
-    status: fullMetrics.health,
-    timestamp: new Date().toISOString(),
-    version: '3.1.0',
-    engine: 'Professional Poker Engine v3.1',
-    uptime: fullMetrics.system.uptime,
-    memory: { heapUsedMB: fullMetrics.system.heapUsedMB, heapTotalMB: fullMetrics.system.heapTotalMB },
-    load: loadStatus,
-    circuitBreakers: cbStatus,
-    messageQueue: queueStats,
-    game: { activeTables: stats.activeTables, totalPlayers: stats.totalPlayers, activeHands: stats.activeHands },
-    capacity: { maxTables: 300, maxPlayers: 2700, maxConnections: 5000 }
-  });
-});
-
-// Prometheus-compatible metrics endpoint
-app.get('/metrics', (req, res) => {
-  const m = metrics.getMetrics();
-  const lines = [
-    `# HELP poker_hands_dealt_total Total hands dealt`,
-    `poker_hands_dealt_total ${m.game.handsDealt}`,
-    `# HELP poker_actions_processed_total Total actions processed`,
-    `poker_actions_processed_total ${m.game.actionsProcessed}`,
-    `# HELP poker_websocket_connections Active WebSocket connections`,
-    `poker_websocket_connections ${m.websocket.connectionAttempts - m.websocket.connectionRejections}`,
-    `# HELP poker_heap_used_mb Heap memory used in MB`,
-    `poker_heap_used_mb ${m.system.heapUsedMB}`,
-    `# HELP poker_event_loop_lag_ms Event loop lag in ms`,
-    `poker_event_loop_lag_ms ${m.system.eventLoopLagMs}`,
-  ];
-  res.set('Content-Type', 'text/plain');
-  res.send(lines.join('\n'));
-});
-
-const supabase = createSupabaseClient();
-const gameManager = new PokerGameManager(supabase);
-const tournamentManager = new TournamentManager();
-
-setupRoutes(app, gameManager, supabase);
-
 // Initialize Supabase client
 const supabase = createSupabaseClient();
 
@@ -117,6 +74,70 @@ const tournamentManager = new TournamentManager();
 
 // Setup API routes
 setupRoutes(app, gameManager, supabase);
+
+// Health check with full metrics
+app.get('/health', (req, res) => {
+  const fullMetrics = legacyMetrics.getMetrics();
+  const stats = gameManager.getStats();
+  const loadStatus = loadManager.getStatus();
+  const cbStatus = supabaseCircuitBreaker.getStatus();
+  const queueStats = messageQueue.getStats();
+  const activeAlerts = alertManager.getActiveAlerts();
+  
+  // Update prometheus gauges
+  metrics.setActiveTables(stats.activeTables);
+  metrics.setActivePlayers(stats.totalPlayers);
+  metrics.setLoadLevel(loadStatus.level === 'normal' ? 0 : loadStatus.level === 'high' ? 1 : 2);
+  metrics.setCircuitBreakerState('supabase', cbStatus.state === 'CLOSED' ? 0 : cbStatus.state === 'OPEN' ? 1 : 2);
+  metrics.setMessageQueueSize(queueStats.size);
+  
+  res.json({
+    status: fullMetrics.health,
+    timestamp: new Date().toISOString(),
+    version: '3.2.0',
+    engine: 'Professional Poker Engine v3.2',
+    uptime: fullMetrics.system.uptime,
+    memory: { 
+      heapUsedMB: fullMetrics.system.heapUsedMB, 
+      heapTotalMB: fullMetrics.system.heapTotalMB 
+    },
+    load: loadStatus,
+    circuitBreakers: {
+      supabase: cbStatus
+    },
+    messageQueue: queueStats,
+    game: { 
+      activeTables: stats.activeTables, 
+      totalPlayers: stats.totalPlayers, 
+      activeHands: stats.activeHands,
+      activeTournaments: tournamentManager.getActiveTournaments?.()?.length || 0
+    },
+    alerts: {
+      active: activeAlerts.length,
+      critical: activeAlerts.filter(a => a.rule.severity === 'critical').length,
+      warning: activeAlerts.filter(a => a.rule.severity === 'warning').length
+    },
+    capacity: { 
+      maxTables: 300, 
+      maxPlayers: 2700, 
+      maxConnections: 5000 
+    }
+  });
+});
+
+// Prometheus-compatible metrics endpoint
+app.get('/metrics', (req, res) => {
+  res.set('Content-Type', 'text/plain; charset=utf-8');
+  res.send(metrics.export());
+});
+
+// Alerts API
+app.get('/api/alerts', (req, res) => {
+  res.json({
+    active: alertManager.getActiveAlerts(),
+    history: alertManager.getAlertHistory(50)
+  });
+});
 
 // WebSocket server
 const wss = new WebSocketServer({ 
@@ -137,26 +158,85 @@ const wsRateLimiter = new RateLimiterMemory({
 wss.on('connection', async (ws, req) => {
   const ip = req.socket.remoteAddress || 'unknown';
   
+  metrics.incWsConnections();
+  
   try {
     await wsRateLimiter.consume(ip);
     wsHandler.handleConnection(ws, req);
   } catch (rateLimitError) {
     logger.warn(`WebSocket rate limit exceeded for IP: ${ip}`);
     ws.close(1008, 'Rate limit exceeded');
+    metrics.incWsErrors();
   }
 });
 
-// Log connection count periodically
+// Event loop lag monitoring
+let lastCheck = process.hrtime.bigint();
 setInterval(() => {
-  logger.info('WebSocket connection stats', {
+  const now = process.hrtime.bigint();
+  const expected = 1000; // 1 second interval
+  const actual = Number(now - lastCheck) / 1e6; // Convert to ms
+  const lag = Math.max(0, actual - expected);
+  
+  metrics.setEventLoopLag(lag / 1000); // Convert to seconds
+  lastCheck = now;
+}, 1000);
+
+// Log connection count and update metrics periodically
+setInterval(() => {
+  const stats = gameManager.getStats();
+  
+  // Update prometheus metrics
+  metrics.setActiveTables(stats.activeTables);
+  metrics.setActivePlayers(stats.totalPlayers);
+  metrics.setActiveTournaments(tournamentManager.getActiveTournaments?.()?.length || 0);
+  
+  logger.info('Server stats', {
     activeConnections: wss.clients.size,
-    memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
+    activeTables: stats.activeTables,
+    totalPlayers: stats.totalPlayers,
+    memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB',
+    activeAlerts: alertManager.getActiveAlerts().length
   });
 }, 30000);
+
+// Initialize alert webhooks from environment
+if (process.env.SLACK_WEBHOOK_URL) {
+  alertManager.addWebhook({
+    url: process.env.SLACK_WEBHOOK_URL,
+    type: 'slack',
+    enabled: true
+  });
+}
+
+if (process.env.DISCORD_WEBHOOK_URL) {
+  alertManager.addWebhook({
+    url: process.env.DISCORD_WEBHOOK_URL,
+    type: 'discord',
+    enabled: true
+  });
+}
+
+if (process.env.PAGERDUTY_ROUTING_KEY) {
+  alertManager.addWebhook({
+    url: `https://events.pagerduty.com/v2/enqueue`,
+    type: 'pagerduty',
+    enabled: true
+  });
+}
+
+// Start alert manager
+alertManager.start(10000); // Check every 10 seconds
 
 // Graceful shutdown
 const gracefulShutdown = async () => {
   logger.info('Shutting down gracefully...');
+  
+  // Stop alert manager
+  alertManager.stop();
+  
+  // Shutdown message queue
+  messageQueue.shutdown();
   
   // Close WebSocket connections
   wss.clients.forEach(client => {
@@ -198,10 +278,19 @@ if (!validation.passed) {
 
 // Start server
 server.listen(config.port, () => {
-  logger.info(`Poker server running on port ${config.port}`);
-  logger.info(`WebSocket endpoint: ws://localhost:${config.port}/ws/poker`);
-  logger.info(`Environment: ${config.nodeEnv}`);
-  logger.info(`Tournament manager initialized`);
+  logger.info(`🚀 Poker Server v3.2 running on port ${config.port}`);
+  logger.info(`📡 WebSocket endpoint: ws://localhost:${config.port}/ws/poker`);
+  logger.info(`📊 Metrics endpoint: http://localhost:${config.port}/metrics`);
+  logger.info(`❤️ Health endpoint: http://localhost:${config.port}/health`);
+  logger.info(`🔔 Alert manager started with ${alertManager.getActiveAlerts().length} active alerts`);
+  logger.info(`⚙️ Environment: ${config.nodeEnv}`);
+  logger.info(`🎰 Tournament manager initialized`);
+  logger.info(`✅ Server ready for 300+ tables, 2700+ players`);
+  
+  // Send PM2 ready signal
+  if (process.send) {
+    process.send('ready');
+  }
 });
 
 export { app, server, wss, tournamentManager };
