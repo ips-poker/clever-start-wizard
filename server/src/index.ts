@@ -1,9 +1,10 @@
 /**
- * Syndikatet Poker Server v3.4
+ * Syndikatet Poker Server v3.5
  * Professional Poker Engine with tournament-grade security
  * Full integration: ConnectionPool, MessageQueue, Metrics, CircuitBreaker, LoadManager
  * Prometheus metrics, Alerting system
  * Phase 4: Prize payouts, Spectator mode, Hand-for-hand
+ * Phase 5: Action timeout guard, Hand history service, HUD stats
  */
 
 import express from 'express';
@@ -34,6 +35,8 @@ import { redisManager } from './utils/redis-manager.js';
 import { prizePayoutSystem } from './utils/prize-payout.js';
 import { handForHandManager } from './utils/hand-for-hand.js';
 import { spectatorManager } from './utils/spectator-manager.js';
+import { actionTimeoutGuard } from './utils/action-timeout-guard.js';
+import { handHistoryService } from './utils/hand-history-service.js';
 
 // Process-level error handlers
 process.on('uncaughtException', (error) => {
@@ -110,8 +113,8 @@ app.get('/health', (req, res) => {
   res.json({
     status: fullMetrics.health,
     timestamp: new Date().toISOString(),
-    version: '3.4.0',
-    engine: 'Professional Poker Engine v3.4',
+    version: '3.5.0',
+    engine: 'Professional Poker Engine v3.5',
     uptime: fullMetrics.system.uptime,
     memory: { 
       heapUsedMB: fullMetrics.system.heapUsedMB, 
@@ -133,9 +136,11 @@ app.get('/health', (req, res) => {
     showdown: showdownProcessor.getStats(),
     workerPool: getHandEvaluatorPool().getStats(),
     redis: redisManager.getStats(),
-    // Phase 4: Professional features stats
+    // Phase 4-5: Professional features stats
     handForHand: handForHandManager.getStats(),
     spectators: spectatorManager.getStats(),
+    timeoutGuard: actionTimeoutGuard.getStats(),
+    handHistory: handHistoryService.getStats(),
     alerts: {
       active: activeAlerts.length,
       critical: activeAlerts.filter(a => a.rule.severity === 'critical').length,
@@ -321,7 +326,10 @@ if (!validation.passed) {
 
 // Start server
 server.listen(config.port, () => {
-  logger.info(`🚀 Poker Server v3.4 running on port ${config.port}`);
+  // Initialize hand history service with supabase
+  handHistoryService.initialize(supabase);
+  
+  logger.info(`🚀 Poker Server v3.5 running on port ${config.port}`);
   logger.info(`📡 WebSocket endpoint: ws://localhost:${config.port}/ws/poker`);
   logger.info(`📊 Metrics endpoint: http://localhost:${config.port}/metrics`);
   logger.info(`❤️ Health endpoint: http://localhost:${config.port}/health`);
@@ -331,6 +339,8 @@ server.listen(config.port, () => {
   logger.info(`👁️ Spectator mode enabled (30s card delay)`);
   logger.info(`🃏 Hand-for-hand system ready`);
   logger.info(`💎 Prize payout system ready`);
+  logger.info(`⏱️ Action timeout guard active (0.5s grace period)`);
+  logger.info(`📜 Hand history service ready (HUD stats enabled)`);
   logger.info(`✅ Server ready for 300+ tables, 2700+ players, 5000+ spectators`);
   
   // Send PM2 ready signal
@@ -339,4 +349,4 @@ server.listen(config.port, () => {
   }
 });
 
-export { app, server, wss, tournamentManager, prizePayoutSystem, handForHandManager, spectatorManager };
+export { app, server, wss, tournamentManager, prizePayoutSystem, handForHandManager, spectatorManager, actionTimeoutGuard, handHistoryService };
