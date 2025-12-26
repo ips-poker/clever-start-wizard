@@ -2,138 +2,98 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ==============================================
-   SYNDIKATE POKER CLUB - PREMIUM CASINO DESIGN SYSTEM
-   Ultra-realistic, cinematic poker experience
-   ============================================== */
-
-/* Google Fonts - Premium Typography */
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto+Condensed:wght@300;400;700&family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+/* Syndikate Poker Club - Brutal Industrial Design System */
 
 @layer base {
   :root {
-    /* ===== CORE THEME - Dark Luxury Casino ===== */
-    --background: 220 25% 6%; /* Deep midnight blue-black */
-    --foreground: 45 20% 95%; /* Warm off-white */
+    /* Syndikate Industrial Brutal Theme */
+    --background: 0 0% 8%; /* Deep dark concrete */
+    --foreground: 0 0% 95%; /* Light text */
     
-    --card: 220 20% 10%; /* Elevated dark surface */
-    --card-foreground: 45 20% 95%;
+    --card: 0 0% 12%; /* Dark metal card */
+    --card-foreground: 0 0% 95%;
     
-    --popover: 220 25% 8%;
-    --popover-foreground: 45 20% 95%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
     
-    --primary: 33 100% 50%; /* Rich casino gold */
-    --primary-foreground: 220 25% 8%;
+    --primary: 24 100% 50%; /* Neon Orange */
+    --primary-foreground: 0 0% 100%;
     
-    --secondary: 220 15% 18%; /* Slate blue-gray */
-    --secondary-foreground: 45 20% 95%;
+    --secondary: 0 0% 18%; /* Metal gray */
+    --secondary-foreground: 0 0% 95%;
     
-    --muted: 220 15% 14%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
     
-    --accent: 142 70% 45%; /* Casino green */
+    --accent: 0 84% 45%; /* Aggressive red */
     --accent-foreground: 0 0% 100%;
     
-    --destructive: 0 72% 50%;
+    --destructive: 0 84% 50%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 220 15% 20%;
-    --input: 220 15% 18%;
-    --ring: 33 100% 50%;
+    --border: 0 0% 20%; /* Metal border */
+    --input: 0 0% 20%;
+    --ring: 24 100% 50%; /* Orange ring */
     
-    --radius: 0.5rem;
+    --radius: 0.25rem; /* Sharp edges */
     
-    /* ===== SYNDIKATE PREMIUM COLORS ===== */
-    --syndikate-orange: 33 100% 50%; /* Signature gold-orange */
-    --syndikate-orange-glow: 33 100% 60%;
-    --syndikate-red: 0 75% 50%; /* Power red */
-    --syndikate-red-dark: 0 75% 38%;
-    --syndikate-gold: 45 100% 50%; /* Pure gold */
-    --syndikate-gold-light: 45 100% 65%;
-    --syndikate-concrete: 220 20% 10%;
-    --syndikate-metal: 220 15% 16%;
-    --syndikate-metal-light: 220 12% 24%;
-    --syndikate-rust: 20 65% 35%;
+    /* Syndikate Custom Colors */
+    --syndikate-orange: 24 100% 50%; /* Main neon orange */
+    --syndikate-orange-glow: 24 100% 55%;
+    --syndikate-red: 0 84% 45%; /* Aggressive red */
+    --syndikate-red-dark: 0 84% 35%;
+    --syndikate-concrete: 0 0% 12%; /* Concrete texture */
+    --syndikate-metal: 0 0% 18%; /* Metal surface */
+    --syndikate-metal-light: 0 0% 25%;
+    --syndikate-rust: 15 70% 35%; /* Rust accent */
     
-    /* ===== POKER TABLE COLORS ===== */
-    --felt-green: 145 60% 22%; /* Classic casino felt */
-    --felt-green-light: 145 55% 28%;
-    --felt-blue: 210 50% 25%; /* Modern blue felt */
-    --felt-red: 355 50% 28%; /* Premium red felt */
-    --felt-purple: 270 40% 25%; /* VIP purple felt */
-    --rail-wood: 25 50% 20%; /* Mahogany rail */
-    --rail-highlight: 35 60% 35%;
+    /* Industrial Gradients */
+    --gradient-industrial: linear-gradient(135deg, hsl(var(--syndikate-concrete)), hsl(var(--syndikate-metal)));
+    --gradient-neon: linear-gradient(135deg, hsl(var(--syndikate-orange)), hsl(var(--syndikate-red)));
+    --gradient-metal: linear-gradient(180deg, hsl(var(--syndikate-metal)), hsl(var(--syndikate-concrete)));
     
-    /* ===== CHIP COLORS - CASINO STANDARD ===== */
-    --chip-white: 0 0% 95%;
-    --chip-red: 0 75% 50%;
-    --chip-green: 142 70% 45%;
-    --chip-blue: 217 90% 55%;
-    --chip-black: 220 25% 12%;
-    --chip-purple: 270 70% 55%;
-    --chip-gold: 45 100% 50%;
-    --chip-pink: 340 80% 60%;
+    /* Brutal Shadows */
+    --shadow-brutal: 0 10px 40px -15px rgba(0, 0, 0, 0.8);
+    --shadow-neon-orange: 0 0 30px hsla(var(--syndikate-orange), 0.5);
+    --shadow-neon-red: 0 0 30px hsla(var(--syndikate-red), 0.5);
+    --shadow-inset: inset 0 2px 8px rgba(0, 0, 0, 0.5);
     
-    /* ===== PREMIUM GRADIENTS ===== */
-    --gradient-gold: linear-gradient(135deg, hsl(45, 100%, 60%) 0%, hsl(35, 100%, 50%) 50%, hsl(25, 90%, 45%) 100%);
-    --gradient-casino: linear-gradient(180deg, hsl(220, 25%, 12%) 0%, hsl(220, 25%, 6%) 100%);
-    --gradient-felt: radial-gradient(ellipse 120% 100% at 50% 40%, hsl(145, 60%, 25%) 0%, hsl(145, 60%, 18%) 100%);
-    --gradient-neon: linear-gradient(135deg, hsl(33, 100%, 55%) 0%, hsl(0, 75%, 50%) 100%);
-    --gradient-metal: linear-gradient(180deg, hsl(220, 15%, 20%) 0%, hsl(220, 20%, 12%) 100%);
-    --gradient-holographic: linear-gradient(135deg, 
-      rgba(255,0,128,0.3) 0%, 
-      rgba(0,255,255,0.3) 25%, 
-      rgba(255,255,0,0.3) 50%, 
-      rgba(128,0,255,0.3) 75%, 
-      rgba(255,0,128,0.3) 100%);
-    
-    /* ===== LUXURY SHADOWS ===== */
-    --shadow-luxury: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-    --shadow-neon-gold: 0 0 40px hsla(45, 100%, 50%, 0.5);
-    --shadow-neon-orange: 0 0 30px hsla(33, 100%, 50%, 0.5);
-    --shadow-neon-green: 0 0 30px hsla(142, 70%, 45%, 0.5);
-    --shadow-neon-red: 0 0 30px hsla(0, 75%, 50%, 0.5);
-    --shadow-inset-deep: inset 0 4px 12px rgba(0, 0, 0, 0.6);
-    --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
-    --shadow-chip: 0 4px 8px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
-    
-    /* ===== PREMIUM TYPOGRAPHY ===== */
+    /* Typography */
     --font-display: 'Bebas Neue', 'Impact', sans-serif;
     --font-body: 'Roboto Condensed', sans-serif;
-    --font-tech: 'Orbitron', 'Rajdhani', sans-serif;
-    --font-numbers: 'Rajdhani', 'Orbitron', monospace;
+    --font-weight-black: 900;
+    --font-weight-bold: 700;
+    --font-weight-normal: 400;
     
-    /* ===== ANIMATION TIMINGS ===== */
-    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
-    --transition-spring: 600ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    /* Spacing */
+    --spacing-brutal: 2rem;
     
-    /* ===== CHART COLORS ===== */
-    --chart-1: 33 100% 50%;
-    --chart-2: 0 75% 50%;
-    --chart-3: 142 70% 45%;
-    --chart-4: 217 90% 55%;
-    --chart-5: 270 70% 55%;
+    /* Transitions */
+    --transition-brutal: all 0.2s cubic-bezier(0.4, 0, 1, 1);
+    --transition-glow: all 0.3s ease;
+    
+    --chart-1: 24 100% 50%;
+    --chart-2: 0 84% 45%;
+    --chart-3: 0 0% 25%;
+    --chart-4: 15 70% 35%;
+    --chart-5: 0 0% 50%;
 
-    /* ===== SIDEBAR ===== */
-    --sidebar-background: 220 25% 8%;
-    --sidebar-foreground: 45 20% 95%;
-    --sidebar-primary: 33 100% 50%;
-    --sidebar-primary-foreground: 220 25% 8%;
-    --sidebar-accent: 220 15% 16%;
-    --sidebar-accent-foreground: 45 20% 95%;
-    --sidebar-border: 220 15% 20%;
-    --sidebar-ring: 33 100% 50%;
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 24 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 18%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 24 100% 50%;
     
     --warning-intervals: 120, 60, 30;
   }
 
   .dark {
-    /* Dark mode inherits premium casino theme */
-    --background: 220 25% 6%;
-    --foreground: 45 20% 95%;
+    /* Dark mode uses same brutal industrial theme */
+    --background: 0 0% 8%;
+    --foreground: 0 0% 95%;
   }
 }
 
