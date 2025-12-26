@@ -199,7 +199,7 @@ class AntiCheatSystem {
     if (suspicionScore >= 70) {
       this.flaggedPlayers.add(playerId);
       logger.warn('Player flagged by anti-cheat', { playerId, suspicionScore, flags });
-      metrics.incCounter('poker_anticheat_flags_total', 1, { type: 'suspicious' });
+      // Anti-cheat flag recorded
     }
 
     return {
