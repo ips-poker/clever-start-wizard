@@ -1,9 +1,7 @@
 /**
- * Syndikatet Poker Server v3.0
+ * Syndikatet Poker Server v3.1
  * Professional Poker Engine with tournament-grade security
- * 
- * Supported games: Texas Hold'em, Omaha, Short Deck, Pineapple, Chinese Poker
- * Features: CSPRNG with audit logs, side pots, Run It Twice, Tournament Manager
+ * Full integration: ConnectionPool, MessageQueue, Metrics, CircuitBreaker, LoadManager
  */
 
 import express from 'express';
@@ -20,51 +18,35 @@ import { createSupabaseClient } from './db/supabase.js';
 import { setupRoutes } from './routes/index.js';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { logger } from './utils/logger.js';
+import { metrics, memoryLeakDetector } from './utils/metrics.js';
+import { messageQueue } from './utils/message-queue.js';
+import { supabaseCircuitBreaker } from './utils/circuit-breaker.js';
+import { loadManager } from './utils/load-manager.js';
 
-// Process-level error handlers to prevent crashes
+// Process-level error handlers
 process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception - keeping server alive', { 
-    error: String(error), 
-    stack: error.stack 
-  });
+  logger.error('Uncaught Exception - keeping server alive', { error: String(error), stack: error.stack });
+  metrics.recordError();
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection - keeping server alive', { 
-    reason: String(reason)
-  });
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled Rejection - keeping server alive', { reason: String(reason) });
+  metrics.recordError();
 });
 
-// Initialize Express app
 const app = express();
 const server = createServer(app);
 
-// Increase server connection limits for high load
-server.maxConnections = 1000;
-server.keepAliveTimeout = 120000; // 2 minutes
+server.maxConnections = 5000;
+server.keepAliveTimeout = 120000;
 server.headersTimeout = 125000;
 
-// Security middleware
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false
-}));
-
-// CORS configuration
-app.use(cors({
-  origin: config.corsOrigins,
-  credentials: true
-}));
-
-// Body parsing
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(cors({ origin: config.corsOrigins, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting
-const rateLimiter = new RateLimiterMemory({
-  points: 100, // requests
-  duration: 60, // per minute
-});
+const rateLimiter = new RateLimiterMemory({ points: 100, duration: 60 });
 
 app.use(async (req, res, next) => {
   try {
@@ -76,35 +58,53 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Health check endpoint with detailed metrics
+// Health check with full metrics
 app.get('/health', (req, res) => {
-  const memUsage = process.memoryUsage();
+  const fullMetrics = metrics.getMetrics();
   const stats = gameManager.getStats();
+  const loadStatus = loadManager.getStatus();
+  const cbStatus = supabaseCircuitBreaker.getStatus();
+  const queueStats = messageQueue.getStats();
   
   res.json({
-    status: 'ok',
+    status: fullMetrics.health,
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    memory: {
-      heapUsedMB: Math.round(memUsage.heapUsed / 1024 / 1024),
-      heapTotalMB: Math.round(memUsage.heapTotal / 1024 / 1024),
-      rssMB: Math.round(memUsage.rss / 1024 / 1024)
-    },
     version: '3.1.0',
-    engine: 'Professional Poker Engine v3.1 (Tournament-Grade)',
-    features: ['texas_holdem', 'omaha', 'short_deck', 'pineapple', 'chinese_poker', 'csprng', 'side_pots', 'run_it_twice', 'tournaments'],
-    capacity: {
-      maxTables: 300,
-      maxPlayersPerTable: 9,
-      maxConcurrentTournaments: 50
-    },
-    stats: {
-      activeTables: stats.activeTables,
-      totalPlayers: stats.totalPlayers,
-      activeHands: stats.activeHands
-    }
+    engine: 'Professional Poker Engine v3.1',
+    uptime: fullMetrics.system.uptime,
+    memory: { heapUsedMB: fullMetrics.system.heapUsedMB, heapTotalMB: fullMetrics.system.heapTotalMB },
+    load: loadStatus,
+    circuitBreakers: cbStatus,
+    messageQueue: queueStats,
+    game: { activeTables: stats.activeTables, totalPlayers: stats.totalPlayers, activeHands: stats.activeHands },
+    capacity: { maxTables: 300, maxPlayers: 2700, maxConnections: 5000 }
   });
 });
+
+// Prometheus-compatible metrics endpoint
+app.get('/metrics', (req, res) => {
+  const m = metrics.getMetrics();
+  const lines = [
+    `# HELP poker_hands_dealt_total Total hands dealt`,
+    `poker_hands_dealt_total ${m.game.handsDealt}`,
+    `# HELP poker_actions_processed_total Total actions processed`,
+    `poker_actions_processed_total ${m.game.actionsProcessed}`,
+    `# HELP poker_websocket_connections Active WebSocket connections`,
+    `poker_websocket_connections ${m.websocket.connectionAttempts - m.websocket.connectionRejections}`,
+    `# HELP poker_heap_used_mb Heap memory used in MB`,
+    `poker_heap_used_mb ${m.system.heapUsedMB}`,
+    `# HELP poker_event_loop_lag_ms Event loop lag in ms`,
+    `poker_event_loop_lag_ms ${m.system.eventLoopLagMs}`,
+  ];
+  res.set('Content-Type', 'text/plain');
+  res.send(lines.join('\n'));
+});
+
+const supabase = createSupabaseClient();
+const gameManager = new PokerGameManager(supabase);
+const tournamentManager = new TournamentManager();
+
+setupRoutes(app, gameManager, supabase);
 
 // Initialize Supabase client
 const supabase = createSupabaseClient();
