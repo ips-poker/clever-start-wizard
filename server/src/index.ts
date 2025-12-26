@@ -1,8 +1,9 @@
 /**
- * Syndikatet Poker Server v3.2
+ * Syndikatet Poker Server v3.3
  * Professional Poker Engine with tournament-grade security
  * Full integration: ConnectionPool, MessageQueue, Metrics, CircuitBreaker, LoadManager
  * Prometheus metrics, Alerting system
+ * NEW: Tournament state caching, Message batching, Parallel showdown processing
  */
 
 import express from 'express';
@@ -25,6 +26,11 @@ import { supabaseCircuitBreaker } from './utils/circuit-breaker.js';
 import { loadManager } from './utils/load-manager.js';
 import { metrics, prometheusRegistry } from './utils/prometheus-metrics.js';
 import { alertManager } from './utils/alerting.js';
+import { tournamentStateCache } from './utils/tournament-state-cache.js';
+import { messageBatcher } from './utils/message-batcher.js';
+import { showdownProcessor } from './utils/parallel-showdown.js';
+import { shutdownWorkerPools, getHandEvaluatorPool } from './utils/worker-pool.js';
+import { redisManager } from './utils/redis-manager.js';
 
 // Process-level error handlers
 process.on('uncaughtException', (error) => {
@@ -101,8 +107,8 @@ app.get('/health', (req, res) => {
   res.json({
     status: fullMetrics.health,
     timestamp: new Date().toISOString(),
-    version: '3.2.0',
-    engine: 'Professional Poker Engine v3.2',
+    version: '3.3.0',
+    engine: 'Professional Poker Engine v3.3',
     uptime: fullMetrics.system.uptime,
     memory: { 
       heapUsedMB: fullMetrics.system.heapUsedMB, 
@@ -119,6 +125,11 @@ app.get('/health', (req, res) => {
       activeHands: stats.activeHands,
       activeTournaments: tournamentManager.getTournamentCount?.() || 0
     },
+    cache: tournamentStateCache.getStats(),
+    batcher: messageBatcher.getStats(),
+    showdown: showdownProcessor.getStats(),
+    workerPool: getHandEvaluatorPool().getStats(),
+    redis: redisManager.getStats(),
     alerts: {
       active: activeAlerts.length,
       critical: activeAlerts.filter(a => a.rule.severity === 'critical').length,
@@ -244,6 +255,18 @@ const gracefulShutdown = async () => {
   
   // Shutdown message queue
   messageQueue.shutdown();
+  
+  // Shutdown message batcher
+  messageBatcher.shutdown();
+  
+  // Shutdown tournament state cache
+  tournamentStateCache.shutdown();
+  
+  // Shutdown redis manager
+  redisManager.shutdown();
+  
+  // Shutdown worker pools
+  await shutdownWorkerPools();
   
   // Close WebSocket connections
   wss.clients.forEach(client => {
