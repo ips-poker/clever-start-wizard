@@ -76,16 +76,33 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Health check endpoint
+// Health check endpoint with detailed metrics
 app.get('/health', (req, res) => {
+  const memUsage = process.memoryUsage();
+  const stats = gameManager.getStats();
+  
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    version: '3.0.0',
-    engine: 'Professional Poker Engine v3.0',
-    features: ['texas_holdem', 'omaha', 'short_deck', 'pineapple', 'chinese_poker', 'csprng', 'side_pots', 'run_it_twice', 'tournaments']
+    memory: {
+      heapUsedMB: Math.round(memUsage.heapUsed / 1024 / 1024),
+      heapTotalMB: Math.round(memUsage.heapTotal / 1024 / 1024),
+      rssMB: Math.round(memUsage.rss / 1024 / 1024)
+    },
+    version: '3.1.0',
+    engine: 'Professional Poker Engine v3.1 (Tournament-Grade)',
+    features: ['texas_holdem', 'omaha', 'short_deck', 'pineapple', 'chinese_poker', 'csprng', 'side_pots', 'run_it_twice', 'tournaments'],
+    capacity: {
+      maxTables: 300,
+      maxPlayersPerTable: 9,
+      maxConcurrentTournaments: 50
+    },
+    stats: {
+      activeTables: stats.activeTables,
+      totalPlayers: stats.totalPlayers,
+      activeHands: stats.activeHands
+    }
   });
 });
 

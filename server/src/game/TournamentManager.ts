@@ -944,7 +944,7 @@ export class TournamentManager {
   
   /**
    * Assign players to tables using cryptographically secure shuffle
-   * PROFESSIONAL: Uses Fisher-Yates with crypto.getRandomValues equivalent
+   * PROFESSIONAL: Uses crypto.getRandomValues() equivalent for tournament integrity
    */
   private assignPlayersToTables(state: TournamentState): void {
     const playersPerTable = state.config.playersPerTable;
@@ -962,10 +962,11 @@ export class TournamentManager {
     }
     
     // PROFESSIONAL: Cryptographically secure Fisher-Yates shuffle
+    // Using crypto.randomBytes for tournament-grade randomness
     const shuffledPlayers = [...state.players];
     for (let i = shuffledPlayers.length - 1; i > 0; i--) {
-      // Use crypto-safe random for tournament integrity
-      const j = Math.floor(Math.random() * (i + 1)); // TODO: Replace with secure random
+      // Secure random number generation
+      const j = this.secureRandomInt(i + 1);
       [shuffledPlayers[i], shuffledPlayers[j]] = [shuffledPlayers[j], shuffledPlayers[i]];
     }
     
@@ -983,11 +984,43 @@ export class TournamentManager {
       player.seatNumber = seatIndex;
     }
     
-    logger.info('Players assigned to tables', {
+    logger.info('Players assigned to tables (secure shuffle)', {
       totalPlayers: state.players.length,
       tablesCreated: tablesNeeded,
       playersPerTable: state.tables.map(t => t.seats.filter(s => s !== null).length)
     });
+  }
+  
+  /**
+   * Cryptographically secure random integer in range [0, max)
+   * Uses rejection sampling to eliminate modulo bias
+   */
+  private secureRandomInt(max: number): number {
+    if (max <= 0) return 0;
+    if (max === 1) return 0;
+    
+    // Use Node.js crypto for secure randomness
+    const crypto = require('crypto');
+    const bitsNeeded = Math.ceil(Math.log2(max));
+    const bytesNeeded = Math.ceil(bitsNeeded / 8);
+    const mask = (1 << bitsNeeded) - 1;
+    const maxValid = mask - ((mask + 1) % max);
+    
+    let result: number;
+    let attempts = 0;
+    const maxAttempts = 100;
+    
+    do {
+      const bytes = crypto.randomBytes(bytesNeeded);
+      result = 0;
+      for (let i = 0; i < bytesNeeded; i++) {
+        result = (result << 8) | bytes[i];
+      }
+      result &= mask;
+      attempts++;
+    } while (result > maxValid && attempts < maxAttempts);
+    
+    return result % max;
   }
   
   private startTimer(tournamentId: string): void {
