@@ -1,17 +1,37 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
-import { 
-  checkRateLimit, 
-  getClientIdentifier, 
-  createRateLimitResponse,
-  RATE_LIMIT_PRESETS 
-} from '../_shared/rate-limiter.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Simple in-memory rate limiting
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(clientId: string, maxRequests = 10, windowMs = 60000): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(clientId);
+  
+  if (!record || now > record.resetAt) {
+    rateLimitMap.set(clientId, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  
+  if (record.count >= maxRequests) {
+    return false;
+  }
+  
+  record.count++;
+  return true;
+}
+
+function getClientId(req: Request): string {
+  const forwarded = req.headers.get('x-forwarded-for');
+  const ip = forwarded?.split(',')[0]?.trim() || 'unknown';
+  return `orange-data:${ip}`;
+}
 
 interface OrangeDataConfig {
   api_key: string;
@@ -49,12 +69,13 @@ serve(async (req) => {
   }
 
   // Rate limiting - 10 requests per minute for financial operations
-  const clientId = getClientIdentifier(req, 'orange-data');
-  const rateLimitResult = checkRateLimit(clientId, RATE_LIMIT_PRESETS.financial);
-  
-  if (!rateLimitResult.allowed) {
+  const clientId = getClientId(req);
+  if (!checkRateLimit(clientId, 10, 60000)) {
     console.warn(`⚠️ Rate limit exceeded for ${clientId}`);
-    return createRateLimitResponse(rateLimitResult, corsHeaders);
+    return new Response(
+      JSON.stringify({ error: 'Too many requests', message: 'Превышен лимит запросов' }),
+      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 
   try {
@@ -232,7 +253,7 @@ serve(async (req) => {
   }
 });
 
-async function createSignature(data: any, signKey: string): Promise<string> {
+async function createSignature(data: unknown, signKey: string): Promise<string> {
   const jsonString = JSON.stringify(data);
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(jsonString);
