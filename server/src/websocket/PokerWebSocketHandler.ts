@@ -205,6 +205,19 @@ export class PokerWebSocketHandler {
       const message = JSON.parse(data.toString());
       logger.info('Processing message', { type: message.type });
       
+      // Wrap all handlers in try-catch to prevent crashes
+      await this.safeHandleMessageType(ws, message);
+    } catch (error) {
+      logger.error('Failed to process message', { error: String(error) });
+      this.sendError(ws, 'Invalid message format');
+    }
+  }
+  
+  /**
+   * Safe message type handler with error isolation
+   */
+  private async safeHandleMessageType(ws: WebSocket, message: any): Promise<void> {
+    try {
       switch (message.type) {
         case 'join_table':
           await this.handleJoinTable(ws, message);
@@ -259,9 +272,12 @@ export class PokerWebSocketHandler {
           logger.warn('Unknown message type', { type: message.type });
           this.sendError(ws, `Unknown message type: ${message.type}`);
       }
-    } catch (error) {
-      logger.error('Failed to process message', { error: String(error) });
-      this.sendError(ws, 'Invalid message format');
+    } catch (handlerError) {
+      logger.error('Handler error - isolated', { 
+        type: message.type, 
+        error: String(handlerError) 
+      });
+      this.sendError(ws, 'Request failed');
     }
   }
   

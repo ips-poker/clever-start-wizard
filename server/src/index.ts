@@ -21,9 +21,28 @@ import { setupRoutes } from './routes/index.js';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { logger } from './utils/logger.js';
 
+// Process-level error handlers to prevent crashes
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception - keeping server alive', { 
+    error: String(error), 
+    stack: error.stack 
+  });
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection - keeping server alive', { 
+    reason: String(reason)
+  });
+});
+
 // Initialize Express app
 const app = express();
 const server = createServer(app);
+
+// Increase server connection limits for high load
+server.maxConnections = 1000;
+server.keepAliveTimeout = 120000; // 2 minutes
+server.headersTimeout = 125000;
 
 // Security middleware
 app.use(helmet({
@@ -92,10 +111,10 @@ const wss = new WebSocketServer({
 // Initialize WebSocket handler with tournament manager
 const wsHandler = new PokerWebSocketHandler(wss, gameManager, supabase, tournamentManager);
 
-// Connection rate limiting for WebSocket
+// WebSocket connection rate limiting (increased for tournaments)
 const wsRateLimiter = new RateLimiterMemory({
-  points: 10, // connections
-  duration: 60, // per minute per IP
+  points: 300, // connections per minute per IP (increased for tournaments)
+  duration: 60,
 });
 
 wss.on('connection', async (ws, req) => {
@@ -104,11 +123,19 @@ wss.on('connection', async (ws, req) => {
   try {
     await wsRateLimiter.consume(ip);
     wsHandler.handleConnection(ws, req);
-  } catch {
+  } catch (rateLimitError) {
     logger.warn(`WebSocket rate limit exceeded for IP: ${ip}`);
     ws.close(1008, 'Rate limit exceeded');
   }
 });
+
+// Log connection count periodically
+setInterval(() => {
+  logger.info('WebSocket connection stats', {
+    activeConnections: wss.clients.size,
+    memoryUsage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
+  });
+}, 30000);
 
 // Graceful shutdown
 const gracefulShutdown = async () => {
