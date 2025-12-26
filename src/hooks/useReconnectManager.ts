@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
+import { shouldPauseRetries, getRemainingPauseTime } from '@/utils/apiErrorHandler';
 
 interface ReconnectConfig {
   maxRetries?: number;
@@ -14,13 +15,15 @@ export type ConnectionStatus =
   | 'connecting' 
   | 'disconnected' 
   | 'reconnecting' 
-  | 'failed';
+  | 'failed'
+  | 'paused'; // Новый статус для паузы при серии 503
 
 interface ReconnectState {
   status: ConnectionStatus;
   retryCount: number;
   nextRetryIn: number | null;
   lastError: string | null;
+  isPaused: boolean; // Флаг паузы из-за 503
 }
 
 export function useReconnectManager(config: ReconnectConfig = {}) {
@@ -38,6 +41,7 @@ export function useReconnectManager(config: ReconnectConfig = {}) {
     retryCount: 0,
     nextRetryIn: null,
     lastError: null,
+    isPaused: false,
   });
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -99,6 +103,18 @@ export function useReconnectManager(config: ReconnectConfig = {}) {
     const currentRetry = state.retryCount;
     updateStatus('disconnected', { lastError: error || null });
     
+    // Проверяем, нужно ли приостановить реконнекты из-за серии 503
+    if (shouldPauseRetries()) {
+      const pauseSeconds = getRemainingPauseTime();
+      console.log(`[ReconnectManager] ⏸️ Pausing reconnects for ${pauseSeconds}s due to server overload`);
+      updateStatus('paused', { 
+        lastError: 'Сервис перегружен. Ожидание...',
+        isPaused: true,
+        nextRetryIn: pauseSeconds
+      });
+      return;
+    }
+    
     if (shouldReconnect && currentRetry < maxRetries) {
       scheduleReconnect(currentRetry);
     } else if (currentRetry >= maxRetries) {
@@ -111,6 +127,14 @@ export function useReconnectManager(config: ReconnectConfig = {}) {
   // Schedule a reconnection attempt
   const scheduleReconnect = useCallback((retryCount: number) => {
     if (!mountedRef.current || isReconnectingRef.current) return;
+    
+    // Проверяем паузу перед планированием реконнекта
+    if (shouldPauseRetries()) {
+      const pauseSeconds = getRemainingPauseTime();
+      console.log(`[ReconnectManager] ⏸️ Reconnect paused for ${pauseSeconds}s`);
+      updateStatus('paused', { isPaused: true, nextRetryIn: pauseSeconds });
+      return;
+    }
     
     clearTimers();
     
@@ -184,6 +208,7 @@ export function useReconnectManager(config: ReconnectConfig = {}) {
       retryCount: 0,
       nextRetryIn: null,
       lastError: null,
+      isPaused: false,
     });
   }, [clearTimers]);
 
@@ -205,6 +230,7 @@ export function useReconnectManager(config: ReconnectConfig = {}) {
     reset,
     isConnected: state.status === 'connected',
     isReconnecting: state.status === 'reconnecting' || state.status === 'connecting',
+    isPausedDueToOverload: state.status === 'paused',
   };
 }
 

@@ -47,6 +47,15 @@ export const ConnectionStatusBanner = memo(function ConnectionStatusBanner({
           bgClass: 'bg-amber-500/90',
           showRetry: true,
         };
+      case 'paused':
+        return {
+          icon: <WifiOff className="w-4 h-4" />,
+          text: nextRetryIn 
+            ? `Сервис перегружен. Пауза ${nextRetryIn}с` 
+            : 'Сервис перегружен. Ожидание...',
+          bgClass: 'bg-orange-600/90',
+          showRetry: true,
+        };
       case 'disconnected':
         return {
           icon: <WifiOff className="w-4 h-4" />,
