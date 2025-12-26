@@ -1,7 +1,9 @@
 // Dedicated Poker Table Page - Opens in popup window for multi-tabling
-import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { OnlinePokerTable } from '@/components/poker/OnlinePokerTable';
+import { TournamentHUD } from '@/components/poker/TournamentHUD';
+import { TournamentMoveNotification } from '@/components/poker/TournamentMoveNotification';
 import { supabase } from '@/integrations/supabase/client';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +11,7 @@ import { Button } from '@/components/ui/button';
 export default function PokerTable() {
   const { tableId } = useParams<{ tableId: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   
   const playerId = searchParams.get('playerId') || localStorage.getItem('poker_player_id');
   const buyIn = parseInt(searchParams.get('buyIn') || '0', 10);
@@ -18,11 +21,13 @@ export default function PokerTable() {
   const [tableName, setTableName] = useState('');
   const [tournamentId, setTournamentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentTableId, setCurrentTableId] = useState<string | null>(tableId || null);
 
   // Fetch table info and player balance
   useEffect(() => {
     const fetchData = async () => {
-      if (!tableId || !playerId) {
+      const activeTableId = currentTableId || tableId;
+      if (!activeTableId || !playerId) {
         setLoading(false);
         return;
       }
@@ -31,7 +36,7 @@ export default function PokerTable() {
       const { data: tableData } = await supabase
         .from('poker_tables')
         .select('name, tournament_id')
-        .eq('id', tableId)
+        .eq('id', activeTableId)
         .single();
       
       if (tableData) {
@@ -55,7 +60,15 @@ export default function PokerTable() {
     };
 
     fetchData();
-  }, [tableId, playerId]);
+  }, [currentTableId, tableId, playerId]);
+
+  // Handle table move notification
+  const handleJoinNewTable = useCallback((newTableId: string) => {
+    setCurrentTableId(newTableId);
+    // Update URL without full reload
+    const params = new URLSearchParams(searchParams);
+    navigate(`/poker-table/${newTableId}?${params.toString()}`, { replace: true });
+  }, [navigate, searchParams]);
 
   const handleLeaveTable = () => {
     window.close();
@@ -66,7 +79,9 @@ export default function PokerTable() {
     window.resizeTo(300, 200);
   };
 
-  if (!tableId) {
+  const activeTableId = currentTableId || tableId;
+
+  if (!activeTableId) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-white">
         <p>Стол не найден</p>
@@ -94,6 +109,20 @@ export default function PokerTable() {
   return (
     <div className="w-screen h-screen overflow-hidden relative bg-black">
       
+      {/* Tournament HUD */}
+      {tournamentId && (
+        <TournamentHUD tournamentId={tournamentId} compact={true} />
+      )}
+
+      {/* Tournament Move Notification */}
+      {tournamentId && playerId && (
+        <TournamentMoveNotification
+          playerId={playerId}
+          tournamentId={tournamentId}
+          onJoinNewTable={handleJoinNewTable}
+        />
+      )}
+
       {/* Window controls - for popup window */}
       <div 
         className="absolute top-0 left-0 right-0 h-7 z-50 flex items-center justify-between px-2"
@@ -120,7 +149,7 @@ export default function PokerTable() {
       {/* Poker table */}
       <div className="relative w-full h-full">
         <OnlinePokerTable
-          tableId={tableId}
+          tableId={activeTableId}
           playerId={playerId}
           buyIn={buyIn}
           playerBalance={playerBalance}

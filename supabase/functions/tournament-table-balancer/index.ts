@@ -18,10 +18,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    console.log(`Tournament table balancer running at ${new Date().toISOString()}`);
 
     // Get all running tournaments
     const { data: tournaments, error: fetchError } = await supabase
@@ -29,7 +38,10 @@ Deno.serve(async (req) => {
       .select('id, name')
       .in('status', ['running', 'final_table']);
 
-    if (fetchError) throw fetchError;
+    if (fetchError) {
+      console.error('Error fetching tournaments:', fetchError);
+      throw fetchError;
+    }
 
     if (!tournaments || tournaments.length === 0) {
       return new Response(
