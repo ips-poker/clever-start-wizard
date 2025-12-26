@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.send-clan-notification]
 verify_jwt = false
+
+[functions.tournament-level-manager]
+verify_jwt = false
+
+[functions.tournament-table-balancer]
+verify_jwt = false
