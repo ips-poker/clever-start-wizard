@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Nginx Proxy для Supabase - Установка
+# Исправлены: буферы для больших заголовков, DNS resolver
+
+echo "🚀 Установка nginx конфигурации для api.syndicate-poker.ru"
+echo ""
+
 # 1. Удаляем старую конфигурацию
 echo "🗑️  Удаление старой конфигурации..."
 rm -f /etc/nginx/sites-available/api.syndicate-poker.ru
@@ -36,6 +42,7 @@ server {
     access_log /var/log/nginx/supabase-proxy-access.log;
     error_log /var/log/nginx/supabase-proxy-error.log;
 
+    # Увеличенные таймауты
     proxy_connect_timeout 600s;
     proxy_send_timeout 600s;
     proxy_read_timeout 600s;
@@ -43,11 +50,26 @@ server {
 
     client_max_body_size 50M;
 
+    # FIX: Увеличенные буферы для больших заголовков
+    proxy_buffer_size 128k;
+    proxy_buffers 4 256k;
+    proxy_busy_buffers_size 256k;
+    large_client_header_buffers 4 64k;
+
+    # FIX: DNS resolver для правильного резолвинга Supabase
+    resolver 8.8.8.8 8.8.4.4 1.1.1.1 valid=300s ipv6=off;
+    resolver_timeout 10s;
+
+    # Upstream переменная для динамического DNS
+    set $supabase_backend "mokhssmnorrhohrowxvu.supabase.co";
+
     location / {
-        proxy_pass https://mokhssmnorrhohrowxvu.supabase.co;
+        # Использование переменной для принудительного DNS резолвинга
+        proxy_pass https://$supabase_backend;
         
         proxy_ssl_server_name on;
         proxy_ssl_name mokhssmnorrhohrowxvu.supabase.co;
+        proxy_ssl_protocols TLSv1.2 TLSv1.3;
         
         proxy_set_header Host mokhssmnorrhohrowxvu.supabase.co;
         proxy_set_header X-Real-IP $remote_addr;
@@ -91,13 +113,24 @@ nginx -t
 if [ $? -eq 0 ]; then
     echo "🔄 Перезапуск nginx..."
     systemctl restart nginx
-    systemctl status nginx --no-pager
     
     echo ""
     echo "✅ Готово! Конфигурация установлена и nginx перезапущен."
     echo ""
     echo "📊 Проверьте работу:"
     echo "curl -I https://api.syndicate-poker.ru"
+    echo ""
+    echo "📋 Ключевые исправления:"
+    echo "  • Увеличены буферы proxy_buffer_size до 128k"
+    echo "  • Добавлен DNS resolver через Google (8.8.8.8)"
+    echo "  • Динамический резолвинг upstream"
+    echo ""
+    
+    # Показать статус
+    systemctl status nginx --no-pager -l
 else
     echo "❌ Ошибка в конфигурации! Nginx не перезапущен."
+    echo ""
+    echo "Проверьте синтаксис конфигурации вручную:"
+    echo "cat /etc/nginx/sites-available/api.syndicate-poker.ru"
 fi

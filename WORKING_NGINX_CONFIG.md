@@ -60,18 +60,16 @@ sudo systemctl reload nginx
 
 ## 💻 Настройки приложения
 
-В `src/integrations/supabase/client.ts`:
+В браузере для переключения режима:
 
-```typescript
-const SUPABASE_URL = "https://api.syndicate-poker.ru";
-```
+```javascript
+// Включить прокси (для LTE/блокировок)
+localStorage.setItem('SUPABASE_MODE', 'proxy')
+location.reload()
 
-В `.env`:
-
-```
-VITE_SUPABASE_PROJECT_ID="mokhssmnorrhohrowxvu"
-VITE_SUPABASE_PUBLISHABLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2hzc21ub3JyaG9ocm93eHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODUzNDYsImV4cCI6MjA2ODY2MTM0Nn0.ZWYgSZFeidY0b_miC7IyfXVPh1EUR2WtxlEvt_fFmGc"
-VITE_SUPABASE_URL="https://mokhssmnorrhohrowxvu.supabase.co"
+// Вернуться на прямой Supabase
+localStorage.setItem('SUPABASE_MODE', 'direct')
+location.reload()
 ```
 
 ## 🚨 Восстановление при проблемах
@@ -110,6 +108,19 @@ sudo certbot certonly --nginx -d api.syndicate-poker.ru
 sudo systemctl reload nginx
 ```
 
+### Если ошибка 503:
+
+```bash
+# Проверить логи
+tail -50 /var/log/nginx/supabase-proxy-error.log
+
+# Проверить DNS резолвинг Supabase
+nslookup mokhssmnorrhohrowxvu.supabase.co
+
+# Тест прямого подключения к Supabase
+curl -v https://mokhssmnorrhohrowxvu.supabase.co/rest/v1/
+```
+
 ## 📋 Архитектура
 
 ```
@@ -117,7 +128,7 @@ sudo systemctl reload nginx
     ↓
 api.syndicate-poker.ru (89.104.74.121)
     ↓
-Nginx (SSL + CORS)
+Nginx (SSL + CORS + DNS Resolver)
     ↓
 mokhssmnorrhohrowxvu.supabase.co
 ```
@@ -127,6 +138,8 @@ mokhssmnorrhohrowxvu.supabase.co
 - ✅ Собственный SSL сертификат
 - ✅ Контроль над CORS
 - ✅ Единая точка входа
+- ✅ DNS resolver через Google (8.8.8.8) для стабильности
+- ✅ Увеличенные буферы для больших запросов
 
 ## 🔄 Обновление конфигурации
 
@@ -155,7 +168,23 @@ netstat -tulpn | grep nginx
 ufw status
 ```
 
+## 🔧 Ключевые настройки nginx
+
+### Буферы для больших заголовков
+```nginx
+proxy_buffer_size 128k;
+proxy_buffers 4 256k;
+proxy_busy_buffers_size 256k;
+large_client_header_buffers 4 64k;
+```
+
+### DNS Resolver
+```nginx
+resolver 8.8.8.8 8.8.4.4 1.1.1.1 valid=300s ipv6=off;
+resolver_timeout 10s;
+```
+
 ---
 
-**Последнее обновление:** 2025-12-02  
-**Статус:** ✅ Работает стабильно
+**Последнее обновление:** 2025-12-26  
+**Статус:** ✅ Работает стабильно (исправлены буферы и DNS)
