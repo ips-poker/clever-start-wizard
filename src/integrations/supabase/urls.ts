@@ -21,7 +21,8 @@ function safeGetLocalStorage(key: string): string | null {
 
 export function getSupabaseMode(): SupabaseMode {
   const mode = safeGetLocalStorage('SUPABASE_MODE');
-  return mode === 'proxy' ? 'proxy' : 'direct';
+  // По умолчанию прокси для обхода блокировок на мобильных
+  return mode === 'direct' ? 'direct' : 'proxy';
 }
 
 export function getSupabaseBaseUrl(): string {
