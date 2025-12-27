@@ -13,8 +13,8 @@ import syndikateLogo from '@/assets/syndikate-logo-main.png';
 import { SmoothAvatarTimer } from './SmoothAvatarTimer';
 import { PPPokerChipStack } from './PPPokerChipStack';
 import { PotChips } from './RealisticPokerChip';
-import { SteampunkTableBackground } from './SteampunkTableBackground';
-
+import { SyndikateTableBackground } from './SyndikateTableBackground';
+import { CyberpunkTableGlow } from './CyberpunkTableGlow';
 import { PPPokerCompactCards } from './PPPokerCompactCards';
 import { PPPokerHeroCards } from './PPPokerHeroCards';
 import { PPPokerCommunityCards } from './PPPokerCommunityCards';
@@ -903,6 +903,19 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
           filter: 'blur(20px)'
         }}
       />
+      
+      {/* Cyberpunk neon glow overlay */}
+      <CyberpunkTableGlow 
+        primaryColor="#00d4ff"
+        secondaryColor="#ff00ff"
+        intensity={0.7}
+        tableInsets={{
+          top: '6%',
+          left: wideMode ? '10%' : '20%',
+          right: wideMode ? '10%' : '20%',
+          bottom: '6%'
+        }}
+      />
     </div>
   );
 });
@@ -1272,8 +1285,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
 
   return (
     <div className="relative w-full h-full">
-      {/* Steampunk industrial background */}
-      <SteampunkTableBackground intensity={0.9} />
+      {/* Syndikate tech background */}
+      <SyndikateTableBackground themeColor={currentTableTheme.color} />
       
       {/* Table felt overlay */}
       <SyndikateTableFelt themeColor={currentTableTheme.color} wideMode={wideMode} />
