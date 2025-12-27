@@ -987,6 +987,11 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         }}
       />
       
+      {/* Dynamic table glow based on user preference */}
+      <TableGlowRenderer 
+        glowStyleId={preferences.tableGlowStyle}
+        wideMode={wideMode}
+      />
     </div>
   );
 });
@@ -1356,19 +1361,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
 
   return (
     <div className="relative w-full h-full">
-      {/* Fullscreen table glow background - behind everything including menus */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <TableGlowRenderer 
-          glowStyleId={preferences.tableGlowStyle}
-          wideMode={wideMode}
-        />
-      </div>
-      
-      {/* Syndikate tech background - transparent when glow style is active */}
-      <SyndikateTableBackground 
-        themeColor={currentTableTheme.color} 
-        transparent={preferences.tableGlowStyle !== 'none'}
-      />
+      {/* Syndikate tech background */}
+      <SyndikateTableBackground themeColor={currentTableTheme.color} />
       
       {/* Table felt overlay */}
       <SyndikateTableFelt themeColor={currentTableTheme.color} wideMode={wideMode} />
