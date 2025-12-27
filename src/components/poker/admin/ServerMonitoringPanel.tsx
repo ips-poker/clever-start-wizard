@@ -52,9 +52,8 @@ interface Alert {
   acknowledged: boolean;
 }
 
-// VPS Server URLs - hardcoded as VITE_* env vars are not supported in Lovable
-const VPS_WS_URL = 'wss://syndicate-poker-server.ru';
-const VPS_API_URL = 'https://syndicate-poker-server.ru';
+// VPS server origin (DO NOT call directly from browser; use Edge Function proxy)
+const VPS_ORIGIN = 'syndicate-poker-server.ru';
 const HEALTH_CHECK_INTERVAL = 5000;
 
 export function ServerMonitoringPanel() {
@@ -77,127 +76,59 @@ export function ServerMonitoringPanel() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [connectionMethod, setConnectionMethod] = useState<'http' | 'ws' | 'checking'>('checking');
+  const [connectionMethod, setConnectionMethod] = useState<'edge' | 'checking'>('checking');
 
-  // WebSocket-based health check (more reliable, bypasses some CORS issues)
-  const checkServerHealthWS = useCallback((): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const startTime = Date.now();
-      const wsUrl = VPS_WS_URL;
-      
-      try {
-        const ws = new WebSocket(wsUrl);
-        const timeout = setTimeout(() => {
-          ws.close();
-          resolve(false);
-        }, 5000);
-
-        ws.onopen = () => {
-          const latency = Date.now() - startTime;
-          clearTimeout(timeout);
-          
-          // Send ping
-          ws.send(JSON.stringify({ type: 'ping' }));
-          
-          setStats(prev => ({
-            ...prev,
-            latency,
-            lastHeartbeat: new Date(),
-            isConnected: true
-          }));
-          
-          setConnectionMethod('ws');
-          ws.close();
-          resolve(true);
-        };
-
-        ws.onerror = () => {
-          clearTimeout(timeout);
-          resolve(false);
-        };
-
-        ws.onclose = () => {
-          clearTimeout(timeout);
-        };
-      } catch {
-        resolve(false);
-      }
-    });
-  }, []);
-
-  // HTTP-based health check
-  const checkServerHealthHTTP = useCallback(async (): Promise<boolean> => {
+  // Edge-function based health check (bypasses browser CORS / proxy tunnel issues)
+  const checkServerHealth = useCallback(async () => {
     const startTime = Date.now();
-    
+    setConnectionMethod('checking');
+
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-      
-      const response = await fetch(`${VPS_API_URL}/health`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        mode: 'cors'
-      });
-      
-      clearTimeout(timeout);
+      const { data, error } = await supabase.functions.invoke('vps-health');
+      if (error) throw error;
 
-      if (!response.ok) throw new Error('Server not responding');
-
-      const data = await response.json();
       const latency = Date.now() - startTime;
+      const payload = data as any;
+
+      if (!payload?.ok) {
+        throw new Error(payload?.error || 'Health proxy returned not ok');
+      }
+
+      const health = payload.health || {};
 
       setStats(prev => ({
         ...prev,
-        version: data.version || 'v3.0',
-        uptime: data.uptime || 0,
-        activeTables: data.activeTables || prev.activeTables,
-        connectedPlayers: data.connectedPlayers || prev.connectedPlayers,
-        activeHands: data.activeHands || prev.activeHands,
-        handsPerMinute: data.handsPerMinute || 0,
-        memoryUsage: data.memoryUsage || 0,
-        cpuUsage: data.cpuUsage || 0,
+        version: health.version || prev.version || 'Unknown',
+        uptime: health.uptime || 0,
+        activeTables: health.activeTables ?? prev.activeTables,
+        connectedPlayers: health.connectedPlayers ?? prev.connectedPlayers,
+        activeHands: health.activeHands ?? prev.activeHands,
+        handsPerMinute: health.handsPerMinute || 0,
+        memoryUsage: health.memoryUsage || 0,
+        cpuUsage: health.cpuUsage || 0,
         latency,
         lastHeartbeat: new Date(),
         isConnected: true,
-        errors: data.errors || [],
-        warnings: data.warnings || []
+        errors: health.errors || [],
+        warnings: health.warnings || []
       }));
 
-      setConnectionMethod('http');
-      
+      setConnectionMethod('edge');
+
       if (latency > 500) {
         addAlert('warning', `High latency detected: ${latency}ms`);
       }
-
-      return true;
-    } catch (error) {
-      console.error('HTTP health check failed:', error);
-      return false;
+    } catch (err) {
+      console.error('VPS health check failed:', err);
+      setStats(prev => ({
+        ...prev,
+        isConnected: false,
+        latency: 0
+      }));
+      setConnectionMethod('edge');
+      addAlert('error', 'Не удаётся получить /health через Supabase proxy');
     }
   }, []);
-
-  // Combined health check - tries HTTP first, then WebSocket
-  const checkServerHealth = useCallback(async () => {
-    setConnectionMethod('checking');
-    
-    // Try HTTP first
-    const httpSuccess = await checkServerHealthHTTP();
-    if (httpSuccess) return;
-    
-    // Fallback to WebSocket ping
-    const wsSuccess = await checkServerHealthWS();
-    if (wsSuccess) return;
-    
-    // Both failed
-    setStats(prev => ({
-      ...prev,
-      isConnected: false,
-      latency: 0
-    }));
-    setConnectionMethod('http');
-    addAlert('error', 'VPS сервер недоступен - проверьте SSH подключение');
-  }, [checkServerHealthHTTP, checkServerHealthWS]);
 
   const addAlert = (type: Alert['type'], message: string) => {
     const newAlert: Alert = {
@@ -325,7 +256,7 @@ export function ServerMonitoringPanel() {
               </Badge>
             </h3>
             <p className="text-sm text-muted-foreground">
-              {VPS_API_URL.replace('https://', '')} • Latency: {stats.latency}ms
+              {VPS_ORIGIN} • Latency: {stats.latency}ms
               {!stats.isConnected && (
                 <span className="text-orange-500 ml-2">
                   • Проверьте: pm2 status на VPS
