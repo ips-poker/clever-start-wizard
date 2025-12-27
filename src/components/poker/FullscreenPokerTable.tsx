@@ -853,14 +853,39 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
           bottom: '10%',
           borderRadius: '40% / 18%',
           background: feltGradient,
-          boxShadow: 'inset 0 0 80px rgba(0,0,0,0.35), inset 0 -40px 80px rgba(0,0,0,0.2), inset 0 30px 50px rgba(255,255,255,0.02)'
+          boxShadow: `
+            inset 0 0 100px rgba(0,0,0,0.45),
+            inset 0 -50px 100px rgba(0,0,0,0.25),
+            inset 0 40px 60px rgba(255,255,255,0.03),
+            inset 0 0 200px rgba(0,180,200,0.04)
+          `
         }}
       >
-        {/* Subtle felt texture */}
-        <div className="absolute inset-0 opacity-[0.03]"
+        {/* Enhanced felt texture - layered noise */}
+        <div className="absolute inset-0 opacity-[0.06]"
           style={{
             borderRadius: 'inherit',
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`
+          }}
+        />
+        
+        {/* Fabric weave pattern overlay */}
+        <div className="absolute inset-0 opacity-[0.02]"
+          style={{
+            borderRadius: 'inherit',
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 3px),
+              repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 3px)
+            `,
+            backgroundSize: '4px 4px'
+          }}
+        />
+        
+        {/* Spotlight highlight from above */}
+        <div className="absolute inset-0 pointer-events-none"
+          style={{
+            borderRadius: 'inherit',
+            background: 'radial-gradient(ellipse 60% 40% at 50% 20%, rgba(255,255,255,0.04) 0%, transparent 60%)'
           }}
         />
         
@@ -872,23 +897,28 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
           </span>
         </div>
         
-        {/* Decorative horizontal line */}
-        <div className="absolute top-1/2 -translate-y-1/2 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-white/[0.03] to-transparent"/>
+        {/* Decorative horizontal line - enhanced */}
+        <div className="absolute top-1/2 -translate-y-1/2 left-[12%] right-[12%] h-px"
+          style={{
+            background: 'linear-gradient(90deg, transparent 0%, rgba(0,200,220,0.08) 20%, rgba(0,200,220,0.12) 50%, rgba(0,200,220,0.08) 80%, transparent 100%)'
+          }}
+        />
         
-        {/* Corner decorations - positioned for vertical shape */}
+        {/* Corner tech decorations */}
         {[
-          { top: '12%', left: sideMargin.corners },
-          { top: '12%', right: sideMargin.corners },
-          { bottom: '12%', left: sideMargin.corners },
-          { bottom: '12%', right: sideMargin.corners }
+          { top: '10%', left: '8%' },
+          { top: '10%', right: '8%' },
+          { bottom: '10%', left: '8%' },
+          { bottom: '10%', right: '8%' }
         ].map((pos, i) => (
           <div 
             key={i}
-            className="absolute w-6 h-6 opacity-[0.04]"
+            className="absolute w-5 h-5 opacity-[0.06]"
             style={{ 
               ...pos,
-              border: '1px solid white',
-              borderRadius: '50%'
+              border: '1px solid rgba(0,200,220,0.5)',
+              borderRadius: '50%',
+              boxShadow: '0 0 8px rgba(0,200,220,0.2)'
             }}
           />
         ))}
