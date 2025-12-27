@@ -41,8 +41,8 @@ const SUITS = {
 // Бортик: left ~24%, right ~76%, top ~10%, bottom ~90%
 // Центр аватара должен быть на центре бортика
 
-// POPUP/DESKTOP POSITIONS - стандартный стол
-const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = {
+// POPUP/DESKTOP POSITIONS - стандартный стол (fallback defaults)
+const DEFAULT_SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = {
   2: [
     { x: 50, y: 87 },   // Seat 0 - Hero (bottom center on rail)
     { x: 50, y: 13 },   // Seat 1 - Top center on rail
@@ -105,11 +105,42 @@ const SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> =
   ],
 };
 
+// ============= LOAD CALIBRATED POSITIONS FROM LOCALSTORAGE =============
+// Калибратор в админке сохраняет позиции в localStorage под ключом 'syndikate_seat_positions'
+function getCalibrationConfig(): { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null {
+  try {
+    const saved = localStorage.getItem('syndikate_seat_positions');
+    if (!saved) return null;
+    const parsed = JSON.parse(saved);
+    // Валидируем структуру
+    if (parsed && typeof parsed === 'object' && parsed.desktop && parsed.telegram) {
+      return parsed;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Функция получения позиций с учётом калибровки
+function getCalibratedPositions(mode: 'desktop' | 'telegram'): Record<number, Array<{ x: number; y: number }>> {
+  const calibration = getCalibrationConfig();
+  if (calibration && calibration[mode]) {
+    // Мержим с defaults на случай если не все количества игроков откалиброваны
+    const defaults = mode === 'desktop' ? DEFAULT_SEAT_POSITIONS_BY_COUNT : DEFAULT_TELEGRAM_SEAT_POSITIONS_BY_COUNT;
+    return { ...defaults, ...calibration[mode] };
+  }
+  return mode === 'desktop' ? DEFAULT_SEAT_POSITIONS_BY_COUNT : DEFAULT_TELEGRAM_SEAT_POSITIONS_BY_COUNT;
+}
+
+// Динамические позиции с учётом калибровки
+const SEAT_POSITIONS_BY_COUNT = getCalibratedPositions('desktop');
+
 // ============= TELEGRAM MINI APP - WIDER TABLE POSITIONS =============
 // Стол для Telegram: left/right margin = 14%, top/bottom = 10%
 // Бортик: left ~14%, right ~86%, top ~10%, bottom ~90%
 // Аватары точно на центре бортика для идеального размещения
-const TELEGRAM_SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = {
+const DEFAULT_TELEGRAM_SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = {
   2: [
     { x: 50, y: 86 },   // Seat 0 - Hero (bottom center on rail)
     { x: 50, y: 14 },   // Seat 1 - Top center on rail
@@ -171,6 +202,9 @@ const TELEGRAM_SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: num
     { x: 88, y: 74 },   // Seat 8 - Right bottom on rail
   ],
 };
+
+// Динамические позиции с учётом калибровки (telegram)
+const TELEGRAM_SEAT_POSITIONS_BY_COUNT = getCalibratedPositions('telegram');
 
 // Legacy aliases - using new 9-position arrays
 const SEAT_POSITIONS_9MAX = SEAT_POSITIONS_BY_COUNT[9];
