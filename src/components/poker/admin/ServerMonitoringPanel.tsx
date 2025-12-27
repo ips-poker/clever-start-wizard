@@ -52,8 +52,9 @@ interface Alert {
   acknowledged: boolean;
 }
 
-const VPS_SERVER_URL = import.meta.env.VITE_POKER_WS_URL || 'wss://syndicate-poker-server.ru';
-const HEALTH_API_URL = import.meta.env.VITE_POKER_API_URL || 'https://syndicate-poker-server.ru';
+// VPS Server URLs - hardcoded as VITE_* env vars are not supported in Lovable
+const VPS_WS_URL = 'wss://syndicate-poker-server.ru';
+const VPS_API_URL = 'https://syndicate-poker-server.ru';
 const HEALTH_CHECK_INTERVAL = 5000;
 
 export function ServerMonitoringPanel() {
@@ -82,7 +83,7 @@ export function ServerMonitoringPanel() {
   const checkServerHealthWS = useCallback((): Promise<boolean> => {
     return new Promise((resolve) => {
       const startTime = Date.now();
-      const wsUrl = VPS_SERVER_URL.replace('https://', 'wss://').replace('http://', 'ws://');
+      const wsUrl = VPS_WS_URL;
       
       try {
         const ws = new WebSocket(wsUrl);
@@ -132,7 +133,7 @@ export function ServerMonitoringPanel() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
       
-      const response = await fetch(`${HEALTH_API_URL}/health`, {
+      const response = await fetch(`${VPS_API_URL}/health`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
@@ -324,7 +325,7 @@ export function ServerMonitoringPanel() {
               </Badge>
             </h3>
             <p className="text-sm text-muted-foreground">
-              {HEALTH_API_URL.replace('https://', '')} • Latency: {stats.latency}ms
+              {VPS_API_URL.replace('https://', '')} • Latency: {stats.latency}ms
               {!stats.isConnected && (
                 <span className="text-orange-500 ml-2">
                   • Проверьте: pm2 status на VPS

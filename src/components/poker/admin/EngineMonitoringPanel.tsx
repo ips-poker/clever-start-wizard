@@ -234,9 +234,7 @@ export function EngineMonitoringPanel() {
   useEffect(() => {
     const checkWsStatus = async () => {
       try {
-        // Simple check - try to ping the WS endpoint
-        const wsUrl = import.meta.env.VITE_POKER_WS_URL || 'wss://pokerengine.syndikate.capital';
-        // We can't directly check WS from here, so we'll rely on table activity
+        // Check WS status based on table activity
         const hasActiveHands = tables.some(t => t.current_hand_id);
         setWsConnected(hasActiveHands || tables.length > 0);
       } catch {
