@@ -29,41 +29,7 @@ export const WesternTableGlow = memo(function WesternTableGlow({
   
   return (
     <>
-      {/* === FULLSCREEN WESTERN BACKGROUND === */}
-      <div 
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `
-            radial-gradient(ellipse at 50% 20%, ${amber}10 0%, transparent 50%),
-            radial-gradient(ellipse at 20% 80%, ${copper}08 0%, transparent 40%),
-            radial-gradient(ellipse at 80% 80%, ${copper}08 0%, transparent 40%),
-            linear-gradient(180deg, #1a0f05 0%, #0d0804 50%, #1a0f05 100%)
-          `
-        }}
-      />
-      
-      {/* Warm lantern glow from top */}
-      <div 
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-1/3 pointer-events-none"
-        style={{
-          background: `radial-gradient(ellipse at 50% 0%, ${amber}15 0%, transparent 70%)`,
-          filter: 'blur(60px)'
-        }}
-      />
-      
-      {/* Wood grain texture effect */}
-      <div 
-        className="absolute inset-0 pointer-events-none opacity-20"
-        style={{
-          backgroundImage: `repeating-linear-gradient(
-            90deg,
-            transparent,
-            transparent 2px,
-            ${warmBrown}08 2px,
-            ${warmBrown}08 4px
-          )`
-        }}
-      />
+      {/* Fullscreen background is rendered by TableGlowFullscreenBackground at wrapper level */}
 
       {/* === COPPER OUTER FRAME === */}
       <div 
