@@ -5,6 +5,7 @@
 // This should be rendered at the wrapper level to cover header/footer
 
 import React, { memo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface TableGlowFullscreenBackgroundProps {
   glowStyleId: string;
@@ -118,59 +119,84 @@ export const TableGlowFullscreenBackground = memo(function TableGlowFullscreenBa
   
   const style = styles[glowStyleId];
   if (!style) return null;
-  
-  // Build accent gradients with smooth falloff
+
+  const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
+    const cleaned = hex.replace('#', '');
+    const full = cleaned.length === 3 ? cleaned.split('').map((c) => c + c).join('') : cleaned;
+    if (full.length !== 6) return null;
+    const r = Number.parseInt(full.slice(0, 2), 16);
+    const g = Number.parseInt(full.slice(2, 4), 16);
+    const b = Number.parseInt(full.slice(4, 6), 16);
+    return { r, g, b };
+  };
+
+  const rgba = (hex: string, alpha: number) => {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return `rgba(255,255,255,${alpha})`;
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+  };
+
+  // Build accent gradients with smooth falloff (avoid #RRGGBBAA for better WebView support)
   const accentGradients = style.accents
-    .map(a => {
-      const opacityHex = Math.round(a.opacity * 255 * intensity).toString(16).padStart(2, '0');
-      const midOpacityHex = Math.round(a.opacity * 127 * intensity).toString(16).padStart(2, '0');
-      return `radial-gradient(${a.position}, ${a.color}${opacityHex} 0%, ${a.color}${midOpacityHex} 30%, transparent 70%)`;
+    .map((a) => {
+      const a1 = Math.max(0, Math.min(1, a.opacity * intensity));
+      const a2 = Math.max(0, Math.min(1, a1 * 0.5));
+      return `radial-gradient(${a.position}, ${rgba(a.color, a1)} 0%, ${rgba(a.color, a2)} 30%, transparent 70%)`;
     })
     .join(', ');
   
   return (
     <div className="fixed inset-0 pointer-events-none z-0">
-      {/* Base gradient with accent colors */}
-      <div 
-        className="absolute inset-0"
-        style={{
-          background: `${accentGradients}, ${style.base}`
-        }}
-      />
-      
-      {/* Directional glows */}
-      {style.glows.map((glow, i) => {
-        let className = 'absolute pointer-events-none ';
-        let posStyle: React.CSSProperties = {};
-        
-        switch (glow.position) {
-          case 'top':
-            className += 'top-0 left-0 right-0 h-1/2';
-            break;
-          case 'bottom':
-            className += 'bottom-0 left-0 right-0 h-1/2';
-            break;
-          case 'left':
-            className += 'left-0 top-0 bottom-0 w-1/3';
-            break;
-          case 'right':
-            className += 'right-0 top-0 bottom-0 w-1/3';
-            break;
-        }
-        
-        return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={glowStyleId}
+          className="absolute inset-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        >
+          {/* Base gradient with accent colors */}
           <div
-            key={i}
-            className={className}
+            className="absolute inset-0"
             style={{
-              ...posStyle,
-              background: glow.gradient,
-              filter: `blur(${glow.blur}px)`,
-              opacity: intensity
+              background: `${accentGradients}, ${style.base}`
             }}
           />
-        );
-      })}
+
+          {/* Directional glows */}
+          {style.glows.map((glow, i) => {
+            let className = 'absolute pointer-events-none ';
+
+            switch (glow.position) {
+              case 'top':
+                className += 'top-0 left-0 right-0 h-1/2';
+                break;
+              case 'bottom':
+                className += 'bottom-0 left-0 right-0 h-1/2';
+                break;
+              case 'left':
+                className += 'left-0 top-0 bottom-0 w-1/3';
+                break;
+              case 'right':
+                className += 'right-0 top-0 bottom-0 w-1/3';
+                break;
+            }
+
+            return (
+              <div
+                key={i}
+                className={className}
+                style={{
+                  background: glow.gradient,
+                  filter: `blur(${glow.blur}px)`,
+                  opacity: intensity
+                }}
+              />
+            );
+          })}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 });

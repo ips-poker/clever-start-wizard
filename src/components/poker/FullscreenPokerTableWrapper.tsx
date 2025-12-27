@@ -452,10 +452,10 @@ export function FullscreenPokerTableWrapper({
 
         {/* Header - glassmorphism style matching table theme */}
         <div 
-          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 backdrop-blur-xl border-b border-white/10"
+          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 backdrop-blur-2xl border-b border-white/10"
           style={{
             paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 12px)',
-            background: 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)'
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.10) 100%)'
           }}
         >
           <div className="flex items-center gap-3">
@@ -606,9 +606,9 @@ export function FullscreenPokerTableWrapper({
               initial={{ x: -300, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -300, opacity: 0 }}
-              className="absolute left-0 top-16 bottom-0 w-64 backdrop-blur-xl z-40 p-4 border-r border-white/10"
+              className="absolute left-0 top-16 bottom-0 w-64 backdrop-blur-2xl z-40 p-4 border-r border-white/10"
               style={{
-                background: 'linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 100%)'
+                background: 'linear-gradient(180deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.14) 100%)'
               }}
             >
               <div className="space-y-2">
