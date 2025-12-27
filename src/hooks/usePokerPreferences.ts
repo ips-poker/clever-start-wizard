@@ -28,15 +28,29 @@ export const CARD_STYLES = [
   { id: 'jumbo', name: 'Jumbo', description: 'Крупные индексы' },
 ] as const;
 
+// Table glow styles
+export const TABLE_GLOW_STYLES = [
+  { id: 'none', name: 'Без подсветки', description: 'Классический вид без эффектов', preview: '#1a1a2e' },
+  { id: 'cyberpunk', name: 'Киберпанк', description: 'Hi-tech неоновое свечение', preview: '#00d4ff' },
+  { id: 'mafia', name: 'Мафия', description: 'Элегантный золотой стиль', preview: '#d4a574' },
+  { id: 'western', name: 'Вестерн', description: 'Тёплый медный салун', preview: '#b87333' },
+  { id: 'cosmic', name: 'Космос', description: 'Глубокий космос и туманности', preview: '#9b59b6' },
+  { id: 'vegas', name: 'Вегас', description: 'Яркие неоновые огни', preview: '#ff1493' },
+  { id: 'matrix', name: 'Матрица', description: 'Цифровой дождь', preview: '#00ff41' },
+  { id: 'elegant', name: 'Элегант', description: 'Минималистичная роскошь', preview: '#d4af37' },
+] as const;
+
 export type TableThemeId = typeof TABLE_THEMES[number]['id'];
 export type CardBackId = typeof CARD_BACKS[number]['id'];
 export type CardStyleId = typeof CARD_STYLES[number]['id'];
+export type TableGlowStyleId = typeof TABLE_GLOW_STYLES[number]['id'];
 
 export interface PokerPreferences {
   // Visual settings
   tableTheme: TableThemeId;
   cardBack: CardBackId;
   cardStyle: CardStyleId;
+  tableGlowStyle: TableGlowStyleId;
   
   // Seat rotation (0-5 for 6-max)
   preferredSeatRotation: number;
@@ -61,6 +75,7 @@ const DEFAULT_PREFERENCES: PokerPreferences = {
   tableTheme: 'midnight',
   cardBack: 'syndikate-orange',
   cardStyle: 'classic',
+  tableGlowStyle: 'cyberpunk',
   preferredSeatRotation: 0,
   showBetAmounts: true,
   showPotOdds: false,
@@ -112,6 +127,7 @@ export function usePokerPreferences() {
   const currentTableTheme = TABLE_THEMES.find(t => t.id === preferences.tableTheme) || TABLE_THEMES[0];
   const currentCardBack = CARD_BACKS.find(c => c.id === preferences.cardBack) || CARD_BACKS[0];
   const currentCardStyle = CARD_STYLES.find(s => s.id === preferences.cardStyle) || CARD_STYLES[0];
+  const currentGlowStyle = TABLE_GLOW_STYLES.find(s => s.id === preferences.tableGlowStyle) || TABLE_GLOW_STYLES[1];
 
   return {
     preferences,
@@ -121,9 +137,11 @@ export function usePokerPreferences() {
     currentTableTheme,
     currentCardBack,
     currentCardStyle,
+    currentGlowStyle,
     // Constants for UI
     TABLE_THEMES,
     CARD_BACKS,
     CARD_STYLES,
+    TABLE_GLOW_STYLES,
   };
 }
