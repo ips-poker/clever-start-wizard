@@ -77,7 +77,8 @@ export const TableGlowFullscreenBackground = memo(function TableGlowFullscreenBa
       ]
     },
     vegas: {
-      base: 'linear-gradient(180deg, #0a0512 0%, #050308 40%, #050308 60%, #0a0512 100%)',
+      // Smoother base to avoid visible banding/"split" in the middle of the screen
+      base: 'linear-gradient(180deg, #0a0512 0%, #06030c 35%, #030208 70%, #0a0512 100%)',
       accents: [
         { position: 'ellipse 120% 80% at 20% 15%', color: '#ff1493', opacity: 0.10 },
         { position: 'ellipse 120% 80% at 80% 15%', color: '#00bfff', opacity: 0.08 },
@@ -86,10 +87,11 @@ export const TableGlowFullscreenBackground = memo(function TableGlowFullscreenBa
         { position: 'ellipse 100% 60% at 50% 50%', color: '#ff1493', opacity: 0.04 },
       ],
       glows: [
-        { position: 'top', gradient: 'linear-gradient(180deg, rgba(255,20,147,0.12) 0%, rgba(255,20,147,0.04) 40%, transparent 100%)', blur: 60 },
-        { position: 'left', gradient: 'linear-gradient(90deg, rgba(57,255,20,0.08) 0%, rgba(57,255,20,0.02) 50%, transparent 100%)', blur: 80 },
-        { position: 'right', gradient: 'linear-gradient(-90deg, rgba(0,191,255,0.08) 0%, rgba(0,191,255,0.02) 50%, transparent 100%)', blur: 80 },
-        { position: 'bottom', gradient: 'linear-gradient(0deg, rgba(255,215,0,0.10) 0%, rgba(255,215,0,0.03) 40%, transparent 100%)', blur: 60 },
+        // Keep glows soft and large; we render them full-screen to avoid seam lines
+        { position: 'top', gradient: 'linear-gradient(180deg, rgba(255,20,147,0.14) 0%, rgba(255,20,147,0.05) 45%, transparent 100%)', blur: 70 },
+        { position: 'left', gradient: 'linear-gradient(90deg, rgba(57,255,20,0.10) 0%, rgba(57,255,20,0.03) 55%, transparent 100%)', blur: 90 },
+        { position: 'right', gradient: 'linear-gradient(-90deg, rgba(0,191,255,0.10) 0%, rgba(0,191,255,0.03) 55%, transparent 100%)', blur: 90 },
+        { position: 'bottom', gradient: 'linear-gradient(0deg, rgba(255,215,0,0.12) 0%, rgba(255,215,0,0.04) 45%, transparent 100%)', blur: 70 },
       ]
     },
     matrix: {
@@ -164,37 +166,23 @@ export const TableGlowFullscreenBackground = memo(function TableGlowFullscreenBa
             }}
           />
 
-          {/* Directional glows */}
-          {style.glows.map((glow, i) => {
-            let className = 'absolute pointer-events-none ';
-
-            switch (glow.position) {
-              case 'top':
-                className += 'top-0 left-0 right-0 h-1/2';
-                break;
-              case 'bottom':
-                className += 'bottom-0 left-0 right-0 h-1/2';
-                break;
-              case 'left':
-                className += 'left-0 top-0 bottom-0 w-1/3';
-                break;
-              case 'right':
-                className += 'right-0 top-0 bottom-0 w-1/3';
-                break;
-            }
-
-            return (
-              <div
-                key={i}
-                className={className}
-                style={{
-                  background: glow.gradient,
-                  filter: `blur(${glow.blur}px)`,
-                  opacity: intensity
-                }}
-              />
-            );
-          })}
+          {/* Directional glows (rendered full-screen to avoid visible seams) */}
+          {style.glows.map((glow, i) => (
+            <div
+              key={i}
+              className="absolute pointer-events-none"
+              style={{
+                top: '-25%',
+                left: '-25%',
+                right: '-25%',
+                bottom: '-25%',
+                background: glow.gradient,
+                filter: `blur(${glow.blur}px)`,
+                opacity: intensity,
+                willChange: 'opacity'
+              }}
+            />
+          ))}
         </motion.div>
       </AnimatePresence>
     </div>
