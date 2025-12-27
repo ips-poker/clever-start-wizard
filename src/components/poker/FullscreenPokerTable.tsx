@@ -14,6 +14,7 @@ import { SmoothAvatarTimer } from './SmoothAvatarTimer';
 import { PPPokerChipStack } from './PPPokerChipStack';
 import { PotChips } from './RealisticPokerChip';
 import { SyndikateTableBackground } from './SyndikateTableBackground';
+import { CyberpunkTableGlow } from './CyberpunkTableGlow';
 import { PPPokerCompactCards } from './PPPokerCompactCards';
 import { PPPokerHeroCards } from './PPPokerHeroCards';
 import { PPPokerCommunityCards } from './PPPokerCommunityCards';
@@ -900,6 +901,19 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
           top: '40%',
           background: 'radial-gradient(ellipse, rgba(251,191,36,0.1) 0%, transparent 70%)',
           filter: 'blur(20px)'
+        }}
+      />
+      
+      {/* Cyberpunk neon glow overlay */}
+      <CyberpunkTableGlow 
+        primaryColor="#00d4ff"
+        secondaryColor="#ff00ff"
+        intensity={0.7}
+        tableInsets={{
+          top: '6%',
+          left: wideMode ? '10%' : '20%',
+          right: wideMode ? '10%' : '20%',
+          bottom: '6%'
         }}
       />
     </div>
