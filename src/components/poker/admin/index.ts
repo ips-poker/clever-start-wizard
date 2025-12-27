@@ -11,3 +11,6 @@ export { ServerMonitoringPanel } from './ServerMonitoringPanel';
 export { TournamentAdvancedTools } from './TournamentAdvancedTools';
 export { PlayerAnalyticsPanel } from './PlayerAnalyticsPanel';
 export { IntegrationsPanel } from './IntegrationsPanel';
+export { SeatCalibrationTool } from './SeatCalibrationTool';
+export { EngineMonitoringPanel } from './EngineMonitoringPanel';
+export { TournamentManipulationTools } from './TournamentManipulationTools';

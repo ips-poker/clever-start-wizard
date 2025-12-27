@@ -76,7 +76,10 @@ import { ServerMonitoringPanel } from './admin/ServerMonitoringPanel';
 import { TournamentAdvancedTools } from './admin/TournamentAdvancedTools';
 import { PlayerAnalyticsPanel } from './admin/PlayerAnalyticsPanel';
 import { IntegrationsPanel } from './admin/IntegrationsPanel';
-import { Gem, Trophy, Server, BarChart3, Webhook, Tv } from 'lucide-react';
+import { SeatCalibrationTool } from './admin/SeatCalibrationTool';
+import { EngineMonitoringPanel } from './admin/EngineMonitoringPanel';
+import { TournamentManipulationTools } from './admin/TournamentManipulationTools';
+import { Gem, Trophy, Server, BarChart3, Webhook, Tv, Target, Wrench } from 'lucide-react';
 
 interface PlayerBalance {
   id: string;
@@ -692,10 +695,14 @@ export function OnlinePokerManagement() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-12">
+        <TabsList className="grid w-full grid-cols-14">
           <TabsTrigger value="monitor" className="gap-1">
             <Eye className="h-4 w-4" />
             <span className="hidden xl:inline">Мониторинг</span>
+          </TabsTrigger>
+          <TabsTrigger value="engine" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600">
+            <Activity className="h-4 w-4" />
+            <span className="hidden xl:inline">Движок</span>
           </TabsTrigger>
           <TabsTrigger value="server" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600">
             <Server className="h-4 w-4" />
@@ -705,9 +712,17 @@ export function OnlinePokerManagement() {
             <Trophy className="h-4 w-4" />
             <span className="hidden xl:inline">Турниры</span>
           </TabsTrigger>
+          <TabsTrigger value="manipulation" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-pink-600">
+            <Wrench className="h-4 w-4" />
+            <span className="hidden xl:inline">Управление</span>
+          </TabsTrigger>
           <TabsTrigger value="advanced" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600">
             <Tv className="h-4 w-4" />
             <span className="hidden xl:inline">TV/ICM</span>
+          </TabsTrigger>
+          <TabsTrigger value="calibration" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-violet-600">
+            <Target className="h-4 w-4" />
+            <span className="hidden xl:inline">Калибровка</span>
           </TabsTrigger>
           <TabsTrigger value="analytics" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600">
             <BarChart3 className="h-4 w-4" />
@@ -729,10 +744,6 @@ export function OnlinePokerManagement() {
             <History className="h-4 w-4" />
             <span className="hidden xl:inline">История</span>
           </TabsTrigger>
-          <TabsTrigger value="bans" className="gap-1">
-            <Ban className="h-4 w-4" />
-            <span className="hidden xl:inline">Баны</span>
-          </TabsTrigger>
           <TabsTrigger value="integrations" className="gap-1">
             <Webhook className="h-4 w-4" />
             <span className="hidden xl:inline">API</span>
@@ -742,6 +753,11 @@ export function OnlinePokerManagement() {
             <span className="hidden xl:inline">Инстр.</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* Engine Monitoring Tab */}
+        <TabsContent value="engine">
+          <EngineMonitoringPanel />
+        </TabsContent>
 
         {/* Server Monitoring Tab */}
         <TabsContent value="server">
@@ -753,9 +769,19 @@ export function OnlinePokerManagement() {
           <OnlineTournamentManager />
         </TabsContent>
 
+        {/* Tournament Manipulation Tools */}
+        <TabsContent value="manipulation">
+          <TournamentManipulationTools />
+        </TabsContent>
+
         {/* Advanced Tournament Tools */}
         <TabsContent value="advanced">
           <TournamentAdvancedTools />
+        </TabsContent>
+
+        {/* Seat Calibration Tab */}
+        <TabsContent value="calibration">
+          <SeatCalibrationTool />
         </TabsContent>
 
         {/* Player Analytics */}
