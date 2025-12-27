@@ -1359,10 +1359,13 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   }, [players, heroSeat, maxPlayers, preferences.preferredSeatRotation]);
   
 
+  // Check if glow style is active - if so, background is provided by fullscreen wrapper
+  const hasActiveGlowStyle = preferences.tableGlowStyle && preferences.tableGlowStyle !== 'none';
+
   return (
     <div className="relative w-full h-full">
-      {/* Syndikate tech background */}
-      <SyndikateTableBackground themeColor={currentTableTheme.color} />
+      {/* Syndikate tech background - only when no glow style active (glow provides its own background) */}
+      {!hasActiveGlowStyle && <SyndikateTableBackground themeColor={currentTableTheme.color} />}
       
       {/* Table felt overlay */}
       <SyndikateTableFelt themeColor={currentTableTheme.color} wideMode={wideMode} />
