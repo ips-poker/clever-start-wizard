@@ -29,6 +29,36 @@ export const MinimalElegantTableGlow = memo(function MinimalElegantTableGlow({
   
   return (
     <>
+      {/* === FULLSCREEN ELEGANT BACKGROUND === */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse at 50% 30%, ${softWhite}05 0%, transparent 50%),
+            radial-gradient(ellipse at 50% 70%, ${subtleGold}03 0%, transparent 50%),
+            linear-gradient(180deg, #0f0f12 0%, #0a0a0d 50%, #0f0f12 100%)
+          `
+        }}
+      />
+      
+      {/* Soft ambient light from top center */}
+      <div 
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-1/3 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse at 50% 0%, ${softWhite}08 0%, transparent 70%)`,
+          filter: 'blur(60px)'
+        }}
+      />
+      
+      {/* Subtle golden accent at bottom */}
+      <div 
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/3 h-1/4 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse at 50% 100%, ${subtleGold}05 0%, transparent 60%)`,
+          filter: 'blur(50px)'
+        }}
+      />
+
       {/* === SOFT OUTER GLOW === */}
       <div 
         className="absolute pointer-events-none"

@@ -28,15 +28,54 @@ export const CyberpunkTableGlow = memo(function CyberpunkTableGlow({
   tableInsets = { top: '6%', left: '20%', right: '20%', bottom: '6%' }
 }: CyberpunkTableGlowProps) {
   
-  // Adjust opacity based on intensity
   const glowOpacity = intensity * 0.6;
   const lineOpacity = intensity * 0.4;
   const accentOpacity = intensity * 0.8;
   
   return (
     <>
+      {/* === FULLSCREEN CYBERPUNK BACKGROUND === */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse at 20% 20%, ${primaryColor}15 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 80%, ${secondaryColor}10 0%, transparent 50%),
+            radial-gradient(ellipse at 50% 50%, ${primaryColor}08 0%, transparent 70%),
+            linear-gradient(180deg, #0a0a1a 0%, #050510 50%, #0a0a1a 100%)
+          `
+        }}
+      />
+      
+      {/* Grid lines across entire screen */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(0deg, transparent, transparent 60px, ${primaryColor}06 60px, ${primaryColor}06 61px),
+            repeating-linear-gradient(90deg, transparent, transparent 60px, ${primaryColor}06 60px, ${primaryColor}06 61px)
+          `,
+          opacity: intensity * 0.7
+        }}
+      />
+      
+      {/* Ambient corner glows */}
+      <div 
+        className="absolute top-0 left-0 w-1/3 h-1/3 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse at 0% 0%, ${primaryColor}20 0%, transparent 70%)`,
+          filter: 'blur(60px)'
+        }}
+      />
+      <div 
+        className="absolute bottom-0 right-0 w-1/3 h-1/3 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse at 100% 100%, ${secondaryColor}15 0%, transparent 70%)`,
+          filter: 'blur(60px)'
+        }}
+      />
+
       {/* === OUTER NEON BORDER GLOW === */}
-      {/* Primary color outer glow - follows table rail shape */}
       <div 
         className="absolute pointer-events-none"
         style={{
@@ -55,7 +94,6 @@ export const CyberpunkTableGlow = memo(function CyberpunkTableGlow({
       />
       
       {/* === INNER NEON RING === */}
-      {/* Secondary accent color inner ring */}
       <div 
         className="absolute pointer-events-none"
         style={{
@@ -73,7 +111,6 @@ export const CyberpunkTableGlow = memo(function CyberpunkTableGlow({
       />
       
       {/* === CORNER DATA NODES === */}
-      {/* Top-left corner */}
       <div 
         className="absolute pointer-events-none"
         style={{
@@ -96,7 +133,6 @@ export const CyberpunkTableGlow = memo(function CyberpunkTableGlow({
         </svg>
       </div>
       
-      {/* Top-right corner */}
       <div 
         className="absolute pointer-events-none"
         style={{
@@ -119,7 +155,6 @@ export const CyberpunkTableGlow = memo(function CyberpunkTableGlow({
         </svg>
       </div>
       
-      {/* Bottom-left corner */}
       <div 
         className="absolute pointer-events-none"
         style={{
@@ -141,7 +176,6 @@ export const CyberpunkTableGlow = memo(function CyberpunkTableGlow({
         </svg>
       </div>
       
-      {/* Bottom-right corner */}
       <div 
         className="absolute pointer-events-none"
         style={{
@@ -164,7 +198,6 @@ export const CyberpunkTableGlow = memo(function CyberpunkTableGlow({
       </div>
       
       {/* === HORIZONTAL SCAN LINES === */}
-      {/* Top edge */}
       <div 
         className="absolute pointer-events-none h-px"
         style={{
@@ -175,7 +208,6 @@ export const CyberpunkTableGlow = memo(function CyberpunkTableGlow({
         }}
       />
       
-      {/* Bottom edge */}
       <div 
         className="absolute pointer-events-none h-px"
         style={{
@@ -187,7 +219,6 @@ export const CyberpunkTableGlow = memo(function CyberpunkTableGlow({
       />
       
       {/* === SIDE DATA INDICATORS === */}
-      {/* Left side indicators */}
       <div 
         className="absolute flex flex-col gap-2 pointer-events-none"
         style={{
@@ -211,7 +242,6 @@ export const CyberpunkTableGlow = memo(function CyberpunkTableGlow({
         ))}
       </div>
       
-      {/* Right side indicators */}
       <div 
         className="absolute flex flex-col gap-2 pointer-events-none"
         style={{
@@ -236,7 +266,6 @@ export const CyberpunkTableGlow = memo(function CyberpunkTableGlow({
       </div>
       
       {/* === CENTER SPOTLIGHT GRADIENT === */}
-      {/* Ambient glow from center - tech style */}
       <div 
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
         style={{
@@ -248,7 +277,6 @@ export const CyberpunkTableGlow = memo(function CyberpunkTableGlow({
       />
       
       {/* === GRID OVERLAY === */}
-      {/* Subtle tech grid on felt area */}
       <div 
         className="absolute pointer-events-none"
         style={{
@@ -266,7 +294,6 @@ export const CyberpunkTableGlow = memo(function CyberpunkTableGlow({
       />
       
       {/* === TOP EDGE HIGHLIGHT === */}
-      {/* Simulated overhead light reflection */}
       <div 
         className="absolute pointer-events-none"
         style={{
