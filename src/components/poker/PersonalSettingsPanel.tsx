@@ -6,7 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { 
   X, Palette, CreditCard, RotateCcw, Eye, Volume2, Sparkles, 
-  ChevronRight, Check
+  ChevronRight, Check, Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -14,6 +14,7 @@ import {
   TABLE_THEMES, 
   CARD_BACKS, 
   CARD_STYLES,
+  TABLE_GLOW_STYLES,
   type PokerPreferences 
 } from '@/hooks/usePokerPreferences';
 
@@ -359,6 +360,71 @@ const CardStyleSelector = memo(function CardStyleSelector({
   );
 });
 
+// Glow style selector
+const GlowStyleSelector = memo(function GlowStyleSelector({ 
+  selected, 
+  onSelect 
+}: { 
+  selected: string; 
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {TABLE_GLOW_STYLES.map((style) => (
+        <button
+          key={style.id}
+          onClick={() => onSelect(style.id)}
+          className={cn(
+            "relative p-2 rounded-lg border-2 transition-all text-left",
+            selected === style.id 
+              ? "border-amber-500 shadow-lg shadow-amber-500/20" 
+              : "border-white/10 hover:border-white/30"
+          )}
+        >
+          {/* Glow preview */}
+          <div 
+            className="w-full h-10 rounded-md mb-2 relative overflow-hidden"
+            style={{ 
+              background: style.id === 'none' 
+                ? 'linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%)'
+                : `linear-gradient(135deg, ${style.preview}20 0%, ${style.preview}40 50%, ${style.preview}20 100%)`,
+              border: style.id !== 'none' ? `1px solid ${style.preview}60` : '1px solid rgba(255,255,255,0.1)'
+            }}
+          >
+            {/* Mini glow effect preview */}
+            {style.id !== 'none' && (
+              <>
+                <div 
+                  className="absolute inset-0 opacity-60"
+                  style={{
+                    background: `radial-gradient(ellipse at center, ${style.preview}30 0%, transparent 70%)`
+                  }}
+                />
+                <div 
+                  className="absolute inset-x-0 top-0 h-0.5"
+                  style={{
+                    background: `linear-gradient(90deg, transparent, ${style.preview}, transparent)`,
+                    boxShadow: `0 0 10px ${style.preview}`
+                  }}
+                />
+              </>
+            )}
+          </div>
+          
+          <span className="text-xs text-white font-medium block">{style.name}</span>
+          <span className="text-[10px] text-white/50 block truncate">{style.description}</span>
+          
+          {selected === style.id && (
+            <div className="absolute top-1 right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center">
+              <Check className="h-2.5 w-2.5 text-black" />
+            </div>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+});
+
 // Seat position selector
 const SeatPositionSelector = memo(function SeatPositionSelector({ 
   selected, 
@@ -473,6 +539,14 @@ export const PersonalSettingsPanel = memo(function PersonalSettingsPanel({
                 <ThemeSelector 
                   selected={preferences.tableTheme}
                   onSelect={(id) => updatePreference('tableTheme', id as any)}
+                />
+              </SettingsSection>
+
+              {/* Table Glow Style */}
+              <SettingsSection title="Подсветка стола" icon={Zap}>
+                <GlowStyleSelector 
+                  selected={preferences.tableGlowStyle}
+                  onSelect={(id) => updatePreference('tableGlowStyle', id as any)}
                 />
               </SettingsSection>
 

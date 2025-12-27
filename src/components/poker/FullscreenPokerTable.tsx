@@ -14,7 +14,15 @@ import { SmoothAvatarTimer } from './SmoothAvatarTimer';
 import { PPPokerChipStack } from './PPPokerChipStack';
 import { PotChips } from './RealisticPokerChip';
 import { SyndikateTableBackground } from './SyndikateTableBackground';
-import { CyberpunkTableGlow } from './CyberpunkTableGlow';
+import { 
+  CyberpunkTableGlow, 
+  MafiaTableGlow, 
+  WesternTableGlow, 
+  CosmicTableGlow, 
+  NeonVegasTableGlow, 
+  MatrixTableGlow, 
+  MinimalElegantTableGlow 
+} from './table-styles';
 import { PPPokerCompactCards } from './PPPokerCompactCards';
 import { PPPokerHeroCards } from './PPPokerHeroCards';
 import { PPPokerCommunityCards } from './PPPokerCommunityCards';
@@ -763,6 +771,79 @@ const PlayerSeat = memo(function PlayerSeat({
   );
 });
 
+// ============= TABLE GLOW RENDERER - Dynamic glow based on preference =============
+const TableGlowRenderer = memo(function TableGlowRenderer({
+  glowStyleId,
+  wideMode = false
+}: {
+  glowStyleId: string;
+  wideMode?: boolean;
+}) {
+  const tableInsets = {
+    top: '6%',
+    left: wideMode ? '10%' : '20%',
+    right: wideMode ? '10%' : '20%',
+    bottom: '6%'
+  };
+
+  switch (glowStyleId) {
+    case 'cyberpunk':
+      return (
+        <CyberpunkTableGlow 
+          primaryColor="#00d4ff"
+          secondaryColor="#ff00ff"
+          intensity={0.7}
+          tableInsets={tableInsets}
+        />
+      );
+    case 'mafia':
+      return (
+        <MafiaTableGlow 
+          intensity={0.8}
+          tableInsets={tableInsets}
+        />
+      );
+    case 'western':
+      return (
+        <WesternTableGlow 
+          intensity={0.8}
+          tableInsets={tableInsets}
+        />
+      );
+    case 'cosmic':
+      return (
+        <CosmicTableGlow 
+          intensity={0.8}
+          tableInsets={tableInsets}
+        />
+      );
+    case 'vegas':
+      return (
+        <NeonVegasTableGlow 
+          intensity={0.8}
+          tableInsets={tableInsets}
+        />
+      );
+    case 'matrix':
+      return (
+        <MatrixTableGlow 
+          intensity={0.8}
+          tableInsets={tableInsets}
+        />
+      );
+    case 'elegant':
+      return (
+        <MinimalElegantTableGlow 
+          intensity={0.8}
+          tableInsets={tableInsets}
+        />
+      );
+    case 'none':
+    default:
+      return null;
+  }
+});
+
 // ============= SYNDIKATE TABLE FELT - Unique hexagonal stadium shape =============
 interface SyndikateTableFeltProps {
   themeColor?: string;
@@ -775,6 +856,8 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
   themeGradient,
   wideMode = false
 }: SyndikateTableFeltProps) {
+  const { preferences } = usePokerPreferences();
+  
   // Generate felt gradient from theme color
   // Wide mode uses smaller left/right margins for Telegram Mini App
   const sideMargin = wideMode ? { outer: '10%', leather: '11%', glow: '12%', inner: '13%', felt: '14%', corners: '12%' } 
@@ -904,17 +987,10 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         }}
       />
       
-      {/* Cyberpunk neon glow overlay */}
-      <CyberpunkTableGlow 
-        primaryColor="#00d4ff"
-        secondaryColor="#ff00ff"
-        intensity={0.7}
-        tableInsets={{
-          top: '6%',
-          left: wideMode ? '10%' : '20%',
-          right: wideMode ? '10%' : '20%',
-          bottom: '6%'
-        }}
+      {/* Dynamic table glow based on user preference */}
+      <TableGlowRenderer 
+        glowStyleId={preferences.tableGlowStyle}
+        wideMode={wideMode}
       />
     </div>
   );
