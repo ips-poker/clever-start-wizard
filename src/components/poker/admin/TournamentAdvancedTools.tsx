@@ -307,28 +307,27 @@ export function TournamentAdvancedTools() {
         <TabsContent value="tv-mode" className="mt-4">
           {tvModeEnabled && selectedTournament ? (
             <FinalTableTVMode
-              tournamentId={selectedTournament.id}
               tournamentName={selectedTournament.name}
               players={participants.slice(0, 9).map((p, i) => ({
                 id: p.player_id,
                 name: p.player_name,
                 chips: p.chips,
-                position: i + 1,
+                seatNumber: i + 1,
                 isDealer: i === 0,
                 isBigBlind: i === 1,
-                isSmallBlind: i === 2,
-                isActive: true,
-                avatar: undefined
+                isSmallBlind: i === 2
               }))}
               prizePool={selectedTournament.prize_pool || 0}
-              payoutStructure={[
-                { position: 1, percentage: 50, amount: (selectedTournament.prize_pool || 0) * 0.5 },
-                { position: 2, percentage: 30, amount: (selectedTournament.prize_pool || 0) * 0.3 },
-                { position: 3, percentage: 20, amount: (selectedTournament.prize_pool || 0) * 0.2 }
+              payoutPositions={[
+                { position: 1, amount: (selectedTournament.prize_pool || 0) * 0.5, percentage: 50 },
+                { position: 2, amount: (selectedTournament.prize_pool || 0) * 0.3, percentage: 30 },
+                { position: 3, amount: (selectedTournament.prize_pool || 0) * 0.2, percentage: 20 }
               ]}
               currentLevel={selectedTournament.current_level || 1}
               blinds={{ small: 100, big: 200, ante: 25 }}
-              averageStack={participants.reduce((sum, p) => sum + p.chips, 0) / Math.max(participants.length, 1)}
+              timeRemaining={300}
+              spectatorCount={0}
+              pot={0}
             />
           ) : (
             <Card>
@@ -343,14 +342,13 @@ export function TournamentAdvancedTools() {
         <TabsContent value="bubble" className="mt-4">
           {selectedTournament && (
             <BubbleProtection
-              tournamentId={selectedTournament.id}
+              isActive={bubbleProtectionEnabled}
+              bubblePosition={Math.max(Math.floor(participants.length * 0.15), 3)}
               playersRemaining={participants.length}
-              playersInMoney={Math.max(Math.floor(participants.length * 0.15), 3)}
-              isHandForHand={handForHandEnabled}
-              tablesActive={2}
-              avgStackBB={participants.reduce((sum, p) => sum + p.chips, 0) / Math.max(participants.length, 1) / 200}
-              onPlayerElimination={handlePlayerElimination}
-              onBubbleBurst={handleBubbleBurst}
+              tablesInTournament={[{ tableId: '1', tableName: 'Table 1', isWaiting: false, currentHand: 1, playersRemaining: participants.length }]}
+              prizeForBubble={(selectedTournament.prize_pool || 0) * 0.05}
+              handForHandActive={handForHandEnabled}
+              onToggleHandForHand={setHandForHandEnabled}
             />
           )}
         </TabsContent>
@@ -358,33 +356,38 @@ export function TournamentAdvancedTools() {
         <TabsContent value="icm" className="mt-4">
           {selectedTournament && (
             <ICMDealCalculator
-              players={participants.map(p => ({
+              isOpen={icmEnabled}
+              onClose={() => setIcmEnabled(false)}
+              players={participants.map((p, i) => ({
                 id: p.player_id,
                 name: p.player_name,
-                chips: p.chips
+                chips: p.chips,
+                seatNumber: i + 1
               }))}
-              prizePool={selectedTournament.prize_pool || 0}
+              prizePoolRemaining={selectedTournament.prize_pool || 0}
               payoutStructure={[
-                { position: 1, percentage: 50, amount: (selectedTournament.prize_pool || 0) * 0.5 },
-                { position: 2, percentage: 30, amount: (selectedTournament.prize_pool || 0) * 0.3 },
-                { position: 3, percentage: 20, amount: (selectedTournament.prize_pool || 0) * 0.2 }
+                { position: 1, amount: (selectedTournament.prize_pool || 0) * 0.5 },
+                { position: 2, amount: (selectedTournament.prize_pool || 0) * 0.3 },
+                { position: 3, amount: (selectedTournament.prize_pool || 0) * 0.2 }
               ]}
-              onDealProposed={(deal) => {
+              onProposeDeal={(deal) => {
                 console.log('Deal proposed:', deal);
-                toast.success(`Deal proposed: ${deal.type}`);
+                toast.success(`Deal proposed`);
               }}
             />
           )}
         </TabsContent>
 
         <TabsContent value="chat" className="mt-4">
-          {selectedTournament && (
-            <TournamentChatModeration
-              tournamentId={selectedTournament.id}
-              onBanPlayer={(playerId) => toast.info(`Player ${playerId} banned from chat`)}
-              onMutePlayer={(playerId, duration) => toast.info(`Player ${playerId} muted for ${duration}s`)}
-            />
-          )}
+          <Card>
+            <CardContent className="py-12 text-center">
+              <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Chat moderation requires active tournament chat</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Connect to a running tournament to moderate chat
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="stats" className="mt-4">
