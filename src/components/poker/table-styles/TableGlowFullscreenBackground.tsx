@@ -5,7 +5,6 @@
 // This should be rendered at the wrapper level to cover header/footer
 
 import React, { memo } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 
 interface TableGlowFullscreenBackgroundProps {
   glowStyleId: string;
@@ -149,42 +148,30 @@ export const TableGlowFullscreenBackground = memo(function TableGlowFullscreenBa
   
   return (
     <div className="fixed inset-0 pointer-events-none z-0">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={glowStyleId}
-          className="absolute inset-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-        >
-          {/* Base gradient with accent colors */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: `${accentGradients}, ${style.base}`
-            }}
-          />
+      {/* Base gradient with accent colors */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `${accentGradients}, ${style.base}`
+        }}
+      />
 
-          {/* Directional glows (rendered full-screen to avoid visible seams) */}
-          {style.glows.map((glow, i) => (
-            <div
-              key={i}
-              className="absolute pointer-events-none"
-              style={{
-                top: '-25%',
-                left: '-25%',
-                right: '-25%',
-                bottom: '-25%',
-                background: glow.gradient,
-                filter: `blur(${glow.blur}px)`,
-                opacity: intensity,
-                willChange: 'opacity'
-              }}
-            />
-          ))}
-        </motion.div>
-      </AnimatePresence>
+      {/* Directional glows (rendered full-screen to avoid visible seams) */}
+      {style.glows.map((glow, i) => (
+        <div
+          key={i}
+          className="absolute pointer-events-none"
+          style={{
+            top: '-25%',
+            left: '-25%',
+            right: '-25%',
+            bottom: '-25%',
+            background: glow.gradient,
+            filter: `blur(${glow.blur}px)`,
+            opacity: intensity
+          }}
+        />
+      ))}
     </div>
   );
 });
