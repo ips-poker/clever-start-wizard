@@ -444,18 +444,19 @@ export function FullscreenPokerTableWrapper({
           onReconnectNow={() => connect()}
         />
 
-        {/* Header - transparent to show glow background */}
+        {/* Header - glassmorphism style matching table theme */}
         <div 
-          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3"
+          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 backdrop-blur-xl border-b border-white/10"
           style={{
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 12px)'
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 12px)',
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)'
           }}
         >
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-black/20 backdrop-blur-sm text-white/80 hover:bg-black/40"
+              className="h-10 w-10 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 transition-all"
               onClick={() => setShowMenu(!showMenu)}
             >
               {showMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -468,7 +469,7 @@ export function FullscreenPokerTableWrapper({
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-black/20 backdrop-blur-sm text-white/80 hover:bg-black/40"
+              className="h-10 w-10 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 transition-all"
               onClick={() => setSoundEnabled(!soundEnabled)}
             >
               {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
@@ -477,7 +478,7 @@ export function FullscreenPokerTableWrapper({
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-black/20 backdrop-blur-sm text-amber-400 hover:bg-black/40"
+              className="h-10 w-10 rounded-full bg-white/5 backdrop-blur-md border border-amber-500/20 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/30 transition-all"
               onClick={() => setShowPersonalSettings(true)}
             >
               <Palette className="h-5 w-5" />
@@ -486,7 +487,7 @@ export function FullscreenPokerTableWrapper({
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-black/20 backdrop-blur-sm text-white/80 hover:bg-black/40"
+              className="h-10 w-10 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 transition-all"
               onClick={() => setShowSettings(true)}
             >
               <Settings2 className="h-5 w-5" />
@@ -599,7 +600,10 @@ export function FullscreenPokerTableWrapper({
               initial={{ x: -300, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -300, opacity: 0 }}
-              className="absolute left-0 top-16 bottom-0 w-64 bg-black/40 backdrop-blur-xl z-40 p-4 border-r border-white/10"
+              className="absolute left-0 top-16 bottom-0 w-64 backdrop-blur-xl z-40 p-4 border-r border-white/10"
+              style={{
+                background: 'linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 100%)'
+              }}
             >
               <div className="space-y-2">
                 <Button
