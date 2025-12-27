@@ -30,7 +30,45 @@ export const NeonVegasTableGlow = memo(function NeonVegasTableGlow({
   
   return (
     <>
-      {/* Fullscreen background is rendered by TableGlowFullscreenBackground at wrapper level */}
+      {/* === FULLSCREEN VEGAS BACKGROUND === */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse at 20% 20%, ${hotPink}12 0%, transparent 40%),
+            radial-gradient(ellipse at 80% 20%, ${electricBlue}10 0%, transparent 40%),
+            radial-gradient(ellipse at 20% 80%, ${neonGreen}08 0%, transparent 40%),
+            radial-gradient(ellipse at 80% 80%, ${gold}10 0%, transparent 40%),
+            radial-gradient(ellipse at 50% 50%, ${hotPink}06 0%, transparent 50%),
+            linear-gradient(180deg, #0a0512 0%, #050308 50%, #0a0512 100%)
+          `
+        }}
+      />
+      
+      {/* Vegas strip glow from top */}
+      <div 
+        className="absolute top-0 left-0 right-0 h-1/4 pointer-events-none"
+        style={{
+          background: `linear-gradient(180deg, ${hotPink}15, transparent)`,
+          filter: 'blur(40px)'
+        }}
+      />
+      
+      {/* Multi-color side glows */}
+      <div 
+        className="absolute left-0 top-0 bottom-0 w-1/6 pointer-events-none"
+        style={{
+          background: `linear-gradient(90deg, ${neonGreen}10, transparent)`,
+          filter: 'blur(50px)'
+        }}
+      />
+      <div 
+        className="absolute right-0 top-0 bottom-0 w-1/6 pointer-events-none"
+        style={{
+          background: `linear-gradient(-90deg, ${electricBlue}10, transparent)`,
+          filter: 'blur(50px)'
+        }}
+      />
 
       {/* === MULTI-COLOR OUTER GLOW === */}
       <div 

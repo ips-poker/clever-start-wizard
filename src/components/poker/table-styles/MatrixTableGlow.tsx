@@ -29,7 +29,60 @@ export const MatrixTableGlow = memo(function MatrixTableGlow({
   
   return (
     <>
-      {/* Fullscreen background is rendered by TableGlowFullscreenBackground at wrapper level */}
+      {/* === FULLSCREEN MATRIX BACKGROUND === */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse at 50% 30%, ${matrixGreen}08 0%, transparent 50%),
+            radial-gradient(ellipse at 30% 70%, ${darkGreen}10 0%, transparent 40%),
+            radial-gradient(ellipse at 70% 70%, ${darkGreen}10 0%, transparent 40%),
+            linear-gradient(180deg, #000a00 0%, #000500 50%, #000a00 100%)
+          `
+        }}
+      />
+      
+      {/* Digital rain columns - fullscreen */}
+      {[5, 15, 25, 35, 45, 55, 65, 75, 85, 95].map((left, i) => (
+        <div 
+          key={`rain-${i}`}
+          className="absolute pointer-events-none"
+          style={{
+            left: `${left}%`,
+            top: 0,
+            bottom: 0,
+            width: '1px',
+            background: `linear-gradient(180deg, 
+              transparent 0%, 
+              ${matrixGreen}${Math.round(accentOpacity * 0.1 * 255).toString(16).padStart(2, '0')} ${10 + i * 3}%, 
+              ${brightGreen}${Math.round(accentOpacity * 0.2 * 255).toString(16).padStart(2, '0')} ${30 + i * 2}%, 
+              ${matrixGreen}${Math.round(accentOpacity * 0.08 * 255).toString(16).padStart(2, '0')} ${60 + i * 2}%, 
+              transparent 100%
+            )`,
+            opacity: 0.4 + (i % 3) * 0.1
+          }}
+        />
+      ))}
+      
+      {/* Matrix code atmosphere */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+            repeating-linear-gradient(0deg, transparent, transparent 3px, ${matrixGreen}03 3px, ${matrixGreen}03 4px)
+          `,
+          opacity: intensity * 0.5
+        }}
+      />
+      
+      {/* Core glow from center */}
+      <div 
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2/3 h-2/3 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse at 50% 50%, ${matrixGreen}10 0%, transparent 60%)`,
+          filter: 'blur(60px)'
+        }}
+      />
 
       {/* === DIGITAL OUTER FRAME === */}
       <div 

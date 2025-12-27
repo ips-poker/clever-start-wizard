@@ -29,7 +29,38 @@ export const MafiaTableGlow = memo(function MafiaTableGlow({
   
   return (
     <>
-      {/* Fullscreen background is rendered by TableGlowFullscreenBackground at wrapper level */}
+      {/* === FULLSCREEN MAFIA BACKGROUND === */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse at 50% 30%, ${goldPrimary}08 0%, transparent 50%),
+            radial-gradient(ellipse at 30% 70%, ${crimson}06 0%, transparent 40%),
+            radial-gradient(ellipse at 70% 70%, ${crimson}06 0%, transparent 40%),
+            linear-gradient(180deg, #1a0f0a 0%, #0d0705 50%, #1a0f0a 100%)
+          `
+        }}
+      />
+      
+      {/* Subtle vignette */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.5) 100%)'
+        }}
+      />
+      
+      {/* Decorative smoke/atmosphere */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-30"
+        style={{
+          background: `
+            radial-gradient(ellipse at 20% 50%, ${goldPrimary}10 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 50%, ${goldPrimary}10 0%, transparent 50%)
+          `,
+          filter: 'blur(80px)'
+        }}
+      />
 
       {/* === GOLD OUTER RING === */}
       <div 
