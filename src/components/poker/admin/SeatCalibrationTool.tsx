@@ -373,12 +373,12 @@ export function SeatCalibrationTool() {
           {/* Preview Canvas - реалистичная визуализация стола */}
           <div className="grid grid-cols-2 gap-4">
             {/* Visual Preview - точная копия FullscreenPokerTable */}
-            {/* Реальные пропорции из FullscreenPokerTable: стол вертикальный овал как хоккейная площадка */}
-            {/* Desktop: ~4:5 (немного выше чем шире), Telegram: 9:16 */}
+            {/* Desktop popup: 420x900 пикселей (ширина x высота) = 7/15 aspect ratio */}
+            {/* Telegram: 9:16 (вертикальный телефон) */}
             <div 
               className="relative overflow-hidden rounded-lg"
               style={{ 
-                aspectRatio: mode === 'telegram' ? '9/16' : '4/5',
+                aspectRatio: mode === 'telegram' ? '9/16' : '7/15',
                 background: 'linear-gradient(180deg, #0a1520 0%, #050a0f 30%, #020508 60%, #000000 100%)'
               }}
             >
