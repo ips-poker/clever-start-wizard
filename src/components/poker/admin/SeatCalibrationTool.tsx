@@ -262,15 +262,30 @@ export function SeatCalibrationTool() {
     toast.success('Код скопирован в буфер обмена');
   }, [positions, mode]);
   
-  // Размеры бортика стола
-  const getRailBounds = () => {
+  // Размеры бортика стола - точно как в FullscreenPokerTable / SyndikateTableFelt
+  const getTableGeometry = () => {
     if (mode === 'telegram') {
-      return { left: 14, right: 86, top: 14, bottom: 86 };
+      return {
+        // Wide mode margins from SyndikateTableFelt
+        rail: { left: 14, right: 86, top: 10, bottom: 90 },
+        felt: { left: 14, right: 86, top: 10, bottom: 90 },
+        outer: { left: 10, right: 90, top: 6, bottom: 94 },
+        leather: { left: 11, right: 89, top: 7, bottom: 93 },
+        inner: { left: 13, right: 87, top: 9, bottom: 91 },
+      };
     }
-    return { left: 24, right: 76, top: 13, bottom: 87 };
+    // Standard desktop mode
+    return {
+      rail: { left: 24, right: 76, top: 10, bottom: 90 },
+      felt: { left: 24, right: 76, top: 10, bottom: 90 },
+      outer: { left: 20, right: 80, top: 6, bottom: 94 },
+      leather: { left: 21, right: 79, top: 7, bottom: 93 },
+      inner: { left: 23, right: 77, top: 9, bottom: 91 },
+    };
   };
   
-  const rail = getRailBounds();
+  const tableGeometry = getTableGeometry();
+  const rail = tableGeometry.rail;
   
   return (
     <div className="space-y-4">
@@ -349,46 +364,119 @@ export function SeatCalibrationTool() {
             </div>
           </div>
           
-          {/* Preview Canvas */}
+          {/* Preview Canvas - реалистичная визуализация стола */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Visual Preview */}
+            {/* Visual Preview - точная копия FullscreenPokerTable */}
             <div 
-              className="relative bg-gradient-to-b from-emerald-900 to-emerald-950 rounded-lg overflow-hidden"
-              style={{ aspectRatio: mode === 'telegram' ? '9/16' : '16/9' }}
+              className="relative overflow-hidden rounded-lg"
+              style={{ 
+                aspectRatio: mode === 'telegram' ? '9/16' : '16/9',
+                background: 'linear-gradient(180deg, #0a1520 0%, #050a0f 30%, #020508 60%, #000000 100%)'
+              }}
             >
+              {/* Teal ambient glow */}
+              <div 
+                className="absolute top-0 left-0 right-0 h-[45%]"
+                style={{
+                  background: 'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(20,80,100,0.4) 0%, rgba(10,40,60,0.2) 40%, transparent 70%)'
+                }}
+              />
+              
+              {/* Outer metallic rail - stadium shape */}
+              <div 
+                className="absolute"
+                style={{
+                  top: `${tableGeometry.outer.top}%`,
+                  left: `${100 - tableGeometry.outer.right}%`,
+                  right: `${100 - tableGeometry.outer.right}%`,
+                  bottom: `${100 - tableGeometry.outer.bottom}%`,
+                  borderRadius: '45% / 22%',
+                  background: 'linear-gradient(180deg, #5a6a7a 0%, #3d4a5a 20%, #2a3440 50%, #3d4a5a 80%, #5a6a7a 100%)',
+                  boxShadow: '0 10px 60px rgba(0,0,0,0.9)'
+                }}
+              />
+              
+              {/* Leather padding */}
+              <div 
+                className="absolute"
+                style={{
+                  top: `${tableGeometry.leather.top}%`,
+                  left: `${100 - tableGeometry.leather.right}%`,
+                  right: `${100 - tableGeometry.leather.right}%`,
+                  bottom: `${100 - tableGeometry.leather.bottom}%`,
+                  borderRadius: '44% / 21%',
+                  background: 'linear-gradient(180deg, #3a2820 0%, #2a1a14 30%, #1a0f0a 60%, #2a1a14 85%, #3a2820 100%)'
+                }}
+              />
+              
+              {/* Inner metal trim */}
+              <div 
+                className="absolute"
+                style={{
+                  top: `${tableGeometry.inner.top}%`,
+                  left: `${100 - tableGeometry.inner.right}%`,
+                  right: `${100 - tableGeometry.inner.right}%`,
+                  bottom: `${100 - tableGeometry.inner.bottom}%`,
+                  borderRadius: '42% / 20%',
+                  background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 50%, #1a202c 100%)',
+                  border: '1px solid rgba(212,175,55,0.2)'
+                }}
+              />
+              
+              {/* Main felt surface */}
+              <div 
+                className="absolute"
+                style={{
+                  top: `${tableGeometry.felt.top}%`,
+                  left: `${100 - tableGeometry.felt.right}%`,
+                  right: `${100 - tableGeometry.felt.right}%`,
+                  bottom: `${100 - tableGeometry.felt.bottom}%`,
+                  borderRadius: '40% / 18%',
+                  background: 'radial-gradient(ellipse at 50% 40%, #0d5c2e 0%, #0d5c2edd 25%, #0d5c2ebb 45%, #0d5c2e99 65%, #0d5c2e77 85%, #0d5c2e55 100%)',
+                  boxShadow: 'inset 0 0 80px rgba(0,0,0,0.35)'
+                }}
+              >
+                {/* Center logo placeholder */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span className="text-white/10 font-black text-xs tracking-wider">SYNDIKATE</span>
+                </div>
+              </div>
+              
               {/* Grid overlay */}
               {showGrid && (
                 <div className="absolute inset-0 pointer-events-none opacity-20">
-                  {/* Vertical lines every 10% */}
                   {[10, 20, 30, 40, 50, 60, 70, 80, 90].map(x => (
                     <div
                       key={`v-${x}`}
-                      className="absolute top-0 bottom-0 w-px bg-white"
+                      className="absolute top-0 bottom-0 w-px bg-cyan-400"
                       style={{ left: `${x}%` }}
                     />
                   ))}
-                  {/* Horizontal lines every 10% */}
                   {[10, 20, 30, 40, 50, 60, 70, 80, 90].map(y => (
                     <div
                       key={`h-${y}`}
-                      className="absolute left-0 right-0 h-px bg-white"
+                      className="absolute left-0 right-0 h-px bg-cyan-400"
                       style={{ top: `${y}%` }}
                     />
                   ))}
                 </div>
               )}
               
-              {/* Rail bounds */}
+              {/* Rail bounds indicator */}
               {showRail && (
                 <div
-                  className="absolute border-2 border-yellow-500/50 rounded-[40%/18%] pointer-events-none"
+                  className="absolute border-2 border-yellow-500 rounded-[40%/18%] pointer-events-none"
                   style={{
-                    left: `${rail.left}%`,
+                    left: `${100 - rail.right}%`,
                     right: `${100 - rail.right}%`,
                     top: `${rail.top}%`,
                     bottom: `${100 - rail.bottom}%`
                   }}
-                />
+                >
+                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] text-yellow-500 font-mono bg-black/60 px-1 rounded">
+                    Бортик (rail)
+                  </div>
+                </div>
               )}
               
               {/* Center crosshair */}
@@ -397,16 +485,16 @@ export function SeatCalibrationTool() {
                 <div className="h-4 w-px bg-white/30 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
               </div>
               
-              {/* Seats */}
+              {/* Seats - аватары игроков */}
               {currentPositions.map((pos, idx) => (
                 <div
                   key={idx}
                   className={`absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 flex items-center justify-center text-xs font-bold cursor-pointer transition-all ${
                     selectedSeat === idx
-                      ? 'border-yellow-500 bg-yellow-500/30 text-yellow-500 scale-125'
+                      ? 'border-yellow-500 bg-yellow-500/30 text-yellow-500 scale-125 z-20'
                       : idx === 0
                         ? 'border-emerald-400 bg-emerald-500/30 text-emerald-400'
-                        : 'border-white/50 bg-white/10 text-white/70'
+                        : 'border-white/50 bg-white/20 text-white/70'
                   }`}
                   style={{
                     left: `${pos.x}%`,
@@ -419,8 +507,13 @@ export function SeatCalibrationTool() {
               ))}
               
               {/* Coordinates display */}
-              <div className="absolute bottom-1 left-1 text-[10px] text-white/50 font-mono">
+              <div className="absolute bottom-1 left-1 text-[10px] text-white/50 font-mono bg-black/50 px-1 rounded">
                 Seat {selectedSeat}: ({currentPositions[selectedSeat]?.x.toFixed(0)}%, {currentPositions[selectedSeat]?.y.toFixed(0)}%)
+              </div>
+              
+              {/* Mode label */}
+              <div className="absolute top-1 right-1 text-[9px] text-cyan-400/70 font-mono bg-black/50 px-1 rounded">
+                {mode === 'telegram' ? 'TELEGRAM MODE' : 'DESKTOP MODE'}
               </div>
             </div>
             
@@ -545,6 +638,43 @@ export function SeatCalibrationTool() {
                     <div>Right: {rail.right}%</div>
                     <div>Top: {rail.top}%</div>
                     <div>Bottom: {rail.bottom}%</div>
+                  </div>
+                </div>
+                
+                {/* Application info */}
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-xs space-y-2">
+                  <Label className="font-medium text-emerald-400 flex items-center gap-2">
+                    <Target className="h-3 w-3" />
+                    Как применяются настройки
+                  </Label>
+                  <ul className="space-y-1 text-muted-foreground">
+                    <li>• Настройки сохраняются в <code className="bg-black/30 px-1 rounded">localStorage</code></li>
+                    <li>• Применяются к <strong>FullscreenPokerTable</strong> (обёртка стола)</li>
+                    <li>• Позиции аватаров рассчитываются относительно бортика</li>
+                    <li>• После сохранения <strong>обновите страницу</strong> с покерным столом</li>
+                  </ul>
+                </div>
+                
+                {/* Elements legend */}
+                <div className="p-3 bg-muted/50 rounded-lg text-xs space-y-2">
+                  <Label className="font-medium">Элементы стола</Label>
+                  <div className="space-y-1 text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-gradient-to-b from-slate-500 to-slate-700" />
+                      <span>Металлический бортик (outer rail)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-gradient-to-b from-amber-900 to-amber-950" />
+                      <span>Кожаная обивка (leather padding)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-gradient-to-b from-emerald-700 to-emerald-900" />
+                      <span>Фелт (felt surface)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-1 border border-yellow-500" />
+                      <span>Жёлтая линия — граница для размещения аватаров</span>
+                    </div>
                   </div>
                 </div>
               </div>
