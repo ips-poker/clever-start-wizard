@@ -30,6 +30,59 @@ export const CosmicTableGlow = memo(function CosmicTableGlow({
   
   return (
     <>
+      {/* === FULLSCREEN COSMIC BACKGROUND === */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse at 30% 20%, ${nebulaPurple}18 0%, transparent 50%),
+            radial-gradient(ellipse at 70% 30%, ${cosmicBlue}12 0%, transparent 40%),
+            radial-gradient(ellipse at 20% 70%, ${nebulaRed}08 0%, transparent 40%),
+            radial-gradient(ellipse at 80% 80%, ${nebulaPurple}10 0%, transparent 50%),
+            linear-gradient(180deg, #050510 0%, #0a0a1a 50%, #050510 100%)
+          `
+        }}
+      />
+      
+      {/* Deep space stars - fullscreen */}
+      {[...Array(30)].map((_, i) => {
+        const x = (i * 37 + 11) % 100;
+        const y = (i * 53 + 7) % 100;
+        const size = 1 + (i % 3);
+        const opacity = 0.3 + (i % 5) * 0.15;
+        return (
+          <div 
+            key={`bg-star-${i}`}
+            className="absolute pointer-events-none rounded-full"
+            style={{
+              left: `${x}%`,
+              top: `${y}%`,
+              width: `${size}px`,
+              height: `${size}px`,
+              background: starWhite,
+              boxShadow: `0 0 ${size * 2}px ${starWhite}`,
+              opacity: opacity * intensity
+            }}
+          />
+        );
+      })}
+      
+      {/* Nebula clouds */}
+      <div 
+        className="absolute top-0 left-0 w-1/2 h-1/2 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse at 30% 30%, ${nebulaPurple}15 0%, transparent 60%)`,
+          filter: 'blur(80px)'
+        }}
+      />
+      <div 
+        className="absolute bottom-0 right-0 w-1/2 h-1/2 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse at 70% 70%, ${cosmicBlue}12 0%, transparent 60%)`,
+          filter: 'blur(80px)'
+        }}
+      />
+
       {/* === NEBULA OUTER GLOW === */}
       <div 
         className="absolute pointer-events-none"
@@ -65,7 +118,7 @@ export const CosmicTableGlow = memo(function CosmicTableGlow({
         }}
       />
       
-      {/* === STAR FIELD === */}
+      {/* === STAR FIELD on table === */}
       {[...Array(12)].map((_, i) => {
         const randomLeft = 25 + Math.sin(i * 2.5) * 25;
         const randomTop = 20 + Math.cos(i * 3.1) * 30;
