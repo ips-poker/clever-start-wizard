@@ -262,25 +262,31 @@ export function SeatCalibrationTool() {
     toast.success('Код скопирован в буфер обмена');
   }, [positions, mode]);
   
-  // Размеры бортика стола - точно как в FullscreenPokerTable / SyndikateTableFelt
+  // Размеры бортика стола - ТОЧНО как в SyndikateTableFelt
+  // Desktop: outer=20%, leather=21%, inner=23%, felt=24%
+  // Telegram (wideMode): outer=10%, leather=11%, inner=13%, felt=14%
   const getTableGeometry = () => {
     if (mode === 'telegram') {
       return {
-        // Wide mode margins from SyndikateTableFelt
+        // Wide mode margins from SyndikateTableFelt (wideMode=true)
+        outer: 10, leather: 11, inner: 13, felt: 14,
+        outerTop: 6, outerBottom: 6,
+        leatherTop: 7, leatherBottom: 7,
+        innerTop: 9, innerBottom: 9,
+        feltTop: 10, feltBottom: 10,
+        // Rail = felt edge (где размещаются аватары)
         rail: { left: 14, right: 86, top: 10, bottom: 90 },
-        felt: { left: 14, right: 86, top: 10, bottom: 90 },
-        outer: { left: 10, right: 90, top: 6, bottom: 94 },
-        leather: { left: 11, right: 89, top: 7, bottom: 93 },
-        inner: { left: 13, right: 87, top: 9, bottom: 91 },
       };
     }
-    // Standard desktop mode
+    // Standard desktop mode (wideMode=false)
     return {
+      outer: 20, leather: 21, inner: 23, felt: 24,
+      outerTop: 6, outerBottom: 6,
+      leatherTop: 7, leatherBottom: 7,
+      innerTop: 9, innerBottom: 9,
+      feltTop: 10, feltBottom: 10,
+      // Rail = felt edge
       rail: { left: 24, right: 76, top: 10, bottom: 90 },
-      felt: { left: 24, right: 76, top: 10, bottom: 90 },
-      outer: { left: 20, right: 80, top: 6, bottom: 94 },
-      leather: { left: 21, right: 79, top: 7, bottom: 93 },
-      inner: { left: 23, right: 77, top: 9, bottom: 91 },
     };
   };
   
@@ -367,10 +373,11 @@ export function SeatCalibrationTool() {
           {/* Preview Canvas - реалистичная визуализация стола */}
           <div className="grid grid-cols-2 gap-4">
             {/* Visual Preview - точная копия FullscreenPokerTable */}
+            {/* Desktop: вытянутый вертикально как popup окно (~4:3 portrait), Telegram: 9:16 */}
             <div 
               className="relative overflow-hidden rounded-lg"
               style={{ 
-                aspectRatio: mode === 'telegram' ? '9/16' : '16/9',
+                aspectRatio: mode === 'telegram' ? '9/16' : '3/4',
                 background: 'linear-gradient(180deg, #0a1520 0%, #050a0f 30%, #020508 60%, #000000 100%)'
               }}
             >
@@ -386,10 +393,10 @@ export function SeatCalibrationTool() {
               <div 
                 className="absolute"
                 style={{
-                  top: `${tableGeometry.outer.top}%`,
-                  left: `${100 - tableGeometry.outer.right}%`,
-                  right: `${100 - tableGeometry.outer.right}%`,
-                  bottom: `${100 - tableGeometry.outer.bottom}%`,
+                  top: `${tableGeometry.outerTop}%`,
+                  left: `${tableGeometry.outer}%`,
+                  right: `${tableGeometry.outer}%`,
+                  bottom: `${tableGeometry.outerBottom}%`,
                   borderRadius: '45% / 22%',
                   background: 'linear-gradient(180deg, #5a6a7a 0%, #3d4a5a 20%, #2a3440 50%, #3d4a5a 80%, #5a6a7a 100%)',
                   boxShadow: '0 10px 60px rgba(0,0,0,0.9)'
@@ -400,10 +407,10 @@ export function SeatCalibrationTool() {
               <div 
                 className="absolute"
                 style={{
-                  top: `${tableGeometry.leather.top}%`,
-                  left: `${100 - tableGeometry.leather.right}%`,
-                  right: `${100 - tableGeometry.leather.right}%`,
-                  bottom: `${100 - tableGeometry.leather.bottom}%`,
+                  top: `${tableGeometry.leatherTop}%`,
+                  left: `${tableGeometry.leather}%`,
+                  right: `${tableGeometry.leather}%`,
+                  bottom: `${tableGeometry.leatherBottom}%`,
                   borderRadius: '44% / 21%',
                   background: 'linear-gradient(180deg, #3a2820 0%, #2a1a14 30%, #1a0f0a 60%, #2a1a14 85%, #3a2820 100%)'
                 }}
@@ -413,10 +420,10 @@ export function SeatCalibrationTool() {
               <div 
                 className="absolute"
                 style={{
-                  top: `${tableGeometry.inner.top}%`,
-                  left: `${100 - tableGeometry.inner.right}%`,
-                  right: `${100 - tableGeometry.inner.right}%`,
-                  bottom: `${100 - tableGeometry.inner.bottom}%`,
+                  top: `${tableGeometry.innerTop}%`,
+                  left: `${tableGeometry.inner}%`,
+                  right: `${tableGeometry.inner}%`,
+                  bottom: `${tableGeometry.innerBottom}%`,
                   borderRadius: '42% / 20%',
                   background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 50%, #1a202c 100%)',
                   border: '1px solid rgba(212,175,55,0.2)'
@@ -427,10 +434,10 @@ export function SeatCalibrationTool() {
               <div 
                 className="absolute"
                 style={{
-                  top: `${tableGeometry.felt.top}%`,
-                  left: `${100 - tableGeometry.felt.right}%`,
-                  right: `${100 - tableGeometry.felt.right}%`,
-                  bottom: `${100 - tableGeometry.felt.bottom}%`,
+                  top: `${tableGeometry.feltTop}%`,
+                  left: `${tableGeometry.felt}%`,
+                  right: `${tableGeometry.felt}%`,
+                  bottom: `${tableGeometry.feltBottom}%`,
                   borderRadius: '40% / 18%',
                   background: 'radial-gradient(ellipse at 50% 40%, #0d5c2e 0%, #0d5c2edd 25%, #0d5c2ebb 45%, #0d5c2e99 65%, #0d5c2e77 85%, #0d5c2e55 100%)',
                   boxShadow: 'inset 0 0 80px rgba(0,0,0,0.35)'
@@ -465,16 +472,17 @@ export function SeatCalibrationTool() {
               {/* Rail bounds indicator */}
               {showRail && (
                 <div
-                  className="absolute border-2 border-yellow-500 rounded-[40%/18%] pointer-events-none"
+                  className="absolute border-2 border-yellow-500 pointer-events-none"
                   style={{
-                    left: `${100 - rail.right}%`,
+                    left: `${rail.left}%`,
                     right: `${100 - rail.right}%`,
                     top: `${rail.top}%`,
-                    bottom: `${100 - rail.bottom}%`
+                    bottom: `${100 - rail.bottom}%`,
+                    borderRadius: '40% / 18%'
                   }}
                 >
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] text-yellow-500 font-mono bg-black/60 px-1 rounded">
-                    Бортик (rail)
+                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[9px] text-yellow-500 font-mono bg-black/60 px-1 rounded whitespace-nowrap">
+                    Бортик (rail) - размещайте аватары здесь
                   </div>
                 </div>
               )}
