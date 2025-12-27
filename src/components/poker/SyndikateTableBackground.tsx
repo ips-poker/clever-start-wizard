@@ -8,20 +8,24 @@ import syndikateLogo from '@/assets/syndikate-logo-main.png';
 
 interface SyndikateTableBackgroundProps {
   themeColor?: string;
+  transparent?: boolean; // When true, no solid background is rendered (for glow styles)
 }
 
 export const SyndikateTableBackground = memo(function SyndikateTableBackground({
-  themeColor = '#0d5c2e'
+  themeColor = '#0d5c2e',
+  transparent = false
 }: SyndikateTableBackgroundProps) {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Base dark gradient - deep tech background */}
-      <div 
-        className="absolute inset-0"
-        style={{
-          background: 'linear-gradient(180deg, #0a1520 0%, #050a0f 30%, #020508 60%, #000000 100%)'
-        }}
-      />
+      {/* Base dark gradient - only show if not transparent mode */}
+      {!transparent && (
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(180deg, #0a1520 0%, #050a0f 30%, #020508 60%, #000000 100%)'
+          }}
+        />
+      )}
       
       {/* Teal/cyan ambient glow at top - tech atmosphere */}
       <div 
