@@ -90,15 +90,17 @@ interface TournamentInfo {
 }
 
 interface TournamentManipulationToolsProps {
-  tournamentId: string;
+  tournamentId?: string;
   onRefresh?: () => void;
 }
 
 export function TournamentManipulationTools({ 
-  tournamentId,
+  tournamentId: propTournamentId,
   onRefresh 
 }: TournamentManipulationToolsProps) {
   const [loading, setLoading] = useState(true);
+  const [tournaments, setTournaments] = useState<TournamentInfo[]>([]);
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string>(propTournamentId || '');
   const [tournament, setTournament] = useState<TournamentInfo | null>(null);
   const [players, setPlayers] = useState<TournamentPlayer[]>([]);
   const [tables, setTables] = useState<TournamentTable[]>([]);
@@ -118,6 +120,36 @@ export function TournamentManipulationTools({
   const [chipPlayer, setChipPlayer] = useState<TournamentPlayer | null>(null);
   const [chipAmount, setChipAmount] = useState('0');
   const [chipOperation, setChipOperation] = useState<'add' | 'remove' | 'set'>('add');
+  
+  // Use prop or selected tournament
+  const tournamentId = propTournamentId || selectedTournamentId;
+  
+  // Fetch available tournaments
+  const fetchTournaments = useCallback(async () => {
+    const { data } = await supabase
+      .from('online_poker_tournaments')
+      .select('id, name, status, current_level, level_end_at, prize_pool')
+      .in('status', ['registering', 'running', 'paused'])
+      .order('created_at', { ascending: false });
+    
+    if (data) {
+      const enriched = data.map(t => ({
+        ...t,
+        players_remaining: 0,
+        players_total: 0
+      }));
+      setTournaments(enriched);
+      
+      // Auto-select first tournament if none selected
+      if (!tournamentId && enriched.length > 0) {
+        setSelectedTournamentId(enriched[0].id);
+      }
+    }
+  }, [tournamentId]);
+  
+  useEffect(() => {
+    fetchTournaments();
+  }, [fetchTournaments]);
   
   const fetchData = useCallback(async () => {
     if (!tournamentId) return;
@@ -443,6 +475,49 @@ export function TournamentManipulationTools({
     return allSeats.filter(s => !occupiedSeats.includes(s));
   };
   
+  // Tournament selector UI (when no prop tournamentId)
+  if (!propTournamentId && !tournamentId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings2 className="h-5 w-5" />
+            Управление турниром
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">Выберите турнир для управления</p>
+            {tournaments.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Нет активных турниров</p>
+            ) : (
+              <Select value={selectedTournamentId} onValueChange={setSelectedTournamentId}>
+                <SelectTrigger className="w-64 mx-auto">
+                  <SelectValue placeholder="Выберите турнир" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tournaments.map(t => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name} ({t.status})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Button 
+              className="mt-4"
+              onClick={fetchTournaments}
+              variant="outline"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Обновить список
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -464,6 +539,25 @@ export function TournamentManipulationTools({
   
   return (
     <div className="space-y-4">
+      {/* Tournament Selector (if no prop) */}
+      {!propTournamentId && tournaments.length > 0 && (
+        <div className="flex items-center gap-2 mb-2">
+          <Label className="text-sm">Турнир:</Label>
+          <Select value={selectedTournamentId} onValueChange={setSelectedTournamentId}>
+            <SelectTrigger className="w-64">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {tournaments.map(t => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.name} ({t.status})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      
       {/* Tournament Header */}
       <Card>
         <CardContent className="py-4">
