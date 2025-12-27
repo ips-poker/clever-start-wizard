@@ -6,3 +6,8 @@ export { StatsExport } from './StatsExport';
 export { DiamondManagement } from './DiamondManagement';
 export { CashGameBotManager } from './CashGameBotManager';
 export { TournamentTestMode } from './TournamentTestMode';
+export { OnlineTournamentManager } from './OnlineTournamentManager';
+export { ServerMonitoringPanel } from './ServerMonitoringPanel';
+export { TournamentAdvancedTools } from './TournamentAdvancedTools';
+export { PlayerAnalyticsPanel } from './PlayerAnalyticsPanel';
+export { IntegrationsPanel } from './IntegrationsPanel';

@@ -72,7 +72,11 @@ import { CreatePlayerWithBalance } from './admin/CreatePlayerWithBalance';
 import { StatsExport } from './admin/StatsExport';
 import { DiamondManagement } from './admin/DiamondManagement';
 import { OnlineTournamentManager } from './admin/OnlineTournamentManager';
-import { Gem, Trophy } from 'lucide-react';
+import { ServerMonitoringPanel } from './admin/ServerMonitoringPanel';
+import { TournamentAdvancedTools } from './admin/TournamentAdvancedTools';
+import { PlayerAnalyticsPanel } from './admin/PlayerAnalyticsPanel';
+import { IntegrationsPanel } from './admin/IntegrationsPanel';
+import { Gem, Trophy, Server, BarChart3, Webhook, Tv } from 'lucide-react';
 
 interface PlayerBalance {
   id: string;
@@ -688,53 +692,85 @@ export function OnlinePokerManagement() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-9">
+        <TabsList className="grid w-full grid-cols-12">
           <TabsTrigger value="monitor" className="gap-1">
             <Eye className="h-4 w-4" />
-            <span className="hidden lg:inline">Мониторинг</span>
+            <span className="hidden xl:inline">Мониторинг</span>
+          </TabsTrigger>
+          <TabsTrigger value="server" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600">
+            <Server className="h-4 w-4" />
+            <span className="hidden xl:inline">VPS</span>
           </TabsTrigger>
           <TabsTrigger value="tournaments" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-600">
             <Trophy className="h-4 w-4" />
-            <span className="hidden lg:inline">Турниры</span>
+            <span className="hidden xl:inline">Турниры</span>
+          </TabsTrigger>
+          <TabsTrigger value="advanced" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600">
+            <Tv className="h-4 w-4" />
+            <span className="hidden xl:inline">TV/ICM</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600">
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden xl:inline">Аналитика</span>
           </TabsTrigger>
           <TabsTrigger value="diamonds" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600">
             <Gem className="h-4 w-4" />
-            <span className="hidden lg:inline">Алмазы</span>
+            <span className="hidden xl:inline">Алмазы</span>
           </TabsTrigger>
           <TabsTrigger value="credits" className="gap-1">
             <CreditCard className="h-4 w-4" />
-            <span className="hidden lg:inline">Кредиты</span>
+            <span className="hidden xl:inline">Кредиты</span>
           </TabsTrigger>
           <TabsTrigger value="tables" className="gap-1">
             <Table2 className="h-4 w-4" />
-            <span className="hidden lg:inline">Столы</span>
+            <span className="hidden xl:inline">Столы</span>
           </TabsTrigger>
           <TabsTrigger value="history" className="gap-1">
             <History className="h-4 w-4" />
-            <span className="hidden lg:inline">История</span>
+            <span className="hidden xl:inline">История</span>
           </TabsTrigger>
           <TabsTrigger value="bans" className="gap-1">
             <Ban className="h-4 w-4" />
-            <span className="hidden lg:inline">Баны</span>
+            <span className="hidden xl:inline">Баны</span>
           </TabsTrigger>
-          <TabsTrigger value="export" className="gap-1">
-            <Download className="h-4 w-4" />
-            <span className="hidden lg:inline">Экспорт</span>
+          <TabsTrigger value="integrations" className="gap-1">
+            <Webhook className="h-4 w-4" />
+            <span className="hidden xl:inline">API</span>
           </TabsTrigger>
           <TabsTrigger value="tools" className="gap-1">
             <Settings className="h-4 w-4" />
-            <span className="hidden lg:inline">Инструменты</span>
+            <span className="hidden xl:inline">Инстр.</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* Server Monitoring Tab */}
+        <TabsContent value="server">
+          <ServerMonitoringPanel />
+        </TabsContent>
 
         {/* Tournaments Tab */}
         <TabsContent value="tournaments">
           <OnlineTournamentManager />
         </TabsContent>
 
+        {/* Advanced Tournament Tools */}
+        <TabsContent value="advanced">
+          <TournamentAdvancedTools />
+        </TabsContent>
+
+        {/* Player Analytics */}
+        <TabsContent value="analytics">
+          <PlayerAnalyticsPanel />
+        </TabsContent>
+
         {/* Diamonds Tab */}
         <TabsContent value="diamonds">
           <DiamondManagement />
+        </TabsContent>
+
+        {/* Integrations Tab */}
+        <TabsContent value="integrations">
+          <IntegrationsPanel />
         </TabsContent>
 
         {/* Monitor Tab - Live View */}
