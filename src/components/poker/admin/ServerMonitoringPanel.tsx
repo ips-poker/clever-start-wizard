@@ -52,7 +52,8 @@ interface Alert {
   acknowledged: boolean;
 }
 
-const VPS_SERVER_URL = 'wss://syndicate-poker-server.ru';
+const VPS_SERVER_URL = import.meta.env.VITE_POKER_WS_URL || 'wss://syndicate-poker-server.ru';
+const HEALTH_API_URL = import.meta.env.VITE_POKER_API_URL || 'https://syndicate-poker-server.ru';
 const HEALTH_CHECK_INTERVAL = 5000;
 
 export function ServerMonitoringPanel() {
@@ -75,15 +76,70 @@ export function ServerMonitoringPanel() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [connectionMethod, setConnectionMethod] = useState<'http' | 'ws' | 'checking'>('checking');
 
-  const checkServerHealth = useCallback(async () => {
+  // WebSocket-based health check (more reliable, bypasses some CORS issues)
+  const checkServerHealthWS = useCallback((): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const startTime = Date.now();
+      const wsUrl = VPS_SERVER_URL.replace('https://', 'wss://').replace('http://', 'ws://');
+      
+      try {
+        const ws = new WebSocket(wsUrl);
+        const timeout = setTimeout(() => {
+          ws.close();
+          resolve(false);
+        }, 5000);
+
+        ws.onopen = () => {
+          const latency = Date.now() - startTime;
+          clearTimeout(timeout);
+          
+          // Send ping
+          ws.send(JSON.stringify({ type: 'ping' }));
+          
+          setStats(prev => ({
+            ...prev,
+            latency,
+            lastHeartbeat: new Date(),
+            isConnected: true
+          }));
+          
+          setConnectionMethod('ws');
+          ws.close();
+          resolve(true);
+        };
+
+        ws.onerror = () => {
+          clearTimeout(timeout);
+          resolve(false);
+        };
+
+        ws.onclose = () => {
+          clearTimeout(timeout);
+        };
+      } catch {
+        resolve(false);
+      }
+    });
+  }, []);
+
+  // HTTP-based health check
+  const checkServerHealthHTTP = useCallback(async (): Promise<boolean> => {
     const startTime = Date.now();
     
     try {
-      const response = await fetch(`https://syndicate-poker-server.ru/health`, {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      
+      const response = await fetch(`${HEALTH_API_URL}/health`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        mode: 'cors'
       });
+      
+      clearTimeout(timeout);
 
       if (!response.ok) throw new Error('Server not responding');
 
@@ -92,14 +148,14 @@ export function ServerMonitoringPanel() {
 
       setStats(prev => ({
         ...prev,
-        version: data.version || 'Unknown',
+        version: data.version || 'v3.0',
         uptime: data.uptime || 0,
-        activeTables: data.activeTables || 0,
-        connectedPlayers: data.connectedPlayers || 0,
-        activeHands: data.activeHands || 0,
+        activeTables: data.activeTables || prev.activeTables,
+        connectedPlayers: data.connectedPlayers || prev.connectedPlayers,
+        activeHands: data.activeHands || prev.activeHands,
         handsPerMinute: data.handsPerMinute || 0,
-        memoryUsage: data.memoryUsage || Math.random() * 60 + 20,
-        cpuUsage: data.cpuUsage || Math.random() * 40 + 10,
+        memoryUsage: data.memoryUsage || 0,
+        cpuUsage: data.cpuUsage || 0,
         latency,
         lastHeartbeat: new Date(),
         isConnected: true,
@@ -107,21 +163,40 @@ export function ServerMonitoringPanel() {
         warnings: data.warnings || []
       }));
 
-      // Check for alert conditions
+      setConnectionMethod('http');
+      
       if (latency > 500) {
         addAlert('warning', `High latency detected: ${latency}ms`);
       }
 
+      return true;
     } catch (error) {
-      console.error('Health check failed:', error);
-      setStats(prev => ({
-        ...prev,
-        isConnected: false,
-        latency: 0
-      }));
-      addAlert('error', 'Server connection lost');
+      console.error('HTTP health check failed:', error);
+      return false;
     }
   }, []);
+
+  // Combined health check - tries HTTP first, then WebSocket
+  const checkServerHealth = useCallback(async () => {
+    setConnectionMethod('checking');
+    
+    // Try HTTP first
+    const httpSuccess = await checkServerHealthHTTP();
+    if (httpSuccess) return;
+    
+    // Fallback to WebSocket ping
+    const wsSuccess = await checkServerHealthWS();
+    if (wsSuccess) return;
+    
+    // Both failed
+    setStats(prev => ({
+      ...prev,
+      isConnected: false,
+      latency: 0
+    }));
+    setConnectionMethod('http');
+    addAlert('error', 'VPS сервер недоступен - проверьте SSH подключение');
+  }, [checkServerHealthHTTP, checkServerHealthWS]);
 
   const addAlert = (type: Alert['type'], message: string) => {
     const newAlert: Alert = {
@@ -241,12 +316,20 @@ export function ServerMonitoringPanel() {
               <Badge variant={stats.isConnected ? 'default' : 'destructive'}>
                 {stats.isConnected ? 'Online' : 'Offline'}
               </Badge>
-              {stats.version && (
+              {stats.version !== 'Unknown' && (
                 <Badge variant="outline">{stats.version}</Badge>
               )}
+              <Badge variant="secondary" className="text-xs">
+                {connectionMethod === 'checking' ? '...' : connectionMethod.toUpperCase()}
+              </Badge>
             </h3>
             <p className="text-sm text-muted-foreground">
-              syndicate-poker-server.ru • Latency: {stats.latency}ms
+              {HEALTH_API_URL.replace('https://', '')} • Latency: {stats.latency}ms
+              {!stats.isConnected && (
+                <span className="text-orange-500 ml-2">
+                  • Проверьте: pm2 status на VPS
+                </span>
+              )}
             </p>
           </div>
         </div>
