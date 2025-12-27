@@ -76,19 +76,19 @@ export const TableGlowFullscreenBackground = memo(function TableGlowFullscreenBa
       ]
     },
     vegas: {
-      base: 'linear-gradient(180deg, #0a0512 0%, #050308 50%, #0a0512 100%)',
+      base: 'linear-gradient(180deg, #0a0512 0%, #050308 40%, #050308 60%, #0a0512 100%)',
       accents: [
-        { position: 'ellipse at 20% 20%', color: '#ff1493', opacity: 0.12 },
-        { position: 'ellipse at 80% 20%', color: '#00bfff', opacity: 0.1 },
-        { position: 'ellipse at 20% 80%', color: '#39ff14', opacity: 0.08 },
-        { position: 'ellipse at 80% 80%', color: '#ffd700', opacity: 0.1 },
-        { position: 'ellipse at 50% 50%', color: '#ff1493', opacity: 0.06 },
+        { position: 'ellipse 120% 80% at 20% 15%', color: '#ff1493', opacity: 0.10 },
+        { position: 'ellipse 120% 80% at 80% 15%', color: '#00bfff', opacity: 0.08 },
+        { position: 'ellipse 120% 80% at 20% 85%', color: '#39ff14', opacity: 0.06 },
+        { position: 'ellipse 120% 80% at 80% 85%', color: '#ffd700', opacity: 0.08 },
+        { position: 'ellipse 100% 60% at 50% 50%', color: '#ff1493', opacity: 0.04 },
       ],
       glows: [
-        { position: 'top', gradient: 'linear-gradient(180deg, rgba(255,20,147,0.15), transparent)', blur: 40 },
-        { position: 'left', gradient: 'linear-gradient(90deg, rgba(57,255,20,0.1), transparent)', blur: 50 },
-        { position: 'right', gradient: 'linear-gradient(-90deg, rgba(0,191,255,0.1), transparent)', blur: 50 },
-        { position: 'bottom', gradient: 'linear-gradient(0deg, rgba(255,215,0,0.12), transparent)', blur: 40 },
+        { position: 'top', gradient: 'linear-gradient(180deg, rgba(255,20,147,0.12) 0%, rgba(255,20,147,0.04) 40%, transparent 100%)', blur: 60 },
+        { position: 'left', gradient: 'linear-gradient(90deg, rgba(57,255,20,0.08) 0%, rgba(57,255,20,0.02) 50%, transparent 100%)', blur: 80 },
+        { position: 'right', gradient: 'linear-gradient(-90deg, rgba(0,191,255,0.08) 0%, rgba(0,191,255,0.02) 50%, transparent 100%)', blur: 80 },
+        { position: 'bottom', gradient: 'linear-gradient(0deg, rgba(255,215,0,0.10) 0%, rgba(255,215,0,0.03) 40%, transparent 100%)', blur: 60 },
       ]
     },
     matrix: {
@@ -119,9 +119,13 @@ export const TableGlowFullscreenBackground = memo(function TableGlowFullscreenBa
   const style = styles[glowStyleId];
   if (!style) return null;
   
-  // Build accent gradients
+  // Build accent gradients with smooth falloff
   const accentGradients = style.accents
-    .map(a => `radial-gradient(${a.position}, ${a.color}${Math.round(a.opacity * 255 * intensity).toString(16).padStart(2, '0')} 0%, transparent 50%)`)
+    .map(a => {
+      const opacityHex = Math.round(a.opacity * 255 * intensity).toString(16).padStart(2, '0');
+      const midOpacityHex = Math.round(a.opacity * 127 * intensity).toString(16).padStart(2, '0');
+      return `radial-gradient(${a.position}, ${a.color}${opacityHex} 0%, ${a.color}${midOpacityHex} 30%, transparent 70%)`;
+    })
     .join(', ');
   
   return (
@@ -141,16 +145,16 @@ export const TableGlowFullscreenBackground = memo(function TableGlowFullscreenBa
         
         switch (glow.position) {
           case 'top':
-            className += 'top-0 left-0 right-0 h-1/3';
+            className += 'top-0 left-0 right-0 h-1/2';
             break;
           case 'bottom':
-            className += 'bottom-0 left-0 right-0 h-1/3';
+            className += 'bottom-0 left-0 right-0 h-1/2';
             break;
           case 'left':
-            className += 'left-0 top-0 bottom-0 w-1/4';
+            className += 'left-0 top-0 bottom-0 w-1/3';
             break;
           case 'right':
-            className += 'right-0 top-0 bottom-0 w-1/4';
+            className += 'right-0 top-0 bottom-0 w-1/3';
             break;
         }
         
