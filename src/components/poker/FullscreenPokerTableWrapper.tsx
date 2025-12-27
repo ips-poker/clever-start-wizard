@@ -21,7 +21,7 @@ import { TournamentHUD } from './TournamentHUD';
 import { BuyInDialog } from './BuyInDialog';
 import { RebuyDialog } from './RebuyDialog';
 import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
-
+import { TableGlowFullscreenBackground } from './table-styles/TableGlowFullscreenBackground';
 
 // Syndikate branding
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
@@ -430,6 +430,12 @@ export function FullscreenPokerTableWrapper({
 
   return (
     <PokerErrorBoundary>
+      {/* Fullscreen glow background - covers entire screen including header/footer */}
+      <TableGlowFullscreenBackground 
+        glowStyleId={preferences.tableGlowStyle}
+        intensity={0.9}
+      />
+      
       <div 
         className="absolute inset-0 overflow-hidden"
         style={{
