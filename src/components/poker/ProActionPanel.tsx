@@ -306,7 +306,7 @@ export const ProActionPanel = memo(function ProActionPanel({
         animate={{ opacity: 1, y: 0 }}
         className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6"
         style={{
-          background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.8) 70%, transparent 100%)'
+          background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 70%, transparent 100%)'
         }}
       >
         <div className="flex items-center justify-center gap-6 flex-wrap">
@@ -349,7 +349,7 @@ export const ProActionPanel = memo(function ProActionPanel({
       exit={{ opacity: 0, y: 30 }}
       className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6"
       style={{
-        background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(20,20,20,0.95) 60%, transparent 100%)'
+        background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)'
       }}
     >
 
