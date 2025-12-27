@@ -695,64 +695,84 @@ export function OnlinePokerManagement() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-14">
-          <TabsTrigger value="monitor" className="gap-1">
-            <Eye className="h-4 w-4" />
-            <span className="hidden xl:inline">Мониторинг</span>
-          </TabsTrigger>
-          <TabsTrigger value="engine" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600">
-            <Activity className="h-4 w-4" />
-            <span className="hidden xl:inline">Движок</span>
-          </TabsTrigger>
-          <TabsTrigger value="server" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-600">
-            <Server className="h-4 w-4" />
-            <span className="hidden xl:inline">VPS</span>
-          </TabsTrigger>
-          <TabsTrigger value="tournaments" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-600">
-            <Trophy className="h-4 w-4" />
-            <span className="hidden xl:inline">Турниры</span>
-          </TabsTrigger>
-          <TabsTrigger value="manipulation" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-500 data-[state=active]:to-pink-600">
-            <Wrench className="h-4 w-4" />
-            <span className="hidden xl:inline">Управление</span>
-          </TabsTrigger>
-          <TabsTrigger value="advanced" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600">
-            <Tv className="h-4 w-4" />
-            <span className="hidden xl:inline">TV/ICM</span>
-          </TabsTrigger>
-          <TabsTrigger value="calibration" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-violet-600">
-            <Target className="h-4 w-4" />
-            <span className="hidden xl:inline">Калибровка</span>
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600">
-            <BarChart3 className="h-4 w-4" />
-            <span className="hidden xl:inline">Аналитика</span>
-          </TabsTrigger>
-          <TabsTrigger value="diamonds" className="gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600">
-            <Gem className="h-4 w-4" />
-            <span className="hidden xl:inline">Алмазы</span>
-          </TabsTrigger>
-          <TabsTrigger value="credits" className="gap-1">
-            <CreditCard className="h-4 w-4" />
-            <span className="hidden xl:inline">Кредиты</span>
-          </TabsTrigger>
-          <TabsTrigger value="tables" className="gap-1">
-            <Table2 className="h-4 w-4" />
-            <span className="hidden xl:inline">Столы</span>
-          </TabsTrigger>
-          <TabsTrigger value="history" className="gap-1">
-            <History className="h-4 w-4" />
-            <span className="hidden xl:inline">История</span>
-          </TabsTrigger>
-          <TabsTrigger value="integrations" className="gap-1">
-            <Webhook className="h-4 w-4" />
-            <span className="hidden xl:inline">API</span>
-          </TabsTrigger>
-          <TabsTrigger value="tools" className="gap-1">
-            <Settings className="h-4 w-4" />
-            <span className="hidden xl:inline">Инстр.</span>
-          </TabsTrigger>
-        </TabsList>
+        <div className="mb-4">
+          {/* Группа 1: Основные */}
+          <div className="flex flex-wrap gap-2 mb-2">
+            <span className="text-xs text-muted-foreground self-center mr-1">Основные:</span>
+            <TabsList className="h-auto p-1 flex-wrap">
+              <TabsTrigger value="monitor" className="gap-1.5 px-3 py-1.5">
+                <Eye className="h-4 w-4" />
+                <span>Мониторинг</span>
+              </TabsTrigger>
+              <TabsTrigger value="credits" className="gap-1.5 px-3 py-1.5">
+                <CreditCard className="h-4 w-4" />
+                <span>Кредиты</span>
+              </TabsTrigger>
+              <TabsTrigger value="tables" className="gap-1.5 px-3 py-1.5">
+                <Table2 className="h-4 w-4" />
+                <span>Столы</span>
+              </TabsTrigger>
+              <TabsTrigger value="history" className="gap-1.5 px-3 py-1.5">
+                <History className="h-4 w-4" />
+                <span>История</span>
+              </TabsTrigger>
+              <TabsTrigger value="diamonds" className="gap-1.5 px-3 py-1.5">
+                <Gem className="h-4 w-4" />
+                <span>Алмазы</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          
+          {/* Группа 2: Турниры */}
+          <div className="flex flex-wrap gap-2 mb-2">
+            <span className="text-xs text-muted-foreground self-center mr-1">Турниры:</span>
+            <TabsList className="h-auto p-1 flex-wrap">
+              <TabsTrigger value="tournaments" className="gap-1.5 px-3 py-1.5">
+                <Trophy className="h-4 w-4" />
+                <span>Турниры</span>
+              </TabsTrigger>
+              <TabsTrigger value="manipulation" className="gap-1.5 px-3 py-1.5">
+                <Wrench className="h-4 w-4" />
+                <span>Управление</span>
+              </TabsTrigger>
+              <TabsTrigger value="advanced" className="gap-1.5 px-3 py-1.5">
+                <Tv className="h-4 w-4" />
+                <span>TV/ICM</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          
+          {/* Группа 3: Инструменты */}
+          <div className="flex flex-wrap gap-2">
+            <span className="text-xs text-muted-foreground self-center mr-1">Инструменты:</span>
+            <TabsList className="h-auto p-1 flex-wrap">
+              <TabsTrigger value="engine" className="gap-1.5 px-3 py-1.5">
+                <Activity className="h-4 w-4" />
+                <span>Движок</span>
+              </TabsTrigger>
+              <TabsTrigger value="server" className="gap-1.5 px-3 py-1.5">
+                <Server className="h-4 w-4" />
+                <span>VPS</span>
+              </TabsTrigger>
+              <TabsTrigger value="calibration" className="gap-1.5 px-3 py-1.5">
+                <Target className="h-4 w-4" />
+                <span>Калибровка</span>
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="gap-1.5 px-3 py-1.5">
+                <BarChart3 className="h-4 w-4" />
+                <span>Аналитика</span>
+              </TabsTrigger>
+              <TabsTrigger value="integrations" className="gap-1.5 px-3 py-1.5">
+                <Webhook className="h-4 w-4" />
+                <span>API</span>
+              </TabsTrigger>
+              <TabsTrigger value="tools" className="gap-1.5 px-3 py-1.5">
+                <Settings className="h-4 w-4" />
+                <span>Прочее</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        </div>
 
         {/* Engine Monitoring Tab */}
         <TabsContent value="engine">
