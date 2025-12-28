@@ -53,44 +53,39 @@ const ActionButton = memo(function ActionButton({
 }) {
   const variants = {
     fold: {
-      bg: 'bg-gray-500/20',
-      hover: 'hover:bg-gray-500/30',
-      border: 'border-gray-400/30',
+      bg: 'from-gray-600 to-gray-700',
+      hover: 'hover:from-gray-500 hover:to-gray-600',
+      border: 'border-gray-500/30',
       shadow: 'shadow-gray-600/20',
-      text: 'text-white/90',
-      glow: ''
+      text: 'text-white/90'
     },
     check: {
-      bg: 'bg-blue-500/25',
-      hover: 'hover:bg-blue-500/35',
-      border: 'border-blue-400/40',
+      bg: 'from-blue-500 to-blue-600',
+      hover: 'hover:from-blue-400 hover:to-blue-500',
+      border: 'border-blue-400/30',
       shadow: 'shadow-blue-500/30',
-      text: 'text-blue-100',
-      glow: 'shadow-[0_0_20px_rgba(59,130,246,0.3)]'
+      text: 'text-white'
     },
     call: {
-      bg: 'bg-emerald-500/25',
-      hover: 'hover:bg-emerald-500/35',
-      border: 'border-emerald-400/40',
+      bg: 'from-emerald-500 to-emerald-600',
+      hover: 'hover:from-emerald-400 hover:to-emerald-500',
+      border: 'border-emerald-400/30',
       shadow: 'shadow-emerald-500/30',
-      text: 'text-emerald-100',
-      glow: 'shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+      text: 'text-white'
     },
     raise: {
-      bg: isActive ? 'bg-amber-500/35' : 'bg-amber-500/25',
-      hover: 'hover:bg-amber-500/35',
-      border: 'border-amber-400/40',
+      bg: isActive ? 'from-amber-400 to-amber-500' : 'from-amber-500 to-amber-600',
+      hover: 'hover:from-amber-400 hover:to-amber-500',
+      border: 'border-amber-400/30',
       shadow: 'shadow-amber-500/30',
-      text: 'text-amber-100',
-      glow: isActive ? 'shadow-[0_0_25px_rgba(245,158,11,0.4)]' : 'shadow-[0_0_20px_rgba(245,158,11,0.3)]'
+      text: 'text-white'
     },
     allin: {
-      bg: 'bg-red-500/30',
-      hover: 'hover:bg-red-500/40',
-      border: 'border-red-400/50',
+      bg: 'from-red-500 to-red-600',
+      hover: 'hover:from-red-400 hover:to-red-500',
+      border: 'border-red-400/30',
       shadow: 'shadow-red-500/40',
-      text: 'text-red-100',
-      glow: 'shadow-[0_0_25px_rgba(239,68,68,0.4)]'
+      text: 'text-white'
     }
   };
 
@@ -103,32 +98,27 @@ const ActionButton = memo(function ActionButton({
       disabled={disabled}
       style={{ flex }}
       className={cn(
-        "relative h-14 px-3 rounded-xl font-bold transition-all duration-200",
-        "backdrop-blur-md",
+        "relative h-14 px-3 rounded-xl font-bold transition-all duration-150",
+        "bg-gradient-to-b shadow-lg",
         "flex flex-col items-center justify-center gap-0.5",
-        "border",
+        "border-t",
         "active:brightness-110",
         "disabled:opacity-40 disabled:cursor-not-allowed",
-        v.bg, v.hover, v.border, v.text, v.glow
+        v.bg, v.hover, v.border, v.shadow, v.text
       )}
     >
-      {/* Glass shine effect */}
-      <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
-        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/10 to-transparent" />
-      </div>
-      
       {icon ? (
-        <span className="flex items-center gap-1.5 relative z-10">
+        <span className="flex items-center gap-1.5">
           {icon}
-          <span className="text-sm font-bold drop-shadow-sm">{label}</span>
+          <span className="text-sm font-bold">{label}</span>
         </span>
       ) : (
-        <div className="relative z-10">
-          <span className="text-sm font-bold drop-shadow-sm">{label}</span>
+        <>
+          <span className="text-sm font-bold">{label}</span>
           {subLabel && (
-            <span className="block text-[10px] opacity-80 font-semibold">{subLabel}</span>
+            <span className="text-[10px] opacity-80 font-semibold">{subLabel}</span>
           )}
-        </div>
+        </>
       )}
     </motion.button>
   );
@@ -314,9 +304,9 @@ export const ProActionPanel = memo(function ProActionPanel({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6 backdrop-blur-xl border-t border-white/10"
+        className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6"
         style={{
-          background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 70%, transparent 100%)'
+          background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.8) 70%, transparent 100%)'
         }}
       >
         <div className="flex items-center justify-center gap-6 flex-wrap">
@@ -357,9 +347,9 @@ export const ProActionPanel = memo(function ProActionPanel({
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 30 }}
-      className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6 backdrop-blur-xl border-t border-white/10"
+      className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6"
       style={{
-        background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)'
+        background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(20,20,20,0.95) 60%, transparent 100%)'
       }}
     >
 

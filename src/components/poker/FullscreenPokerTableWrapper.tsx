@@ -21,7 +21,7 @@ import { TournamentHUD } from './TournamentHUD';
 import { BuyInDialog } from './BuyInDialog';
 import { RebuyDialog } from './RebuyDialog';
 import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
-import { TableGlowFullscreenBackground } from './table-styles/TableGlowFullscreenBackground';
+
 
 // Syndikate branding
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
@@ -430,12 +430,6 @@ export function FullscreenPokerTableWrapper({
 
   return (
     <PokerErrorBoundary>
-      {/* Fullscreen glow background - covers entire screen including header/footer */}
-      <TableGlowFullscreenBackground 
-        glowStyleId={preferences.tableGlowStyle}
-        intensity={0.9}
-      />
-      
       <div 
         className="absolute inset-0 overflow-hidden"
         style={{
@@ -450,19 +444,18 @@ export function FullscreenPokerTableWrapper({
           onReconnectNow={() => connect()}
         />
 
-        {/* Header - glassmorphism style matching table theme */}
+        {/* Header - with safe area inset for Telegram fullscreen */}
         <div 
-          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 backdrop-blur-xl border-b border-white/10"
+          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 bg-gradient-to-b from-black/60 to-transparent"
           style={{
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 12px)',
-            background: 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%)'
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 12px)'
           }}
         >
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 transition-all"
+              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
               onClick={() => setShowMenu(!showMenu)}
             >
               {showMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -475,7 +468,7 @@ export function FullscreenPokerTableWrapper({
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 transition-all"
+              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
               onClick={() => setSoundEnabled(!soundEnabled)}
             >
               {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
@@ -484,7 +477,7 @@ export function FullscreenPokerTableWrapper({
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-white/5 backdrop-blur-md border border-amber-500/20 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/30 transition-all"
+              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-amber-400 hover:bg-black/60"
               onClick={() => setShowPersonalSettings(true)}
             >
               <Palette className="h-5 w-5" />
@@ -493,7 +486,7 @@ export function FullscreenPokerTableWrapper({
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 transition-all"
+              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
               onClick={() => setShowSettings(true)}
             >
               <Settings2 className="h-5 w-5" />
@@ -606,10 +599,7 @@ export function FullscreenPokerTableWrapper({
               initial={{ x: -300, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -300, opacity: 0 }}
-              className="absolute left-0 top-16 bottom-0 w-64 backdrop-blur-xl z-40 p-4 border-r border-white/10"
-              style={{
-                background: 'linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 100%)'
-              }}
+              className="absolute left-0 top-16 bottom-0 w-64 bg-black/90 backdrop-blur-xl z-40 p-4"
             >
               <div className="space-y-2">
                 <Button
