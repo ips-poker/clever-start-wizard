@@ -76,14 +76,29 @@ export function FullscreenPokerTableWrapper({
   
   const {
     isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
-    connect, disconnect, joinTable, fold, check, call, raise, allIn, addChips
+    connect, disconnect, joinTable, fold, check, call, raise, allIn, addChips, sitOut, sitIn
   } = pokerTable;
-  
+
   // Check if player can join (not yet seated)
   const canJoinTable = useMemo(() => {
     return isConnected && !myPlayer && mySeat === null;
   }, [isConnected, myPlayer, mySeat]);
-  
+
+  // Table readiness hint (why hand isn't starting)
+  const startHandHint = useMemo(() => {
+    const players = tableState?.players ?? [];
+    const activePlayers = players.filter((p) => p.isActive && !p.isSittingOut && !p.isDisconnected);
+    const sittingOutPlayers = players.filter((p) => p.isSittingOut);
+    const required = 2;
+
+    return {
+      required,
+      activeCount: activePlayers.length,
+      canStart: activePlayers.length >= required,
+      sittingOutPlayers
+    };
+  }, [tableState?.players]);
+
   // Get occupied seats
   const occupiedSeats = useMemo(() => {
     return tableState?.players.map(p => p.seatNumber) || [];
@@ -511,6 +526,38 @@ export function FullscreenPokerTableWrapper({
             paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 56px)'
           }}
         >
+          {/* Why there is no hand yet */}
+          {tableState?.phase === 'waiting' && !startHandHint.canStart && (
+            <div className="pointer-events-none absolute left-1/2 top-3 z-20 w-[min(520px,calc(100%-24px))] -translate-x-1/2">
+              <div className="rounded-xl bg-black/60 backdrop-blur-md border border-white/10 px-4 py-3 shadow-lg">
+                <div className="text-sm text-white/90 font-medium">
+                  Ожидание раздачи: нужно {startHandHint.required} активных игрока (сейчас {startHandHint.activeCount}).
+                </div>
+                {startHandHint.sittingOutPlayers.length > 0 && (
+                  <div className="mt-1 text-xs text-white/70">
+                    Вне игры (Sit Out): {startHandHint.sittingOutPlayers.map(p => p.name || p.playerId.slice(0, 8)).join(', ')}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* If YOU are sitting out - show a way back */}
+          {myPlayer?.isSittingOut && (
+            <div className="pointer-events-auto absolute left-1/2 top-20 z-20 -translate-x-1/2">
+              <Button
+                variant="secondary"
+                className="rounded-full"
+                onClick={() => {
+                  sitIn();
+                  toast.success('Вы снова в игре');
+                }}
+              >
+                Вернуться в игру
+              </Button>
+            </div>
+          )}
+
           <FullscreenPokerTable
             tableState={tableState}
             players={formattedPlayers}
