@@ -130,9 +130,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
   // Showdown token to ensure timers don't clear a newer hand/showdown
   const showdownTokenRef = useRef(0);
-  // Timestamp when showdown started - used to ensure minimum display (1 sec for fast gameplay)
+  // Timestamp when showdown started - used to ensure minimum display
   const showdownStartTimeRef = useRef<number>(0);
-  const SHOWDOWN_DISPLAY_MS = 1000; // 1 second showdown display
+  const SHOWDOWN_DISPLAY_MS = 1000; // 1 second for real showdown
+  const FOLD_WIN_DISPLAY_MS = 500; // 0.5 second for fold wins (faster)
 
   // Keep latest snapshots for stable WebSocket handlers (avoid stale closures)
   const tableStateRef = useRef<TableState | null>(null);
@@ -757,6 +758,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           const showdownPlayersRaw = (eventData.showdownPlayers || (eventData as any).showdown_players || nestedResult?.showdownPlayers || (nestedResult as any)?.showdown_players || rootResult?.showdownPlayers || (rootResult as any)?.showdown_players || (data as any).showdownPlayers || (data as any).showdown_players) as unknown;
           const communityCardsRaw = (eventData.communityCards || (eventData as any).community_cards || nestedResult?.communityCards || (nestedResult as any)?.community_cards || rootResult?.communityCards || (rootResult as any)?.community_cards || (data as any).communityCards || (data as any).community_cards) as unknown;
           const communityCards = normalizeCardStrings(communityCardsRaw);
+          
+          // Check if this is a fold win (all others folded) - use shorter display time
+          const reason = (eventData.reason || (data as any).reason || nestedResult?.reason || rootResult?.reason) as string | undefined;
+          const isFoldWin = reason === 'all_folded' || reason === 'fold';
 
           log('🃏 showdownPlayersRaw:', showdownPlayersRaw);
 
@@ -861,7 +866,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               communityCards,
             });
 
-            // Keep showdown highlight visible for 1.5 seconds, then clear IF still the same showdown
+            // Use shorter display time for fold wins, longer for real showdowns
+            const displayTime = isFoldWin ? FOLD_WIN_DISPLAY_MS : SHOWDOWN_DISPLAY_MS;
+            
+            // Keep showdown highlight visible, then clear IF still the same showdown
             setTimeout(() => {
               if (showdownTokenRef.current !== thisShowdownToken) return;
               if (tableStateRef.current?.phase !== 'showdown') return;
@@ -883,7 +891,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                   })),
                 };
               });
-            }, SHOWDOWN_DISPLAY_MS);
+            }, displayTime);
           }
 
           if (shouldForceShowdown) {
