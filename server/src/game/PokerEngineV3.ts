@@ -1024,15 +1024,25 @@ export function getAllowedActions(
   result.maxBet = player.stack + player.betAmount;
 
   if (toCall <= 0) {
-    // No bet to match - can check or open betting
+    // No bet to match - can check
     result.canCheck = true;
     
     if (player.stack > 0) {
-      result.canBet = true;
       result.canAllIn = true;
-      result.minBet = Math.min(bigBlind, player.stack);
-      // Min raise (for bet) is just the big blind
-      result.minRaise = bigBlind;
+      
+      // CRITICAL FIX: If currentBet > 0 (e.g., preflop with blinds already matched),
+      // player should RAISE, not BET. Only BET when currentBet is 0.
+      if (currentBet > 0) {
+        // There's a bet to raise (e.g., preflop after calling BB)
+        const minRaiseIncrement = Math.max(minRaise, lastRaiseAmount, bigBlind);
+        result.minRaise = currentBet + minRaiseIncrement;
+        result.canRaise = true;
+      } else {
+        // No bet at all - can open betting
+        result.canBet = true;
+        result.minBet = Math.min(bigBlind, player.stack);
+        result.minRaise = bigBlind;
+      }
     }
   } else {
     // Must match a bet
