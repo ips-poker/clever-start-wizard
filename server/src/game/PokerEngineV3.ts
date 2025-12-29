@@ -1094,6 +1094,18 @@ export function validateAndProcessAction(
   const toCall = currentBet - player.betAmount;
   const allowed = getAllowedActions(player, currentBet, minRaise, lastRaiseAmount, bigBlind);
   
+  // Debug log for action validation
+  console.log('[Engine] Allowed actions:', {
+    canCheck: allowed.canCheck,
+    canCall: allowed.canCall,
+    canBet: allowed.canBet,
+    canRaise: allowed.canRaise,
+    canAllIn: allowed.canAllIn,
+    minRaise: allowed.minRaise,
+    callAmount: allowed.callAmount,
+    toCall
+  });
+  
   switch (action.type) {
     case 'fold':
       if (!allowed.canFold) {
@@ -1172,12 +1184,31 @@ export function validateAndProcessAction(
       break;
       
     case 'raise':
+      // CRITICAL FIX: If player CAN raise (has chips, not folded/all-in) but canRaise is false,
+      // it means they don't have enough for a full raise but can still go all-in
       if (!allowed.canRaise) {
+        // Check if this is a valid all-in raise (short stack)
+        if (allowed.canAllIn && action.amount && action.amount >= player.stack + player.betAmount) {
+          // This is an all-in, treat it as such
+          console.log('[Engine] Converting short raise to all-in');
+          actionAmount = player.stack;
+          newBet = player.betAmount + actionAmount;
+          newStack = 0;
+          isAllIn = true;
+          const raiseSize = newBet - currentBet;
+          if (raiseSize > 0) {
+            newCurrentBet = newBet;
+            newLastRaiseAmount = raiseSize;
+            newMinRaise = raiseSize;
+            reopensAction = raiseSize >= Math.max(minRaise, lastRaiseAmount, bigBlind);
+          }
+          break;
+        }
         return { 
           valid: false, 
           error: `Cannot raise. Min raise to ${allowed.minRaise}`, 
           newBet, newStack, actionAmount, isFolded, isAllIn,
-          newCurrentBet, newMinRaise, lastRaiseAmount: newLastRaiseAmount, reopensAction
+          newCurrentBet, newMinRaise: allowed.minRaise, lastRaiseAmount: newLastRaiseAmount, reopensAction
         };
       }
       
