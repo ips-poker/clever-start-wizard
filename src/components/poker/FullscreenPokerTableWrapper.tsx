@@ -181,27 +181,24 @@ export function FullscreenPokerTableWrapper({
       
       // Play sounds based on phase transitions
       if (phase === 'preflop' && prevPhase !== 'preflop') {
-        // New hand - shuffle first, then deal cards synced with animation
+        // New hand - shuffle first, then deal cards quickly
         sounds.playShuffle();
-        // Hero cards animate with 0.1s delay between them, spring takes ~200ms to reach midpoint
-        // Deal sounds at: card appears + ~100ms (when card is visually "landing")
-        setTimeout(() => sounds.playDeal(), 500);  // First hole card lands
-        setTimeout(() => sounds.playDeal(), 600);  // Second hole card lands
+        // Deal sounds synced with faster animations
+        setTimeout(() => sounds.playDeal(), 150);  // First hole card
+        setTimeout(() => sounds.playDeal(), 250);  // Second hole card
       } else if (phase === 'flop') {
-        // Flop - 3 cards with animation delays: 0ms, 150ms, 300ms
-        // Add ~100ms for card to reach "landing" point in spring animation
-        setTimeout(() => sounds.playDeal(), 100);  // First flop card
-        setTimeout(() => sounds.playDeal(), 250);  // Second flop card  
-        setTimeout(() => sounds.playDeal(), 400);  // Third flop card
+        // Flop - 3 cards quickly
+        setTimeout(() => sounds.playDeal(), 50);   // First flop card
+        setTimeout(() => sounds.playDeal(), 150);  // Second flop card  
+        setTimeout(() => sounds.playDeal(), 250);  // Third flop card
       } else if (phase === 'turn') {
-        // Turn - 1 card with 100ms animation delay
-        setTimeout(() => sounds.playDeal(), 200);
+        // Turn - 1 card
+        setTimeout(() => sounds.playDeal(), 100);
       } else if (phase === 'river') {
-        // River - 1 card with 100ms animation delay
-        setTimeout(() => sounds.playDeal(), 200);
-      } else if (phase === 'showdown') {
-        // Silent showdown - win sound will play when pot is collected
+        // River - 1 card
+        setTimeout(() => sounds.playDeal(), 100);
       }
+      // Showdown is silent - win sound plays when pot is collected
     }
   }, [tableState?.phase, sounds]);
 
