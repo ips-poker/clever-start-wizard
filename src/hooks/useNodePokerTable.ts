@@ -130,8 +130,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
   // Showdown token to ensure timers don't clear a newer hand/showdown
   const showdownTokenRef = useRef(0);
-  // Timestamp when showdown started - used to ensure 4 sec minimum display
+  // Timestamp when showdown started - used to ensure minimum display (1.5 sec for fast gameplay)
   const showdownStartTimeRef = useRef<number>(0);
+  const SHOWDOWN_DISPLAY_MS = 1500; // 1.5 seconds showdown display
 
   // Keep latest snapshots for stable WebSocket handlers (avoid stale closures)
   const tableStateRef = useRef<TableState | null>(null);
@@ -313,9 +314,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
               // If we're currently in showdown, keep showdown annotations stable even if
               // server keeps sending "state" snapshots without winner indices.
-              // IMPORTANT: Keep winning data for at least 4 seconds from showdown start
+              // IMPORTANT: Keep winning data for showdown display duration
               const showdownElapsed = Date.now() - showdownStartTimeRef.current;
-              const isWithinShowdownWindow = showdownElapsed < 4000;
+              const isWithinShowdownWindow = showdownElapsed < SHOWDOWN_DISPLAY_MS;
               
               if (prev?.phase === 'showdown' && isWithinShowdownWindow) {
                 const prevById = new Map(prev.players.map((p) => [p.playerId, p] as const));
@@ -838,7 +839,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           const potAmount = Number(eventData.pot ?? (data as any).pot ?? 0);
 
           if (shouldForceShowdown || winners.length > 0) {
-            // Start / refresh showdown token and timestamp (used to keep highlight visible full 4 seconds)
+            // Start / refresh showdown token and timestamp
             showdownTokenRef.current += 1;
             showdownStartTimeRef.current = Date.now();
             const thisShowdownToken = showdownTokenRef.current;
@@ -860,7 +861,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               communityCards,
             });
 
-            // Keep showdown highlight visible for 3 seconds, then clear IF still the same showdown
+            // Keep showdown highlight visible for 1.5 seconds, then clear IF still the same showdown
             setTimeout(() => {
               if (showdownTokenRef.current !== thisShowdownToken) return;
               if (tableStateRef.current?.phase !== 'showdown') return;
@@ -882,7 +883,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                   })),
                 };
               });
-            }, 3000);
+            }, SHOWDOWN_DISPLAY_MS);
           }
 
           if (shouldForceShowdown) {
