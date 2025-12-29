@@ -328,6 +328,10 @@ if (!validation.passed) {
 server.listen(config.port, () => {
   // Initialize hand history service with supabase
   handHistoryService.initialize(supabase);
+
+  // Build marker (helps verify PM2 is running the latest compiled dist)
+  const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2025-12-29-fast-hands';
+  logger.info(`🧩 Build tag: ${BUILD_TAG}`);
   
   logger.info(`🚀 Poker Server v3.5 running on port ${config.port}`);
   logger.info(`📡 WebSocket endpoint: ws://localhost:${config.port}/ws/poker`);

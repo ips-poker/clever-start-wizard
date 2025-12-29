@@ -928,7 +928,8 @@ export class PokerTable {
     });
     
     if (activePlayers.length >= 2) {
-      logger.info('checkStartHand: starting hand immediately');
+      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2025-12-29-fast-hands';
+      logger.info('checkStartHand: starting hand immediately', { build: BUILD_TAG });
       this.pendingHandStart = true;
       // Start immediately - no delay for fast gameplay
       this.pendingHandStart = false;
