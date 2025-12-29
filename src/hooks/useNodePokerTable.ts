@@ -132,7 +132,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const showdownTokenRef = useRef(0);
   // Timestamp when showdown started - used to ensure minimum display
   const showdownStartTimeRef = useRef<number>(0);
-  const SHOWDOWN_DISPLAY_MS = 1000; // 1 second for real showdown
+  const SHOWDOWN_DISPLAY_MS = 3000; // 3 seconds for real showdown
   const FOLD_WIN_DISPLAY_MS = 500; // 0.5 second for fold wins (faster)
 
   // Keep latest snapshots for stable WebSocket handlers (avoid stale closures)
