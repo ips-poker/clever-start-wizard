@@ -443,6 +443,175 @@ export class PokerTable {
     return { success: true };
   }
   
+  // ==========================================
+  // DISCONNECT / RECONNECT HANDLING
+  // Player's seat is preserved for 60 seconds after disconnect
+  // ==========================================
+  
+  private disconnectedPlayers: Map<string, { 
+    disconnectedAt: number; 
+    seatNumber: number;
+    stack: number;
+    holeCards: string[];
+    currentBet: number;
+    isFolded: boolean;
+    isAllIn: boolean;
+    wasInHand: boolean;
+  }> = new Map();
+  
+  private readonly RECONNECT_WINDOW_MS = 60000; // 60 seconds to reconnect
+  
+  /**
+   * Mark player as disconnected - preserve seat for reconnect
+   * Called when WebSocket connection closes
+   */
+  markPlayerDisconnected(playerId: string): void {
+    const player = this.players.get(playerId);
+    if (!player) {
+      logger.warn('Cannot mark disconnect - player not found', { playerId: playerId.substring(0, 8) });
+      return;
+    }
+    
+    // Save player state for reconnection
+    this.disconnectedPlayers.set(playerId, {
+      disconnectedAt: Date.now(),
+      seatNumber: player.seatNumber,
+      stack: player.stack,
+      holeCards: [...player.holeCards],
+      currentBet: player.currentBet,
+      isFolded: player.isFolded,
+      isAllIn: player.isAllIn,
+      wasInHand: !!this.currentHand && !player.isFolded
+    });
+    
+    // Mark as disconnected (NOT sitting_out - different status)
+    player.status = 'disconnected';
+    
+    logger.info('Player marked as disconnected', {
+      playerId: playerId.substring(0, 8),
+      seatNumber: player.seatNumber,
+      wasInHand: !!this.currentHand && !player.isFolded,
+      reconnectWindowMs: this.RECONNECT_WINDOW_MS
+    });
+    
+    // Emit event so other players see disconnected status
+    this.emit('player_disconnected', { 
+      playerId, 
+      seatNumber: player.seatNumber,
+      reconnectWindowSeconds: this.RECONNECT_WINDOW_MS / 1000
+    });
+    
+    // Set timeout to auto-fold/remove if player doesn't reconnect
+    setTimeout(() => {
+      this.checkDisconnectTimeout(playerId);
+    }, this.RECONNECT_WINDOW_MS);
+  }
+  
+  /**
+   * Restore a disconnected player when they reconnect
+   * Returns true if successfully restored
+   */
+  restoreDisconnectedPlayer(playerId: string): boolean {
+    const player = this.players.get(playerId);
+    const disconnectInfo = this.disconnectedPlayers.get(playerId);
+    
+    // Check if player still has a seat
+    if (!player) {
+      logger.warn('Cannot restore - player not at table', { playerId: playerId.substring(0, 8) });
+      return false;
+    }
+    
+    // Check if we're within reconnect window
+    if (disconnectInfo) {
+      const elapsed = Date.now() - disconnectInfo.disconnectedAt;
+      if (elapsed > this.RECONNECT_WINDOW_MS) {
+        logger.warn('Reconnect window expired', { 
+          playerId: playerId.substring(0, 8), 
+          elapsedMs: elapsed 
+        });
+        return false;
+      }
+    }
+    
+    // Restore player status
+    player.status = 'active';
+    player.missedTurns = 0;
+    
+    // Clean up disconnect tracking
+    this.disconnectedPlayers.delete(playerId);
+    
+    logger.info('Player restored from disconnect', {
+      playerId: playerId.substring(0, 8),
+      seatNumber: player.seatNumber,
+      stack: player.stack,
+      inHand: !!this.currentHand && !player.isFolded
+    });
+    
+    // Emit reconnect event
+    this.emit('player_reconnected', { 
+      playerId, 
+      seatNumber: player.seatNumber,
+      stack: player.stack
+    });
+    
+    return true;
+  }
+  
+  /**
+   * Check if disconnected player should be auto-folded/removed
+   * Called after RECONNECT_WINDOW_MS timeout
+   */
+  private checkDisconnectTimeout(playerId: string): void {
+    const disconnectInfo = this.disconnectedPlayers.get(playerId);
+    const player = this.players.get(playerId);
+    
+    // Player already reconnected or left
+    if (!disconnectInfo || !player || player.status !== 'disconnected') {
+      return;
+    }
+    
+    logger.info('Disconnect timeout - handling abandoned player', {
+      playerId: playerId.substring(0, 8),
+      wasInHand: disconnectInfo.wasInHand
+    });
+    
+    // If in active hand, fold them
+    if (this.currentHand && !player.isFolded) {
+      player.isFolded = true;
+      this.emit('player_folded', { 
+        playerId, 
+        reason: 'disconnect_timeout',
+        seatNumber: player.seatNumber
+      });
+      
+      // If it was their turn, advance to next player
+      if (this.currentHand.currentPlayerSeat === player.seatNumber) {
+        this.advanceToNextPlayer();
+      }
+    }
+    
+    // Mark as sitting out (not removed from table yet)
+    player.status = 'sitting_out';
+    player.missedTurns = 3; // Mark as if they missed 3 turns
+    
+    // Update database
+    this.supabase
+      .from('poker_table_players')
+      .update({ status: 'sitting_out' })
+      .eq('table_id', this.id)
+      .eq('player_id', playerId)
+      .then(() => {});
+    
+    // Clean up disconnect tracking
+    this.disconnectedPlayers.delete(playerId);
+    
+    this.emit('player_sitting_out', { 
+      playerId, 
+      reason: 'disconnect_timeout' 
+    });
+  }
+  
+
   /**
    * Perform action using Engine v3.0
    * PROFESSIONAL: Full validation with race condition protection
@@ -1238,6 +1407,108 @@ export class PokerTable {
     }
     
     return fromSeat;
+  }
+  
+  /**
+   * Advance to next player when current player is disconnected/timed out
+   * Used after marking player as folded due to disconnect timeout
+   */
+  private advanceToNextPlayer(): void {
+    if (!this.currentHand) return;
+    
+    const activePlayers = this.getActivePlayersInHand();
+    
+    // Check if hand should end (only 1 player left)
+    if (activePlayers.length <= 1) {
+      logger.info('Only one player left after disconnect timeout, ending hand');
+      this.endHandWithWinner(activePlayers[0]?.id);
+      return;
+    }
+    
+    // Find next player who can act
+    const currentSeat = this.currentHand.currentPlayerSeat;
+    if (currentSeat === null) return;
+    
+    let nextSeat = this.getNextActiveSeat(currentSeat);
+    let attempts = 0;
+    
+    while (attempts < this.config.maxPlayers) {
+      const playerId = this.seats[nextSeat];
+      if (playerId) {
+        const player = this.players.get(playerId);
+        if (player && !player.isFolded && !player.isAllIn && player.status === 'active') {
+          this.currentHand.currentPlayerSeat = nextSeat;
+          this.currentHand.actionStartTime = Date.now();
+          
+          this.emit('turn_changed', {
+            currentPlayerSeat: nextSeat,
+            playerId,
+            phase: this.currentHand.phase
+          });
+          
+          // Start new action timer
+          this.startActionTimer();
+          return;
+        }
+      }
+      nextSeat = (nextSeat + 1) % this.config.maxPlayers;
+      attempts++;
+    }
+    
+    // No one can act - check if we should advance phase or end hand
+    logger.info('No active players can act, checking phase transition');
+    this.checkPhaseTransition();
+  }
+  
+  /**
+   * Get active players still in hand (not folded)
+   */
+  private getActivePlayersInHand(): Player[] {
+    if (!this.currentHand) return [];
+    
+    return Array.from(this.players.values())
+      .filter(p => !p.isFolded && p.holeCards.length > 0);
+  }
+  
+  /**
+   * End hand with a winner (when all others folded/disconnected)
+   */
+  private endHandWithWinner(winnerId?: string): void {
+    if (!this.currentHand || !winnerId) return;
+    
+    const winner = this.players.get(winnerId);
+    if (!winner) return;
+    
+    const pot = this.currentHand.pot;
+    winner.stack += pot;
+    
+    this.emit('hand_complete', {
+      winners: [{
+        playerId: winnerId,
+        name: winner.name,
+        seatNumber: winner.seatNumber,
+        amount: pot
+      }],
+      pot,
+      reason: 'all_folded'
+    });
+    
+    // Clear hand state
+    this.currentHand = null;
+    
+    // Check for new hand
+    setTimeout(() => {
+      this.checkStartHand();
+    }, 1000);
+  }
+  
+  /**
+   * Check if phase should transition (all active players acted)
+   */
+  private checkPhaseTransition(): void {
+    // This will be called if the normal action flow is broken
+    // For now, just log and let the normal flow handle it
+    logger.info('Phase transition check triggered');
   }
   
   /**

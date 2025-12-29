@@ -1074,6 +1074,85 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             }
           }
           break;
+        
+        // RECONNECT HANDLING - restore player after page reload
+        case 'reconnect_success':
+          log('✅ Reconnect successful!', data);
+          if (data.state && tableId) {
+            setTableState(transformServerState(data.state, tableId));
+            
+            const stateData = data.state as Record<string, unknown>;
+            if (stateData.myCards) {
+              setMyCards(stateData.myCards as string[]);
+            }
+            if (stateData.mySeat !== undefined) {
+              setMySeat(stateData.mySeat as number);
+            }
+            
+            // Find my seat from players if not in root
+            const playersData = stateData.players as Record<string, unknown>[] | undefined;
+            if (playersData && playerId) {
+              const myPlayer = playersData.find(p => p.playerId === playerId || p.id === playerId);
+              if (myPlayer) {
+                const seatNum = (myPlayer.seatNumber ?? myPlayer.seat_number) as number | undefined;
+                if (seatNum !== undefined) setMySeat(seatNum);
+                const cards = myPlayer.holeCards as string[] | undefined;
+                if (cards && cards.length > 0) setMyCards(cards);
+              }
+            }
+          }
+          break;
+        
+        case 'reconnect_failed':
+          log('❌ Reconnect failed:', data.reason, data.message);
+          // Clear session marker since seat is gone
+          if (tableId) {
+            sessionStorage.removeItem(`poker_session_${tableId}`);
+          }
+          // Show error to user
+          setError(data.message as string || 'Не удалось восстановить сессию');
+          setTimeout(() => setError(null), 5000);
+          break;
+        
+        case 'player_disconnected':
+          // Another player disconnected - update their status in UI
+          log('👤 Player disconnected:', data.data);
+          setTableState((prev) => {
+            if (!prev) return prev;
+            const eventData = data.data as Record<string, unknown> | undefined;
+            const disconnectedPlayerId = eventData?.playerId as string | undefined;
+            if (!disconnectedPlayerId) return prev;
+            
+            return {
+              ...prev,
+              players: prev.players.map(p => 
+                p.playerId === disconnectedPlayerId 
+                  ? { ...p, isDisconnected: true, isActive: false }
+                  : p
+              )
+            };
+          });
+          break;
+        
+        case 'player_reconnected':
+          // Player came back
+          log('👤 Player reconnected:', data.data);
+          setTableState((prev) => {
+            if (!prev) return prev;
+            const eventData = data.data as Record<string, unknown> | undefined;
+            const reconnectedPlayerId = eventData?.playerId as string | undefined;
+            if (!reconnectedPlayerId) return prev;
+            
+            return {
+              ...prev,
+              players: prev.players.map(p => 
+                p.playerId === reconnectedPlayerId 
+                  ? { ...p, isDisconnected: false, isActive: true }
+                  : p
+              )
+            };
+          });
+          break;
 
         default:
           log('📨 Unknown message type:', data.type, data);
@@ -1116,9 +1195,30 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       setError(null);
       reconnectAttemptRef.current = 0;
 
-      // Server auto-subscribes based on URL params, but we can explicitly subscribe
-      // State will be sent by server in 'connected' or 'state' message
-      log('📡 Waiting for server state...');
+      // CRITICAL: On reconnect, try to restore session first
+      // This handles page reload scenario - player may still have a seat
+      const wasReconnect = reconnectAttemptRef.current > 0 || sessionStorage.getItem(`poker_session_${tableId}`);
+      
+      if (wasReconnect || sessionStorage.getItem(`poker_session_${tableId}`)) {
+        log('🔄 Attempting session restore after reconnect...');
+        sendMessage({
+          type: 'reconnect_request',
+          tableId,
+          playerId
+        });
+        // Save session marker
+        sessionStorage.setItem(`poker_session_${tableId}`, JSON.stringify({
+          playerId,
+          timestamp: Date.now()
+        }));
+      } else {
+        // First connection - save session marker for future reconnects
+        sessionStorage.setItem(`poker_session_${tableId}`, JSON.stringify({
+          playerId,
+          timestamp: Date.now()
+        }));
+        log('📡 Waiting for server state...');
+      }
 
       // Start ping interval
       pingIntervalRef.current = setInterval(() => {
