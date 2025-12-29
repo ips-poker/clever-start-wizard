@@ -618,7 +618,8 @@ const PlayerSeat = memo(function PlayerSeat({
         </div>
         
         {/* Opponent cards - positioned at corner of avatar */}
-        {!isHero && !player.isFolded && gamePhase !== 'waiting' && (() => {
+        {/* Only show cards during active hand phases (preflop through showdown), NOT waiting */}
+        {!isHero && !player.isFolded && gamePhase && ['preflop', 'flop', 'turn', 'river', 'showdown'].includes(gamePhase) && (() => {
           // Get cards from showdownPlayers if available (revealed at showdown)
           const showdownData = showdownPlayers?.find(sp => sp.playerId === player.playerId || sp.seatNumber === seatNumber);
           const revealedCards = showdownData?.holeCards;
