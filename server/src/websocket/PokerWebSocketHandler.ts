@@ -319,6 +319,11 @@ export class PokerWebSocketHandler {
           }
           break;
         
+        // Reconnect request - restore player after page reload
+        case 'reconnect_request':
+          await this.handleReconnectRequest(ws, message);
+          break;
+        
         default:
           logger.warn('Unknown message type', { type: message.type });
           this.sendError(ws, `Unknown message type: ${message.type}`);
@@ -594,11 +599,89 @@ export class PokerWebSocketHandler {
   }
   
   /**
-   * Handle connection close
+   * Handle connection close - PRESERVE player state for reconnect
+   * Player stays at table, just marked as disconnected temporarily
    */
   private handleClose(ws: WebSocket): void {
+    const connection = this.connectionPool.getConnection(ws);
+    
+    if (connection?.playerId) {
+      const playerId = connection.playerId;
+      
+      // Find which table the player was at
+      for (const tableId of connection.subscribedTables) {
+        const table = this.gameManager.getTable(tableId);
+        if (table) {
+          // Mark player as disconnected but DON'T remove from table
+          // Player has 60 seconds to reconnect
+          table.markPlayerDisconnected(playerId);
+          
+          logger.info('Player disconnected, preserving seat for reconnect', {
+            playerId: playerId.substring(0, 8),
+            tableId,
+            reconnectWindowSeconds: 60
+          });
+        }
+      }
+    }
+    
     this.connectionPool.removeConnection(ws, 'closed');
     logger.info('Client disconnected');
+  }
+  
+  /**
+   * Handle reconnect request - restore player to their seat
+   */
+  private async handleReconnectRequest(ws: WebSocket, message: any): Promise<void> {
+    const { tableId, playerId } = message;
+    
+    if (!tableId || !playerId) {
+      this.sendError(ws, 'Missing tableId or playerId');
+      return;
+    }
+    
+    const table = this.gameManager.getTable(tableId);
+    if (!table) {
+      this.sendError(ws, 'Table not found');
+      return;
+    }
+    
+    // Try to restore the player
+    const restored = table.restoreDisconnectedPlayer(playerId);
+    
+    if (restored) {
+      // Authenticate and subscribe connection
+      this.connectionPool.authenticateConnection(ws, playerId);
+      this.connectionPool.subscribeToTable(ws, tableId);
+      this.setupTableListeners(table);
+      
+      // Send full state
+      const state = table.getPlayerState(playerId);
+      this.send(ws, { 
+        type: 'reconnect_success', 
+        tableId, 
+        state,
+        message: 'Соединение восстановлено'
+      });
+      
+      logger.info('Player reconnected successfully', {
+        playerId: playerId.substring(0, 8),
+        tableId
+      });
+    } else {
+      // Player's seat was given up (timeout) or not found
+      this.send(ws, {
+        type: 'reconnect_failed',
+        tableId,
+        reason: 'seat_expired',
+        message: 'Ваше место было освобождено'
+      });
+      
+      logger.info('Player reconnect failed - seat expired', {
+        playerId: playerId.substring(0, 8),
+        tableId
+      });
+    }
   }
   
   /**
