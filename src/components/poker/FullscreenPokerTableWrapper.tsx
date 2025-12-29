@@ -452,11 +452,20 @@ export function FullscreenPokerTableWrapper({
   }, [tableState?.players, playerId, mySeat]);
 
   // Betting info
-  const minRaiseAmount = tableState?.minRaise || tableState?.bigBlindAmount || 20;
-  const maxRaiseAmount = myPlayer?.stack || 10000;
+  // Server sends minRaise as TOTAL bet amount (not delta)
+  const serverMinRaise = tableState?.minRaise || tableState?.bigBlindAmount || 20;
+  const bigBlind = tableState?.bigBlindAmount || 20;
   const currentBetValue = tableState?.currentBet || 0;
+  const myBetAmount = (myPlayer as any)?.betAmount || 0;
+  
+  // minRaise should be at least currentBet + BB for a valid raise
+  // If server says minRaise=0 or less than currentBet, calculate ourselves
+  const minRaiseAmount = serverMinRaise > currentBetValue 
+    ? serverMinRaise 
+    : currentBetValue + bigBlind;
+  
+  const maxRaiseAmount = myPlayer?.stack ? myPlayer.stack + myBetAmount : 10000;
   const potValue = tableState?.pot || showdownResult?.pot || 0;
-  const myBet = (myPlayer as any)?.currentBet || 0;
 
   // Connection status for banner
   const connectionStatus = isConnecting ? 'connecting' : (isConnected ? 'connected' : 'disconnected');
