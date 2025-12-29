@@ -237,7 +237,17 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
     // Server sends phase at root level after rebuilding
     // Also check config for old format fallback
-    const phase = (state.phase || config?.phase || 'waiting') as TableState['phase'];
+    const rawPhase = (state.phase || config?.phase || 'waiting') as string;
+    const normalizedPhase = (() => {
+      const p = String(rawPhase).toLowerCase();
+      if (p === 'no_hand' || p === 'nohand' || p === 'idle' || p === 'lobby') return 'waiting';
+      if (p === 'waiting' || p === 'preflop' || p === 'flop' || p === 'turn' || p === 'river' || p === 'showdown') {
+        return p as TableState['phase'];
+      }
+      // Unknown phase from server -> treat as waiting (safe default)
+      return 'waiting';
+    })();
+
     const pot = (state.pot ?? 0) as number;
     const currentBet = (state.currentBet ?? 0) as number;
     const currentPlayerSeat = (state.currentPlayerSeat ?? null) as number | null;
@@ -245,7 +255,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     const dealerSeat = (state.dealerSeat ?? 0) as number;
     const smallBlindSeat = (state.smallBlindSeat ?? 1) as number;
     const bigBlindSeat = (state.bigBlindSeat ?? 2) as number;
-    
+
     // Blinds from root state or nested config
     const smallBlind = (state.smallBlind || config?.smallBlind || 10) as number;
     const bigBlind = (state.bigBlind || config?.bigBlind || 20) as number;
@@ -258,7 +268,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     return {
       tableId: tblId,
       handId,
-      phase,
+      phase: normalizedPhase,
       pot,
       currentBet,
       currentPlayerSeat,
