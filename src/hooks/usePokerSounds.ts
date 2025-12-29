@@ -1,7 +1,7 @@
 import { useCallback, useRef, useEffect } from 'react';
 
 // =====================================================
-// POKER SOUND SYSTEM - FULL IMPLEMENTATION
+// POKER SOUND SYSTEM - OPTIMIZED (No overlaps)
 // =====================================================
 
 interface SoundConfig {
@@ -21,11 +21,23 @@ const SOUNDS: Record<string, SoundConfig> = {
   win: { src: '/sounds/chip-win.mp3', volume: 0.5 },
 };
 
+// Minimum delay between same sound plays (prevents overlapping)
+const SOUND_DEBOUNCE_MS: Record<string, number> = {
+  deal: 80,       // Cards can be dealt quickly
+  chip: 100,
+  timerBeep: 400, // Timer beeps should not overlap
+  default: 50
+};
+
 export function usePokerSounds() {
   const enabledRef = useRef(true);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioCache = useRef<Map<string, HTMLAudioElement>>(new Map());
   const audioContextRef = useRef<AudioContext | null>(null);
+  const lastPlayedRef = useRef<Map<string, number>>(new Map());
+  
+  // Active audio instances for cleanup
+  const activeAudioRef = useRef<Set<HTMLAudioElement>>(new Set());
 
   // Preload all sounds
   useEffect(() => {
@@ -37,6 +49,12 @@ export function usePokerSounds() {
     });
 
     return () => {
+      // Cleanup all active audio
+      activeAudioRef.current.forEach(audio => {
+        audio.pause();
+        audio.src = '';
+      });
+      activeAudioRef.current.clear();
       audioCache.current.forEach(audio => {
         audio.pause();
         audio.src = '';
@@ -45,9 +63,19 @@ export function usePokerSounds() {
     };
   }, []);
 
-  // Play sound utility
+  // Play sound utility with debouncing
   const playSound = useCallback((key: string, options?: { volume?: number; playbackRate?: number }) => {
     if (!enabledRef.current) return;
+
+    // Debounce check
+    const now = Date.now();
+    const lastPlayed = lastPlayedRef.current.get(key) || 0;
+    const debounceMs = SOUND_DEBOUNCE_MS[key] || SOUND_DEBOUNCE_MS.default;
+    
+    if (now - lastPlayed < debounceMs) {
+      return; // Skip - too soon
+    }
+    lastPlayedRef.current.set(key, now);
 
     try {
       const cached = audioCache.current.get(key);
@@ -56,6 +84,11 @@ export function usePokerSounds() {
         const config = SOUNDS[key];
         sound.volume = options?.volume ?? config.volume;
         sound.playbackRate = options?.playbackRate ?? config.playbackRate ?? 1;
+        
+        // Track active audio for cleanup
+        activeAudioRef.current.add(sound);
+        sound.onended = () => activeAudioRef.current.delete(sound);
+        
         sound.play().catch(() => {});
       }
     } catch (e) {
@@ -63,9 +96,20 @@ export function usePokerSounds() {
     }
   }, []);
 
-  // Generate beep using Web Audio API for timer warnings
+  // Generate beep using Web Audio API for timer warnings - with debounce
   const playBeep = useCallback((frequency: number, duration: number, volume: number = 0.3) => {
     if (!enabledRef.current) return;
+
+    // Debounce timer beeps
+    const beepKey = `timerBeep_${frequency}`;
+    const now = Date.now();
+    const lastPlayed = lastPlayedRef.current.get(beepKey) || 0;
+    const debounceMs = SOUND_DEBOUNCE_MS.timerBeep;
+    
+    if (now - lastPlayed < debounceMs) {
+      return; // Skip - too soon
+    }
+    lastPlayedRef.current.set(beepKey, now);
 
     try {
       if (!audioContextRef.current) {

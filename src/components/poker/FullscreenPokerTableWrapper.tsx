@@ -205,32 +205,55 @@ export function FullscreenPokerTableWrapper({
     }
   }, [tableState?.phase, sounds]);
 
-  // Winner sounds - only one chip slide sound
+  // Winner sounds - only one chip slide sound per showdown
+  const lastShowdownIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (showdownResult && showdownResult.winners.length > 0) { 
-      // Play only one chip slide sound when pot is collected
-      sounds.playChipSlide();
-    }
-  }, [showdownResult, sounds]);
-
-  // Timer warning sounds when it's my turn
-  useEffect(() => {
-    if (isMyTurn && turnTimeRemaining !== null) {
-      if (turnTimeRemaining === 10) {
-        sounds.playTimerWarning();
-      } else if (turnTimeRemaining <= 5 && turnTimeRemaining > 0) {
-        sounds.playTimerCritical();
-      } else if (turnTimeRemaining === 0) {
-        sounds.playTimerExpired();
+    if (showdownResult && showdownResult.winners.length > 0) {
+      // Use handId or pot+winners as unique key to prevent duplicate sounds
+      const showdownKey = `${tableState?.handId || ''}_${showdownResult.pot}_${showdownResult.winners.map(w => w.playerId).join(',')}`;
+      if (lastShowdownIdRef.current !== showdownKey) {
+        lastShowdownIdRef.current = showdownKey;
+        sounds.playChipSlide();
       }
+    }
+  }, [showdownResult, tableState?.handId, sounds]);
+
+  // Timer warning sounds when it's my turn - only play once at specific thresholds
+  const timerSoundPlayedRef = useRef<Set<number>>(new Set());
+  
+  useEffect(() => {
+    // Reset when it's not my turn
+    if (!isMyTurn) {
+      timerSoundPlayedRef.current.clear();
+      return;
+    }
+    
+    if (turnTimeRemaining === null) return;
+    
+    // Only play at specific thresholds, once per threshold
+    const threshold = turnTimeRemaining;
+    if (timerSoundPlayedRef.current.has(threshold)) return;
+    
+    if (threshold === 10) {
+      timerSoundPlayedRef.current.add(10);
+      sounds.playTimerWarning();
+    } else if (threshold === 5) {
+      // Single critical warning at 5 seconds, not every second
+      timerSoundPlayedRef.current.add(5);
+      sounds.playTimerCritical();
+    } else if (threshold === 0) {
+      timerSoundPlayedRef.current.add(0);
+      sounds.playTimerExpired();
     }
   }, [turnTimeRemaining, isMyTurn, sounds]);
   
-  // Play sound when it becomes my turn
+  // Play sound when it becomes my turn - track to prevent duplicates
+  const prevIsMyTurnRef = useRef(false);
   useEffect(() => {
-    if (isMyTurn) {
+    if (isMyTurn && !prevIsMyTurnRef.current) {
       sounds.playMyTurn();
     }
+    prevIsMyTurnRef.current = isMyTurn;
   }, [isMyTurn, sounds]);
 
   // Cashout - return diamonds when leaving table
