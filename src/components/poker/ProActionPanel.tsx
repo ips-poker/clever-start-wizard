@@ -478,14 +478,17 @@ export const ProActionPanel = memo(function ProActionPanel({
           />
         ) : (
           // When slider is closed, show Raise/Bet button
+          // Disable only if player can't afford minimum raise
+          // minRaise is TOTAL amount, myStack is what player has left
+          // Player can raise if: minRaise <= myStack (since we send TOTAL to server)
           <ActionButton
             label={currentBet > 0 ? "Raise" : "Bet"}
             variant="raise"
             onClick={() => {
-              console.log('[ProActionPanel] Raise/Bet clicked, opening slider. minRaise:', minRaise, 'maxRaise:', maxRaise, 'myStack:', myStack);
+              console.log('[ProActionPanel] Raise/Bet clicked, opening slider. minRaise:', minRaise, 'maxRaise:', maxRaise, 'myStack:', myStack, 'currentBet:', currentBet);
               setShowSlider(true);
             }}
-            disabled={disabled || minRaise > myStack}
+            disabled={disabled || minRaise > maxRaise}
           />
         )}
 
