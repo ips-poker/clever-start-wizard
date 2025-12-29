@@ -130,9 +130,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
   // Showdown token to ensure timers don't clear a newer hand/showdown
   const showdownTokenRef = useRef(0);
-  // Timestamp when showdown started - used to ensure minimum display (1.5 sec for fast gameplay)
+  // Timestamp when showdown started - used to ensure minimum display (1 sec for fast gameplay)
   const showdownStartTimeRef = useRef<number>(0);
-  const SHOWDOWN_DISPLAY_MS = 1500; // 1.5 seconds showdown display
+  const SHOWDOWN_DISPLAY_MS = 1000; // 1 second showdown display
 
   // Keep latest snapshots for stable WebSocket handlers (avoid stale closures)
   const tableStateRef = useRef<TableState | null>(null);

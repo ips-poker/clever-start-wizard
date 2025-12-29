@@ -928,12 +928,11 @@ export class PokerTable {
     });
     
     if (activePlayers.length >= 2) {
-      logger.info('checkStartHand: starting hand in 3 seconds...');
+      logger.info('checkStartHand: starting hand immediately');
       this.pendingHandStart = true;
-      setTimeout(() => {
-        this.pendingHandStart = false;
-        this.startHand();
-      }, 3000);
+      // Start immediately - no delay for fast gameplay
+      this.pendingHandStart = false;
+      this.startHand();
     } else {
       logger.info('checkStartHand: not enough players', { need: 2, have: activePlayers.length });
     }
@@ -1359,8 +1358,8 @@ export class PokerTable {
       isHandActive: false
     });
     
-    // Check for next hand after showdown display time (5 seconds to give clients time to show results)
-    setTimeout(() => this.checkStartHand(), 5000);
+    // Check for next hand after showdown display time (1 second for fast gameplay)
+    setTimeout(() => this.checkStartHand(), 1000);
   }
   
   /**
