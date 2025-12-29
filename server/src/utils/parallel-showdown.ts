@@ -87,16 +87,16 @@ class ParallelShowdownProcessor {
       );
       
       // Build final results
-      const results: ShowdownResult[] = evaluationResults.map(eval => {
-        const winnings = potDistribution.filter(w => w.playerId === eval.playerId);
+      const results: ShowdownResult[] = evaluationResults.map(evalResult => {
+        const winnings = potDistribution.filter(w => w.playerId === evalResult.playerId);
         const totalWin = winnings.reduce((sum, w) => sum + w.amount, 0);
         
         return {
-          playerId: eval.playerId,
-          rank: eval.rank,
-          handName: eval.name,
-          bestCards: eval.bestCards,
-          tiebreakers: eval.tiebreakers,
+          playerId: evalResult.playerId,
+          rank: evalResult.rank,
+          handName: evalResult.name,
+          bestCards: evalResult.bestCards,
+          tiebreakers: evalResult.tiebreakers,
           winAmount: totalWin,
           isWinner: totalWin > 0,
           isSplit: winnings.length > 1 || 

@@ -3,7 +3,9 @@
  * Автоматическая выплата призов при завершении турнира
  */
 
-import { supabase } from '../config';
+import { createSupabaseClient } from '../db/supabase.js';
+
+const supabase = createSupabaseClient();
 
 interface PayoutPosition {
   position: number;
@@ -129,7 +131,7 @@ export async function processTournamentPayouts(tournamentId: string): Promise<Pa
 
     // Обрабатываем каждую призовую позицию
     for (const payout of prizeInfo.payouts) {
-      const participant = participants.find(p => p.finish_position === payout.position);
+      const participant = participants.find((p: { player_id: string; finish_position: number | null }) => p.finish_position === payout.position);
       
       if (!participant) {
         console.warn(`[PrizePayout] No player found for position ${payout.position}`);

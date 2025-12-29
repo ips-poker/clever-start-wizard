@@ -287,8 +287,9 @@ class HealthCheckSystem {
       status,
       details: {
         level: loadStatus.level,
-        cpuLoad: loadStatus.cpuLoad,
-        memoryUsage: loadStatus.memoryUsage
+        loadFactor: loadStatus.loadFactor,
+        heapUsedMB: loadStatus.metrics.heapUsedMB,
+        connections: loadStatus.metrics.connections
       },
       lastCheck: Date.now()
     };
@@ -310,8 +311,7 @@ class HealthCheckSystem {
       status,
       details: {
         queueSize: mqStats.size,
-        processed: mqStats.processed,
-        dropped: mqStats.dropped
+        byPriority: mqStats.byPriority
       },
       lastCheck: Date.now()
     };
