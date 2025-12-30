@@ -445,8 +445,6 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // Fall through to update state
         case 'player_left':
         case 'playerLeft':
-        case 'player_disconnected':
-        case 'playerDisconnected':
         case 'hand_started':
         case 'handStarted':  // Server sends camelCase
           // Clear showdown and ALL player cards when new hand starts
