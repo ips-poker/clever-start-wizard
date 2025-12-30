@@ -1062,6 +1062,46 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }]);
           break;
 
+        case 'player_sitting_out':
+          // Player started sitting out (manually or due to disconnect timeout)
+          log('💤 Player sitting out:', data.data);
+          setTableState((prev) => {
+            if (!prev) return prev;
+            const eventData = data.data as Record<string, unknown> | undefined;
+            const sittingOutPlayerId = eventData?.playerId as string | undefined;
+            if (!sittingOutPlayerId) return prev;
+            
+            return {
+              ...prev,
+              players: prev.players.map(p => 
+                p.playerId === sittingOutPlayerId 
+                  ? { ...p, isSittingOut: true, isActive: false }
+                  : p
+              )
+            };
+          });
+          break;
+        
+        case 'player_sitting_in':
+          // Player returned to active play
+          log('🎮 Player sitting in:', data.data);
+          setTableState((prev) => {
+            if (!prev) return prev;
+            const eventData = data.data as Record<string, unknown> | undefined;
+            const sittingInPlayerId = eventData?.playerId as string | undefined;
+            if (!sittingInPlayerId) return prev;
+            
+            return {
+              ...prev,
+              players: prev.players.map(p => 
+                p.playerId === sittingInPlayerId 
+                  ? { ...p, isSittingOut: false, isDisconnected: false, isActive: true }
+                  : p
+              )
+            };
+          });
+          break;
+
         case 'left_table':
           log('👋 Left table:', data.tableId);
           setTableState(null);
@@ -1540,22 +1580,18 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         connect();
       }, 100);
 
-      // Handle window close/refresh - try to disconnect gracefully
+      // Handle window close/refresh - DO NOT send leave_table!
+      // Player should stay at table with 'disconnected' status for 60 seconds
+      // They can reconnect if it was a network issue or accidental close
+      // Player only leaves when explicitly clicking "Покинуть стол" button
       const handleBeforeUnload = () => {
-        log('🚨 Window closing - disconnecting...');
-        // Try to send leave message before disconnect
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
-          try {
-            wsRef.current.send(JSON.stringify({
-              type: 'leave_table',
-              tableId,
-              playerId
-            }));
-          } catch (e) {
-            // Ignore - window is closing anyway
-          }
+        log('🚨 Window closing - keeping seat reserved for reconnect');
+        // Just close WebSocket cleanly - server will mark as disconnected
+        // DO NOT send leave_table - player should stay at table!
+        if (wsRef.current) {
+          wsRef.current.close(1001, 'Window closing');
+          wsRef.current = null;
         }
-        disconnect();
       };
 
       window.addEventListener('beforeunload', handleBeforeUnload);

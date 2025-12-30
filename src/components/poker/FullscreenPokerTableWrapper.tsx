@@ -571,19 +571,30 @@ export function FullscreenPokerTableWrapper({
             </div>
           )}
 
-          {/* If YOU are sitting out - show a way back */}
-          {myPlayer?.isSittingOut && (
-            <div className="pointer-events-auto absolute left-1/2 top-20 z-20 -translate-x-1/2">
-              <Button
-                variant="secondary"
-                className="rounded-full"
-                onClick={() => {
-                  sitIn();
-                  toast.success('Вы снова в игре');
-                }}
+          {/* If YOU are sitting out OR disconnected - show a prominent "Return" button */}
+          {(myPlayer?.isSittingOut || myPlayer?.isDisconnected) && (
+            <div className="pointer-events-auto absolute left-1/2 bottom-44 z-30 -translate-x-1/2">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="flex flex-col items-center gap-2"
               >
-                Вернуться в игру
-              </Button>
+                <div className="text-white/70 text-sm bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm">
+                  {myPlayer?.isDisconnected ? 'Соединение потеряно' : 'Вы вне игры'}
+                </div>
+                <Button
+                  variant="default"
+                  size="lg"
+                  className="rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-8 py-3 shadow-lg shadow-emerald-500/30"
+                  onClick={() => {
+                    sitIn();
+                    toast.success('Вы вернулись в игру');
+                  }}
+                >
+                  <RotateCcw className="h-5 w-5 mr-2" />
+                  Вернуться в игру
+                </Button>
+              </motion.div>
             </div>
           )}
 
