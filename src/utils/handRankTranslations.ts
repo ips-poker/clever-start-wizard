@@ -9,7 +9,9 @@ export const HAND_RANK_TRANSLATIONS: Record<string, string> = {
   'Full House': 'Фулл-хаус',
   'Flush': 'Флеш',
   'Straight': 'Стрит',
-  'Three of a Kind': 'Тройка',
+  'Three of a Kind': 'Сет', // Default to Set, context determines Trips
+  'Set': 'Сет',
+  'Trips': 'Трипс',
   'Two Pair': 'Две пары',
   'One Pair': 'Пара',
   'High Card': 'Старшая карта',

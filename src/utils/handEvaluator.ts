@@ -9,7 +9,8 @@ export type HandRank =
   | 'Фулл-хаус'
   | 'Флеш'
   | 'Стрит'
-  | 'Тройка'
+  | 'Сет'
+  | 'Трипс'
   | 'Две пары'
   | 'Пара'
   | 'Старшая карта';
@@ -108,7 +109,9 @@ function isStraightFlush(cards: Card[]): { isRoyal: boolean; cards: Card[] } | n
 }
 
 export function evaluateHand(holeCards: string[], communityCards: string[]): HandRank {
-  const allCards = parseCards([...holeCards, ...communityCards]);
+  const holeParsed = parseCards(holeCards);
+  const communityParsed = parseCards(communityCards);
+  const allCards = [...holeParsed, ...communityParsed];
   
   if (allCards.length < 5) {
     // Not enough cards for full evaluation
@@ -150,9 +153,28 @@ export function evaluateHand(holeCards: string[], communityCards: string[]): Han
     return 'Стрит';
   }
   
-  // Three of a kind
+  // Three of a kind - distinguish between Set and Trips
   if (counts[0] === 3) {
-    return 'Тройка';
+    // Find the rank that has 3 cards
+    let tripRank = 0;
+    for (const [rank, count] of rankCounts) {
+      if (count === 3) {
+        tripRank = rank;
+        break;
+      }
+    }
+    
+    // Count how many of the trip cards are in hole cards
+    const holeRankCounts = countRanks(holeParsed);
+    const holeCount = holeRankCounts.get(tripRank) || 0;
+    
+    // Set: 2 cards from hand + 1 from board (pocket pair hit the board)
+    // Trips: 1 card from hand + 2 from board (board pair matched hole card)
+    if (holeCount >= 2) {
+      return 'Сет';
+    } else {
+      return 'Трипс';
+    }
   }
   
   // Two pair

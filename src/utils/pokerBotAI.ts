@@ -253,7 +253,7 @@ export function evaluateMadeHand(holeCards: string[], communityCards: string[]):
   }
   
   if (rankCountsArr[0] === 3) {
-    return { rank: 4, name: 'Тройка', strength: 65 };
+    return { rank: 4, name: 'Сет/Трипс', strength: 65 };
   }
   
   if (rankCountsArr[0] === 2 && rankCountsArr[1] === 2) {
