@@ -58,12 +58,12 @@ const FlyingChip = memo(function FlyingChip({
   const startSpreadY = (Math.random() - 0.5) * 0.8;
   
   // Timing - staggered by wave and chip index
-  const waveDelay = wave * 0.12;
-  const chipDelay = index * 0.035;
+  const waveDelay = wave * 0.1;
+  const chipDelay = index * 0.03;
   const totalDelay = waveDelay + chipDelay;
   
-  // Duration - quick and consistent
-  const duration = 0.5 + Math.random() * 0.1;
+  // Duration - 0.7s as requested
+  const duration = 0.7;
   
   // Slight rotation during flight
   const rotation = (Math.random() - 0.5) * 25;
@@ -92,7 +92,7 @@ const FlyingChip = memo(function FlyingChip({
         ],
         y: [
           `${startSpreadY}vh`,
-          `${startSpreadY + deltaY * 0.55 - 1.5}vh`,
+          `${startSpreadY + deltaY * 0.5 - 1.5}vh`,
           `${deltaY}vh`
         ],
         scale: [0.6, 0.9, 0.6],
@@ -129,7 +129,7 @@ const FlyingChip = memo(function FlyingChip({
             }}
           >
             <PPPokerChip 
-              size={16} 
+              size={22} 
               bbValue={bbValue}
               showSymbol={false}
             />
@@ -262,9 +262,9 @@ export const WinnerChipCascade = memo(function WinnerChipCascade({
   const chipWaves = useMemo(() => {
     if (!isActive) return [];
     
-    // Fewer waves and chips for cleaner look
-    const waveCount = amount >= 5000 ? 3 : amount >= 500 ? 2 : 1;
-    const chipsPerWave = amount >= 2000 ? 4 : amount >= 200 ? 3 : 2;
+    // 1-2 waves, 4-6 chips per wave for cleaner look
+    const waveCount = amount >= 1000 ? 2 : 1;
+    const chipsPerWave = amount >= 500 ? 6 : 4;
     
     const waves: Array<{
       wave: number;
