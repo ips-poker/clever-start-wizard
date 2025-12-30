@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { useCalibrationSync } from '@/hooks/useCalibrationSync';
 import { 
   Save, 
   RotateCcw, 
@@ -25,7 +26,9 @@ import {
   Target,
   Grid3X3,
   Move,
-  Users
+  Users,
+  Cloud,
+  CloudUpload
 } from 'lucide-react';
 
 // Типы позиций
@@ -233,6 +236,9 @@ export function SeatCalibrationTool() {
   const [showBets, setShowBets] = useState(true);
   const [editingBets, setEditingBets] = useState(false);
   
+  // Хук синхронизации с Supabase
+  const { isLoading: isSyncing, saveCalibration, lastUpdated, syncCalibration } = useCalibrationSync();
+  
   // Позиции аватаров
   const [positions, setPositions] = useState<SeatConfiguration>({
     desktop: { ...DEFAULT_DESKTOP_POSITIONS },
@@ -324,15 +330,26 @@ export function SeatCalibrationTool() {
     toast.success('Сброшено к значениям по умолчанию');
   }, [mode]);
   
-  const savePositions = useCallback(() => {
+  const savePositions = useCallback(async () => {
     try {
+      // Сохраняем в localStorage
       localStorage.setItem('syndikate_seat_positions', JSON.stringify(positions));
       localStorage.setItem('syndikate_bet_offsets', JSON.stringify(betOffsets));
-      toast.success('Позиции и ставки сохранены');
+      
+      // Синхронизируем с Supabase для Telegram mini-app
+      const syncSuccess = await saveCalibration();
+      
+      if (syncSuccess) {
+        toast.success('Сохранено локально и синхронизировано с сервером (для Telegram)');
+      } else {
+        toast.success('Сохранено локально', { 
+          description: 'Синхронизация с сервером не удалась. Telegram mini-app может не увидеть изменения.' 
+        });
+      }
     } catch {
       toast.error('Ошибка сохранения');
     }
-  }, [positions, betOffsets]);
+  }, [positions, betOffsets, saveCalibration]);
   
   const exportPositions = useCallback(() => {
     const data = { positions, betOffsets };
@@ -410,12 +427,18 @@ const ${mode.toUpperCase()}_BET_OFFSETS_BY_COUNT: Record<number, Array<{ x: numb
                 <Download className="h-4 w-4 mr-1" />
                 Экспорт
               </Button>
-              <Button size="sm" onClick={savePositions}>
-                <Save className="h-4 w-4 mr-1" />
-                Сохранить
+              <Button size="sm" onClick={savePositions} disabled={isSyncing}>
+                <CloudUpload className="h-4 w-4 mr-1" />
+                {isSyncing ? 'Синхронизация...' : 'Сохранить и синхронизировать'}
               </Button>
             </div>
           </div>
+          {lastUpdated && (
+            <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <Cloud className="h-3 w-3" />
+              Последняя синхронизация: {new Date(lastUpdated).toLocaleString('ru-RU')}
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {/* Mode & Player Count Selection */}

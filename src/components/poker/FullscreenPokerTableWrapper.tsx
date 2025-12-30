@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNodePokerTable, PokerPlayer, TableState } from '@/hooks/useNodePokerTable';
 import { usePokerSounds } from '@/hooks/usePokerSounds';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
+import { useCalibrationSync } from '@/hooks/useCalibrationSync';
 import { PokerErrorBoundary } from './PokerErrorBoundary';
 import { ConnectionStatusBanner } from './ConnectionStatusBanner';
 import { TableSettingsPanel } from './TableSettingsPanel';
@@ -67,6 +68,9 @@ export function FullscreenPokerTableWrapper({
   const [actualBuyIn, setActualBuyIn] = useState<number>(buyIn);
   
   const { preferences, currentTableTheme, updatePreference } = usePokerPreferences();
+  
+  // Синхронизация калибровки позиций с Supabase (для Telegram mini-app)
+  useCalibrationSync();
   
   const sounds = usePokerSounds();
   const hasConnectedRef = useRef(false);
