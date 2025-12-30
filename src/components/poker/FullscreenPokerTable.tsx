@@ -235,38 +235,6 @@ function getCalibratedBetOffsets(mode: 'desktop' | 'telegram'): Record<number, A
   return null;
 }
 
-// Динамические позиции с учётом калибровки
-const SEAT_POSITIONS_BY_COUNT = getCalibratedPositions('desktop');
-
-// Динамические позиции с учётом калибровки (telegram)
-const TELEGRAM_SEAT_POSITIONS_BY_COUNT = getCalibratedPositions('telegram');
-
-// Смещения ставок с учётом калибровки
-const BET_OFFSETS_DESKTOP = getCalibratedBetOffsets('desktop');
-const BET_OFFSETS_TELEGRAM = getCalibratedBetOffsets('telegram');
-
-// Функция получения смещения ставки для конкретного места
-export function getBetOffset(
-  seatIndex: number, 
-  playerCount: number, 
-  forTelegram?: boolean
-): { x: number; y: number } | null {
-  const isTelegram = forTelegram ?? isTelegramMiniApp();
-  const offsets = isTelegram ? BET_OFFSETS_TELEGRAM : BET_OFFSETS_DESKTOP;
-  
-  if (offsets && offsets[playerCount] && offsets[playerCount][seatIndex]) {
-    return offsets[playerCount][seatIndex];
-  }
-  return null; // Вернёт null если нет калибровки - компонент использует дефолтную логику
-}
-
-// Legacy aliases - using new 9-position arrays
-const SEAT_POSITIONS_9MAX = SEAT_POSITIONS_BY_COUNT[9];
-const TELEGRAM_SEAT_POSITIONS_9MAX = TELEGRAM_SEAT_POSITIONS_BY_COUNT[9];
-
-// Legacy 6-max (используем новую систему)
-const SEAT_POSITIONS_6MAX = SEAT_POSITIONS_BY_COUNT[6];
-
 // Определение контекста Telegram
 function isTelegramMiniApp(): boolean {
   // В Telegram WebApp объект WebApp существует всегда, но initData иногда может быть пустым (особенно в dev/preview).
@@ -285,19 +253,31 @@ function isTelegramMiniApp(): boolean {
   return looksLikeTelegramUrl;
 }
 
-// Функция получения позиций по количеству игроков
+// Функция получения смещения ставки для конкретного места (динамическая)
+export function getBetOffset(
+  seatIndex: number, 
+  playerCount: number, 
+  forTelegram?: boolean
+): { x: number; y: number } | null {
+  const isTelegram = forTelegram ?? isTelegramMiniApp();
+  const offsets = getCalibratedBetOffsets(isTelegram ? 'telegram' : 'desktop');
+  
+  if (offsets && offsets[playerCount] && offsets[playerCount][seatIndex]) {
+    return offsets[playerCount][seatIndex];
+  }
+  return null; // Вернёт null если нет калибровки - компонент использует дефолтную логику
+}
+
+// Функция получения позиций по количеству игроков (динамическая загрузка из localStorage)
 function getSeatPositions(playerCount: number, forTelegram?: boolean): Array<{ x: number; y: number }> {
   const isTelegram = forTelegram ?? isTelegramMiniApp();
+  const mode = isTelegram ? 'telegram' : 'desktop';
+  const positions = getCalibratedPositions(mode);
+  const defaults = isTelegram ? DEFAULT_TELEGRAM_SEAT_POSITIONS_BY_COUNT : DEFAULT_SEAT_POSITIONS_BY_COUNT;
   
-  if (isTelegram) {
-    if (playerCount <= 2) return TELEGRAM_SEAT_POSITIONS_BY_COUNT[2];
-    if (playerCount >= 9) return TELEGRAM_SEAT_POSITIONS_9MAX;
-    return TELEGRAM_SEAT_POSITIONS_BY_COUNT[playerCount] || TELEGRAM_SEAT_POSITIONS_BY_COUNT[6];
-  }
-  
-  if (playerCount <= 2) return SEAT_POSITIONS_BY_COUNT[2];
-  if (playerCount >= 9) return SEAT_POSITIONS_9MAX;
-  return SEAT_POSITIONS_BY_COUNT[playerCount] || SEAT_POSITIONS_BY_COUNT[6];
+  if (playerCount <= 2) return positions[2] || defaults[2];
+  if (playerCount >= 9) return positions[9] || defaults[9];
+  return positions[playerCount] || defaults[playerCount] || positions[6] || defaults[6];
 }
 
 // ============= PREMIUM POKER CARD with personalization =============
