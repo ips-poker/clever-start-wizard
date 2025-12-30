@@ -1,6 +1,6 @@
 /**
- * Premium Win Animation - Chips Cascade to Winner
- * Uses the same PPPokerChip component as the table
+ * Premium Win Animation - Chips Cascade from Pot to Winner
+ * Clean, direct trajectory animation
  */
 
 import React, { memo, useMemo } from 'react';
@@ -12,17 +12,16 @@ interface WinnerChipCascadeProps {
   fromPosition: { x: number; y: number }; // Pot position (%)
   toPosition: { x: number; y: number };   // Winner position (%)
   amount: number;
-  bigBlind?: number; // For chip color calculation
+  bigBlind?: number;
   onComplete?: () => void;
 }
 
 // Chip BB values for cascading - matches table chip denominations
 const CHIP_BB_VALUES = [1, 5, 10, 20, 50, 100] as const;
 
-const getChipBBValue = (index: number, totalWaves: number): number => {
-  // Later waves have higher value chips
-  const baseIndex = Math.min(index, CHIP_BB_VALUES.length - 1);
-  return CHIP_BB_VALUES[baseIndex];
+const getChipBBValue = (waveIndex: number): number => {
+  const idx = Math.min(waveIndex, CHIP_BB_VALUES.length - 1);
+  return CHIP_BB_VALUES[idx];
 };
 
 interface SingleChipProps {
@@ -37,7 +36,7 @@ interface SingleChipProps {
   onComplete?: () => void;
 }
 
-// Single flying chip with arc trajectory - uses PPPokerChip
+// Single flying chip - DIRECT trajectory from pot to winner
 const FlyingChip = memo(function FlyingChip({
   index,
   wave,
@@ -49,33 +48,25 @@ const FlyingChip = memo(function FlyingChip({
   bbValue,
   onComplete
 }: SingleChipProps) {
-  // Calculate delta as percentage points (since positions are in %)
-  const deltaXPercent = toX - fromX;
-  const deltaYPercent = toY - fromY;
+  // Direct path from pot to winner
+  const deltaX = toX - fromX;
+  const deltaY = toY - fromY;
   
-  // Convert percentage to viewport units for smooth animation
-  const deltaXVw = deltaXPercent; // vw units match % of viewport
-  const deltaYVh = deltaYPercent; // vh units match % of viewport
+  // Small spread at start (chips fan out slightly from pot center)
+  const spreadAngle = ((index - (totalInWave - 1) / 2) / Math.max(totalInWave, 1)) * 0.3;
+  const startSpreadX = spreadAngle * 1.5;
+  const startSpreadY = (Math.random() - 0.5) * 0.8;
   
-  // Arc height based on distance
-  const distance = Math.sqrt(deltaXPercent * deltaXPercent + deltaYPercent * deltaYPercent);
-  const arcHeight = Math.min(distance * 0.5, 15); // In vh units
-  
-  // Spread chips within wave
-  const spreadAngle = ((index - (totalInWave - 1) / 2) / totalInWave) * 0.5;
-  const spreadX = spreadAngle * 3; // vw
-  const spreadY = (Math.random() - 0.5) * 2; // vh
-  
-  // Timing
-  const waveDelay = wave * 0.2;
-  const chipDelay = index * 0.05;
+  // Timing - staggered by wave and chip index
+  const waveDelay = wave * 0.12;
+  const chipDelay = index * 0.035;
   const totalDelay = waveDelay + chipDelay;
   
-  // Duration - slower for more visible movement
-  const duration = 1.0 + Math.random() * 0.3;
+  // Duration - quick and consistent
+  const duration = 0.5 + Math.random() * 0.1;
   
-  // Rotation for tumbling effect
-  const rotation = (Math.random() - 0.5) * 120;
+  // Slight rotation during flight
+  const rotation = (Math.random() - 0.5) * 25;
   
   return (
     <motion.div
@@ -83,89 +74,80 @@ const FlyingChip = memo(function FlyingChip({
       style={{ 
         left: `${fromX}%`, 
         top: `${fromY}%`,
-        zIndex: 9999 + wave
+        zIndex: 9999 + wave * 10 + index,
+        transform: 'translate(-50%, -50%)'
       }}
       initial={{ 
-        x: `${spreadX}vw`, 
-        y: `${spreadY}vh`, 
-        scale: 1.2, 
-        opacity: 1,
-        rotate: 0 
+        x: `${startSpreadX}vw`, 
+        y: `${startSpreadY}vh`, 
+        scale: 0.6, 
+        opacity: 0
       }}
       animate={{
+        // Direct path with very slight curve
         x: [
-          `${spreadX}vw`,
-          `${spreadX + deltaXVw * 0.25}vw`,
-          `${spreadX + deltaXVw * 0.6}vw`,
-          `${deltaXVw}vw`
+          `${startSpreadX}vw`,
+          `${startSpreadX + deltaX * 0.55}vw`,
+          `${deltaX}vw`
         ],
         y: [
-          `${spreadY}vh`,
-          `${spreadY - arcHeight}vh`,
-          `${spreadY + deltaYVh * 0.4 - arcHeight * 0.3}vh`,
-          `${deltaYVh}vh`
+          `${startSpreadY}vh`,
+          `${startSpreadY + deltaY * 0.55 - 1.5}vh`,
+          `${deltaY}vh`
         ],
-        scale: [1.2, 1.1, 1.0, 0.9],
-        opacity: [1, 1, 1, 1], // Keep visible until end
-        rotate: [0, rotation * 0.3, rotation * 0.7, rotation]
+        scale: [0.6, 0.9, 0.6],
+        opacity: [0, 1, 1],
+        rotate: [0, rotation * 0.6, rotation]
       }}
       transition={{
         duration,
         delay: totalDelay,
-        ease: [0.25, 0.46, 0.45, 0.94], // Smooth ease-out
-        times: [0, 0.25, 0.65, 1]
+        ease: [0.4, 0, 0.2, 1],
+        times: [0, 0.6, 1]
       }}
       onAnimationComplete={onComplete}
     >
       <motion.div 
         className="relative"
-        style={{ transform: 'translate(-50%, -50%)' }}
-        animate={{ opacity: [1, 1, 1, 0] }}
+        animate={{ opacity: [1, 1, 0] }}
         transition={{ 
-          duration: duration + 0.3, 
+          duration: duration + 0.15, 
           delay: totalDelay,
-          times: [0, 0.8, 0.95, 1]
+          times: [0, 0.9, 1]
         }}
       >
-        {/* Stack of PPPokerChips (2-3 chips based on wave) */}
-        {[0, 1, 2].slice(0, 2 + (wave % 2)).map((stackIdx) => (
+        {/* Stack of 2 small chips */}
+        {[0, 1].map((stackIdx) => (
           <div
             key={stackIdx}
             className="absolute"
             style={{
-              bottom: stackIdx * 4,
+              bottom: stackIdx * 2,
               left: '50%',
               transform: 'translateX(-50%)',
-              filter: stackIdx === 0 ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))' : 'none'
+              filter: stackIdx === 0 ? 'drop-shadow(0 1px 3px rgba(0,0,0,0.4))' : 'none'
             }}
           >
             <PPPokerChip 
-              size={32} 
+              size={16} 
               bbValue={bbValue}
-              showSymbol={stackIdx === 0}
+              showSymbol={false}
             />
           </div>
         ))}
         
-        {/* Sparkle trail */}
+        {/* Subtle glow */}
         <motion.div
-          className="absolute w-5 h-5 rounded-full"
+          className="absolute w-2 h-2 rounded-full"
           style={{
             left: '50%',
             top: '50%',
             transform: 'translate(-50%, -50%)',
-            background: 'radial-gradient(circle, rgba(251,191,36,0.9) 0%, transparent 70%)',
-            filter: 'blur(4px)'
+            background: 'radial-gradient(circle, rgba(251,191,36,0.6) 0%, transparent 70%)',
+            filter: 'blur(1px)'
           }}
-          animate={{
-            opacity: [0.9, 0.5, 0.8, 0.3],
-            scale: [0.8, 1.5, 1, 0.5]
-          }}
-          transition={{
-            duration: duration * 0.8,
-            delay: totalDelay,
-            repeat: 1
-          }}
+          animate={{ opacity: [0.6, 0.3, 0.1] }}
+          transition={{ duration: duration * 0.6, delay: totalDelay }}
         />
       </motion.div>
     </motion.div>
@@ -188,38 +170,39 @@ const FloatingAmount = memo(function FloatingAmount({
   toY: number;
   delay: number;
 }) {
+  const deltaX = toX - fromX;
+  const deltaY = toY - fromY;
+  
   return (
     <motion.div
-      className="absolute pointer-events-none z-70"
+      className="absolute pointer-events-none z-[10000]"
       style={{ 
         left: `${fromX}%`, 
-        top: `${fromY}%` 
+        top: `${fromY}%`,
+        transform: 'translate(-50%, -50%)'
       }}
-      initial={{ 
-        scale: 0.5, 
-        opacity: 0 
-      }}
+      initial={{ scale: 0.6, opacity: 0 }}
       animate={{
-        x: [`0%`, `${(toX - fromX) * 0.5}%`, `${toX - fromX}%`],
-        y: [`0%`, `${(toY - fromY) * 0.3 - 10}%`, `${toY - fromY - 5}%`],
-        scale: [0.5, 1.3, 1],
+        x: [`0vw`, `${deltaX * 0.5}vw`, `${deltaX}vw`],
+        y: [`0vh`, `${deltaY * 0.5 - 3}vh`, `${deltaY - 4}vh`],
+        scale: [0.6, 1.1, 0.9],
         opacity: [0, 1, 0]
       }}
       transition={{
-        duration: 1.2,
-        delay: delay + 0.2,
-        ease: "easeOut"
+        duration: 0.8,
+        delay: delay + 0.15,
+        ease: "easeOut",
+        times: [0, 0.5, 1]
       }}
     >
       <div 
-        className="px-3 py-1 rounded-lg font-bold text-lg whitespace-nowrap"
+        className="px-2 py-0.5 rounded-md font-bold text-sm whitespace-nowrap"
         style={{
-          background: 'linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(30,30,30,0.95) 100%)',
+          background: 'linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(30,30,30,0.9) 100%)',
           color: '#fbbf24',
-          textShadow: '0 0 10px rgba(251,191,36,0.6)',
-          border: '1px solid rgba(251,191,36,0.3)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.5), 0 0 30px rgba(251,191,36,0.2)',
-          transform: 'translate(-50%, -50%)'
+          textShadow: '0 0 8px rgba(251,191,36,0.5)',
+          border: '1px solid rgba(251,191,36,0.25)',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.4)'
         }}
       >
         +{amount.toLocaleString()}
@@ -240,7 +223,7 @@ const WinnerSpotlight = memo(function WinnerSpotlight({
 }) {
   return (
     <motion.div
-      className="absolute pointer-events-none z-55"
+      className="absolute pointer-events-none z-[9990]"
       style={{ 
         left: `${x}%`, 
         top: `${y}%`,
@@ -248,79 +231,23 @@ const WinnerSpotlight = memo(function WinnerSpotlight({
       }}
       initial={{ scale: 0, opacity: 0 }}
       animate={{
-        scale: [0, 1.5, 2, 2.5],
-        opacity: [0, 0.6, 0.4, 0]
+        scale: [0, 1.2, 1.8],
+        opacity: [0, 0.5, 0]
       }}
       transition={{
-        duration: 1,
-        delay: delay + 0.5,
+        duration: 0.7,
+        delay: delay + 0.4,
         ease: "easeOut"
       }}
     >
       <div
-        className="w-32 h-32 rounded-full"
+        className="w-20 h-20 rounded-full"
         style={{
-          background: 'radial-gradient(circle, rgba(251,191,36,0.5) 0%, rgba(251,191,36,0.2) 40%, transparent 70%)',
-          filter: 'blur(8px)'
+          background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, transparent 70%)',
+          filter: 'blur(6px)'
         }}
       />
     </motion.div>
-  );
-});
-
-// Particle burst on landing
-const ParticleBurst = memo(function ParticleBurst({
-  x,
-  y,
-  delay
-}: {
-  x: number;
-  y: number;
-  delay: number;
-}) {
-  const particles = useMemo(() => 
-    Array.from({ length: 12 }, (_, i) => ({
-      angle: (i / 12) * Math.PI * 2,
-      distance: 30 + Math.random() * 20,
-      size: 3 + Math.random() * 3,
-      duration: 0.5 + Math.random() * 0.3
-    })), 
-  []);
-
-  return (
-    <>
-      {particles.map((p, i) => (
-        <motion.div
-          key={i}
-          className="absolute pointer-events-none z-65 rounded-full"
-          style={{ 
-            left: `${x}%`, 
-            top: `${y}%`,
-            width: p.size,
-            height: p.size,
-            background: i % 3 === 0 
-              ? '#fbbf24' 
-              : i % 3 === 1 
-                ? '#f59e0b' 
-                : '#fef3c7',
-            boxShadow: '0 0 6px rgba(251,191,36,0.8)',
-            transform: 'translate(-50%, -50%)'
-          }}
-          initial={{ scale: 0, opacity: 1 }}
-          animate={{
-            x: Math.cos(p.angle) * p.distance,
-            y: Math.sin(p.angle) * p.distance,
-            scale: [0, 1, 0],
-            opacity: [1, 1, 0]
-          }}
-          transition={{
-            duration: p.duration,
-            delay: delay + 0.6,
-            ease: "easeOut"
-          }}
-        />
-      ))}
-    </>
   );
 });
 
@@ -331,13 +258,13 @@ export const WinnerChipCascade = memo(function WinnerChipCascade({
   amount,
   onComplete
 }: WinnerChipCascadeProps) {
-  // Generate waves of chips with BB values
+  // Generate waves of chips
   const chipWaves = useMemo(() => {
     if (!isActive) return [];
     
-    // Number of waves based on pot size
-    const waveCount = amount >= 10000 ? 4 : amount >= 1000 ? 3 : 2;
-    const chipsPerWave = amount >= 5000 ? 5 : amount >= 500 ? 4 : 3;
+    // Fewer waves and chips for cleaner look
+    const waveCount = amount >= 5000 ? 3 : amount >= 500 ? 2 : 1;
+    const chipsPerWave = amount >= 2000 ? 4 : amount >= 200 ? 3 : 2;
     
     const waves: Array<{
       wave: number;
@@ -347,9 +274,7 @@ export const WinnerChipCascade = memo(function WinnerChipCascade({
     for (let w = 0; w < waveCount; w++) {
       const chips = [];
       for (let c = 0; c < chipsPerWave; c++) {
-        // Higher wave = higher denomination chips (using BB values)
-        const bbValue = getChipBBValue(w, waveCount);
-        chips.push({ index: c, bbValue });
+        chips.push({ index: c, bbValue: getChipBBValue(w) });
       }
       waves.push({ wave: w, chips });
     }
@@ -363,7 +288,7 @@ export const WinnerChipCascade = memo(function WinnerChipCascade({
   const handleChipComplete = () => {
     completedCount++;
     if (completedCount >= totalChips) {
-      setTimeout(() => onComplete?.(), 300);
+      setTimeout(() => onComplete?.(), 200);
     }
   };
 
@@ -371,31 +296,31 @@ export const WinnerChipCascade = memo(function WinnerChipCascade({
 
   return (
     <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 9999 }}>
-      {/* Central glow pulse */}
+      {/* Initial pot glow */}
       <motion.div
-        className="absolute z-50"
+        className="absolute z-[9990]"
         style={{ 
           left: `${fromPosition.x}%`, 
           top: `${fromPosition.y}%`,
           transform: 'translate(-50%, -50%)'
         }}
-        initial={{ scale: 1, opacity: 0.8 }}
+        initial={{ scale: 1, opacity: 0.7 }}
         animate={{ 
-          scale: [1, 1.5, 0.5],
-          opacity: [0.8, 0.4, 0]
+          scale: [1, 1.3, 0.5],
+          opacity: [0.7, 0.3, 0]
         }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
       >
         <div
-          className="w-24 h-24 rounded-full"
+          className="w-16 h-16 rounded-full"
           style={{
-            background: 'radial-gradient(circle, rgba(251,191,36,0.6) 0%, transparent 70%)',
-            filter: 'blur(10px)'
+            background: 'radial-gradient(circle, rgba(251,191,36,0.5) 0%, transparent 70%)',
+            filter: 'blur(6px)'
           }}
         />
       </motion.div>
 
-      {/* Flying chips in waves */}
+      {/* Flying chips */}
       <AnimatePresence>
         {chipWaves.map(({ wave, chips }) => 
           chips.map((chip) => (
@@ -415,28 +340,21 @@ export const WinnerChipCascade = memo(function WinnerChipCascade({
         )}
       </AnimatePresence>
 
-      {/* Floating amount display */}
+      {/* Floating amount */}
       <FloatingAmount
         amount={amount}
         fromX={fromPosition.x}
         fromY={fromPosition.y}
         toX={toPosition.x}
         toY={toPosition.y}
-        delay={0.3}
+        delay={0.2}
       />
 
       {/* Winner spotlight */}
       <WinnerSpotlight
         x={toPosition.x}
         y={toPosition.y}
-        delay={0.4}
-      />
-
-      {/* Particle burst at landing */}
-      <ParticleBurst
-        x={toPosition.x}
-        y={toPosition.y}
-        delay={0.5}
+        delay={0.3}
       />
     </div>
   );
