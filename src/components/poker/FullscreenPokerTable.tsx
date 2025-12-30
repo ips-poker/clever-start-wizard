@@ -26,10 +26,12 @@ import {
 import { PPPokerCompactCards } from './PPPokerCompactCards';
 import { PPPokerHeroCards } from './PPPokerHeroCards';
 import { PPPokerCommunityCards } from './PPPokerCommunityCards';
+import { CommunityCardAnimation } from './CommunityCardAnimation';
 import { PPPokerPotDisplay } from './PPPokerPotDisplay';
 import { PPPokerActionBadge } from './PPPokerActionBadge';
 import { PPPokerLevelBadge } from './PPPokerLevelBadge';
 import { PotCollectionAnimation } from './PotCollectionAnimation';
+import { WinnerChipCascade } from './WinnerChipCascade';
 import { getHandStrengthName } from '@/utils/handEvaluator';
 
 // ============= SUIT CONFIGURATION =============
@@ -1379,103 +1381,16 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         }}
       />
       
-      {/* Win distribution animation - chips flying from pot to winner in cascade */}
-      <AnimatePresence>
-        {winDistribution && (() => {
-          const targetPos = positions[winDistribution.winnerSeat];
-          const potY = 50; // Center of table
-          const potX = 50;
-          const deltaX = (targetPos.x - potX);
-          const deltaY = (targetPos.y - potY);
-          const chipCount = 12;
-          
-          return (
-            <motion.div
-              key="win-distribution"
-              className="absolute inset-0 pointer-events-none z-50"
-              initial={{ opacity: 1 }}
-              exit={{ opacity: 0, transition: { duration: 0.2 } }}
-            >
-              {/* Flying chips cascade from pot to winner */}
-              {[...Array(chipCount)].map((_, i) => {
-                const offsetX = (Math.random() - 0.5) * 15;
-                const offsetY = (Math.random() - 0.5) * 10;
-                const chipColors = [
-                  'radial-gradient(circle at 30% 30%, #fbbf24 0%, #f59e0b 60%, #d97706 100%)',
-                  'radial-gradient(circle at 30% 30%, #22c55e 0%, #16a34a 60%, #15803d 100%)',
-                  'radial-gradient(circle at 30% 30%, #ef4444 0%, #dc2626 60%, #b91c1c 100%)',
-                ];
-                
-                return (
-                  <motion.div
-                    key={`win-chip-${i}`}
-                    className="absolute"
-                    style={{ left: `${potX}%`, top: `${potY}%` }}
-                    initial={{ x: offsetX, y: offsetY, scale: 1, opacity: 1, rotate: 0 }}
-                    animate={{ 
-                      x: `calc(${deltaX}vw + ${offsetX}px)`,
-                      y: `calc(${deltaY}vh + ${offsetY}px)`,
-                      scale: [1, 1.1, 0.8],
-                      opacity: [1, 1, 1, 0],
-                      rotate: (Math.random() - 0.5) * 180
-                    }}
-                    transition={{
-                      duration: 0.7,
-                      delay: i * 0.04,
-                      ease: [0.25, 0.46, 0.45, 0.94]
-                    }}
-                    onAnimationComplete={() => {
-                      if (i === chipCount - 1) {
-                        setTimeout(() => setWinDistribution(null), 200);
-                      }
-                    }}
-                  >
-                    <div className="relative" style={{ transform: 'translate(-50%, -50%)' }}>
-                      {[0, 1, 2].map((j) => (
-                        <div
-                          key={j}
-                          className="absolute rounded-full"
-                          style={{
-                            width: 18,
-                            height: 18,
-                            bottom: j * 2,
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            background: chipColors[(i + j) % 3],
-                            border: '2px solid rgba(255,255,255,0.5)',
-                            boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </motion.div>
-                );
-              })}
-              
-              {/* Golden trail effect */}
-              <motion.div
-                className="absolute rounded-full"
-                style={{ 
-                  left: `${potX}%`, 
-                  top: `${potY}%`,
-                  width: 60,
-                  height: 60,
-                  transform: 'translate(-50%, -50%)',
-                  background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, transparent 70%)'
-                }}
-                initial={{ scale: 1, opacity: 0.8 }}
-                animate={{ 
-                  scale: [1, 2, 0.5],
-                  opacity: [0.8, 0.4, 0],
-                  x: `calc(${deltaX}vw)`,
-                  y: `calc(${deltaY}vh)`
-                }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-              />
-            </motion.div>
-          );
-        })()}
-      </AnimatePresence>
+      {/* Win distribution animation - Premium chips cascade */}
+      {winDistribution && (
+        <WinnerChipCascade
+          isActive={true}
+          fromPosition={{ x: 50, y: 50 }}
+          toPosition={positions[winDistribution.winnerSeat]}
+          amount={winDistribution.amount}
+          onComplete={() => setWinDistribution(null)}
+        />
+      )}
       
       {/* Center area - pot and community cards - vertically centered in table */}
       {(() => {
