@@ -864,9 +864,33 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               communityCards,
             });
 
+            // Apply pot payout locally so UI always reflects winner stack even if server state snapshot lags.
+            // (Server should still eventually send corrected stacks; this is a visual correctness patch.)
+            if (winners.length > 0) {
+              const winByPlayerId = new Map(winners.map((w) => [w.playerId, w.amount] as const));
+              setTableState((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  pot: 0,
+                  currentBet: 0,
+                  currentPlayerSeat: null,
+                  players: prev.players.map((p) => {
+                    const won = winByPlayerId.get(p.playerId) || 0;
+                    return {
+                      ...p,
+                      stack: p.stack + won,
+                      betAmount: 0,
+                      totalBetInHand: 0,
+                    };
+                  }),
+                };
+              });
+            }
+
             // Use shorter display time for fold wins, longer for real showdowns
             const displayTime = isFoldWin ? FOLD_WIN_DISPLAY_MS : SHOWDOWN_DISPLAY_MS;
-            
+
             // Keep showdown highlight visible, then clear IF still the same showdown
             setTimeout(() => {
               if (showdownTokenRef.current !== thisShowdownToken) return;
