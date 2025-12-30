@@ -183,14 +183,36 @@ const DEFAULT_TELEGRAM_SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number
   ],
 };
 
-// ============= LOAD CALIBRATED POSITIONS FROM LOCALSTORAGE =============
-// Калибратор в админке сохраняет позиции в localStorage под ключом 'syndikate_seat_positions'
+// ============= LOAD CALIBRATED POSITIONS =============
+// Калибратор в админке сохраняет позиции в localStorage и синхронизирует через Supabase
+// В Telegram mini-app localStorage изолирован, поэтому используем глобальный кеш
+
+// Глобальный кеш для калибровки (заполняется через syncCalibrationFromSupabase)
+let globalCalibrationCache: { 
+  positions: { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null;
+  betOffsets: { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null;
+  loaded: boolean;
+} = { positions: null, betOffsets: null, loaded: false };
+
+// Экспортируем функцию для установки кеша из хука
+export function setGlobalCalibrationCache(
+  positions: { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null,
+  betOffsets: { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null
+) {
+  globalCalibrationCache = { positions, betOffsets, loaded: true };
+}
+
 function getCalibrationConfig(): { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null {
+  // Сначала проверяем глобальный кеш (загруженный из Supabase)
+  if (globalCalibrationCache.loaded && globalCalibrationCache.positions) {
+    return globalCalibrationCache.positions;
+  }
+  
+  // Fallback на localStorage (для desktop)
   try {
     const saved = localStorage.getItem('syndikate_seat_positions');
     if (!saved) return null;
     const parsed = JSON.parse(saved);
-    // Валидируем структуру
     if (parsed && typeof parsed === 'object' && parsed.desktop && parsed.telegram) {
       return parsed;
     }
@@ -202,6 +224,12 @@ function getCalibrationConfig(): { desktop: Record<number, Array<{ x: number; y:
 
 // Калибратор ставок - смещения фишек от позиции аватара
 function getBetOffsetsConfig(): { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null {
+  // Сначала проверяем глобальный кеш (загруженный из Supabase)
+  if (globalCalibrationCache.loaded && globalCalibrationCache.betOffsets) {
+    return globalCalibrationCache.betOffsets;
+  }
+  
+  // Fallback на localStorage (для desktop)
   try {
     const saved = localStorage.getItem('syndikate_bet_offsets');
     if (!saved) return null;
