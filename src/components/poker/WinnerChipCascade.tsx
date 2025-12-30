@@ -396,7 +396,7 @@ export const WinnerChipCascade = memo(function WinnerChipCascade({
   if (!isActive) return null;
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 9999 }}>
       {/* Central glow pulse */}
       <motion.div
         className="absolute z-50"
