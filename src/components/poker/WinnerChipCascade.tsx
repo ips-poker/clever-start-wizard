@@ -49,28 +49,33 @@ const FlyingChip = memo(function FlyingChip({
   bbValue,
   onComplete
 }: SingleChipProps) {
-  // Calculate arc trajectory
-  const deltaX = toX - fromX;
-  const deltaY = toY - fromY;
-  const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+  // Calculate delta as percentage points (since positions are in %)
+  const deltaXPercent = toX - fromX;
+  const deltaYPercent = toY - fromY;
+  
+  // Convert percentage to viewport units for smooth animation
+  const deltaXVw = deltaXPercent; // vw units match % of viewport
+  const deltaYVh = deltaYPercent; // vh units match % of viewport
   
   // Arc height based on distance
-  const arcHeight = Math.min(distance * 0.4, 25);
+  const distance = Math.sqrt(deltaXPercent * deltaXPercent + deltaYPercent * deltaYPercent);
+  const arcHeight = Math.min(distance * 0.5, 15); // In vh units
   
   // Spread chips within wave
-  const spreadX = (index - (totalInWave - 1) / 2) * 12;
-  const spreadY = (Math.random() - 0.5) * 8;
+  const spreadAngle = ((index - (totalInWave - 1) / 2) / totalInWave) * 0.5;
+  const spreadX = spreadAngle * 3; // vw
+  const spreadY = (Math.random() - 0.5) * 2; // vh
   
   // Timing
-  const waveDelay = wave * 0.18;
-  const chipDelay = index * 0.04;
+  const waveDelay = wave * 0.2;
+  const chipDelay = index * 0.05;
   const totalDelay = waveDelay + chipDelay;
   
-  // Duration varies slightly for natural feel
-  const duration = 0.7 + Math.random() * 0.2;
+  // Duration - slower for more visible movement
+  const duration = 1.0 + Math.random() * 0.3;
   
   // Rotation for tumbling effect
-  const rotation = (Math.random() - 0.5) * 180;
+  const rotation = (Math.random() - 0.5) * 120;
   
   return (
     <motion.div
@@ -81,40 +86,46 @@ const FlyingChip = memo(function FlyingChip({
         zIndex: 9999 + wave
       }}
       initial={{ 
-        x: spreadX, 
-        y: spreadY, 
-        scale: 1.3, 
+        x: `${spreadX}vw`, 
+        y: `${spreadY}vh`, 
+        scale: 1.2, 
         opacity: 1,
         rotate: 0 
       }}
       animate={{
         x: [
-          spreadX,
-          spreadX + deltaX * 0.3,
-          spreadX + deltaX * 0.7,
-          (toX - fromX) / 100 * window.innerWidth + spreadX
+          `${spreadX}vw`,
+          `${spreadX + deltaXVw * 0.25}vw`,
+          `${spreadX + deltaXVw * 0.6}vw`,
+          `${deltaXVw}vw`
         ],
         y: [
-          spreadY,
-          spreadY - arcHeight * 1.5,
-          spreadY - arcHeight * 0.5,
-          (toY - fromY) / 100 * window.innerHeight + spreadY
+          `${spreadY}vh`,
+          `${spreadY - arcHeight}vh`,
+          `${spreadY + deltaYVh * 0.4 - arcHeight * 0.3}vh`,
+          `${deltaYVh}vh`
         ],
-        scale: [1.3, 1.2, 1, 0.8],
-        opacity: [1, 1, 1, 0],
-        rotate: [0, rotation * 0.4, rotation * 0.8, rotation]
+        scale: [1.2, 1.1, 1.0, 0.9],
+        opacity: [1, 1, 1, 1], // Keep visible until end
+        rotate: [0, rotation * 0.3, rotation * 0.7, rotation]
       }}
       transition={{
         duration,
         delay: totalDelay,
-        ease: [0.34, 1.56, 0.64, 1],
-        times: [0, 0.3, 0.7, 1]
+        ease: [0.25, 0.46, 0.45, 0.94], // Smooth ease-out
+        times: [0, 0.25, 0.65, 1]
       }}
       onAnimationComplete={onComplete}
     >
-      <div 
+      <motion.div 
         className="relative"
         style={{ transform: 'translate(-50%, -50%)' }}
+        animate={{ opacity: [1, 1, 1, 0] }}
+        transition={{ 
+          duration: duration + 0.3, 
+          delay: totalDelay,
+          times: [0, 0.8, 0.95, 1]
+        }}
       >
         {/* Stack of PPPokerChips (2-3 chips based on wave) */}
         {[0, 1, 2].slice(0, 2 + (wave % 2)).map((stackIdx) => (
@@ -125,11 +136,11 @@ const FlyingChip = memo(function FlyingChip({
               bottom: stackIdx * 4,
               left: '50%',
               transform: 'translateX(-50%)',
-              filter: stackIdx === 0 ? 'drop-shadow(0 4px 6px rgba(0,0,0,0.4))' : 'none'
+              filter: stackIdx === 0 ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))' : 'none'
             }}
           >
             <PPPokerChip 
-              size={28} 
+              size={32} 
               bbValue={bbValue}
               showSymbol={stackIdx === 0}
             />
@@ -138,25 +149,25 @@ const FlyingChip = memo(function FlyingChip({
         
         {/* Sparkle trail */}
         <motion.div
-          className="absolute w-4 h-4 rounded-full"
+          className="absolute w-5 h-5 rounded-full"
           style={{
             left: '50%',
             top: '50%',
             transform: 'translate(-50%, -50%)',
             background: 'radial-gradient(circle, rgba(251,191,36,0.9) 0%, transparent 70%)',
-            filter: 'blur(3px)'
+            filter: 'blur(4px)'
           }}
           animate={{
-            opacity: [0.9, 0.5, 0],
-            scale: [0.5, 2, 0.5]
+            opacity: [0.9, 0.5, 0.8, 0.3],
+            scale: [0.8, 1.5, 1, 0.5]
           }}
           transition={{
-            duration: 0.35,
-            delay: totalDelay + 0.1,
-            repeat: 2
+            duration: duration * 0.8,
+            delay: totalDelay,
+            repeat: 1
           }}
         />
-      </div>
+      </motion.div>
     </motion.div>
   );
 });
