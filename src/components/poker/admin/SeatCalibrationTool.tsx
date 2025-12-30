@@ -34,10 +34,44 @@ interface SeatPosition {
   y: number;
 }
 
+interface BetOffset {
+  x: number; // смещение по X от позиции аватара (в %)
+  y: number; // смещение по Y от позиции аватара (в %)
+}
+
 interface SeatConfiguration {
   desktop: Record<number, SeatPosition[]>;
   telegram: Record<number, SeatPosition[]>;
 }
+
+interface BetConfiguration {
+  desktop: Record<number, BetOffset[]>;
+  telegram: Record<number, BetOffset[]>;
+}
+
+// Дефолтные смещения ставок - направлены к центру стола
+const calculateDefaultBetOffsets = (seatPos: SeatPosition): BetOffset => {
+  const centerX = 50;
+  const centerY = 50;
+  const dx = centerX - seatPos.x;
+  const dy = centerY - seatPos.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  // Нормализуем и масштабируем смещение (5-10% от центра)
+  const scale = distance > 0 ? 8 / distance : 0;
+  return {
+    x: Math.round(dx * scale * 10) / 10,
+    y: Math.round(dy * scale * 10) / 10
+  };
+};
+
+// Генерируем дефолтные смещения ставок на основе позиций аватаров
+const generateDefaultBetOffsets = (positions: Record<number, SeatPosition[]>): Record<number, BetOffset[]> => {
+  const result: Record<number, BetOffset[]> = {};
+  for (const [count, seats] of Object.entries(positions)) {
+    result[Number(count)] = seats.map(pos => calculateDefaultBetOffsets(pos));
+  }
+  return result;
+};
 
 // Значения по умолчанию - текущие из FullscreenPokerTable.tsx
 const DEFAULT_DESKTOP_POSITIONS: Record<number, SeatPosition[]> = {
@@ -166,10 +200,24 @@ const DEFAULT_TELEGRAM_POSITIONS: Record<number, SeatPosition[]> = {
   ],
 };
 
+// Дефолтные смещения ставок
+const DEFAULT_DESKTOP_BET_OFFSETS = generateDefaultBetOffsets(DEFAULT_DESKTOP_POSITIONS);
+const DEFAULT_TELEGRAM_BET_OFFSETS = generateDefaultBetOffsets(DEFAULT_TELEGRAM_POSITIONS);
+
 // Получение сохранённых позиций из localStorage
 const getSavedPositions = (): SeatConfiguration | null => {
   try {
     const saved = localStorage.getItem('syndikate_seat_positions');
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+};
+
+// Получение сохранённых смещений ставок из localStorage
+const getSavedBetOffsets = (): BetConfiguration | null => {
+  try {
+    const saved = localStorage.getItem('syndikate_bet_offsets');
     return saved ? JSON.parse(saved) : null;
   } catch {
     return null;
@@ -182,25 +230,40 @@ export function SeatCalibrationTool() {
   const [selectedSeat, setSelectedSeat] = useState(0);
   const [showGrid, setShowGrid] = useState(true);
   const [showRail, setShowRail] = useState(true);
-  const [livePreview, setLivePreview] = useState(true);
+  const [showBets, setShowBets] = useState(true);
+  const [editingBets, setEditingBets] = useState(false);
   
-  // Позиции
+  // Позиции аватаров
   const [positions, setPositions] = useState<SeatConfiguration>({
     desktop: { ...DEFAULT_DESKTOP_POSITIONS },
     telegram: { ...DEFAULT_TELEGRAM_POSITIONS }
   });
   
+  // Смещения ставок
+  const [betOffsets, setBetOffsets] = useState<BetConfiguration>({
+    desktop: { ...DEFAULT_DESKTOP_BET_OFFSETS },
+    telegram: { ...DEFAULT_TELEGRAM_BET_OFFSETS }
+  });
+  
   // Загрузить сохранённые при монтировании
   useEffect(() => {
-    const saved = getSavedPositions();
-    if (saved) {
-      setPositions(saved);
-      toast.info('Загружены сохранённые позиции');
+    const savedPos = getSavedPositions();
+    const savedBets = getSavedBetOffsets();
+    
+    if (savedPos) {
+      setPositions(savedPos);
+    }
+    if (savedBets) {
+      setBetOffsets(savedBets);
+    }
+    if (savedPos || savedBets) {
+      toast.info('Загружены сохранённые настройки');
     }
   }, []);
   
   // Текущие позиции для текущего режима и количества игроков
   const currentPositions = positions[mode][maxPlayers] || [];
+  const currentBetOffsets = betOffsets[mode][maxPlayers] || [];
   
   const updatePosition = useCallback((seatIndex: number, axis: 'x' | 'y', value: number) => {
     setPositions(prev => {
@@ -222,14 +285,41 @@ export function SeatCalibrationTool() {
     });
   }, [mode, maxPlayers]);
   
+  const updateBetOffset = useCallback((seatIndex: number, axis: 'x' | 'y', value: number) => {
+    setBetOffsets(prev => {
+      const newOffsets = { ...prev };
+      const modeOffsets = { ...newOffsets[mode] };
+      const seatOffsets = [...(modeOffsets[maxPlayers] || [])];
+      
+      if (seatOffsets[seatIndex]) {
+        seatOffsets[seatIndex] = {
+          ...seatOffsets[seatIndex],
+          [axis]: value
+        };
+      }
+      
+      modeOffsets[maxPlayers] = seatOffsets;
+      newOffsets[mode] = modeOffsets;
+      
+      return newOffsets;
+    });
+  }, [mode, maxPlayers]);
+  
   const resetToDefault = useCallback(() => {
     const defaultPositions = mode === 'desktop' 
       ? DEFAULT_DESKTOP_POSITIONS 
       : DEFAULT_TELEGRAM_POSITIONS;
+    const defaultBets = mode === 'desktop'
+      ? DEFAULT_DESKTOP_BET_OFFSETS
+      : DEFAULT_TELEGRAM_BET_OFFSETS;
     
     setPositions(prev => ({
       ...prev,
       [mode]: { ...defaultPositions }
+    }));
+    setBetOffsets(prev => ({
+      ...prev,
+      [mode]: { ...defaultBets }
     }));
     toast.success('Сброшено к значениям по умолчанию');
   }, [mode]);
@@ -237,30 +327,35 @@ export function SeatCalibrationTool() {
   const savePositions = useCallback(() => {
     try {
       localStorage.setItem('syndikate_seat_positions', JSON.stringify(positions));
-      toast.success('Позиции сохранены');
+      localStorage.setItem('syndikate_bet_offsets', JSON.stringify(betOffsets));
+      toast.success('Позиции и ставки сохранены');
     } catch {
       toast.error('Ошибка сохранения');
     }
-  }, [positions]);
+  }, [positions, betOffsets]);
   
   const exportPositions = useCallback(() => {
-    const json = JSON.stringify(positions, null, 2);
+    const data = { positions, betOffsets };
+    const json = JSON.stringify(data, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'seat_positions.json';
+    a.download = 'seat_and_bet_positions.json';
     a.click();
     URL.revokeObjectURL(url);
     toast.success('Экспортировано в JSON');
-  }, [positions]);
+  }, [positions, betOffsets]);
   
   const generateCode = useCallback(() => {
     const modePositions = positions[mode];
-    const code = `const ${mode.toUpperCase()}_SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = ${JSON.stringify(modePositions, null, 2)};`;
+    const modeBets = betOffsets[mode];
+    const code = `const ${mode.toUpperCase()}_SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = ${JSON.stringify(modePositions, null, 2)};
+
+const ${mode.toUpperCase()}_BET_OFFSETS_BY_COUNT: Record<number, Array<{ x: number; y: number }>> = ${JSON.stringify(modeBets, null, 2)};`;
     navigator.clipboard.writeText(code);
     toast.success('Код скопирован в буфер обмена');
-  }, [positions, mode]);
+  }, [positions, betOffsets, mode]);
   
   // Размеры бортика стола - ТОЧНО как в SyndikateTableFelt
   // Desktop: outer=20%, leather=21%, inner=23%, felt=24%
@@ -366,6 +461,14 @@ export function SeatCalibrationTool() {
               <div className="flex items-center gap-2">
                 <Switch checked={showRail} onCheckedChange={setShowRail} />
                 <Label className="text-xs">Бортик</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={showBets} onCheckedChange={setShowBets} />
+                <Label className="text-xs">Ставки</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={editingBets} onCheckedChange={setEditingBets} />
+                <Label className="text-xs text-amber-400">Редакт. ставки</Label>
               </div>
             </div>
           </div>
@@ -495,29 +598,78 @@ export function SeatCalibrationTool() {
               </div>
               
               {/* Seats - аватары игроков */}
-              {currentPositions.map((pos, idx) => (
-                <div
-                  key={idx}
-                  className={`absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 flex items-center justify-center text-xs font-bold cursor-pointer transition-all ${
-                    selectedSeat === idx
-                      ? 'border-yellow-500 bg-yellow-500/30 text-yellow-500 scale-125 z-20'
-                      : idx === 0
-                        ? 'border-emerald-400 bg-emerald-500/30 text-emerald-400'
-                        : 'border-white/50 bg-white/20 text-white/70'
-                  }`}
-                  style={{
-                    left: `${pos.x}%`,
-                    top: `${pos.y}%`
-                  }}
-                  onClick={() => setSelectedSeat(idx)}
-                >
-                  {idx === 0 ? 'H' : idx}
-                </div>
-              ))}
+              {currentPositions.map((pos, idx) => {
+                const betOffset = currentBetOffsets[idx] || { x: 0, y: 0 };
+                const betX = pos.x + betOffset.x;
+                const betY = pos.y + betOffset.y;
+                
+                return (
+                  <React.Fragment key={idx}>
+                    {/* Avatar */}
+                    <div
+                      className={`absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 flex items-center justify-center text-xs font-bold cursor-pointer transition-all ${
+                        selectedSeat === idx && !editingBets
+                          ? 'border-yellow-500 bg-yellow-500/30 text-yellow-500 scale-125 z-20'
+                          : idx === 0
+                            ? 'border-emerald-400 bg-emerald-500/30 text-emerald-400'
+                            : 'border-white/50 bg-white/20 text-white/70'
+                      }`}
+                      style={{
+                        left: `${pos.x}%`,
+                        top: `${pos.y}%`
+                      }}
+                      onClick={() => { setSelectedSeat(idx); setEditingBets(false); }}
+                    >
+                      {idx === 0 ? 'H' : idx}
+                    </div>
+                    
+                    {/* Bet chip indicator */}
+                    {showBets && (
+                      <div
+                        className={`absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center text-[9px] font-bold cursor-pointer transition-all ${
+                          selectedSeat === idx && editingBets
+                            ? 'border-2 border-amber-500 bg-amber-500/50 text-white scale-125 z-30'
+                            : 'border border-amber-400/60 bg-amber-600/40 text-amber-200'
+                        }`}
+                        style={{
+                          left: `${betX}%`,
+                          top: `${betY}%`
+                        }}
+                        onClick={() => { setSelectedSeat(idx); setEditingBets(true); }}
+                        title={`Bet offset: (${betOffset.x.toFixed(1)}, ${betOffset.y.toFixed(1)})`}
+                      >
+                        $
+                      </div>
+                    )}
+                    
+                    {/* Line connecting avatar to bet */}
+                    {showBets && (
+                      <svg
+                        className="absolute inset-0 w-full h-full pointer-events-none"
+                        style={{ zIndex: 5 }}
+                      >
+                        <line
+                          x1={`${pos.x}%`}
+                          y1={`${pos.y}%`}
+                          x2={`${betX}%`}
+                          y2={`${betY}%`}
+                          stroke={selectedSeat === idx ? 'rgba(251, 191, 36, 0.6)' : 'rgba(251, 191, 36, 0.2)'}
+                          strokeWidth="1"
+                          strokeDasharray="3,3"
+                        />
+                      </svg>
+                    )}
+                  </React.Fragment>
+                );
+              })}
               
               {/* Coordinates display */}
               <div className="absolute bottom-1 left-1 text-[10px] text-white/50 font-mono bg-black/50 px-1 rounded">
-                Seat {selectedSeat}: ({currentPositions[selectedSeat]?.x.toFixed(0)}%, {currentPositions[selectedSeat]?.y.toFixed(0)}%)
+                {editingBets ? (
+                  <>Bet {selectedSeat}: offset ({currentBetOffsets[selectedSeat]?.x.toFixed(1) || 0}, {currentBetOffsets[selectedSeat]?.y.toFixed(1) || 0})</>
+                ) : (
+                  <>Seat {selectedSeat}: ({currentPositions[selectedSeat]?.x.toFixed(0)}%, {currentPositions[selectedSeat]?.y.toFixed(0)}%)</>
+                )}
               </div>
               
               {/* Mode label */}
@@ -535,6 +687,9 @@ export function SeatCalibrationTool() {
                     <Badge variant={selectedSeat === 0 ? 'default' : 'outline'}>
                       Seat {selectedSeat} {selectedSeat === 0 && '(Hero)'}
                     </Badge>
+                    <Badge variant={editingBets ? 'default' : 'secondary'} className={editingBets ? 'bg-amber-500' : ''}>
+                      {editingBets ? '$ Ставка' : 'Аватар'}
+                    </Badge>
                     <div className="flex gap-1 ml-auto">
                       {currentPositions.map((_, idx) => (
                         <Button
@@ -550,7 +705,58 @@ export function SeatCalibrationTool() {
                     </div>
                   </div>
                   
-                  {currentPositions[selectedSeat] && (
+                  {editingBets && currentBetOffsets[selectedSeat] ? (
+                    // Bet offset controls
+                    <div className="space-y-4">
+                      <div className="text-xs text-amber-400 mb-2">
+                        Смещение ставки от аватара (в % от размера стола)
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs">X смещение</Label>
+                          <Input
+                            type="number"
+                            className="w-16 h-6 text-xs"
+                            value={currentBetOffsets[selectedSeat].x}
+                            onChange={(e) => updateBetOffset(selectedSeat, 'x', Number(e.target.value))}
+                            min={-30}
+                            max={30}
+                            step={0.5}
+                          />
+                        </div>
+                        <Slider
+                          value={[currentBetOffsets[selectedSeat].x]}
+                          onValueChange={([v]) => updateBetOffset(selectedSeat, 'x', v)}
+                          min={-30}
+                          max={30}
+                          step={0.5}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs">Y смещение</Label>
+                          <Input
+                            type="number"
+                            className="w-16 h-6 text-xs"
+                            value={currentBetOffsets[selectedSeat].y}
+                            onChange={(e) => updateBetOffset(selectedSeat, 'y', Number(e.target.value))}
+                            min={-30}
+                            max={30}
+                            step={0.5}
+                          />
+                        </div>
+                        <Slider
+                          value={[currentBetOffsets[selectedSeat].y]}
+                          onValueChange={([v]) => updateBetOffset(selectedSeat, 'y', v)}
+                          min={-30}
+                          max={30}
+                          step={0.5}
+                        />
+                      </div>
+                    </div>
+                  ) : currentPositions[selectedSeat] ? (
+                    // Seat position controls
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
@@ -594,7 +800,7 @@ export function SeatCalibrationTool() {
                         />
                       </div>
                     </div>
-                  )}
+                  ) : null}
                 </div>
                 
                 {/* All positions table */}
