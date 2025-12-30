@@ -116,37 +116,6 @@ const DEFAULT_SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number; y: numb
   ],
 };
 
-// ============= LOAD CALIBRATED POSITIONS FROM LOCALSTORAGE =============
-// Калибратор в админке сохраняет позиции в localStorage под ключом 'syndikate_seat_positions'
-function getCalibrationConfig(): { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null {
-  try {
-    const saved = localStorage.getItem('syndikate_seat_positions');
-    if (!saved) return null;
-    const parsed = JSON.parse(saved);
-    // Валидируем структуру
-    if (parsed && typeof parsed === 'object' && parsed.desktop && parsed.telegram) {
-      return parsed;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-// Функция получения позиций с учётом калибровки
-function getCalibratedPositions(mode: 'desktop' | 'telegram'): Record<number, Array<{ x: number; y: number }>> {
-  const calibration = getCalibrationConfig();
-  if (calibration && calibration[mode]) {
-    // Мержим с defaults на случай если не все количества игроков откалиброваны
-    const defaults = mode === 'desktop' ? DEFAULT_SEAT_POSITIONS_BY_COUNT : DEFAULT_TELEGRAM_SEAT_POSITIONS_BY_COUNT;
-    return { ...defaults, ...calibration[mode] };
-  }
-  return mode === 'desktop' ? DEFAULT_SEAT_POSITIONS_BY_COUNT : DEFAULT_TELEGRAM_SEAT_POSITIONS_BY_COUNT;
-}
-
-// Динамические позиции с учётом калибровки
-const SEAT_POSITIONS_BY_COUNT = getCalibratedPositions('desktop');
-
 // ============= TELEGRAM MINI APP - WIDER TABLE POSITIONS =============
 // Стол для Telegram: left/right margin = 14%, top/bottom = 10%
 // Бортик: left ~14%, right ~86%, top ~10%, bottom ~90%
@@ -213,6 +182,37 @@ const DEFAULT_TELEGRAM_SEAT_POSITIONS_BY_COUNT: Record<number, Array<{ x: number
     { x: 88, y: 74 },   // Seat 8 - Right bottom on rail
   ],
 };
+
+// ============= LOAD CALIBRATED POSITIONS FROM LOCALSTORAGE =============
+// Калибратор в админке сохраняет позиции в localStorage под ключом 'syndikate_seat_positions'
+function getCalibrationConfig(): { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null {
+  try {
+    const saved = localStorage.getItem('syndikate_seat_positions');
+    if (!saved) return null;
+    const parsed = JSON.parse(saved);
+    // Валидируем структуру
+    if (parsed && typeof parsed === 'object' && parsed.desktop && parsed.telegram) {
+      return parsed;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Функция получения позиций с учётом калибровки
+function getCalibratedPositions(mode: 'desktop' | 'telegram'): Record<number, Array<{ x: number; y: number }>> {
+  const calibration = getCalibrationConfig();
+  if (calibration && calibration[mode]) {
+    // Мержим с defaults на случай если не все количества игроков откалиброваны
+    const defaults = mode === 'desktop' ? DEFAULT_SEAT_POSITIONS_BY_COUNT : DEFAULT_TELEGRAM_SEAT_POSITIONS_BY_COUNT;
+    return { ...defaults, ...calibration[mode] };
+  }
+  return mode === 'desktop' ? DEFAULT_SEAT_POSITIONS_BY_COUNT : DEFAULT_TELEGRAM_SEAT_POSITIONS_BY_COUNT;
+}
+
+// Динамические позиции с учётом калибровки
+const SEAT_POSITIONS_BY_COUNT = getCalibratedPositions('desktop');
 
 // Динамические позиции с учётом калибровки (telegram)
 const TELEGRAM_SEAT_POSITIONS_BY_COUNT = getCalibratedPositions('telegram');
