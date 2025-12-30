@@ -197,7 +197,7 @@ export function evaluateMadeHand(holeCards: string[], communityCards: string[]):
   const allCards = [...holeCards, ...communityCards].map(parseCard).filter(Boolean) as Array<{ rank: string; suit: string; value: number }>;
   
   if (allCards.length < 2) {
-    return { rank: 1, name: 'High Card', strength: 10 };
+    return { rank: 1, name: 'Старшая карта', strength: 10 };
   }
   
   // Count suits and ranks
@@ -232,41 +232,41 @@ export function evaluateMadeHand(holeCards: string[], communityCards: string[]):
   // Determine hand rank
   if (hasFlush && hasStraight) {
     const highValue = Math.max(...values);
-    if (highValue === 14) return { rank: 10, name: 'Royal Flush', strength: 100 };
-    return { rank: 9, name: 'Straight Flush', strength: 98 };
+    if (highValue === 14) return { rank: 10, name: 'Роял-флеш', strength: 100 };
+    return { rank: 9, name: 'Стрит-флеш', strength: 98 };
   }
   
   if (rankCountsArr[0] === 4) {
-    return { rank: 8, name: 'Four of a Kind', strength: 95 };
+    return { rank: 8, name: 'Каре', strength: 95 };
   }
   
   if (rankCountsArr[0] === 3 && rankCountsArr[1] >= 2) {
-    return { rank: 7, name: 'Full House', strength: 90 };
+    return { rank: 7, name: 'Фулл-хаус', strength: 90 };
   }
   
   if (hasFlush) {
-    return { rank: 6, name: 'Flush', strength: 82 };
+    return { rank: 6, name: 'Флеш', strength: 82 };
   }
   
   if (hasStraight) {
-    return { rank: 5, name: 'Straight', strength: 75 };
+    return { rank: 5, name: 'Стрит', strength: 75 };
   }
   
   if (rankCountsArr[0] === 3) {
-    return { rank: 4, name: 'Three of a Kind', strength: 65 };
+    return { rank: 4, name: 'Тройка', strength: 65 };
   }
   
   if (rankCountsArr[0] === 2 && rankCountsArr[1] === 2) {
-    return { rank: 3, name: 'Two Pair', strength: 55 };
+    return { rank: 3, name: 'Две пары', strength: 55 };
   }
   
   if (rankCountsArr[0] === 2) {
     const pairValue = values.find(v => rankCounts.get(v) === 2) || 0;
-    return { rank: 2, name: 'One Pair', strength: 30 + pairValue * 2 };
+    return { rank: 2, name: 'Пара', strength: 30 + pairValue * 2 };
   }
   
   const highCard = Math.max(...values);
-  return { rank: 1, name: 'High Card', strength: 10 + highCard };
+  return { rank: 1, name: 'Старшая карта', strength: 10 + highCard };
 }
 
 /**

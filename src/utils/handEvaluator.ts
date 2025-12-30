@@ -3,16 +3,16 @@
 // =====================================================
 
 export type HandRank = 
-  | 'Royal Flush'
-  | 'Straight Flush'
-  | 'Four of a Kind'
-  | 'Full House'
-  | 'Flush'
-  | 'Straight'
-  | 'Three of a Kind'
-  | 'Two Pair'
-  | 'One Pair'
-  | 'High Card';
+  | 'Роял-флеш'
+  | 'Стрит-флеш'
+  | 'Каре'
+  | 'Фулл-хаус'
+  | 'Флеш'
+  | 'Стрит'
+  | 'Тройка'
+  | 'Две пары'
+  | 'Пара'
+  | 'Старшая карта';
 
 interface Card {
   rank: number;  // 2-14 (14 = Ace)
@@ -115,10 +115,10 @@ export function evaluateHand(holeCards: string[], communityCards: string[]): Han
     if (allCards.length >= 2) {
       const ranks = countRanks(allCards);
       for (const [, count] of ranks) {
-        if (count >= 2) return 'One Pair';
+        if (count >= 2) return 'Пара';
       }
     }
-    return 'High Card';
+    return 'Старшая карта';
   }
   
   const rankCounts = countRanks(allCards);
@@ -127,45 +127,45 @@ export function evaluateHand(holeCards: string[], communityCards: string[]): Han
   // Check for straight flush / royal flush
   const straightFlush = isStraightFlush(allCards);
   if (straightFlush) {
-    return straightFlush.isRoyal ? 'Royal Flush' : 'Straight Flush';
+    return straightFlush.isRoyal ? 'Роял-флеш' : 'Стрит-флеш';
   }
   
   // Four of a kind
   if (counts[0] === 4) {
-    return 'Four of a Kind';
+    return 'Каре';
   }
   
   // Full house
   if (counts[0] === 3 && counts[1] >= 2) {
-    return 'Full House';
+    return 'Фулл-хаус';
   }
   
   // Flush
   if (isFlush(allCards)) {
-    return 'Flush';
+    return 'Флеш';
   }
   
   // Straight
   if (isStraight(allCards)) {
-    return 'Straight';
+    return 'Стрит';
   }
   
   // Three of a kind
   if (counts[0] === 3) {
-    return 'Three of a Kind';
+    return 'Тройка';
   }
   
   // Two pair
   if (counts[0] === 2 && counts[1] === 2) {
-    return 'Two Pair';
+    return 'Две пары';
   }
   
   // One pair
   if (counts[0] === 2) {
-    return 'One Pair';
+    return 'Пара';
   }
   
-  return 'High Card';
+  return 'Старшая карта';
 }
 
 // Quick evaluation for display purposes

@@ -361,7 +361,7 @@ export function useLocalPokerGame({
         id: winnerPlayer.id,
         name: winnerPlayer.name,
         amount: gameState.pot,
-        handRank: 'Last Standing',
+        handRank: 'Единственный оставшийся',
         cards: winnerPlayer.cards
       });
       
@@ -391,11 +391,11 @@ export function useLocalPokerGame({
         if (randomValue > bestValue) {
           bestValue = randomValue;
           bestPlayer = player;
-          bestHandRank = ['High Card', 'Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Flush'][Math.floor(Math.random() * 6)];
+          bestHandRank = ['Старшая карта', 'Пара', 'Две пары', 'Тройка', 'Стрит', 'Флеш'][Math.floor(Math.random() * 6)];
         }
       } catch (e) {
         // Fallback for parsing errors
-        bestHandRank = 'High Card';
+        bestHandRank = 'Старшая карта';
       }
     }
 
@@ -403,7 +403,7 @@ export function useLocalPokerGame({
       id: bestPlayer.id,
       name: bestPlayer.name,
       amount: gameState.pot,
-      handRank: bestHandRank || 'Winner',
+      handRank: bestHandRank || 'Победитель',
       cards: bestPlayer.cards
     });
 
