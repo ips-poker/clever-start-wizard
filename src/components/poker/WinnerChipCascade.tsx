@@ -92,7 +92,7 @@ const FlyingChip = memo(function FlyingChip({
         ],
         y: [
           `${startSpreadY}vh`,
-          `${startSpreadY + deltaY * 0.5 - 1.5}vh`,
+          `${startSpreadY + deltaY * 0.5 - 0.5}vh`,
           `${deltaY}vh`
         ],
         scale: [0.6, 0.9, 0.6],
