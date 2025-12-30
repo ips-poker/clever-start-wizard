@@ -168,6 +168,19 @@ export class PokerTable {
         tableId: this.id, 
         count: dbPlayers.length 
       });
+      
+      // CRITICAL: Auto-start hand if we have enough players loaded from DB
+      // Use setTimeout to let constructor complete first
+      setTimeout(() => {
+        if (!this.currentHand && this.players.size >= 2) {
+          logger.info('Auto-starting hand after loading players from DB', { 
+            tableId: this.id, 
+            playerCount: this.players.size 
+          });
+          this.checkStartHand();
+        }
+      }, 2000); // 2 second delay to ensure table is fully initialized
+      
     } catch (err) {
       logger.error('Error loading players from DB', { tableId: this.id, error: String(err) });
     }
