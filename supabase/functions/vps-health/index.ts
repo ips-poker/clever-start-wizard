@@ -3,7 +3,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 // Proxy VPS /health through Supabase Edge Function to avoid browser CORS/Tunnel issues.
 // This function is public (uses anon key on client) but only exposes the same health JSON the VPS exposes.
 
-const VPS_HEALTH_URL = "https://syndicate-poker-server.ru/health";
+const VPS_HEALTH_URL = "http://89.104.74.121:3001/health";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
