@@ -12,6 +12,7 @@ interface PPPokerChipStackProps {
   showBBFormat?: boolean;
   animated?: boolean;
   isHero?: boolean;
+  calibratedOffset?: { x: number; y: number } | null;
 }
 
 // Format BB value
@@ -29,7 +30,8 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
   bigBlind = 20,
   showBBFormat = true,
   animated = true,
-  isHero = false
+  isHero = false,
+  calibratedOffset
 }: PPPokerChipStackProps) {
   
   const bbValue = useMemo(() => formatBB(amount, bigBlind), [amount, bigBlind]);
@@ -46,32 +48,55 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
   };
 
   // Position bets towards table center (PPPoker style)
-  // Each position has offset pointing to center (~48%, ~46%)
-  const betOffset = useMemo(() => {
+  // Если есть калиброванное смещение - используем его (в процентах)
+  // Иначе вычисляем по дефолтной логике
+  const { offsetStyle, usePercentOffset } = useMemo(() => {
+    if (calibratedOffset) {
+      // Калиброванное смещение - в процентах относительно контейнера
+      return {
+        usePercentOffset: true,
+        offsetStyle: {
+          left: `${seatPosition.x + calibratedOffset.x}%`,
+          top: `${seatPosition.y + calibratedOffset.y}%`,
+        }
+      };
+    }
+    
+    // Дефолтная логика - смещение в пикселях
     const { x, y } = seatPosition;
+    let betOffset = { x: 0, y: -54 };
     
     // Left rail positions (x < 25)
     if (x <= 25) {
       // Left bottom (y > 50): bet goes right and slightly up
-      if (y > 50) return { x: 75, y: 12 };
+      if (y > 50) betOffset = { x: 75, y: 12 };
       // Left top (y <= 50): bet goes right and down
-      return { x: 75, y: 12 };
+      else betOffset = { x: 75, y: 12 };
     }
-    
     // Right rail positions (x > 70)
-    if (x >= 70) {
+    else if (x >= 70) {
       // Right bottom (y > 50): bet goes left and slightly up
-      if (y > 50) return { x: -75, y: 12 };
+      if (y > 50) betOffset = { x: -75, y: 12 };
       // Right top (y <= 50): bet goes left and down
-      return { x: -75, y: 12 };
+      else betOffset = { x: -75, y: 12 };
+    }
+    // Top center position (y < 20): bet goes down
+    else if (y <= 20) {
+      betOffset = { x: 0, y: 85 };
+    }
+    // Bottom/hero position: bet goes up (centered)
+    else {
+      betOffset = { x: 0, y: -54 };
     }
     
-    // Top center position (y < 20): bet goes down
-    if (y <= 20) return { x: 0, y: 85 };
-    
-    // Bottom/hero position: bet goes up (centered)
-    return { x: 0, y: -54 };
-  }, [seatPosition.x, seatPosition.y]);
+    return {
+      usePercentOffset: false,
+      offsetStyle: {
+        left: `calc(${seatPosition.x}% + ${betOffset.x}px)`,
+        top: `calc(${seatPosition.y}% + ${betOffset.y}px)`,
+      }
+    };
+  }, [seatPosition.x, seatPosition.y, calibratedOffset]);
 
   return (
     <motion.div
@@ -85,8 +110,7 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
       }}
       className="absolute flex flex-col items-center gap-0.5 z-20 pointer-events-none"
       style={{
-        left: `calc(${seatPosition.x}% + ${betOffset.x}px)`,
-        top: `calc(${seatPosition.y}% + ${betOffset.y}px)`,
+        ...offsetStyle,
         transform: 'translate(-50%, -50%)'
       }}
     >

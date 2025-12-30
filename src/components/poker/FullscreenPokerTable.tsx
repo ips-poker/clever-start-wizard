@@ -200,6 +200,21 @@ function getCalibrationConfig(): { desktop: Record<number, Array<{ x: number; y:
   }
 }
 
+// Калибратор ставок - смещения фишек от позиции аватара
+function getBetOffsetsConfig(): { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null {
+  try {
+    const saved = localStorage.getItem('syndikate_bet_offsets');
+    if (!saved) return null;
+    const parsed = JSON.parse(saved);
+    if (parsed && typeof parsed === 'object' && parsed.desktop && parsed.telegram) {
+      return parsed;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 // Функция получения позиций с учётом калибровки
 function getCalibratedPositions(mode: 'desktop' | 'telegram'): Record<number, Array<{ x: number; y: number }>> {
   const calibration = getCalibrationConfig();
@@ -211,11 +226,39 @@ function getCalibratedPositions(mode: 'desktop' | 'telegram'): Record<number, Ar
   return mode === 'desktop' ? DEFAULT_SEAT_POSITIONS_BY_COUNT : DEFAULT_TELEGRAM_SEAT_POSITIONS_BY_COUNT;
 }
 
+// Функция получения смещений ставок
+function getCalibratedBetOffsets(mode: 'desktop' | 'telegram'): Record<number, Array<{ x: number; y: number }>> | null {
+  const config = getBetOffsetsConfig();
+  if (config && config[mode]) {
+    return config[mode];
+  }
+  return null;
+}
+
 // Динамические позиции с учётом калибровки
 const SEAT_POSITIONS_BY_COUNT = getCalibratedPositions('desktop');
 
 // Динамические позиции с учётом калибровки (telegram)
 const TELEGRAM_SEAT_POSITIONS_BY_COUNT = getCalibratedPositions('telegram');
+
+// Смещения ставок с учётом калибровки
+const BET_OFFSETS_DESKTOP = getCalibratedBetOffsets('desktop');
+const BET_OFFSETS_TELEGRAM = getCalibratedBetOffsets('telegram');
+
+// Функция получения смещения ставки для конкретного места
+export function getBetOffset(
+  seatIndex: number, 
+  playerCount: number, 
+  forTelegram?: boolean
+): { x: number; y: number } | null {
+  const isTelegram = forTelegram ?? isTelegramMiniApp();
+  const offsets = isTelegram ? BET_OFFSETS_TELEGRAM : BET_OFFSETS_DESKTOP;
+  
+  if (offsets && offsets[playerCount] && offsets[playerCount][seatIndex]) {
+    return offsets[playerCount][seatIndex];
+  }
+  return null; // Вернёт null если нет калибровки - компонент использует дефолтную логику
+}
 
 // Legacy aliases - using new 9-position arrays
 const SEAT_POSITIONS_9MAX = SEAT_POSITIONS_BY_COUNT[9];
@@ -1461,6 +1504,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
                 seatPosition={pos}
                 animated={true}
                 isHero={isHeroSeat}
+                calibratedOffset={getBetOffset(idx, positions.length, isTelegramMiniApp())}
               />
             )}
           </React.Fragment>
