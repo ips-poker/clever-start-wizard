@@ -45,6 +45,8 @@ export type CardBackId = typeof CARD_BACKS[number]['id'];
 export type CardStyleId = typeof CARD_STYLES[number]['id'];
 export type TableGlowStyleId = typeof TABLE_GLOW_STYLES[number]['id'];
 
+export type DisplayFormat = 'bb' | 'chips';
+
 export interface PokerPreferences {
   // Visual settings
   tableTheme: TableThemeId;
@@ -61,6 +63,7 @@ export interface PokerPreferences {
   showStackInBB: boolean;
   autoMuckLosingHand: boolean;
   showHandStrength: boolean;
+  displayFormat: DisplayFormat; // 'bb' or 'chips' - affects stacks and bets display
   
   // Sound settings
   soundEnabled: boolean;
@@ -82,6 +85,7 @@ const DEFAULT_PREFERENCES: PokerPreferences = {
   showStackInBB: false,
   autoMuckLosingHand: true,
   showHandStrength: true,
+  displayFormat: 'chips',
   soundEnabled: true,
   soundVolume: 0.7,
   fastAnimations: false,

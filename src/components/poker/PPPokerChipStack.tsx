@@ -1,9 +1,10 @@
-// PPPoker-style Chip + BB Display for bet display
-// Realistic 3D poker chip stack with edge pattern + "X.X BB" text
+// PPPoker-style Chip + BB/Chips Display for bet display
+// Realistic 3D poker chip stack with edge pattern + "X.X BB" or chips text
 
 import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { PPPokerChipStackVisual } from './RealisticPokerChip';
+import { type DisplayFormat } from '@/hooks/usePokerPreferences';
 
 interface PPPokerChipStackProps {
   amount: number;
@@ -13,6 +14,7 @@ interface PPPokerChipStackProps {
   animated?: boolean;
   isHero?: boolean;
   calibratedOffset?: { x: number; y: number } | null;
+  displayFormat?: DisplayFormat;
 }
 
 // Format BB value
@@ -24,6 +26,13 @@ const formatBB = (amount: number, bigBlind: number): string => {
   return bb.toFixed(1);
 };
 
+// Format chips value (compact)
+const formatChips = (amount: number): string => {
+  if (amount >= 1000000) return `${(amount / 1000000).toFixed(1)}M`;
+  if (amount >= 1000) return `${(amount / 1000).toFixed(1)}K`;
+  return amount.toLocaleString();
+};
+
 export const PPPokerChipStack = memo(function PPPokerChipStack({
   amount,
   seatPosition,
@@ -31,10 +40,18 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
   showBBFormat = true,
   animated = true,
   isHero = false,
-  calibratedOffset
+  calibratedOffset,
+  displayFormat = 'bb'
 }: PPPokerChipStackProps) {
   
-  const bbValue = useMemo(() => formatBB(amount, bigBlind), [amount, bigBlind]);
+  const displayValue = useMemo(() => {
+    if (displayFormat === 'bb') {
+      return { text: `${formatBB(amount, bigBlind)} BB`, suffix: '' };
+    } else {
+      return { text: formatChips(amount), suffix: '' };
+    }
+  }, [amount, bigBlind, displayFormat]);
+  
   const bbNumeric = bigBlind > 0 ? amount / bigBlind : 1;
 
   if (amount <= 0) return null;
@@ -122,7 +139,7 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
         animated={animated}
       />
 
-      {/* BB Amount text below chips - PPPoker exact style */}
+      {/* Amount text below chips - PPPoker exact style */}
       <div 
         className="px-2 py-0.5 rounded-full flex items-center"
         style={{
@@ -138,7 +155,7 @@ export const PPPokerChipStack = memo(function PPPokerChipStack({
             textShadow: '0 1px 2px rgba(0,0,0,0.5)'
           }}
         >
-          {bbValue} BB
+          {displayValue.text}
         </span>
       </div>
     </motion.div>

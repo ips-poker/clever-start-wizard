@@ -577,6 +577,42 @@ export const PersonalSettingsPanel = memo(function PersonalSettingsPanel({
 
               {/* Visual Preferences */}
               <SettingsSection title="Отображение" icon={Eye} defaultOpen={false}>
+                {/* Display format toggle - BB or Chips */}
+                <div className="mb-4 p-3 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                  <Label className="text-xs text-amber-400 font-medium mb-2 block">
+                    Формат отображения
+                  </Label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => updatePreference('displayFormat', 'chips')}
+                      className={cn(
+                        "flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all",
+                        preferences.displayFormat === 'chips'
+                          ? "bg-amber-500 text-black"
+                          : "bg-white/10 text-white/70 hover:bg-white/20"
+                      )}
+                    >
+                      💎 Фишки
+                    </button>
+                    <button
+                      onClick={() => updatePreference('displayFormat', 'bb')}
+                      className={cn(
+                        "flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all",
+                        preferences.displayFormat === 'bb'
+                          ? "bg-amber-500 text-black"
+                          : "bg-white/10 text-white/70 hover:bg-white/20"
+                      )}
+                    >
+                      BB Блайнды
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-white/40 mt-2">
+                    {preferences.displayFormat === 'bb' 
+                      ? 'Стеки и ставки отображаются в больших блайндах'
+                      : 'Стеки и ставки отображаются в фишках'}
+                  </p>
+                </div>
+                
                 <SettingRow label="Показывать ставки" description="Размер ставок у игроков">
                   <Switch
                     checked={preferences.showBetAmounts}
@@ -587,12 +623,6 @@ export const PersonalSettingsPanel = memo(function PersonalSettingsPanel({
                   <Switch
                     checked={preferences.showPotOdds}
                     onCheckedChange={(v) => updatePreference('showPotOdds', v)}
-                  />
-                </SettingRow>
-                <SettingRow label="Стек в ББ" description="Показывать стек в больших блайндах">
-                  <Switch
-                    checked={preferences.showStackInBB}
-                    onCheckedChange={(v) => updatePreference('showStackInBB', v)}
                   />
                 </SettingRow>
                 <SettingRow label="Сила руки" description="Показывать текущую комбинацию">

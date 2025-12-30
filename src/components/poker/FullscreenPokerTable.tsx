@@ -478,6 +478,8 @@ interface PlayerSeatProps {
   lastAction?: string;
   showdownPlayers?: Array<{ playerId: string; seatNumber: number; holeCards: string[]; handName?: string }>;
   showdownWinners?: Array<{ playerId: string; amount: number; handName?: string }>;
+  bigBlind?: number;
+  displayFormat?: 'bb' | 'chips';
 }
 
 // ============= ACTION BADGE - PPPoker style status above player =============
@@ -536,10 +538,23 @@ const PlayerSeat = memo(function PlayerSeat({
   onSeatClick,
   lastAction,
   showdownPlayers,
-  showdownWinners
+  showdownWinners,
+  bigBlind = 20,
+  displayFormat = 'chips'
 }: PlayerSeatProps & { lastAction?: string }) {
   // Avatar sizes - same for all players
   const avatarSize = 56;
+  
+  // Format stack based on display preference
+  const formatStack = (stack: number): string => {
+    if (displayFormat === 'bb') {
+      const bb = stack / bigBlind;
+      if (bb >= 100) return `${Math.round(bb)} BB`;
+      if (bb >= 10) return `${bb.toFixed(1)} BB`;
+      return `${bb.toFixed(1)} BB`;
+    }
+    return stack.toLocaleString();
+  };
   
   // Check if this player is a winner from showdownWinners prop (more reliable than player.isWinner)
   const isWinner = useMemo(() => {
@@ -800,7 +815,7 @@ const PlayerSeat = memo(function PlayerSeat({
           "text-[11px] font-bold",
           player.isAllIn ? "text-white" : "text-emerald-400"
         )}>
-          {player.isAllIn ? 'ALL-IN' : player.stack.toLocaleString()}
+          {player.isAllIn ? 'ALL-IN' : formatStack(player.stack)}
         </p>
       </div>
       
@@ -1111,11 +1126,30 @@ const CommunityCards = memo(function CommunityCards({
 });
 
 // ============= POT DISPLAY - PPPoker style with premium 3D chips =============
-const PotDisplay = memo(function PotDisplay({ pot, blinds }: { pot: number; blinds: string }) {
+const PotDisplay = memo(function PotDisplay({ 
+  pot, 
+  blinds,
+  displayFormat = 'chips'
+}: { 
+  pot: number; 
+  blinds: string;
+  displayFormat?: 'bb' | 'chips';
+}) {
   if (pot === 0) return null;
   
   // Parse big blind from blinds string (e.g., "10/20" -> 20)
   const bigBlind = parseInt(blinds.split('/')[1]) || 20;
+  
+  // Format pot based on display preference
+  const formatPot = (amount: number): string => {
+    if (displayFormat === 'bb') {
+      const bb = amount / bigBlind;
+      if (bb >= 100) return `${Math.round(bb)} BB`;
+      if (bb >= 10) return `${bb.toFixed(1)} BB`;
+      return `${bb.toFixed(1)} BB`;
+    }
+    return amount.toLocaleString();
+  };
   
   return (
     <motion.div
@@ -1141,7 +1175,7 @@ const PotDisplay = memo(function PotDisplay({ pot, blinds }: { pot: number; blin
             textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 10px rgba(251,191,36,0.3)'
           }}
         >
-          {pot.toLocaleString()}
+          {formatPot(pot)}
         </span>
       </div>
       
@@ -1450,7 +1484,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         
         return (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-3 z-10">
-            <PotDisplay pot={pot} blinds={`${smallBlind}/${bigBlind}`} />
+            <PotDisplay pot={pot} blinds={`${smallBlind}/${bigBlind}`} displayFormat={preferences.displayFormat} />
             <CommunityCards 
               cards={communityCards} 
               phase={phase} 
@@ -1503,6 +1537,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               lastAction={(player as any)?.lastAction}
               showdownPlayers={showdownPlayers}
               showdownWinners={winners}
+              bigBlind={bigBlind}
+              displayFormat={preferences.displayFormat}
             />
 
             {/* Bet amount - anchored to avatar center in table coordinates */}
@@ -1510,9 +1546,11 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               <PPPokerChipStack
                 amount={player.betAmount}
                 seatPosition={pos}
+                bigBlind={bigBlind}
                 animated={true}
                 isHero={isHeroSeat}
                 calibratedOffset={getBetOffset(idx, positions.length, isTelegramMiniApp())}
+                displayFormat={preferences.displayFormat}
               />
             )}
           </React.Fragment>
