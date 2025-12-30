@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.tournament-table-balancer]
 verify_jwt = false
+
+[functions.vps-health]
+verify_jwt = false
