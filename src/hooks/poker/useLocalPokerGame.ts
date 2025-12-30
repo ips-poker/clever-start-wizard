@@ -391,7 +391,7 @@ export function useLocalPokerGame({
         if (randomValue > bestValue) {
           bestValue = randomValue;
           bestPlayer = player;
-          bestHandRank = ['Старшая карта', 'Пара', 'Две пары', 'Тройка', 'Стрит', 'Флеш'][Math.floor(Math.random() * 6)];
+          bestHandRank = ['Старшая карта', 'Пара', 'Две пары', 'Сет', 'Стрит', 'Флеш'][Math.floor(Math.random() * 6)];
         }
       } catch (e) {
         // Fallback for parsing errors
