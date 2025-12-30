@@ -1,10 +1,19 @@
-import React, { memo, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { memo, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Crown, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MemoizedPokerCard } from './MemoizedPokerCard';
 import { resolveAvatarUrl } from '@/utils/avatarResolver';
+
+// HUD Stats interface for player statistics
+export interface PlayerHUDStats {
+  vpip: number;      // Voluntarily Put $ In Pot (%)
+  pfr: number;       // Pre-Flop Raise (%)
+  af: number;        // Aggression Factor
+  threeBet?: number; // 3-Bet (%)
+  handsPlayed: number;
+}
 
 // Seat positions for 6-max table (PPPoker style)
 const SEAT_POSITIONS_6MAX = [
@@ -42,6 +51,7 @@ interface OptimizedPlayerSeatProps {
   showCards?: boolean;
   timeRemaining?: number;
   maxTime?: number;
+  hudStats?: PlayerHUDStats;
 }
 
 // Timer ring component - memoized separately for performance
@@ -136,6 +146,93 @@ const PlayerCards = memo(function PlayerCards({
   );
 });
 
+// HUD Tooltip component for showing player stats on hover
+const HUDTooltip = memo(function HUDTooltip({ 
+  stats,
+  isVisible 
+}: { 
+  stats: PlayerHUDStats;
+  isVisible: boolean;
+}) {
+  if (!isVisible || stats.handsPlayed < 5) return null;
+
+  // Color coding based on player type
+  const getVPIPColor = (vpip: number) => {
+    if (vpip > 40) return 'text-red-400';
+    if (vpip > 30) return 'text-orange-400';
+    if (vpip > 22) return 'text-yellow-400';
+    if (vpip < 15) return 'text-blue-400';
+    return 'text-green-400';
+  };
+
+  const getPFRColor = (pfr: number) => {
+    if (pfr > 25) return 'text-red-400';
+    if (pfr > 18) return 'text-orange-400';
+    if (pfr < 8) return 'text-blue-400';
+    return 'text-green-400';
+  };
+
+  const getAFColor = (af: number) => {
+    if (af > 4) return 'text-red-400';
+    if (af > 2.5) return 'text-orange-400';
+    if (af < 1) return 'text-blue-400';
+    return 'text-green-400';
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, y: 5, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 5, scale: 0.95 }}
+        transition={{ duration: 0.15 }}
+        className="absolute -top-14 left-1/2 -translate-x-1/2 z-50"
+      >
+        <div className="bg-black/95 backdrop-blur-md border border-border/50 rounded-lg px-2.5 py-1.5 shadow-xl">
+          <div className="flex items-center gap-2.5 text-[10px] font-mono whitespace-nowrap">
+            <div className="flex flex-col items-center">
+              <span className={cn("font-bold text-xs", getVPIPColor(stats.vpip))}>
+                {stats.vpip.toFixed(0)}
+              </span>
+              <span className="text-muted-foreground text-[8px]">VPIP</span>
+            </div>
+            <div className="w-px h-4 bg-border/50" />
+            <div className="flex flex-col items-center">
+              <span className={cn("font-bold text-xs", getPFRColor(stats.pfr))}>
+                {stats.pfr.toFixed(0)}
+              </span>
+              <span className="text-muted-foreground text-[8px]">PFR</span>
+            </div>
+            <div className="w-px h-4 bg-border/50" />
+            <div className="flex flex-col items-center">
+              <span className={cn("font-bold text-xs", getAFColor(stats.af))}>
+                {stats.af.toFixed(1)}
+              </span>
+              <span className="text-muted-foreground text-[8px]">AF</span>
+            </div>
+            {stats.threeBet !== undefined && (
+              <>
+                <div className="w-px h-4 bg-border/50" />
+                <div className="flex flex-col items-center">
+                  <span className="font-bold text-xs text-purple-400">
+                    {stats.threeBet.toFixed(0)}
+                  </span>
+                  <span className="text-muted-foreground text-[8px]">3B</span>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="text-center text-[8px] text-muted-foreground mt-0.5">
+            {stats.handsPlayed} рук
+          </div>
+        </div>
+        {/* Arrow pointer */}
+        <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-black/95 border-r border-b border-border/50 transform rotate-45" />
+      </motion.div>
+    </AnimatePresence>
+  );
+});
+
 // Empty seat component
 const EmptySeat = memo(function EmptySeat({ position }: { position: { top: string; left: string } }) {
   return (
@@ -158,9 +255,11 @@ export const OptimizedPlayerSeat = memo(function OptimizedPlayerSeat({
   isWinner = false,
   showCards = false,
   timeRemaining = 0,
-  maxTime = 30
+  maxTime = 30,
+  hudStats
 }: OptimizedPlayerSeatProps) {
   const position = SEAT_POSITIONS_6MAX[seatNumber - 1];
+  const [isHovered, setIsHovered] = useState(false);
 
   if (!player) {
     return <EmptySeat position={position} />;
@@ -168,6 +267,7 @@ export const OptimizedPlayerSeat = memo(function OptimizedPlayerSeat({
 
   const shouldShowTimer = player.isTurn && isHero && timeRemaining > 0;
   const shouldShowCards = showCards && player.cards && player.cards.length > 0 && !player.isFolded;
+  const shouldShowHUD = !isHero && hudStats && hudStats.handsPlayed >= 5;
 
   return (
     <div
@@ -176,7 +276,14 @@ export const OptimizedPlayerSeat = memo(function OptimizedPlayerSeat({
         player.isFolded && "opacity-50"
       )}
       style={{ top: position.top, left: position.left }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
+      {/* HUD Tooltip on hover */}
+      {shouldShowHUD && (
+        <HUDTooltip stats={hudStats} isVisible={isHovered} />
+      )}
+      
       {/* Timer ring */}
       {shouldShowTimer && (
         <TimerRing timeRemaining={timeRemaining} maxTime={maxTime} />
@@ -260,7 +367,19 @@ export const OptimizedPlayerSeat = memo(function OptimizedPlayerSeat({
   if (!prevProps.player && !nextProps.player) return true;
   if (!prevProps.player || !nextProps.player) return false;
   
+  // HUD stats comparison - only compare if they exist
+  const prevHUD = prevProps.hudStats;
+  const nextHUD = nextProps.hudStats;
+  const hudEqual = (!prevHUD && !nextHUD) || (
+    prevHUD && nextHUD &&
+    prevHUD.vpip === nextHUD.vpip &&
+    prevHUD.pfr === nextHUD.pfr &&
+    prevHUD.af === nextHUD.af &&
+    prevHUD.handsPlayed === nextHUD.handsPlayed
+  );
+  
   return (
+    hudEqual &&
     prevProps.seatNumber === nextProps.seatNumber &&
     prevProps.isHero === nextProps.isHero &&
     prevProps.isWinner === nextProps.isWinner &&
