@@ -18,7 +18,7 @@ interface HandRankDisplayProps {
 function getHandTier(handRank: string): 'legendary' | 'epic' | 'rare' | 'common' {
   const legendaryHands = ['Royal Flush', 'Роял-флеш'];
   const epicHands = ['Straight Flush', 'Стрит-флеш', 'Four of a Kind', 'Каре'];
-  const rareHands = ['Full House', 'Фулл-хаус', 'Flush', 'Флеш', 'Straight', 'Стрит'];
+  const rareHands = ['Full House', 'Фулл-хаус', 'Flush', 'Флеш', 'Straight', 'Стрит', 'Тройка', 'Three of a Kind'];
   
   if (legendaryHands.some(h => handRank.includes(h))) return 'legendary';
   if (epicHands.some(h => handRank.includes(h))) return 'epic';
