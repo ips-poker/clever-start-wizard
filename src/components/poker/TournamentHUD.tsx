@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-import { Trophy, Clock, Users, TrendingUp, Layers, ChevronUp, ChevronDown, Target, Coins } from 'lucide-react';
+import { Trophy, Clock, Users, TrendingUp, Layers, ChevronUp, ChevronDown, Target, Coins, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TournamentHUDProps {
@@ -13,6 +13,7 @@ interface TournamentHUDProps {
   currentPlayerId?: string;
   className?: string;
   compact?: boolean;
+  onOpenLobby?: () => void; // Callback to open full tournament lobby
 }
 
 interface TournamentInfo {
@@ -48,7 +49,8 @@ export function TournamentHUD({
   tournamentId, 
   currentPlayerId,
   className, 
-  compact = false 
+  compact = false,
+  onOpenLobby
 }: TournamentHUDProps) {
   const [tournament, setTournament] = useState<TournamentInfo | null>(null);
   const [nextLevel, setNextLevel] = useState<LevelInfo | null>(null);
@@ -219,7 +221,13 @@ export function TournamentHUD({
     return 'text-red-400';
   };
 
-  if (!tournament || tournament.status === 'registration') {
+  // Show HUD for active tournaments (not just registration)
+  if (!tournament) {
+    return null;
+  }
+  
+  // Hide only in certain states
+  if (tournament.status === 'finished' || tournament.status === 'cancelled') {
     return null;
   }
 
@@ -230,7 +238,7 @@ export function TournamentHUD({
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className={cn(
-          "absolute top-2 left-2 z-40",
+          "absolute top-2 left-2 z-40 flex items-center gap-1",
           className
         )}
       >
@@ -251,13 +259,22 @@ export function TournamentHUD({
           {timeRemaining !== null && (
             <span className={cn(
               "font-mono",
-              timeRemaining <= 60 ? "text-red-400" : "text-white/70"
+              timeRemaining <= 60 ? "text-red-400 animate-pulse" : "text-white/70"
             )}>
               {formatTime(timeRemaining)}
             </span>
           )}
           <ChevronDown className="h-3 w-3 text-white/50" />
         </button>
+        {onOpenLobby && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onOpenLobby(); }}
+            className="flex items-center justify-center h-7 w-7 rounded-full bg-black/60 backdrop-blur-sm border border-amber-500/30 text-amber-400 hover:bg-black/80 transition-colors"
+            title="Открыть лобби турнира"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+          </button>
+        )}
       </motion.div>
     );
   }
@@ -276,18 +293,29 @@ export function TournamentHUD({
         <div className="flex items-center justify-between px-3 py-2 bg-amber-500/10 border-b border-amber-500/20">
           <div className="flex items-center gap-2">
             <Trophy className="h-4 w-4 text-amber-500" />
-            <span className="text-white font-semibold text-sm truncate max-w-[140px]">
+            <span className="text-white font-semibold text-sm truncate max-w-[120px]">
               {tournament.name}
             </span>
           </div>
-          {compact && (
-            <button
-              onClick={() => setExpanded(false)}
-              className="p-1 hover:bg-white/10 rounded transition-colors"
-            >
-              <ChevronUp className="h-3 w-3 text-white/50" />
-            </button>
-          )}
+          <div className="flex items-center gap-1">
+            {onOpenLobby && (
+              <button
+                onClick={onOpenLobby}
+                className="p-1 hover:bg-white/10 rounded transition-colors"
+                title="Открыть лобби турнира"
+              >
+                <ExternalLink className="h-3 w-3 text-amber-400" />
+              </button>
+            )}
+            {compact && (
+              <button
+                onClick={() => setExpanded(false)}
+                className="p-1 hover:bg-white/10 rounded transition-colors"
+              >
+                <ChevronUp className="h-3 w-3 text-white/50" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Level & Blinds */}
