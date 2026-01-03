@@ -26,6 +26,7 @@ import { BountyLeaderboard } from './BountyLeaderboard';
 import { RebuyDialog } from './RebuyDialog';
 import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
 import { ProTournamentLobby } from './tournament-lobby';
+import { TimeBankIndicator } from './TimeBankIndicator';
 
 
 // Syndikate branding
@@ -73,6 +74,7 @@ export function FullscreenPokerTableWrapper({
   const [selectedSeatForJoin, setSelectedSeatForJoin] = useState<number | null>(null);
   const [isProcessingCashout, setIsProcessingCashout] = useState(false);
   const [actualBuyIn, setActualBuyIn] = useState<number>(buyIn);
+  const [isTimeBankActive, setIsTimeBankActive] = useState(false);
   
   const { preferences, currentTableTheme, updatePreference } = usePokerPreferences();
   
@@ -575,6 +577,20 @@ export function FullscreenPokerTableWrapper({
               currentPlayerId={playerId}
               onComplete={() => setKnockoutEvent(null)}
             />
+            
+            {/* Time Bank Indicator for tournaments */}
+            {myPlayer && (
+              <TimeBankIndicator
+                timeBankRemaining={myPlayer.timeBankRemaining ?? 30}
+                timeBankInitial={30}
+                timeBankPerLevel={5}
+                isMyTurn={isMyTurn}
+                isTimeBankActive={isTimeBankActive}
+                actionTimeRemaining={turnTimeRemaining ?? undefined}
+                onUseTimeBank={() => setIsTimeBankActive(true)}
+                size="md"
+              />
+            )}
           </>
         )}
 
