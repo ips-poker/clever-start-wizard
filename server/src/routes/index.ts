@@ -7,6 +7,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { PokerGameManager } from '../game/PokerGameManager.js';
 import { z } from 'zod';
 import { logger } from '../utils/logger.js';
+import { setupAnalyticsRoutes } from './analytics.js';
 
 // Request schemas
 const CreateTableSchema = z.object({
@@ -184,6 +185,9 @@ export function setupRoutes(app: Express, gameManager: PokerGameManager, supabas
       res.status(500).json({ success: false, error: 'Internal server error' });
     }
   });
+  
+  // Setup analytics routes
+  setupAnalyticsRoutes(app, supabase);
   
   // 404 handler
   app.use((req: Request, res: Response) => {
