@@ -18,7 +18,8 @@ import {
   Info,
   Play,
   RefreshCw,
-  Loader2
+  Loader2,
+  Calculator
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TournamentLobbyHeader } from './TournamentLobbyHeader';
@@ -26,6 +27,7 @@ import { PlayersListTab } from './PlayersListTab';
 import { BlindStructureTab } from './BlindStructureTab';
 import { PayoutsTab } from './PayoutsTab';
 import { TournamentInfoTab } from './TournamentInfoTab';
+import { ICMDealCalculator } from '@/components/poker/ICMDealCalculator';
 
 interface ProTournamentLobbyProps {
   tournamentId: string;
@@ -128,6 +130,7 @@ export function ProTournamentLobby({
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('players');
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [icmOpen, setIcmOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -398,6 +401,19 @@ export function ProTournamentLobby({
             Закрыть
           </Button>
           
+          {/* ICM Calculator Button - show when tournament is running with multiple players */}
+          {['running', 'final_table', 'hand_for_hand'].includes(tournament.status) && 
+           activePlayers.length >= 2 && activePlayers.length <= 10 && payouts.length > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={() => setIcmOpen(true)}
+              className="gap-1 border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+            >
+              <Calculator className="h-4 w-4" />
+              <span className="hidden sm:inline">ICM</span>
+            </Button>
+          )}
+          
           {(canRegister || canLateRegister) && (
             <Button onClick={onRegister} className="flex-1 gap-1">
               <Trophy className="h-4 w-4" />
@@ -420,6 +436,25 @@ export function ProTournamentLobby({
           )}
         </div>
       </DialogContent>
+
+      {/* ICM Calculator Modal */}
+      <ICMDealCalculator
+        isOpen={icmOpen}
+        onClose={() => setIcmOpen(false)}
+        players={activePlayers.map(p => ({
+          id: p.player_id,
+          name: playersData.get(p.player_id)?.name || 'Игрок',
+          avatarUrl: playersData.get(p.player_id)?.avatar_url || undefined,
+          chips: p.chips || 0,
+          seatNumber: p.seat_number || 0
+        }))}
+        payoutStructure={payouts.map(p => ({
+          position: p.position,
+          amount: p.amount || 0
+        }))}
+        prizePoolRemaining={tournament.prize_pool || 0}
+        currentPlayerId={playerId}
+      />
     </Dialog>
   );
 }

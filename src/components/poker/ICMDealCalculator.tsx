@@ -1,6 +1,7 @@
 /**
  * ICM Deal Calculator UI
  * 5.4 - Calculate and propose deals based on ICM equity
+ * Updated with Monte Carlo simulation for accuracy
  */
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,12 +16,17 @@ import {
   RefreshCw,
   ArrowRight,
   Handshake,
-  Scale
+  Scale,
+  TrendingUp,
+  TrendingDown,
+  Percent,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
 interface Player {
@@ -44,57 +50,56 @@ interface ICMDealCalculatorProps {
   prizePoolRemaining: number;
   currentPlayerId?: string;
   onProposeDeal?: (dealAmounts: { playerId: string; amount: number }[]) => void;
+  isAdmin?: boolean;
 }
 
-// Advanced ICM calculation using Malmuth-Harville method
-const calculateICM = (
+/**
+ * ICM calculation using Monte Carlo simulation for better accuracy
+ */
+const calculateICMMonteCarlo = (
   stacks: number[],
-  payouts: number[]
+  payouts: number[],
+  iterations: number = 10000
 ): number[] => {
   const n = stacks.length;
   const total = stacks.reduce((a, b) => a + b, 0);
   
   if (total === 0 || n === 0) return stacks.map(() => 0);
   
-  const probabilities: number[][] = [];
-  
-  // Calculate probability of each player finishing in each position
-  for (let player = 0; player < n; player++) {
-    probabilities[player] = [];
+  const probs = stacks.map(s => s / total);
+  const equity = new Array(n).fill(0);
+  const maxPositions = Math.min(n, payouts.length);
+
+  for (let iter = 0; iter < iterations; iter++) {
+    const remaining = new Set(Array.from({ length: n }, (_, i) => i));
+    const currentProbs = [...probs];
     
-    // Probability of 1st place
-    probabilities[player][0] = stacks[player] / total;
-    
-    // For positions 2+, we need recursive calculation
-    for (let pos = 1; pos < Math.min(n, payouts.length); pos++) {
-      let prob = 0;
+    for (let pos = 0; pos < maxPositions && remaining.size > 0; pos++) {
+      const totalProb = Array.from(remaining)
+        .reduce((sum, i) => sum + currentProbs[i], 0);
       
-      // For each other player who could finish ahead
-      for (let ahead = 0; ahead < n; ahead++) {
-        if (ahead === player) continue;
-        
-        // Probability that 'ahead' finishes in higher positions
-        // Simplified: use remaining chips after removing ahead's stack
-        const remaining = total - stacks[ahead];
-        if (remaining > 0) {
-          const pAhead = stacks[ahead] / total;
-          const pPlayerInPos = stacks[player] / remaining;
-          prob += pAhead * pPlayerInPos * 0.9; // Discount factor for approximation
+      let random = Math.random() * totalProb;
+      let winner = -1;
+      
+      for (const i of remaining) {
+        random -= currentProbs[i];
+        if (random <= 0) {
+          winner = i;
+          break;
         }
       }
       
-      probabilities[player][pos] = Math.min(prob, 1 - probabilities[player].slice(0, pos).reduce((a, b) => a + b, 0));
+      if (winner === -1) {
+        winner = Array.from(remaining)[0];
+      }
+      
+      equity[winner] += payouts[pos] || 0;
+      remaining.delete(winner);
+      currentProbs[winner] = 0;
     }
   }
-  
-  // Calculate expected value
-  return stacks.map((_, playerIdx) => {
-    let ev = 0;
-    for (let pos = 0; pos < Math.min(n, payouts.length); pos++) {
-      ev += (probabilities[playerIdx][pos] || 0) * payouts[pos];
-    }
-    return ev;
-  });
+
+  return equity.map(e => e / iterations);
 };
 
 // Chip chop calculation
@@ -134,10 +139,10 @@ export const ICMDealCalculator: React.FC<ICMDealCalculatorProps> = ({
     [payoutStructure]
   );
   
-  // ICM Calculation
+  // ICM Calculation using Monte Carlo
   const icmEquities = useMemo(() => {
     const stacks = sortedPlayers.map(p => p.chips);
-    return calculateICM(stacks, payoutAmounts);
+    return calculateICMMonteCarlo(stacks, payoutAmounts);
   }, [sortedPlayers, payoutAmounts]);
   
   // Chip Chop Calculation
