@@ -201,7 +201,7 @@ async function processPlayerPayout(
     if (diamondAmount > 0) {
       const { data: wallet, error: walletError } = await supabase
         .from('diamond_wallets')
-        .select('id, balance')
+        .select('id, balance, total_won')
         .eq('player_id', playerId)
         .single();
 

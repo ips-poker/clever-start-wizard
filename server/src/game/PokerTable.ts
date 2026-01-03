@@ -149,7 +149,7 @@ export class PokerTable {
         });
       }
 
-      const seatFixPromises: Promise<unknown>[] = [];
+      const seatFixPromises: PromiseLike<unknown>[] = [];
       
       for (const dbPlayer of dbPlayers) {
         const normalizedSeat = dbPlayer.seat_number - seatOffset;
