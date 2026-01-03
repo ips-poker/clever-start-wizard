@@ -10,7 +10,6 @@ import {
   Clock, 
   Coins, 
   Play, 
-  Plus,
   Calendar,
   Award,
   Loader2
@@ -19,7 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { CreateTournamentModal } from './CreateTournamentModal';
+
 import { ProTournamentLobby } from './tournament-lobby';
 import { ActiveTournamentAssignments } from './TournamentTableAssignment';
 
@@ -53,7 +52,7 @@ interface OnlineTournamentLobbyProps {
 export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournament, onJoinTable }: OnlineTournamentLobbyProps) {
   const [tournaments, setTournaments] = useState<OnlineTournament[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  
   const [selectedTournament, setSelectedTournament] = useState<OnlineTournament | null>(null);
   const [myRegistrations, setMyRegistrations] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState('registration');
@@ -380,16 +379,10 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-amber-500" />
-          Онлайн турниры
-        </h2>
-        <Button onClick={() => setShowCreateModal(true)} size="sm" className="gap-1">
-          <Plus className="h-4 w-4" />
-          Создать турнир
-        </Button>
-      </div>
+      <h2 className="text-xl font-bold flex items-center gap-2">
+        <Trophy className="h-5 w-5 text-amber-500" />
+        Онлайн турниры
+      </h2>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid grid-cols-4 w-full">
@@ -441,13 +434,6 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
         </TabsContent>
       </Tabs>
 
-      {/* Create Tournament Modal */}
-      <CreateTournamentModal
-        open={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        playerId={playerId}
-        onCreated={fetchTournaments}
-      />
 
       {/* Pro Tournament Details Modal */}
       {selectedTournament && (
