@@ -139,29 +139,64 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
       return;
     }
 
+    // Check if this is late registration for a running tournament
+    const isLateReg = ['running', 'starting'].includes(tournament.status) && 
+                      tournament.late_registration_enabled &&
+                      (tournament.current_level || 1) <= (tournament.late_registration_level || 0);
+
     try {
-      const { error } = await supabase
-        .from('online_poker_tournament_participants')
-        .insert({
-          tournament_id: tournament.id,
-          player_id: playerId,
-          chips: tournament.starting_chips
+      if (isLateReg) {
+        // Use late registration function that handles seating
+        const { data, error } = await supabase.rpc('late_register_tournament_player', {
+          p_tournament_id: tournament.id,
+          p_player_id: playerId
         });
 
-      if (error) throw error;
+        if (error) throw error;
+        
+        const result = data as { success: boolean; error?: string; table_id?: string };
+        if (!result.success) {
+          throw new Error(result.error || 'Ошибка поздней регистрации');
+        }
 
-      // Deduct buy-in from balance
-      await supabase.rpc('update_player_balance', {
-        p_player_id: playerId,
-        p_amount: -tournament.buy_in
-      });
+        // Deduct buy-in from balance
+        await supabase.rpc('update_player_balance', {
+          p_player_id: playerId,
+          p_amount: -tournament.buy_in
+        });
 
-      // Update prize pool
-      await supabase.rpc('calculate_online_tournament_prize_pool', {
-        tournament_id_param: tournament.id
-      });
+        toast.success('Поздняя регистрация успешна! Вы уже за столом.');
+        
+        // Auto-join the table
+        if (result.table_id) {
+          onJoinTournament(tournament.id);
+        }
+      } else {
+        // Normal registration for upcoming tournaments
+        const { error } = await supabase
+          .from('online_poker_tournament_participants')
+          .insert({
+            tournament_id: tournament.id,
+            player_id: playerId,
+            chips: tournament.starting_chips
+          });
 
-      toast.success('Вы зарегистрированы на турнир!');
+        if (error) throw error;
+
+        // Deduct buy-in from balance
+        await supabase.rpc('update_player_balance', {
+          p_player_id: playerId,
+          p_amount: -tournament.buy_in
+        });
+
+        // Update prize pool
+        await supabase.rpc('calculate_online_tournament_prize_pool', {
+          tournament_id_param: tournament.id
+        });
+
+        toast.success('Вы зарегистрированы на турнир!');
+      }
+
       fetchMyRegistrations();
       fetchTournaments();
     } catch (error: any) {
