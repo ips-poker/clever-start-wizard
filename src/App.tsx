@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { BrutalLoadingScreen } from "@/components/BrutalLoadingScreen";
+import { NotificationToastContainer } from "@/components/notifications";
 import Index from "./pages/Index";
 import TournamentDirector from "./pages/TournamentDirector";
 import Admin from "./pages/Admin";
@@ -53,6 +54,7 @@ function App() {
             <div className="notranslate" translate="no">
               <Toaster />
               <Sonner />
+              <NotificationToastContainer />
             </div>
             <div className="pb-16 md:pb-0">
               <Routes>
