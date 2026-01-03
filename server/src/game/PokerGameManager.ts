@@ -189,6 +189,54 @@ export class PokerGameManager {
   }
   
   /**
+   * Load a table dynamically from database if not already in memory
+   */
+  async loadTableIfNeeded(tableId: string): Promise<PokerTable | undefined> {
+    // Check if already loaded
+    if (this.tables.has(tableId)) {
+      return this.tables.get(tableId);
+    }
+    
+    try {
+      const { data: tableData, error } = await this.supabase
+        .from('poker_tables')
+        .select('*')
+        .eq('id', tableId)
+        .in('status', ['waiting', 'playing'])
+        .single();
+      
+      if (error || !tableData) {
+        logger.warn('Table not found in database for dynamic load', { tableId });
+        return undefined;
+      }
+      
+      const config: TableConfig = {
+        id: tableData.id,
+        name: tableData.name,
+        gameType: tableData.game_type,
+        tableType: tableData.table_type,
+        maxPlayers: tableData.max_players,
+        smallBlind: tableData.small_blind,
+        bigBlind: tableData.big_blind,
+        ante: tableData.ante || 0,
+        minBuyIn: tableData.min_buy_in,
+        maxBuyIn: tableData.max_buy_in,
+        actionTimeSeconds: tableData.action_time_seconds || 30,
+        timeBankSeconds: tableData.time_bank_seconds || 60
+      };
+      
+      const table = new PokerTable(config, this.supabase);
+      this.tables.set(tableId, table);
+      
+      logger.info(`Dynamically loaded table: ${tableData.name}`, { tableId });
+      return table;
+    } catch (err) {
+      logger.error('Error dynamically loading table', { tableId, error: String(err) });
+      return undefined;
+    }
+  }
+  
+  /**
    * Get all active tables
    */
   getAllTables(): PokerTable[] {
