@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.vps-health]
 verify_jwt = false
+
+[functions.issue-tournament-tickets]
+verify_jwt = false
