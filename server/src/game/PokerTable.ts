@@ -1771,7 +1771,7 @@ export class PokerTable {
       const tournamentId = tableData?.tournament_id;
       
       // Update all player stacks in parallel
-      const updates: Promise<any>[] = [];
+      const updates: PromiseLike<any>[] = [];
       
       for (const player of this.players.values()) {
         // Update poker_table_players
@@ -1785,7 +1785,6 @@ export class PokerTable {
             })
             .eq('table_id', this.id)
             .eq('player_id', player.id)
-            .then()
         );
         
         // If tournament, also update participant chips
@@ -1796,13 +1795,12 @@ export class PokerTable {
               .update({ chips: player.stack })
               .eq('tournament_id', tournamentId)
               .eq('player_id', player.id)
-              .then()
           );
         }
       }
       
       await Promise.all(updates);
-      
+
       logger.info('Synced player stacks to database', {
         tableId: this.id,
         playerCount: this.players.size,
