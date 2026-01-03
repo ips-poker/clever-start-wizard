@@ -94,14 +94,14 @@ export function useTournamentReconnect(playerId: string | null) {
         .from('online_poker_tournaments')
         .select('status')
         .eq('id', savedSession.tournamentId)
-        .single();
+        .maybeSingle();
 
       if (tournamentError || !tournament || !['running', 'break'].includes(tournament.status)) {
         clearSession();
-        setState(prev => ({ 
-          ...prev, 
-          isReconnecting: false, 
-          error: 'Турнир завершён' 
+        setState(prev => ({
+          ...prev,
+          isReconnecting: false,
+          error: 'Турнир завершён'
         }));
         return null;
       }
@@ -112,14 +112,25 @@ export function useTournamentReconnect(playerId: string | null) {
         .select('status, table_id, seat_number, chips')
         .eq('player_id', playerId)
         .eq('tournament_id', savedSession.tournamentId)
-        .single();
+        .maybeSingle();
 
-      if (participantError || !participant || participant.status === 'eliminated') {
+      if (participantError || !participant) {
+        // Not found (or error) -> don't spam 406 in console
         clearSession();
-        setState(prev => ({ 
-          ...prev, 
-          isReconnecting: false, 
-          error: 'Вы выбыли из турнира' 
+        setState(prev => ({
+          ...prev,
+          isReconnecting: false,
+          error: 'Вы не зарегистрированы в турнире'
+        }));
+        return null;
+      }
+
+      if (participant.status === 'eliminated') {
+        clearSession();
+        setState(prev => ({
+          ...prev,
+          isReconnecting: false,
+          error: 'Вы выбыли из турнира'
         }));
         return null;
       }
@@ -130,12 +141,16 @@ export function useTournamentReconnect(playerId: string | null) {
       const currentStack = participant.chips || savedSession.stack;
 
       // 4. Verify table player entry exists
-      const { data: tablePlayer } = await supabase
+      const { data: tablePlayer, error: tablePlayerError } = await supabase
         .from('poker_table_players')
         .select('id, stack, seat_number')
         .eq('player_id', playerId)
         .eq('table_id', currentTableId)
-        .single();
+        .maybeSingle();
+
+      if (tablePlayerError) {
+        console.warn('[Reconnect] Failed to check table seat:', tablePlayerError);
+      }
 
       if (!tablePlayer) {
         // Player not at table - need to rejoin
