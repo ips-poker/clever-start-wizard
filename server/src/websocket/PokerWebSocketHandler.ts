@@ -105,7 +105,14 @@ export class PokerWebSocketHandler {
   ) {
     this.gameManager = gameManager;
     this.supabase = supabase;
-    this.tournamentManager = tournamentManager || new TournamentManager();
+    
+    // Initialize or use provided tournament manager with Supabase for DB sync
+    if (tournamentManager) {
+      this.tournamentManager = tournamentManager;
+    } else {
+      this.tournamentManager = new TournamentManager();
+    }
+    this.tournamentManager.setSupabase(supabase);
     
     // Initialize ConnectionPool
     this.connectionPool = new ConnectionPool();

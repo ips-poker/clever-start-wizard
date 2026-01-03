@@ -81,8 +81,9 @@ const supabase = createSupabaseClient();
 // Initialize game manager
 const gameManager = new PokerGameManager(supabase);
 
-// Initialize tournament manager
+// Initialize tournament manager with Supabase for DB sync
 const tournamentManager = new TournamentManager();
+tournamentManager.setSupabase(supabase);
 
 // Setup API routes
 setupRoutes(app, gameManager, supabase);
