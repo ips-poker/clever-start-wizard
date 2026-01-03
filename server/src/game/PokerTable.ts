@@ -339,15 +339,80 @@ export class PokerTable {
   }> {
     logger.info('joinTable called', { tableId: this.id, playerId, seatNumber, buyIn, avatarUrl });
     
+    // Normalize seat numbering: many clients use 1..maxPlayers, engine uses 0..maxPlayers-1
+    if (seatNumber >= 1) {
+      const originalSeat = seatNumber;
+      seatNumber = seatNumber - 1;
+      logger.info('Normalized 1-based seat number to 0-based', {
+        tableId: this.id,
+        playerId: playerId.substring(0, 8),
+        originalSeat,
+        normalizedSeat: seatNumber
+      });
+    }
+
     // Validate seat
     if (seatNumber < 0 || seatNumber >= this.config.maxPlayers) {
       logger.warn('Invalid seat number', { seatNumber, maxPlayers: this.config.maxPlayers });
       return { success: false, error: 'Invalid seat number' };
     }
-    
+
+    // If requested seat is occupied, try to find a free seat; if table is full of bots, evict one bot
     if (this.seats[seatNumber] !== null) {
-      logger.warn('Seat is occupied', { seatNumber, occupiedBy: this.seats[seatNumber] });
-      return { success: false, error: 'Seat is occupied' };
+      const requestedSeat = seatNumber;
+
+      const emptySeat = this.seats.findIndex(s => s === null);
+      if (emptySeat !== -1) {
+        seatNumber = emptySeat;
+        logger.info('Requested seat occupied; assigned first free seat', {
+          tableId: this.id,
+          playerId: playerId.substring(0, 8),
+          requestedSeat,
+          assignedSeat: seatNumber
+        });
+      } else if (!this.currentHand) {
+        const botSeat = this.seats.findIndex((pid) => {
+          if (!pid) return false;
+          const p = this.players.get(pid);
+          return !!p && /bot/i.test(p.name);
+        });
+
+        if (botSeat !== -1) {
+          const botId = this.seats[botSeat]!;
+          logger.warn('Table full - evicting bot to make room', {
+            tableId: this.id,
+            botId: botId.substring(0, 8),
+            botSeat,
+            joiningPlayerId: playerId.substring(0, 8)
+          });
+
+          // Remove bot locally
+          this.players.delete(botId);
+          this.seats[botSeat] = null;
+
+          // Best-effort DB cleanup (do not block join on RLS)
+          try {
+            await this.supabase
+              .from('poker_table_players')
+              .delete()
+              .eq('table_id', this.id)
+              .eq('player_id', botId);
+          } catch (err) {
+            logger.warn('Failed to delete bot from DB (continuing anyway)', {
+              tableId: this.id,
+              botId: botId.substring(0, 8),
+              error: String(err)
+            });
+          }
+
+          seatNumber = botSeat;
+        }
+      }
+
+      if (this.seats[seatNumber] !== null) {
+        logger.warn('No seats available for join', { tableId: this.id, requestedSeat, maxPlayers: this.config.maxPlayers });
+        return { success: false, error: 'No seats available' };
+      }
     }
     
     // Validate buy-in
@@ -924,10 +989,31 @@ export class PokerTable {
     if (this.currentHand) {
       this.currentHand.actionStartTime = Date.now();
     }
-    
+
+    // Always clear any existing timer before starting a new one
+    this.clearActionTimer();
+
+    const seat = this.currentHand?.currentPlayerSeat ?? null;
+    const playerId = seat !== null ? this.seats[seat] : null;
+    const player = playerId ? this.players.get(playerId) : null;
+    const isBot = !!player && /bot/i.test(player.name);
+
+    const delayMs = isBot
+      ? 500 + Math.floor(Math.random() * 900) // bots act fast so table actually plays
+      : this.config.actionTimeSeconds * 1000;
+
+    if (isBot) {
+      logger.debug('Bot action scheduled', {
+        tableId: this.id,
+        playerId: playerId?.substring(0, 8),
+        seat,
+        delayMs
+      });
+    }
+
     this.actionTimer = setTimeout(() => {
       this.handleTimeout();
-    }, this.config.actionTimeSeconds * 1000);
+    }, delayMs);
   }
   
   /**
@@ -946,15 +1032,38 @@ export class PokerTable {
    */
   private async handleTimeout(): Promise<void> {
     if (!this.currentHand || this.currentHand.currentPlayerSeat === null) return;
-    
+
     const playerId = this.seats[this.currentHand.currentPlayerSeat];
     if (!playerId) return;
-    
+
     const player = this.players.get(playerId);
     if (!player) return;
-    
+
+    const isBot = /bot/i.test(player.name);
+
+    // Bots: act quickly and NEVER time-bank / sit-out, otherwise "full bot tables" appear frozen.
+    if (isBot) {
+      const callAmount = Math.max(0, (this.currentHand.currentBet || 0) - (player.currentBet || 0));
+      const canCheck = callAmount === 0;
+
+      // Conservative bot: check when possible, otherwise call if affordable, else fold.
+      const botAction = canCheck ? 'check' : (callAmount <= player.stack ? 'call' : 'fold');
+
+      logger.info('Bot auto-action', {
+        tableId: this.id,
+        playerId: playerId.substring(0, 8),
+        action: botAction,
+        callAmount,
+        stack: player.stack,
+        phase: this.currentHand.phase
+      });
+
+      await this.action(playerId, botAction);
+      return;
+    }
+
     logger.info('Player timed out', { playerId, missedTurns: player.missedTurns });
-    
+
     // Use time bank if available
     if (player.timeBank > 0) {
       player.timeBank -= this.config.actionTimeSeconds;
@@ -962,37 +1071,37 @@ export class PokerTable {
       this.startActionTimer();
       return;
     }
-    
+
     // Increment missed turns counter
     player.missedTurns++;
-    
+
     // Auto fold/check - PROFESSIONAL: prefer check when possible
     const canCheck = player.currentBet >= this.currentHand.currentBet;
     const autoAction = canCheck ? 'check' : 'fold';
-    
-    logger.warn('Player auto-action due to timeout', { 
-      playerId: playerId.substring(0, 8), 
+
+    logger.warn('Player auto-action due to timeout', {
+      playerId: playerId.substring(0, 8),
       action: autoAction,
       timeBankRemaining: player.timeBank,
       missedTurns: player.missedTurns
     });
-    
+
     await this.action(playerId, autoAction);
-    
+
     // After 2 consecutive missed turns, set player to sitting_out
     if (player.missedTurns >= 2) {
-      logger.info('Player auto sitting out after 2 missed turns', { 
+      logger.info('Player auto sitting out after 2 missed turns', {
         playerId: playerId.substring(0, 8),
         missedTurns: player.missedTurns
       });
       player.status = 'sitting_out';
-      this.emit('player_sitting_out', { 
-        playerId, 
+      this.emit('player_sitting_out', {
+        playerId,
         reason: 'missed_turns',
-        missedTurns: player.missedTurns 
+        missedTurns: player.missedTurns
       });
     }
-    
+
     this.emit('timeout', { playerId, action: autoAction, missedTurns: player.missedTurns });
   }
   
