@@ -1776,27 +1776,29 @@ export class PokerTable {
       for (const player of this.players.values()) {
         // Update poker_table_players
         updates.push(
-          this.supabase
-            .from('poker_table_players')
-            .update({ 
-              stack: player.stack,
-              status: player.status,
-              last_action_at: new Date().toISOString()
-            })
-            .eq('table_id', this.id)
-            .eq('player_id', player.id)
-            .then()
+          Promise.resolve(
+            this.supabase
+              .from('poker_table_players')
+              .update({
+                stack: player.stack,
+                status: player.status,
+                last_action_at: new Date().toISOString(),
+              })
+              .eq('table_id', this.id)
+              .eq('player_id', player.id)
+          )
         );
-        
+
         // If tournament, also update participant chips
         if (isTournament && tournamentId) {
           updates.push(
-            this.supabase
-              .from('online_poker_tournament_participants')
-              .update({ chips: player.stack })
-              .eq('tournament_id', tournamentId)
-              .eq('player_id', player.id)
-              .then()
+            Promise.resolve(
+              this.supabase
+                .from('online_poker_tournament_participants')
+                .update({ chips: player.stack })
+                .eq('tournament_id', tournamentId)
+                .eq('player_id', player.id)
+            )
           );
         }
       }
