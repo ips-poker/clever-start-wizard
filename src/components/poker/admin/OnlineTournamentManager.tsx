@@ -169,6 +169,7 @@ export function OnlineTournamentManager() {
     max_players: 9,
     min_players: 2,
     level_duration: 300,
+    players_per_table: 9,
     // Extended settings
     tournament_format: 'freezeout',
     rebuy_enabled: false,
@@ -383,6 +384,7 @@ export function OnlineTournamentManager() {
       max_players: 9,
       min_players: 2,
       level_duration: 300,
+      players_per_table: 9,
       tournament_format: 'freezeout',
       rebuy_enabled: false,
       rebuy_cost: 1000,
@@ -1028,7 +1030,7 @@ export function OnlineTournamentManager() {
             <TabsContent value="settings" className="space-y-4 mt-4">
               <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
-                  <Label>Мин. игроков</Label>
+                  <Label>Мин. игроков в турнире</Label>
                   <Input
                     type="number"
                     value={newTournament.min_players}
@@ -1036,12 +1038,29 @@ export function OnlineTournamentManager() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Макс. игроков</Label>
+                  <Label>Макс. игроков в турнире</Label>
                   <Input
                     type="number"
                     value={newTournament.max_players}
                     onChange={(e) => setNewTournament(prev => ({ ...prev, max_players: parseInt(e.target.value) || 9 }))}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label>Игроков за столом</Label>
+                  <Select
+                    value={newTournament.players_per_table.toString()}
+                    onValueChange={(v) => setNewTournament(prev => ({ ...prev, players_per_table: parseInt(v) }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="6">6-max</SelectItem>
+                      <SelectItem value="7">7-max</SelectItem>
+                      <SelectItem value="8">8-max</SelectItem>
+                      <SelectItem value="9">9-max</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>Уровень (сек)</Label>
@@ -1051,6 +1070,9 @@ export function OnlineTournamentManager() {
                     onChange={(e) => setNewTournament(prev => ({ ...prev, level_duration: parseInt(e.target.value) || 300 }))}
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label>Время хода (сек)</Label>
                   <Input
@@ -1059,9 +1081,6 @@ export function OnlineTournamentManager() {
                     onChange={(e) => setNewTournament(prev => ({ ...prev, action_time_seconds: parseInt(e.target.value) || 30 }))}
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label>Тайм-банк старт</Label>
                   <Input
@@ -1087,6 +1106,9 @@ export function OnlineTournamentManager() {
                     onChange={(e) => setNewTournament(prev => ({ ...prev, break_interval: parseInt(e.target.value) || 0 }))}
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label>Перерыв (сек)</Label>
                   <Input
