@@ -277,7 +277,117 @@ export class PokerTable {
       logger.error('Error loading players from DB', { tableId: this.id, error: String(err) });
     }
   }
-  
+
+  /**
+   * Ensure a player that is already seated in DB is loaded into memory.
+   * Used for tournament seating where the DB may be updated outside the WebSocket flow.
+   */
+  public async ensurePlayerLoadedFromDatabase(playerId: string): Promise<boolean> {
+    if (this.players.has(playerId)) return true;
+
+    try {
+      const { data: dbPlayer, error } = await this.supabase
+        .from('poker_table_players')
+        .select('player_id, seat_number, stack, status')
+        .eq('table_id', this.id)
+        .eq('player_id', playerId)
+        .maybeSingle();
+
+      if (error) {
+        logger.warn('ensurePlayerLoadedFromDatabase: failed to read poker_table_players', {
+          tableId: this.id,
+          playerId: playerId.substring(0, 8),
+          error: error.message
+        });
+        return false;
+      }
+
+      if (!dbPlayer) return false;
+
+      // Seat numbers in DB can be either 0-based or 1-based depending on where they were created.
+      // Prefer 1-based -> 0-based conversion when it doesn't conflict with an occupied seat.
+      const candidateOneBased = dbPlayer.seat_number - 1;
+      const candidateZeroBased = dbPlayer.seat_number;
+
+      const inRange = (n: number) => n >= 0 && n < this.config.maxPlayers;
+
+      let seatNumber: number;
+      if (dbPlayer.seat_number === 0) {
+        seatNumber = 0;
+      } else if (inRange(candidateOneBased) && this.seats[candidateOneBased] === null) {
+        seatNumber = candidateOneBased;
+      } else if (inRange(candidateZeroBased) && this.seats[candidateZeroBased] === null) {
+        seatNumber = candidateZeroBased;
+      } else {
+        logger.warn('ensurePlayerLoadedFromDatabase: seat already occupied', {
+          tableId: this.id,
+          playerId: playerId.substring(0, 8),
+          dbSeatNumber: dbPlayer.seat_number,
+          candidateOneBased,
+          candidateZeroBased
+        });
+        return false;
+      }
+
+      const { data: profile } = await this.supabase
+        .from('players')
+        .select('id, name, avatar_url')
+        .eq('id', playerId)
+        .maybeSingle();
+
+      const playerName = profile?.name || 'Player';
+      const isBot = this.isBotName(playerName);
+
+      const player: Player = {
+        id: playerId,
+        name: playerName,
+        avatarUrl: profile?.avatar_url || undefined,
+        seatNumber,
+        stack: dbPlayer.stack,
+        status: dbPlayer.status === 'sitting_out' ? 'sitting_out' : 'active',
+        holeCards: [],
+        currentBet: 0,
+        isFolded: false,
+        isAllIn: false,
+        timeBank: isBot ? 0 : this.config.timeBankSeconds,
+        lastActionTime: null,
+        missedTurns: 0
+      };
+
+      this.players.set(playerId, player);
+      this.seats[seatNumber] = playerId;
+
+      this.emit('player_joined', {
+        playerId,
+        playerName: player.name,
+        seatNumber,
+        stack: player.stack,
+        avatarUrl: player.avatarUrl || null
+      });
+
+      logger.info('ensurePlayerLoadedFromDatabase: player loaded into memory', {
+        tableId: this.id,
+        playerId: playerId.substring(0, 8),
+        seatNumber,
+        stack: player.stack
+      });
+
+      // If table is idle, attempt to start a hand.
+      if (!this.currentHand) {
+        this.checkStartHand();
+      }
+
+      return true;
+    } catch (err) {
+      logger.error('ensurePlayerLoadedFromDatabase: unexpected error', {
+        tableId: this.id,
+        playerId: playerId.substring(0, 8),
+        error: String(err)
+      });
+      return false;
+    }
+  }
+
   /**
    * Map config game type to engine GameType
    */
