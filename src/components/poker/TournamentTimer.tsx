@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Timer, ChevronUp, Pause, Play, Volume2, VolumeX } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Timer, ChevronUp, Pause, Play, Volume2, VolumeX, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +20,13 @@ interface TournamentTimerProps {
   onLevelChange?: (level: TournamentLevel) => void;
 }
 
+/**
+ * TournamentTimer v2.0 - Unified Timer
+ * 
+ * Uses level_end_at from database as single source of truth.
+ * VPS is the master timer, Edge Function is backup.
+ * Frontend only displays countdown based on level_end_at.
+ */
 export const TournamentTimer = ({ 
   tournamentId, 
   isAdmin = false,
@@ -27,14 +34,18 @@ export const TournamentTimer = ({
 }: TournamentTimerProps) => {
   const [levels, setLevels] = useState<TournamentLevel[]>([]);
   const [currentLevel, setCurrentLevel] = useState(1);
-  const [timeRemaining, setTimeRemaining] = useState(300);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [levelDuration, setLevelDuration] = useState(300);
   const [isPaused, setIsPaused] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [tournament, setTournament] = useState<any>(null);
+  const [lastLevelEndAt, setLastLevelEndAt] = useState<string | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const lastAnnouncedTimeRef = useRef<number | null>(null);
 
-  // Загрузка уровней турнира
+  // Load tournament and levels
   useEffect(() => {
-    const fetchLevels = async () => {
+    const fetchData = async () => {
       const { data: tourney } = await supabase
         .from('online_poker_tournaments')
         .select('*')
@@ -45,6 +56,7 @@ export const TournamentTimer = ({
         setTournament(tourney);
         setCurrentLevel(tourney.current_level || 1);
         setIsPaused(tourney.status === 'paused');
+        setLastLevelEndAt(tourney.level_end_at);
       }
 
       const { data } = await supabase
@@ -57,118 +69,176 @@ export const TournamentTimer = ({
         setLevels(data);
         const current = data.find(l => l.level === (tourney?.current_level || 1));
         if (current) {
-          setTimeRemaining(current.duration);
+          setLevelDuration(current.duration);
         }
       }
     };
 
-    fetchLevels();
+    fetchData();
   }, [tournamentId]);
 
-  // Таймер
+  // Subscribe to real-time tournament updates
   useEffect(() => {
-    if (isPaused || !tournament || tournament.status !== 'running') return;
-
-    const interval = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1) {
-          // Переход на следующий уровень
-          handleNextLevel();
-          return 0;
+    const channel = supabase
+      .channel(`tournament-timer-${tournamentId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'online_poker_tournaments',
+          filter: `id=eq.${tournamentId}`
+        },
+        (payload) => {
+          const newData = payload.new as any;
+          setTournament(newData);
+          setIsPaused(newData.status === 'paused');
+          
+          // Detect level change
+          if (newData.current_level !== currentLevel) {
+            setCurrentLevel(newData.current_level);
+            const newLevel = levels.find(l => l.level === newData.current_level);
+            if (newLevel) {
+              setLevelDuration(newLevel.duration);
+              onLevelChange?.(newLevel);
+              
+              if (!isMuted) {
+                playSound('levelUp');
+                if (newLevel.is_break) {
+                  toast.success(`🍵 Перерыв! ${Math.floor(newLevel.duration / 60)} минут`);
+                } else {
+                  toast.success(`Уровень ${newLevel.level}: ${newLevel.small_blind}/${newLevel.big_blind}`);
+                }
+              }
+            }
+          }
+          
+          // Update level_end_at if changed
+          if (newData.level_end_at !== lastLevelEndAt) {
+            setLastLevelEndAt(newData.level_end_at);
+          }
         }
-        return prev - 1;
-      });
-    }, 1000);
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tournamentId, currentLevel, levels, isMuted, lastLevelEndAt, onLevelChange]);
+
+  // Calculate time remaining from level_end_at (single source of truth)
+  useEffect(() => {
+    if (!lastLevelEndAt || isPaused || tournament?.status !== 'running') {
+      setTimeRemaining(null);
+      return;
+    }
+
+    const updateTimer = () => {
+      const endTime = new Date(lastLevelEndAt).getTime();
+      const now = Date.now();
+      const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
+      setTimeRemaining(remaining);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [isPaused, tournament?.status, currentLevel]);
+  }, [lastLevelEndAt, isPaused, tournament?.status]);
 
-  // Звуковые уведомления
+  // Sound notifications based on timeRemaining
   useEffect(() => {
-    if (isMuted) return;
+    if (isMuted || timeRemaining === null) return;
+
+    // Avoid duplicate announcements
+    if (lastAnnouncedTimeRef.current === timeRemaining) return;
 
     if (timeRemaining === 60) {
       playSound('warning');
       toast.info('Осталась 1 минута до следующего уровня');
+      lastAnnouncedTimeRef.current = 60;
     } else if (timeRemaining === 10) {
       playSound('alert');
       toast.warning('10 секунд до следующего уровня!');
+      lastAnnouncedTimeRef.current = 10;
+    } else if (timeRemaining > 60) {
+      lastAnnouncedTimeRef.current = null;
     }
   }, [timeRemaining, isMuted]);
 
   const playSound = (type: 'warning' | 'alert' | 'levelUp') => {
-    // Простой звук через Web Audio API
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      const audioContext = audioContextRef.current;
+      
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
 
-    if (type === 'warning') {
-      oscillator.frequency.value = 440;
-      gainNode.gain.value = 0.3;
-    } else if (type === 'alert') {
-      oscillator.frequency.value = 880;
-      gainNode.gain.value = 0.4;
-    } else {
-      oscillator.frequency.value = 660;
-      gainNode.gain.value = 0.5;
+      if (type === 'warning') {
+        oscillator.frequency.value = 440;
+        gainNode.gain.value = 0.3;
+      } else if (type === 'alert') {
+        oscillator.frequency.value = 880;
+        gainNode.gain.value = 0.4;
+      } else {
+        oscillator.frequency.value = 660;
+        gainNode.gain.value = 0.5;
+      }
+
+      oscillator.start();
+      setTimeout(() => oscillator.stop(), 200);
+    } catch (err) {
+      console.warn('Audio playback failed:', err);
     }
-
-    oscillator.start();
-    setTimeout(() => oscillator.stop(), 200);
   };
-
-  const handleNextLevel = useCallback(async () => {
-    const nextLevelNum = currentLevel + 1;
-    const nextLevel = levels.find(l => l.level === nextLevelNum);
-
-    if (!nextLevel) {
-      toast.info('Достигнут последний уровень блайндов');
-      return;
-    }
-
-    setCurrentLevel(nextLevelNum);
-    setTimeRemaining(nextLevel.duration);
-
-    // Обновляем турнир в БД
-    await supabase
-      .from('online_poker_tournaments')
-      .update({
-        current_level: nextLevelNum,
-        small_blind: nextLevel.small_blind,
-        big_blind: nextLevel.big_blind,
-        ante: nextLevel.ante
-      })
-      .eq('id', tournamentId);
-
-    if (!isMuted) {
-      playSound('levelUp');
-    }
-
-    if (nextLevel.is_break) {
-      toast.success(`🍵 Перерыв! ${Math.floor(nextLevel.duration / 60)} минут`);
-    } else {
-      toast.success(`Уровень ${nextLevelNum}: ${nextLevel.small_blind}/${nextLevel.big_blind}`);
-    }
-
-    onLevelChange?.(nextLevel);
-  }, [currentLevel, levels, tournamentId, isMuted, onLevelChange]);
 
   const handlePauseToggle = async () => {
     const newStatus = isPaused ? 'running' : 'paused';
+    
+    // Optimistic UI update
     setIsPaused(!isPaused);
 
-    await supabase
+    const { error } = await supabase
       .from('online_poker_tournaments')
       .update({ status: newStatus })
       .eq('id', tournamentId);
 
-    toast.info(isPaused ? 'Турнир возобновлён' : 'Турнир на паузе');
+    if (error) {
+      // Revert on error
+      setIsPaused(isPaused);
+      toast.error('Ошибка при изменении статуса');
+    } else {
+      toast.info(isPaused ? 'Турнир возобновлён' : 'Турнир на паузе');
+    }
   };
 
-  const formatTime = (seconds: number) => {
+  const handleRefresh = async () => {
+    const { data: tourney } = await supabase
+      .from('online_poker_tournaments')
+      .select('*')
+      .eq('id', tournamentId)
+      .single();
+
+    if (tourney) {
+      setTournament(tourney);
+      setCurrentLevel(tourney.current_level || 1);
+      setIsPaused(tourney.status === 'paused');
+      setLastLevelEndAt(tourney.level_end_at);
+      toast.success('Данные обновлены');
+    }
+  };
+
+  const formatTime = (seconds: number | null) => {
+    if (seconds === null) return '--:--';
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -176,13 +246,21 @@ export const TournamentTimer = ({
 
   const currentLevelData = levels.find(l => l.level === currentLevel);
   const nextLevelData = levels.find(l => l.level === currentLevel + 1);
-  const progress = currentLevelData 
-    ? ((currentLevelData.duration - timeRemaining) / currentLevelData.duration) * 100 
+  const progress = timeRemaining !== null && levelDuration > 0
+    ? ((levelDuration - timeRemaining) / levelDuration) * 100 
     : 0;
+
+  const timeWarningClass = timeRemaining === null 
+    ? 'text-muted-foreground'
+    : timeRemaining <= 10 
+      ? 'text-destructive animate-pulse font-bold'
+      : timeRemaining <= 60 
+        ? 'text-yellow-500 animate-pulse' 
+        : 'text-foreground';
 
   return (
     <div className="bg-card/90 backdrop-blur-sm border border-border rounded-xl p-4 space-y-4">
-      {/* Заголовок */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Timer className="h-5 w-5 text-primary" />
@@ -190,7 +268,16 @@ export const TournamentTimer = ({
             {currentLevelData?.is_break ? 'ПЕРЕРЫВ' : `Уровень ${currentLevel}`}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleRefresh}
+            className="h-8 w-8"
+            title="Обновить"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -212,27 +299,29 @@ export const TournamentTimer = ({
         </div>
       </div>
 
-      {/* Таймер */}
+      {/* Timer Display */}
       <div className="text-center">
-        <div className={`text-5xl font-mono font-bold ${
-          timeRemaining <= 60 ? 'text-destructive animate-pulse' : 
-          timeRemaining <= 120 ? 'text-yellow-500' : 'text-foreground'
-        }`}>
+        <div className={`text-5xl font-mono font-bold transition-colors ${timeWarningClass}`}>
           {formatTime(timeRemaining)}
         </div>
         <Progress value={progress} className="mt-2 h-2" />
+        {isPaused && (
+          <div className="text-xs text-muted-foreground mt-1">
+            Осталось: {formatTime(timeRemaining)} при возобновлении
+          </div>
+        )}
       </div>
 
-      {/* Текущие блайнды */}
+      {/* Current Blinds */}
       {currentLevelData && !currentLevelData.is_break && (
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="bg-muted/50 rounded-lg p-2">
             <div className="text-xs text-muted-foreground">SB</div>
-            <div className="font-bold text-lg">{currentLevelData.small_blind}</div>
+            <div className="font-bold text-lg">{currentLevelData.small_blind.toLocaleString()}</div>
           </div>
           <div className="bg-muted/50 rounded-lg p-2">
             <div className="text-xs text-muted-foreground">BB</div>
-            <div className="font-bold text-lg">{currentLevelData.big_blind}</div>
+            <div className="font-bold text-lg">{currentLevelData.big_blind.toLocaleString()}</div>
           </div>
           <div className="bg-muted/50 rounded-lg p-2">
             <div className="text-xs text-muted-foreground">Ante</div>
@@ -241,7 +330,20 @@ export const TournamentTimer = ({
         </div>
       )}
 
-      {/* Следующий уровень */}
+      {/* Break Display */}
+      {currentLevelData?.is_break && (
+        <div className="bg-primary/10 rounded-lg p-4 text-center">
+          <div className="text-2xl mb-2">☕</div>
+          <div className="text-sm text-muted-foreground">
+            Игра возобновится через
+          </div>
+          <div className="font-bold text-primary">
+            {formatTime(timeRemaining)}
+          </div>
+        </div>
+      )}
+
+      {/* Next Level Preview */}
       {nextLevelData && (
         <div className="flex items-center justify-between text-sm text-muted-foreground bg-muted/30 rounded-lg p-2">
           <div className="flex items-center gap-1">
@@ -250,14 +352,14 @@ export const TournamentTimer = ({
           </div>
           <span className="font-medium">
             {nextLevelData.is_break 
-              ? 'Перерыв' 
-              : `${nextLevelData.small_blind}/${nextLevelData.big_blind}`
+              ? `Перерыв (${Math.floor(nextLevelData.duration / 60)} мин)` 
+              : `${nextLevelData.small_blind.toLocaleString()}/${nextLevelData.big_blind.toLocaleString()}`
             }
           </span>
         </div>
       )}
 
-      {/* Статус */}
+      {/* Paused Status */}
       {isPaused && (
         <div className="text-center text-yellow-500 font-medium animate-pulse">
           ⏸️ ПАУЗА
