@@ -339,17 +339,9 @@ export class PokerTable {
   }> {
     logger.info('joinTable called', { tableId: this.id, playerId, seatNumber, buyIn, avatarUrl });
     
-    // Normalize seat numbering: many clients use 1..maxPlayers, engine uses 0..maxPlayers-1
-    if (seatNumber >= 1) {
-      const originalSeat = seatNumber;
-      seatNumber = seatNumber - 1;
-      logger.info('Normalized 1-based seat number to 0-based', {
-        tableId: this.id,
-        playerId: playerId.substring(0, 8),
-        originalSeat,
-        normalizedSeat: seatNumber
-      });
-    }
+    // Seat numbers are 0-based across the Syndicate web client and server (0..maxPlayers-1).
+    // NOTE: 1-based normalization is handled when loading legacy DB rows in loadPlayersFromDatabase().
+
 
     // Validate seat
     if (seatNumber < 0 || seatNumber >= this.config.maxPlayers) {
@@ -1811,8 +1803,11 @@ export class PokerTable {
     }
     
     if (!player) {
-      logger.warn('getPlayerState: player not found', { playerId: playerId.substring(0, 8) });
+      // This is a common case for spectators or users who opened a table without joining yet.
+      // Keep it as debug to avoid noisy logs.
+      logger.debug('getPlayerState: player not found', { playerId: playerId.substring(0, 8) });
       return {
+
         ...publicState,
         myCards: [],
         mySeat: null,

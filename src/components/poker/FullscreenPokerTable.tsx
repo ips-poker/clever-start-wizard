@@ -602,14 +602,23 @@ const PlayerSeat = memo(function PlayerSeat({
   }
 
   const resolvedAvatar = resolveAvatarUrl(player.avatarUrl, player.playerId);
+  const isReplaceableBot = canJoin && /bot/i.test(player.name ?? '');
 
   return (
     <motion.div
-      className={cn("absolute -translate-x-1/2 -translate-y-1/2", isHero ? "z-20" : "z-10")}
+      className={cn(
+        "absolute -translate-x-1/2 -translate-y-1/2",
+        isHero ? "z-20" : "z-10",
+        isReplaceableBot && "cursor-pointer"
+      )}
       style={{ left: `${position.x}%`, top: `${position.y}%` }}
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
+      onClick={() => {
+        if (isReplaceableBot) onSeatClick?.(seatNumber);
+      }}
     >
+
       {/* Avatar with status border and opponent cards */}
       <div className="relative">
         {/* Timer ring - UNDER cards and game elements, around avatar */}
@@ -1532,7 +1541,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               heroCards={idx === 0 ? heroCards : undefined}
               communityCards={communityCards}
               gamePhase={phase}
-              canJoin={canJoinTable && !player}
+              canJoin={canJoinTable && (!player || /bot/i.test(player.name ?? ''))}
               onSeatClick={onSeatClick}
               lastAction={(player as any)?.lastAction}
               showdownPlayers={showdownPlayers}
