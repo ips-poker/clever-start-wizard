@@ -37,6 +37,7 @@ import { handForHandManager } from './utils/hand-for-hand.js';
 import { spectatorManager } from './utils/spectator-manager.js';
 import { actionTimeoutGuard } from './utils/action-timeout-guard.js';
 import { handHistoryService } from './utils/hand-history-service.js';
+import { realtimeEventBroadcaster } from './utils/realtime-events.js';
 
 // Process-level error handlers
 process.on('uncaughtException', (error) => {
@@ -167,6 +168,16 @@ app.get('/api/alerts', (req, res) => {
   res.json({
     active: alertManager.getActiveAlerts(),
     history: alertManager.getAlertHistory(50)
+  });
+});
+
+// Realtime events API
+app.get('/api/events', (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+  res.json({
+    success: true,
+    events: realtimeEventBroadcaster.getRecentEvents(limit),
+    stats: realtimeEventBroadcaster.getStats()
   });
 });
 
