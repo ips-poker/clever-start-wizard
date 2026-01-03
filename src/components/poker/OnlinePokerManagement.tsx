@@ -75,6 +75,7 @@ import { OnlineTournamentManager } from './admin/OnlineTournamentManager';
 import { ServerMonitoringPanel } from './admin/ServerMonitoringPanel';
 import { TournamentAdvancedTools } from './admin/TournamentAdvancedTools';
 import { PlayerAnalyticsPanel } from './admin/PlayerAnalyticsPanel';
+import { EnhancedPlayerAnalytics, TournamentAnalytics, PlayerComparison } from './analytics';
 import { IntegrationsPanel } from './admin/IntegrationsPanel';
 import { SeatCalibrationTool } from './admin/SeatCalibrationTool';
 import { EngineMonitoringPanel } from './admin/EngineMonitoringPanel';
