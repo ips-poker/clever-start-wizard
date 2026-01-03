@@ -225,7 +225,7 @@ async function processPlayerPayout(
           .from('diamond_wallets')
           .update({
             balance: wallet.balance + diamondAmount,
-            total_won: supabase.rpc ? diamondAmount : diamondAmount, // Increment
+            total_won: wallet.total_won + diamondAmount,
             updated_at: new Date().toISOString()
           })
           .eq('player_id', playerId);

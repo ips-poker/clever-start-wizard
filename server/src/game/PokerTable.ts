@@ -192,20 +192,20 @@ export class PokerTable {
         // Persist normalization so future loads + clients are consistent
         if (seatOffset === 1 && normalizedSeat !== dbPlayer.seat_number) {
           seatFixPromises.push(
-            this.supabase
-              .from('poker_table_players')
-              .update({ seat_number: normalizedSeat })
-              .eq('table_id', this.id)
-              .eq('player_id', dbPlayer.player_id)
-              .then(({ error }) => {
-                if (error) {
-                  logger.warn('Failed to persist normalized seat number', {
-                    tableId: this.id,
-                    playerId: dbPlayer.player_id.substring(0, 8),
-                    error: error.message
-                  });
-                }
-              })
+            (async () => {
+              const { error } = await this.supabase
+                .from('poker_table_players')
+                .update({ seat_number: normalizedSeat })
+                .eq('table_id', this.id)
+                .eq('player_id', dbPlayer.player_id);
+              if (error) {
+                logger.warn('Failed to persist normalized seat number', {
+                  tableId: this.id,
+                  playerId: dbPlayer.player_id.substring(0, 8),
+                  error: error.message
+                });
+              }
+            })()
           );
         }
         
