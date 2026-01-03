@@ -188,10 +188,42 @@ export default function OnlinePoker() {
     }
   };
 
-  const handleJoinTournament = (tournamentId: string) => {
+  const handleJoinTournament = async (tournamentId: string) => {
     // Store active tournament ID for move notifications
     setActiveTournamentId(tournamentId);
-    console.log('Tournament registration:', tournamentId);
+    
+    if (!playerId) {
+      toast.error('Необходимо войти в систему');
+      return;
+    }
+    
+    try {
+      // Get player's table assignment
+      const { data, error } = await supabase.rpc('get_player_tournament_table', {
+        p_tournament_id: tournamentId,
+        p_player_id: playerId
+      });
+      
+      if (error) throw error;
+      
+      const assignment = data as { success: boolean; table_assigned?: boolean; table_id?: string; error?: string };
+      
+      if (!assignment.success) {
+        toast.error(assignment.error || 'Ошибка получения рассадки');
+        return;
+      }
+      
+      if (!assignment.table_assigned || !assignment.table_id) {
+        toast.info('Ожидайте начала турнира. Вы будете автоматически посажены за стол.');
+        return;
+      }
+      
+      // Open the tournament table
+      handleJoinTournamentTable(assignment.table_id);
+    } catch (error: any) {
+      console.error('Error joining tournament:', error);
+      toast.error('Ошибка входа в турнир: ' + error.message);
+    }
   };
 
   // Join a specific tournament table (after seating is done)
