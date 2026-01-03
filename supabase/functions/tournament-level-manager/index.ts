@@ -54,21 +54,36 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Check if specific tournament requested (direct call from frontend)
+    let specificTournamentId: string | null = null;
+    try {
+      const body = await req.json();
+      specificTournamentId = body?.tournamentId || null;
+    } catch {
+      // No body - cron job call
+    }
+
     const results: ProcessResult[] = [];
     const now = new Date();
-    console.log(`Tournament level manager running at ${now.toISOString()}`);
+    console.log(`Tournament level manager running at ${now.toISOString()}, specific: ${specificTournamentId || 'none'}`);
 
-    // 1. Получаем все активные турниры с истекшим временем уровня
-    // ВАЖНО: Только турниры без активного VPS (level_end_at истек более 30 сек назад)
-    // Это backup для случаев когда VPS не работает
-    const backupThreshold = new Date(now.getTime() - 30000); // 30 секунд grace period
-    
-    const { data: expiredTournaments, error: fetchError } = await supabase
+    // Build query for expired tournaments
+    let query = supabase
       .from('online_poker_tournaments')
       .select('id, name, current_level, level_duration, level_end_at, status, small_blind, big_blind, ante')
       .in('status', ['running', 'break'])
-      .not('level_end_at', 'is', null)
-      .lt('level_end_at', backupThreshold.toISOString());
+      .not('level_end_at', 'is', null);
+
+    if (specificTournamentId) {
+      // Direct call - process this specific tournament immediately
+      query = query.eq('id', specificTournamentId).lt('level_end_at', now.toISOString());
+    } else {
+      // Cron job - use 30 sec grace period as backup for VPS
+      const backupThreshold = new Date(now.getTime() - 30000);
+      query = query.lt('level_end_at', backupThreshold.toISOString());
+    }
+
+    const { data: expiredTournaments, error: fetchError } = await query;
 
     if (fetchError) {
       console.error('Error fetching tournaments:', fetchError);
@@ -76,18 +91,18 @@ Deno.serve(async (req) => {
     }
 
     if (!expiredTournaments || expiredTournaments.length === 0) {
-      console.log('No tournaments need level advancement (VPS likely handling timers)');
+      console.log('No tournaments need level advancement');
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: 'No tournaments need backup level advancement',
+          message: 'No tournaments need level advancement',
           processed: 0 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Processing ${expiredTournaments.length} tournaments with expired levels (backup mode)`);
+    console.log(`Processing ${expiredTournaments.length} tournaments with expired levels`);
 
     // 2. Обрабатываем каждый турнир
     for (const tournament of expiredTournaments) {

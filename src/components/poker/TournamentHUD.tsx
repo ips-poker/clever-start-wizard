@@ -174,25 +174,41 @@ export function TournamentHUD({
     };
   }, [tournamentId, tournament?.current_level, currentPlayerId, tournament?.big_blind]);
 
-  // Timer countdown
+  // Timer countdown + trigger level advancement when expired
   useEffect(() => {
     if (!tournament?.level_end_at) {
       setTimeRemaining(null);
       return;
     }
 
-    const updateTimer = () => {
+    let hasTriggeredAdvance = false;
+
+    const updateTimer = async () => {
       const endTime = new Date(tournament.level_end_at!).getTime();
       const now = Date.now();
       const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
       setTimeRemaining(remaining);
+
+      // If time expired and tournament is running, trigger level advancement
+      if (remaining === 0 && !hasTriggeredAdvance && tournament.status === 'running') {
+        hasTriggeredAdvance = true;
+        console.log('[TournamentHUD] Timer expired, triggering level manager');
+        
+        try {
+          await supabase.functions.invoke('tournament-level-manager', {
+            body: { tournamentId }
+          });
+        } catch (err) {
+          console.warn('[TournamentHUD] Level manager invoke failed:', err);
+        }
+      }
     };
 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [tournament?.level_end_at]);
+  }, [tournament?.level_end_at, tournament?.status, tournamentId]);
 
   // Calculate average stack
   const avgStack = useMemo(() => {
