@@ -166,9 +166,12 @@ export class PokerTable {
 
         const profile = profileMap.get(dbPlayer.player_id);
         
+        const playerName = profile?.name || 'Player';
+        const isBot = this.isBotName(playerName);
+
         const player: Player = {
           id: dbPlayer.player_id,
-          name: profile?.name || 'Player',
+          name: playerName,
           avatarUrl: profile?.avatar_url || undefined,
           seatNumber: normalizedSeat,
           stack: dbPlayer.stack,
@@ -177,7 +180,7 @@ export class PokerTable {
           currentBet: 0, // CRITICAL: No bet until hand starts
           isFolded: false,
           isAllIn: false,
-          timeBank: this.config.timeBankSeconds,
+          timeBank: isBot ? 0 : this.config.timeBankSeconds,
           lastActionTime: null,
           missedTurns: 0
         };
@@ -438,6 +441,8 @@ export class PokerTable {
       }
     }
     
+    const isBot = this.isBotName(playerName);
+
     const player: Player = {
       id: playerId,
       name: playerName,
@@ -449,7 +454,7 @@ export class PokerTable {
       currentBet: 0,
       isFolded: false,
       isAllIn: false,
-      timeBank: this.config.timeBankSeconds,
+      timeBank: isBot ? 0 : this.config.timeBankSeconds,
       lastActionTime: null,
       missedTurns: 0
     };
@@ -975,6 +980,18 @@ export class PokerTable {
   }
   
   /**
+   * Bot detection: keep it consistent across the table code.
+   * We intentionally treat bots as "no time bank" and let them act quickly.
+   */
+  private isBotName(name: unknown): boolean {
+    return typeof name === 'string' && name.toLowerCase().includes('bot');
+  }
+
+  private isBotPlayer(player: Player | null | undefined): boolean {
+    return this.isBotName(player?.name);
+  }
+
+  /**
    * Start action timer
    */
   private startActionTimer(): void {
@@ -987,18 +1004,36 @@ export class PokerTable {
 
     const seat = this.currentHand?.currentPlayerSeat ?? null;
     const playerId = seat !== null ? this.seats[seat] : null;
-    const player = playerId ? this.players.get(playerId) : null;
-    const isBot = !!player && /bot/i.test(player.name);
+
+    if (seat === null || !playerId) return;
+
+    const player = this.players.get(playerId) ?? null;
+
+    // Avoid "30s stalls" if the seat is known but player state isn't loaded yet.
+    // We'll retry soon and schedule the correct (bot vs human) delay once we have the player.
+    if (!player) {
+      logger.warn('startActionTimer: player state missing, retrying soon', {
+        tableId: this.id,
+        playerId: playerId.substring(0, 8),
+        seat
+      });
+
+      this.actionTimer = setTimeout(() => this.startActionTimer(), 500);
+      return;
+    }
+
+    const isBot = this.isBotPlayer(player);
 
     const delayMs = isBot
       ? 500 + Math.floor(Math.random() * 900) // bots act fast so table actually plays
       : this.config.actionTimeSeconds * 1000;
 
     if (isBot) {
-      logger.debug('Bot action scheduled', {
+      logger.info('Bot turn scheduled', {
         tableId: this.id,
-        playerId: playerId?.substring(0, 8),
+        playerId: playerId.substring(0, 8),
         seat,
+        name: player.name,
         delayMs
       });
     }
@@ -1025,13 +1060,25 @@ export class PokerTable {
   private async handleTimeout(): Promise<void> {
     if (!this.currentHand || this.currentHand.currentPlayerSeat === null) return;
 
-    const playerId = this.seats[this.currentHand.currentPlayerSeat];
+    const seat = this.currentHand.currentPlayerSeat;
+    const playerId = this.seats[seat];
     if (!playerId) return;
 
-    const player = this.players.get(playerId);
-    if (!player) return;
+    const player = this.players.get(playerId) ?? null;
 
-    const isBot = /bot/i.test(player.name);
+    // If we somehow have a seat mapping but no player state yet, retry soon.
+    // This prevents tables from "freezing" at the start of a hand.
+    if (!player) {
+      logger.warn('handleTimeout: missing player state, retrying', {
+        tableId: this.id,
+        playerId: playerId.substring(0, 8),
+        seat
+      });
+      this.startActionTimer();
+      return;
+    }
+
+    const isBot = this.isBotPlayer(player);
 
     // Bots: act quickly and NEVER time-bank / sit-out, otherwise "full bot tables" appear frozen.
     if (isBot) {
