@@ -7,6 +7,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { TableConfig } from './PokerGameManager.js';
 import { PokerEngineV3, ActionResult, GameType, GameConfig, evaluateHand } from './PokerEngineV3.js';
 import { logger } from '../utils/logger.js';
+import { makeBotDecision, getBotAggression, BotDecision } from './PokerBotAI.js';
 
 export interface Player {
   id: string;
@@ -992,6 +993,78 @@ export class PokerTable {
   }
 
   /**
+   * Execute professional bot AI decision
+   */
+  private async executeBotDecision(player: Player): Promise<void> {
+    if (!this.currentHand) return;
+
+    const aggression = getBotAggression(player.name);
+    
+    // Count active players in hand
+    const playersInHand = Array.from(this.players.values()).filter(
+      p => !p.isFolded && p.status === 'active'
+    ).length;
+
+    // Make AI decision
+    const decision = makeBotDecision(
+      player.holeCards,
+      this.currentHand.communityCards,
+      this.currentHand.pot,
+      this.currentHand.currentBet,
+      player.currentBet,
+      player.stack,
+      this.currentHand.phase,
+      player.seatNumber,
+      this.currentHand.dealerSeat,
+      this.config.maxPlayers,
+      playersInHand,
+      this.config.bigBlind,
+      aggression
+    );
+
+    logger.info('Bot AI decision', {
+      tableId: this.id,
+      playerId: player.id.substring(0, 8),
+      name: player.name,
+      holeCards: player.holeCards,
+      phase: this.currentHand.phase,
+      pot: this.currentHand.pot,
+      currentBet: this.currentHand.currentBet,
+      playerBet: player.currentBet,
+      stack: player.stack,
+      action: decision.action,
+      amount: decision.amount,
+      reasoning: decision.reasoning,
+      confidence: decision.confidence,
+      aggression
+    });
+
+    // Execute the decision
+    try {
+      if (decision.action === 'allin') {
+        await this.action(player.id, 'allin');
+      } else if (decision.action === 'raise' && decision.amount) {
+        await this.action(player.id, 'raise', decision.amount);
+      } else {
+        await this.action(player.id, decision.action);
+      }
+    } catch (err) {
+      // Fallback: if action fails, try simpler actions
+      logger.warn('Bot action failed, trying fallback', {
+        playerId: player.id.substring(0, 8),
+        action: decision.action,
+        error: err instanceof Error ? err.message : 'unknown'
+      });
+      
+      const callAmount = Math.max(0, this.currentHand.currentBet - player.currentBet);
+      const canCheck = callAmount === 0;
+      const fallbackAction = canCheck ? 'check' : (callAmount <= player.stack ? 'call' : 'fold');
+      
+      await this.action(player.id, fallbackAction);
+    }
+  }
+
+  /**
    * Start action timer
    */
   private startActionTimer(): void {
@@ -1080,24 +1153,9 @@ export class PokerTable {
 
     const isBot = this.isBotPlayer(player);
 
-    // Bots: act quickly and NEVER time-bank / sit-out, otherwise "full bot tables" appear frozen.
+    // Bots: use professional AI to make decisions
     if (isBot) {
-      const callAmount = Math.max(0, (this.currentHand.currentBet || 0) - (player.currentBet || 0));
-      const canCheck = callAmount === 0;
-
-      // Conservative bot: check when possible, otherwise call if affordable, else fold.
-      const botAction = canCheck ? 'check' : (callAmount <= player.stack ? 'call' : 'fold');
-
-      logger.info('Bot auto-action', {
-        tableId: this.id,
-        playerId: playerId.substring(0, 8),
-        action: botAction,
-        callAmount,
-        stack: player.stack,
-        phase: this.currentHand.phase
-      });
-
-      await this.action(playerId, botAction);
+      await this.executeBotDecision(player);
       return;
     }
 
