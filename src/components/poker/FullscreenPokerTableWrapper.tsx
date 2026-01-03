@@ -22,6 +22,7 @@ import { TournamentHUD } from './TournamentHUD';
 import { BuyInDialog } from './BuyInDialog';
 import { RebuyDialog } from './RebuyDialog';
 import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
+import { ProTournamentLobby } from './tournament-lobby';
 
 
 // Syndikate branding
@@ -63,6 +64,7 @@ export function FullscreenPokerTableWrapper({
   const [showPersonalSettings, setShowPersonalSettings] = useState(false);
   const [showBuyInDialog, setShowBuyInDialog] = useState(false);
   const [showRebuyDialog, setShowRebuyDialog] = useState(false);
+  const [showTournamentLobby, setShowTournamentLobby] = useState(false);
   const [selectedSeatForJoin, setSelectedSeatForJoin] = useState<number | null>(null);
   const [isProcessingCashout, setIsProcessingCashout] = useState(false);
   const [actualBuyIn, setActualBuyIn] = useState<number>(buyIn);
@@ -546,9 +548,11 @@ export function FullscreenPokerTableWrapper({
         {/* Tournament HUD - only show for tournament tables */}
         {isTournament && tournamentId && (
           <TournamentHUD 
-            tournamentId={tournamentId} 
+            tournamentId={tournamentId}
+            currentPlayerId={playerId}
             compact={true}
             className="!top-16"
+            onOpenLobby={() => setShowTournamentLobby(true)}
           />
         )}
 
@@ -767,6 +771,21 @@ export function FullscreenPokerTableWrapper({
           onClose={() => setShowPersonalSettings(false)}
           maxSeats={maxSeats}
         />
+
+        {/* Tournament Lobby Modal */}
+        {isTournament && tournamentId && (
+          <ProTournamentLobby
+            tournamentId={tournamentId}
+            playerId={playerId}
+            playerBalance={playerBalance}
+            isRegistered={!!myPlayer}
+            open={showTournamentLobby}
+            onClose={() => setShowTournamentLobby(false)}
+            onRegister={() => {}}
+            onUnregister={() => {}}
+            onJoin={() => setShowTournamentLobby(false)}
+          />
+        )}
 
         {/* Winner info shown directly on player cards during showdown - no popup */}
       </div>
