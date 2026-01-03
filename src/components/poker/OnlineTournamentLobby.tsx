@@ -39,6 +39,8 @@ interface OnlineTournament {
   registration_start: string;
   started_at: string | null;
   player_count?: number;
+  late_registration_enabled?: boolean;
+  late_registration_level?: number;
 }
 
 interface OnlineTournamentLobbyProps {
@@ -223,7 +225,13 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
 
   const renderTournamentCard = (tournament: OnlineTournament) => {
     const isRegistered = myRegistrations.has(tournament.id);
-    const canRegister = tournament.status === 'registration' && 
+    
+    // Check if late registration is available
+    const isLateRegOpen = tournament.late_registration_enabled && 
+                          ['running', 'starting'].includes(tournament.status) &&
+                          (tournament.current_level || 1) <= (tournament.late_registration_level || 0);
+    
+    const canRegister = (tournament.status === 'registration' || isLateRegOpen) && 
                         (tournament.player_count || 0) < tournament.max_players &&
                         !isRegistered;
     const canUnregister = isRegistered && tournament.status === 'registration';
@@ -285,7 +293,7 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
                   }}
                   disabled={playerBalance < tournament.buy_in}
                 >
-                  Регистрация
+                  {isLateRegOpen ? 'Поздняя регистрация' : 'Регистрация'}
                 </Button>
               )}
               {canUnregister && (
