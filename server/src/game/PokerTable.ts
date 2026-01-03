@@ -1785,7 +1785,7 @@ export class PokerTable {
             })
             .eq('table_id', this.id)
             .eq('player_id', player.id)
-            .select()
+            .then()
         );
         
         // If tournament, also update participant chips
@@ -1796,7 +1796,7 @@ export class PokerTable {
               .update({ chips: player.stack })
               .eq('tournament_id', tournamentId)
               .eq('player_id', player.id)
-              .select()
+              .then()
           );
         }
       }
