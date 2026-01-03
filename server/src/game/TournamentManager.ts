@@ -932,27 +932,42 @@ export class TournamentManager {
   startTournament(tournamentId: string): { success: boolean; error?: string } {
     const state = this.tournaments.get(tournamentId);
     if (!state) return { success: false, error: 'Tournament not found' };
-    
+
     if (state.players.length < state.config.minPlayers) {
       return { success: false, error: `Need at least ${state.config.minPlayers} players` };
     }
-    
+
     // Assign players to tables
     this.assignPlayersToTables(state);
-    
+
+    // If a previous timer exists (e.g. server restart / duplicate start), stop it first
+    const existingTimer = this.timerIntervals.get(tournamentId);
+    if (existingTimer) {
+      clearInterval(existingTimer);
+      this.timerIntervals.delete(tournamentId);
+    }
+
+    // Reset/initialize level clock to ensure HUD timer starts correctly
+    const currentLevelNumber = state.currentLevel || 1;
+    const currentBlindLevel =
+      state.config.blindStructure.find((l) => l.level === currentLevelNumber) ??
+      state.config.blindStructure[0];
+
     state.status = 'running';
     state.startedAt = Date.now();
     state.levelStartTime = Date.now();
-    state.players.forEach(p => p.status = 'playing');
-    
+    state.currentLevel = currentLevelNumber;
+    state.timeRemaining = currentBlindLevel?.duration ?? 300;
+    state.players.forEach((p) => (p.status = 'playing'));
+
     // Start timer
     this.startTimer(tournamentId);
-    
+
     // Sync initial level to database
     this.syncLevelToDatabase(tournamentId, state);
-    
+
     logger.info('Tournament started', { tournamentId, players: state.players.length });
-    
+
     return { success: true };
   }
   
@@ -1117,25 +1132,46 @@ export class TournamentManager {
   pauseTournament(tournamentId: string): { success: boolean } {
     const state = this.tournaments.get(tournamentId);
     if (!state) return { success: false };
-    
+
     state.status = 'paused';
     state.pausedAt = Date.now();
-    
+
     const interval = this.timerIntervals.get(tournamentId);
-    if (interval) clearInterval(interval);
-    
+    if (interval) {
+      clearInterval(interval);
+      this.timerIntervals.delete(tournamentId);
+    }
+
     return { success: true };
   }
   
   resumeTournament(tournamentId: string): { success: boolean } {
     const state = this.tournaments.get(tournamentId);
     if (!state) return { success: false };
-    
+
+    // Prevent duplicate timers
+    const existingTimer = this.timerIntervals.get(tournamentId);
+    if (existingTimer) {
+      clearInterval(existingTimer);
+      this.timerIntervals.delete(tournamentId);
+    }
+
     state.status = 'running';
     state.pausedAt = null;
-    
+
+    // Re-anchor end time for HUD based on remaining seconds
+    const currentBlindLevel =
+      state.config.blindStructure.find((l) => l.level === state.currentLevel) ??
+      state.config.blindStructure[0];
+
+    if (!Number.isFinite(state.timeRemaining) || state.timeRemaining <= 0) {
+      state.timeRemaining = currentBlindLevel?.duration ?? 300;
+    }
+    state.levelStartTime = Date.now();
+
     this.startTimer(tournamentId);
-    
+    this.syncLevelToDatabase(tournamentId, state);
+
     return { success: true };
   }
   
