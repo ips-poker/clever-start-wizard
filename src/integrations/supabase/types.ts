@@ -2544,6 +2544,10 @@ export type Database = {
             }
             Returns: Json
           }
+      late_register_tournament_player: {
+        Args: { p_player_id: string; p_tournament_id: string }
+        Returns: Json
+      }
       link_players_to_profiles: { Args: never; Returns: undefined }
       merge_player_profiles: {
         Args: {
