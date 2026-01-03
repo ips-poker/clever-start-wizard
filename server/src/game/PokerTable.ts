@@ -539,6 +539,30 @@ export class PokerTable {
     
     return { success: true };
   }
+  
+  /**
+   * Update player's stack (for rebuy/addon sync)
+   */
+  updatePlayerStack(playerId: string, newStack: number): boolean {
+    const player = this.players.get(playerId);
+    if (!player) {
+      logger.warn('updatePlayerStack: player not found', { playerId: playerId.substring(0, 8), newStack });
+      return false;
+    }
+    
+    const oldStack = player.stack;
+    player.stack = newStack;
+    
+    logger.info('Player stack updated (rebuy/addon)', { 
+      playerId: playerId.substring(0, 8), 
+      oldStack, 
+      newStack 
+    });
+    
+    this.emit('player_stack_updated', { playerId, oldStack, newStack });
+    
+    return true;
+  }
 
   /**
    * Sit out - player will auto-fold when it's their turn
@@ -1652,6 +1676,32 @@ export class PokerTable {
     
     // Save hand history
     await this.saveHandHistory();
+    
+    // CRITICAL: Check for players with zero chips (tournament elimination candidates)
+    // Emit event for each player with stack <= 0 for tournament handling
+    const eliminatedPlayers: { playerId: string; seatNumber: number; name: string }[] = [];
+    for (const player of this.players.values()) {
+      if (player.stack <= 0) {
+        eliminatedPlayers.push({
+          playerId: player.id,
+          seatNumber: player.seatNumber,
+          name: player.name
+        });
+        logger.info('Player eliminated (zero stack)', {
+          playerId: player.id.substring(0, 8),
+          name: player.name,
+          seatNumber: player.seatNumber
+        });
+      }
+    }
+    
+    // Emit elimination event if any players busted
+    if (eliminatedPlayers.length > 0) {
+      this.emit('players_eliminated', {
+        tableId: this.id,
+        players: eliminatedPlayers
+      });
+    }
     
     // CRITICAL: Reset all player states for clean slate before next hand
     // This prevents cards/bets from previous hand showing for new players
