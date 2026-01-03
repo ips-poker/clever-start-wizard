@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { CreateTournamentModal } from './CreateTournamentModal';
-import { TournamentDetailsModal } from './TournamentDetailsModal';
+import { ProTournamentLobby } from './tournament-lobby';
 import { ActiveTournamentAssignments } from './TournamentTableAssignment';
 
 interface OnlineTournament {
@@ -449,13 +449,14 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
         onCreated={fetchTournaments}
       />
 
-      {/* Tournament Details Modal */}
+      {/* Pro Tournament Details Modal */}
       {selectedTournament && (
-        <TournamentDetailsModal
-          tournament={selectedTournament}
+        <ProTournamentLobby
+          tournamentId={selectedTournament.id}
           playerId={playerId}
-          isRegistered={myRegistrations.has(selectedTournament.id)}
           playerBalance={playerBalance}
+          isRegistered={myRegistrations.has(selectedTournament.id)}
+          open={!!selectedTournament}
           onClose={() => setSelectedTournament(null)}
           onRegister={() => handleRegister(selectedTournament)}
           onUnregister={() => handleUnregister(selectedTournament.id)}
