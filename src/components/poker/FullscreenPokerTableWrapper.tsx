@@ -20,6 +20,9 @@ import { FullscreenPokerTable } from './FullscreenPokerTable';
 import { ProActionPanel } from './ProActionPanel';
 import { TournamentHUD } from './TournamentHUD';
 import { BuyInDialog } from './BuyInDialog';
+import { BountyDisplay } from './BountyDisplay';
+import { KnockoutNotification, KnockoutEvent } from './KnockoutNotification';
+import { BountyLeaderboard } from './BountyLeaderboard';
 import { RebuyDialog } from './RebuyDialog';
 import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
 import { ProTournamentLobby } from './tournament-lobby';
@@ -65,6 +68,8 @@ export function FullscreenPokerTableWrapper({
   const [showBuyInDialog, setShowBuyInDialog] = useState(false);
   const [showRebuyDialog, setShowRebuyDialog] = useState(false);
   const [showTournamentLobby, setShowTournamentLobby] = useState(false);
+  const [showBountyLeaderboard, setShowBountyLeaderboard] = useState(false);
+  const [knockoutEvent, setKnockoutEvent] = useState<KnockoutEvent | null>(null);
   const [selectedSeatForJoin, setSelectedSeatForJoin] = useState<number | null>(null);
   const [isProcessingCashout, setIsProcessingCashout] = useState(false);
   const [actualBuyIn, setActualBuyIn] = useState<number>(buyIn);
@@ -547,13 +552,30 @@ export function FullscreenPokerTableWrapper({
 
         {/* Tournament HUD - only show for tournament tables */}
         {isTournament && tournamentId && (
-          <TournamentHUD 
-            tournamentId={tournamentId}
-            currentPlayerId={playerId}
-            compact={true}
-            className="!top-16"
-            onOpenLobby={() => setShowTournamentLobby(true)}
-          />
+          <>
+            <TournamentHUD 
+              tournamentId={tournamentId}
+              currentPlayerId={playerId}
+              compact={true}
+              className="!top-16"
+              onOpenLobby={() => setShowTournamentLobby(true)}
+            />
+            
+            {/* PKO Bounty Display - shows player's current bounty */}
+            <BountyDisplay
+              tournamentId={tournamentId}
+              playerId={playerId}
+              compact={true}
+              className="absolute top-16 right-2 z-40"
+            />
+            
+            {/* Knockout notification for PKO tournaments */}
+            <KnockoutNotification
+              event={knockoutEvent}
+              currentPlayerId={playerId}
+              onComplete={() => setKnockoutEvent(null)}
+            />
+          </>
         )}
 
         {/* Main poker table - optimized spacing for all UI elements */}
