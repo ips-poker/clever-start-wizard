@@ -45,13 +45,11 @@ export function CreateTournamentModal({ open, onClose, playerId, onCreated }: Cr
 
     setLoading(true);
     try {
-      // Create tournament - extract players_per_table for table creation
-      const { players_per_table, ...tournamentData } = formData;
-      
+      // Create tournament with players_per_table
       const { data: tournament, error: createError } = await supabase
         .from('online_poker_tournaments')
         .insert({
-          ...tournamentData,
+          ...formData,
           created_by: playerId
         })
         .select()

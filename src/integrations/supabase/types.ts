@@ -870,6 +870,7 @@ export type Database = {
           max_players: number
           min_players: number
           name: string
+          players_per_table: number | null
           prize_pool: number | null
           rebuy_chips: number | null
           rebuy_cost: number | null
@@ -915,6 +916,7 @@ export type Database = {
           max_players?: number
           min_players?: number
           name: string
+          players_per_table?: number | null
           prize_pool?: number | null
           rebuy_chips?: number | null
           rebuy_cost?: number | null
@@ -960,6 +962,7 @@ export type Database = {
           max_players?: number
           min_players?: number
           name?: string
+          players_per_table?: number | null
           prize_pool?: number | null
           rebuy_chips?: number | null
           rebuy_cost?: number | null
