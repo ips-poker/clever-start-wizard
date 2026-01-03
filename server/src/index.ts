@@ -86,7 +86,10 @@ const gameManager = new PokerGameManager(supabase);
 const tournamentManager = new TournamentManager();
 tournamentManager.setSupabase(supabase);
 
-// Health check with full metrics (must be before setupRoutes which has 404 catch-all)
+// Setup API routes
+setupRoutes(app, gameManager, supabase);
+
+// Health check with full metrics
 app.get('/health', (req, res) => {
   const fullMetrics = legacyMetrics.getMetrics();
   const stats = gameManager.getStats();
@@ -177,9 +180,6 @@ app.get('/api/events', (req, res) => {
     stats: realtimeEventBroadcaster.getStats()
   });
 });
-
-// Setup API routes (includes 404 catch-all, so must be last)
-setupRoutes(app, gameManager, supabase);
 
 // WebSocket server
 const wss = new WebSocketServer({ 
