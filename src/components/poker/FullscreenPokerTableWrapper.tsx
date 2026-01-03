@@ -92,10 +92,11 @@ export function FullscreenPokerTableWrapper({
     connect, disconnect, joinTable, fold, check, call, raise, allIn, addChips, sitOut, sitIn
   } = pokerTable;
 
-  // Check if player can join (not yet seated)
+  // Check if player can join (not yet seated) - only for cash games
+  // Tournaments use auto-seating from participant data
   const canJoinTable = useMemo(() => {
-    return isConnected && !myPlayer && mySeat === null;
-  }, [isConnected, myPlayer, mySeat]);
+    return isConnected && !myPlayer && mySeat === null && !isTournament;
+  }, [isConnected, myPlayer, mySeat, isTournament]);
 
   // Table readiness hint (why hand isn't starting)
   const startHandHint = useMemo(() => {
@@ -152,6 +153,44 @@ export function FullscreenPokerTableWrapper({
       // Don't disconnect here - let handleLeave handle it
     };
   }, []);
+
+  // Auto-join for tournament players - they already have assigned seats
+  const hasAutoJoinedRef = useRef(false);
+  useEffect(() => {
+    if (!isTournament || !tournamentId || !isConnected || myPlayer || hasAutoJoinedRef.current) {
+      return;
+    }
+
+    // Fetch player's assigned seat from tournament participants
+    const autoJoinTournament = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_player_tournament_table', {
+          p_tournament_id: tournamentId,
+          p_player_id: playerId
+        });
+
+        if (error) {
+          console.error('[Tournament AutoJoin] Error fetching seat:', error);
+          return;
+        }
+
+        const assignment = data as any;
+        if (assignment?.success && assignment?.table_assigned && assignment?.seat_number !== undefined) {
+          hasAutoJoinedRef.current = true;
+          console.log('[Tournament AutoJoin] Joining seat', assignment.seat_number, 'with chips', assignment.chips);
+          
+          // Join at assigned seat with tournament chips
+          setActualBuyIn(assignment.chips || 0);
+          joinTable(assignment.seat_number);
+          toast.success(`Вы за столом: место ${assignment.seat_number + 1}`);
+        }
+      } catch (err) {
+        console.error('[Tournament AutoJoin] Failed:', err);
+      }
+    };
+
+    autoJoinTournament();
+  }, [isTournament, tournamentId, isConnected, myPlayer, playerId, joinTable]);
 
   // Track previous phase for phase change sounds
   const previousPhaseRef = useRef<string | null>(null);
