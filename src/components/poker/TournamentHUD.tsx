@@ -61,7 +61,12 @@ export function TournamentHUD({
 
   // Fetch tournament data
   useEffect(() => {
-    if (!tournamentId) return;
+    if (!tournamentId) {
+      console.log('[TournamentHUD] No tournamentId provided');
+      return;
+    }
+    
+    console.log('[TournamentHUD] Fetching tournament:', tournamentId);
 
     const fetchTournament = async () => {
       const { data, error } = await supabase
@@ -69,6 +74,8 @@ export function TournamentHUD({
         .select('*')
         .eq('id', tournamentId)
         .single();
+      
+      console.log('[TournamentHUD] Tournament data:', data, 'Error:', error);
 
       if (!error && data) {
         setTournament(data);
