@@ -12,7 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Trophy, Coins, Users, Clock, Loader2 } from 'lucide-react';
+import { Trophy, Coins, Users, Clock, Loader2, LayoutGrid } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface CreateTournamentModalProps {
   open: boolean;
@@ -30,7 +31,8 @@ export function CreateTournamentModal({ open, onClose, playerId, onCreated }: Cr
     starting_chips: 5000,
     max_players: 9,
     min_players: 2,
-    level_duration: 300
+    level_duration: 300,
+    players_per_table: 6
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,11 +45,13 @@ export function CreateTournamentModal({ open, onClose, playerId, onCreated }: Cr
 
     setLoading(true);
     try {
-      // Create tournament
+      // Create tournament - extract players_per_table for table creation
+      const { players_per_table, ...tournamentData } = formData;
+      
       const { data: tournament, error: createError } = await supabase
         .from('online_poker_tournaments')
         .insert({
-          ...formData,
+          ...tournamentData,
           created_by: playerId
         })
         .select()
@@ -70,7 +74,8 @@ export function CreateTournamentModal({ open, onClose, playerId, onCreated }: Cr
         starting_chips: 5000,
         max_players: 9,
         min_players: 2,
-        level_duration: 300
+        level_duration: 300,
+        players_per_table: 6
       });
     } catch (error: any) {
       toast.error(error.message || 'Ошибка создания турнира');
@@ -137,18 +142,38 @@ export function CreateTournamentModal({ open, onClose, playerId, onCreated }: Cr
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label className="flex items-center gap-1">
-              <Users className="h-3.5 w-3.5" />
-              Макс. игроков: {formData.max_players}
-            </Label>
-            <Slider
-              value={[formData.max_players]}
-              onValueChange={([val]) => setFormData(prev => ({ ...prev, max_players: val }))}
-              min={2}
-              max={27}
-              step={1}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                <Users className="h-3.5 w-3.5" />
+                Макс. игроков: {formData.max_players}
+              </Label>
+              <Slider
+                value={[formData.max_players]}
+                onValueChange={([val]) => setFormData(prev => ({ ...prev, max_players: val }))}
+                min={2}
+                max={100}
+                step={1}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Игроков за столом
+              </Label>
+              <Select
+                value={formData.players_per_table.toString()}
+                onValueChange={(val) => setFormData(prev => ({ ...prev, players_per_table: parseInt(val) }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="6">6-max</SelectItem>
+                  <SelectItem value="9">9-max</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
