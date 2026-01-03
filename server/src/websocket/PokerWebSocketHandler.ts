@@ -20,6 +20,7 @@ import { MessageQueue, messageQueue } from '../utils/message-queue.js';
 import { metrics } from '../utils/metrics.js';
 import { supabaseCircuitBreaker } from '../utils/circuit-breaker.js';
 import { loadManager, LoadLevel } from '../utils/load-manager.js';
+import { createHandForHandIntegration, HandForHandIntegration } from '../utils/hand-for-hand-integration.js';
 import { z } from 'zod';
 
 // Message schemas
@@ -92,6 +93,7 @@ export class PokerWebSocketHandler {
   private tablesWithListeners: Set<string> = new Set();
   private gameManager: PokerGameManager;
   private tournamentManager: TournamentManager;
+  private handForHandIntegration: HandForHandIntegration;
   private supabase: SupabaseClient;
   private pingInterval: NodeJS.Timeout;
   private tournamentTimerInterval: NodeJS.Timeout | null = null;
@@ -113,6 +115,12 @@ export class PokerWebSocketHandler {
       this.tournamentManager = new TournamentManager();
     }
     this.tournamentManager.setSupabase(supabase);
+    
+    // Initialize Hand-for-Hand integration
+    this.handForHandIntegration = createHandForHandIntegration(supabase);
+    this.handForHandIntegration.setBroadcastCallback((tournamentId, message) => {
+      this.broadcastToTournament(tournamentId, message);
+    });
     
     // Initialize ConnectionPool
     this.connectionPool = new ConnectionPool();
@@ -139,7 +147,7 @@ export class PokerWebSocketHandler {
     // Load active tournaments from database
     this.loadActiveTournaments();
     
-    logger.info('PokerWebSocketHandler v3.1 initialized with full utility integration');
+    logger.info('PokerWebSocketHandler v3.2 initialized with Hand-for-Hand support');
   }
   
   /**
@@ -315,6 +323,11 @@ export class PokerWebSocketHandler {
         
         case 'get_tournament_state':
           await this.handleGetTournamentState(ws, message);
+          break;
+        
+        // Hand-for-Hand status request
+        case 'get_hfh_status':
+          await this.handleGetHFHStatus(ws, message);
           break;
         
         // Chat message (controlled by load level)
@@ -749,6 +762,9 @@ export class PokerWebSocketHandler {
       // Process each eliminated player
       for (const eliminatedPlayer of data.players) {
         await this.handleTournamentElimination(tournamentId, eliminatedPlayer.playerId);
+        
+        // Notify Hand-for-Hand integration about elimination
+        await this.handForHandIntegration.playerEliminated(tournamentId, eliminatedPlayer.playerId);
       }
     } catch (err) {
       logger.error('Error handling tournament elimination event', { tableId, error: String(err) });
@@ -1386,6 +1402,36 @@ export class PokerWebSocketHandler {
   }
   
   /**
+   * Handle get HFH status request
+   */
+  private async handleGetHFHStatus(ws: WebSocket, message: unknown): Promise<void> {
+    const parsed = z.object({
+      type: z.literal('get_hfh_status'),
+      tournamentId: z.string().uuid()
+    }).safeParse(message);
+    
+    if (!parsed.success) {
+      this.sendError(ws, 'Invalid HFH status request');
+      return;
+    }
+    
+    const status = this.handForHandIntegration.getStatus(parsed.data.tournamentId);
+    
+    this.send(ws, {
+      type: 'hfh_status',
+      tournamentId: parsed.data.tournamentId,
+      active: status?.active ?? false,
+      ...(status && {
+        waitingTables: status.waitingTables,
+        totalTables: status.totalTables,
+        tablesPlaying: status.tablesPlaying,
+        tablesWaiting: status.tablesWaiting
+      }),
+      timestamp: Date.now()
+    });
+  }
+  
+  /**
    * Cleanup on shutdown
    */
   shutdown(): void {
@@ -1401,6 +1447,7 @@ export class PokerWebSocketHandler {
     this.connectionPool.shutdown();
     messageQueue.shutdown();
     loadManager.shutdown();
+    this.handForHandIntegration.shutdown();
     
     logger.info('PokerWebSocketHandler shutdown complete');
   }
