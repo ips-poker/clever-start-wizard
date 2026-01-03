@@ -6,3 +6,4 @@ export { BlindStructureTab } from './BlindStructureTab';
 export { PayoutsTab } from './PayoutsTab';
 export { TournamentInfoTab } from './TournamentInfoTab';
 export { ProTournamentLobby } from './ProTournamentLobby';
+export { HandForHandOverlay, useHandForHandStatus } from '../HandForHandOverlay';
