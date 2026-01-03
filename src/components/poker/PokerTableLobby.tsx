@@ -61,10 +61,12 @@ export function PokerTableLobby({ playerId, playerBalance = 0, onJoinTable }: Po
   const fetchTables = async () => {
     setLoading(true);
     try {
-      // Fetch tables
+      // Fetch only CASH tables (exclude tournament tables)
       const { data: tablesData, error: tablesError } = await supabase
         .from('poker_tables')
         .select('*')
+        .eq('table_type', 'cash')
+        .is('tournament_id', null)
         .order('created_at', { ascending: false });
 
       if (tablesError) throw tablesError;

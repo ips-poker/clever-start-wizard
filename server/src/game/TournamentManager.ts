@@ -1348,6 +1348,40 @@ export class TournamentManager {
     return { success: true };
   }
   
+  /**
+   * Sync rebuy from database RPC result
+   */
+  syncRebuyFromDb(tournamentId: string, playerId: string, newChips: number): void {
+    const state = this.tournaments.get(tournamentId);
+    if (!state) return;
+    
+    const player = state.players.find(p => p.playerId === playerId);
+    if (!player) return;
+    
+    player.chips = newChips;
+    player.rebuys++;
+    state.totalRebuys++;
+    
+    logger.info('Rebuy synced from DB', { tournamentId, playerId, newChips });
+  }
+  
+  /**
+   * Sync addon from database RPC result
+   */
+  syncAddonFromDb(tournamentId: string, playerId: string, newChips: number): void {
+    const state = this.tournaments.get(tournamentId);
+    if (!state) return;
+    
+    const player = state.players.find(p => p.playerId === playerId);
+    if (!player) return;
+    
+    player.chips = newChips;
+    player.addons++;
+    state.totalAddons++;
+    
+    logger.info('Addon synced from DB', { tournamentId, playerId, newChips });
+  }
+  
   getTournament(tournamentId: string): TournamentState | undefined {
     return this.tournaments.get(tournamentId);
   }

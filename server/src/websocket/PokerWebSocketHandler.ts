@@ -708,8 +708,51 @@ export class PokerWebSocketHandler {
       if (loadManager.shouldLogDetailed()) {
         logger.info('Table event received', { tableId: event.tableId, eventType: event.type });
       }
+      
+      // Handle tournament player eliminations
+      if (event.type === 'players_eliminated') {
+        this.handleTournamentEliminationEvent(event.tableId, event.data as { tableId: string; players: { playerId: string; seatNumber: number; name: string }[] });
+      }
+      
       this.broadcastTableEvent(event);
     });
+  }
+  
+  /**
+   * Handle tournament elimination event when players have zero chips
+   */
+  private async handleTournamentEliminationEvent(
+    tableId: string, 
+    data: { tableId: string; players: { playerId: string; seatNumber: number; name: string }[] }
+  ): Promise<void> {
+    try {
+      // Get tournament ID for this table
+      const { data: tableData, error } = await this.supabase
+        .from('poker_tables')
+        .select('tournament_id, table_type')
+        .eq('id', tableId)
+        .single();
+      
+      if (error || !tableData?.tournament_id || tableData.table_type !== 'tournament') {
+        // Not a tournament table, skip elimination logic
+        return;
+      }
+      
+      const tournamentId = tableData.tournament_id;
+      
+      logger.info('Processing tournament eliminations', {
+        tableId,
+        tournamentId,
+        eliminatedCount: data.players.length
+      });
+      
+      // Process each eliminated player
+      for (const eliminatedPlayer of data.players) {
+        await this.handleTournamentElimination(tournamentId, eliminatedPlayer.playerId);
+      }
+    } catch (err) {
+      logger.error('Error handling tournament elimination event', { tableId, error: String(err) });
+    }
   }
   
   /**
@@ -1050,7 +1093,30 @@ export class PokerWebSocketHandler {
         
         case 'tournament_rebuy':
           if (playerId) {
-            actionResult = this.tournamentManager.processRebuy(tournamentId, playerId);
+            // Use database RPC for rebuy to properly handle wallet and sync
+            try {
+              const result = await supabaseCircuitBreaker.rpc(async () => {
+                const { data, error } = await this.supabase.rpc('process_online_tournament_rebuy', {
+                  p_tournament_id: tournamentId,
+                  p_player_id: playerId
+                });
+                if (error) throw error;
+                return data;
+              });
+              
+              if (result?.success) {
+                // Sync to TournamentManager in-memory state
+                this.tournamentManager.syncRebuyFromDb(tournamentId, playerId, result.new_chips);
+                actionResult = { success: true };
+                
+                // Also sync to poker_table_players for the active table
+                await this.syncPlayerChipsToTable(tournamentId, playerId, result.new_chips);
+              } else {
+                actionResult = { success: false, error: result?.error || 'Rebuy failed' };
+              }
+            } catch (err) {
+              actionResult = { success: false, error: String(err) };
+            }
           } else {
             actionResult = { success: false, error: 'Player ID required' };
           }
@@ -1058,7 +1124,30 @@ export class PokerWebSocketHandler {
         
         case 'tournament_addon':
           if (playerId) {
-            actionResult = this.tournamentManager.processAddon(tournamentId, playerId);
+            // Use database RPC for addon to properly handle wallet and sync
+            try {
+              const result = await supabaseCircuitBreaker.rpc(async () => {
+                const { data, error } = await this.supabase.rpc('process_online_tournament_addon', {
+                  p_tournament_id: tournamentId,
+                  p_player_id: playerId
+                });
+                if (error) throw error;
+                return data;
+              });
+              
+              if (result?.success) {
+                // Sync to TournamentManager in-memory state
+                this.tournamentManager.syncAddonFromDb(tournamentId, playerId, result.new_chips);
+                actionResult = { success: true };
+                
+                // Also sync to poker_table_players for the active table
+                await this.syncPlayerChipsToTable(tournamentId, playerId, result.new_chips);
+              } else {
+                actionResult = { success: false, error: result?.error || 'Addon failed' };
+              }
+            } catch (err) {
+              actionResult = { success: false, error: String(err) };
+            }
           } else {
             actionResult = { success: false, error: 'Player ID required' };
           }
@@ -1236,6 +1325,40 @@ export class PokerWebSocketHandler {
       
     } catch (err) {
       logger.error('Tournament elimination exception', { error: String(err) });
+    }
+  }
+  
+  /**
+   * Sync player chips to their active table after rebuy/addon
+   */
+  private async syncPlayerChipsToTable(tournamentId: string, playerId: string, newChips: number): Promise<void> {
+    try {
+      // Find the player's current table in this tournament
+      const { data: participant, error } = await this.supabase
+        .from('online_poker_tournament_participants')
+        .select('table_id')
+        .eq('tournament_id', tournamentId)
+        .eq('player_id', playerId)
+        .single();
+      
+      if (error || !participant?.table_id) return;
+      
+      // Update the player's stack at the table
+      await this.supabase
+        .from('poker_table_players')
+        .update({ stack: newChips })
+        .eq('table_id', participant.table_id)
+        .eq('player_id', playerId);
+      
+      // Also update the in-memory PokerTable if it exists
+      const table = this.gameManager.getTable(participant.table_id);
+      if (table) {
+        table.updatePlayerStack(playerId, newChips);
+      }
+      
+      logger.info('Synced player chips to table', { tournamentId, playerId, tableId: participant.table_id, newChips });
+    } catch (err) {
+      logger.error('Failed to sync player chips to table', { error: String(err) });
     }
   }
   
