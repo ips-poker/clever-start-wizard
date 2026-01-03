@@ -80,6 +80,7 @@ import { IntegrationsPanel } from './admin/IntegrationsPanel';
 import { SeatCalibrationTool } from './admin/SeatCalibrationTool';
 import { EngineMonitoringPanel } from './admin/EngineMonitoringPanel';
 import { TournamentManipulationTools } from './admin/TournamentManipulationTools';
+import { RealtimeDashboard } from './admin/RealtimeDashboard';
 import { Gem, Trophy, Server, BarChart3, Webhook, Tv, Target, Wrench } from 'lucide-react';
 
 interface PlayerBalance {
@@ -747,6 +748,10 @@ export function OnlinePokerManagement() {
           <div className="flex flex-wrap gap-2">
             <span className="text-xs text-muted-foreground self-center mr-1">Инструменты:</span>
             <TabsList className="h-auto p-1 flex-wrap">
+              <TabsTrigger value="realtime" className="gap-1.5 px-3 py-1.5">
+                <Zap className="h-4 w-4" />
+                <span>Live</span>
+              </TabsTrigger>
               <TabsTrigger value="engine" className="gap-1.5 px-3 py-1.5">
                 <Activity className="h-4 w-4" />
                 <span>Движок</span>
@@ -774,6 +779,11 @@ export function OnlinePokerManagement() {
             </TabsList>
           </div>
         </div>
+
+        {/* Realtime Dashboard Tab */}
+        <TabsContent value="realtime">
+          <RealtimeDashboard />
+        </TabsContent>
 
         {/* Engine Monitoring Tab */}
         <TabsContent value="engine">
