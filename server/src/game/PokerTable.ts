@@ -132,15 +132,45 @@ export class PokerTable {
         .in('id', playerIds);
       
       const profileMap = new Map(playerProfiles?.map(p => [p.id, p]) || []);
+
+      // Some older data sets stored seats as 1..maxPlayers (1-based).
+      // Engine + table logic requires 0..maxPlayers-1 (0-based).
+      const seatNumbers = dbPlayers.map(p => p.seat_number);
+      const hasZeroBased = seatNumbers.some(n => n === 0);
+      const isOneBased = !hasZeroBased && seatNumbers.every(n => n >= 1 && n <= this.config.maxPlayers);
+      const seatOffset = isOneBased ? 1 : 0;
+
+      if (seatOffset === 1) {
+        logger.warn('Detected 1-based seat numbers in DB; normalizing to 0-based', {
+          tableId: this.id,
+          maxPlayers: this.config.maxPlayers,
+          seatNumbers
+        });
+      }
+
+      const seatFixPromises: Promise<unknown>[] = [];
       
       for (const dbPlayer of dbPlayers) {
+        const normalizedSeat = dbPlayer.seat_number - seatOffset;
+
+        if (normalizedSeat < 0 || normalizedSeat >= this.config.maxPlayers) {
+          logger.warn('Skipping player with invalid seat number from DB', {
+            tableId: this.id,
+            playerId: dbPlayer.player_id.substring(0, 8),
+            dbSeatNumber: dbPlayer.seat_number,
+            normalizedSeat,
+            maxPlayers: this.config.maxPlayers
+          });
+          continue;
+        }
+
         const profile = profileMap.get(dbPlayer.player_id);
         
         const player: Player = {
           id: dbPlayer.player_id,
           name: profile?.name || 'Player',
           avatarUrl: profile?.avatar_url || undefined,
-          seatNumber: dbPlayer.seat_number,
+          seatNumber: normalizedSeat,
           stack: dbPlayer.stack,
           status: dbPlayer.status === 'sitting_out' ? 'sitting_out' : 'active',
           holeCards: [], // CRITICAL: No cards until hand starts
@@ -153,14 +183,42 @@ export class PokerTable {
         };
         
         this.players.set(dbPlayer.player_id, player);
-        this.seats[dbPlayer.seat_number] = dbPlayer.player_id;
+        this.seats[normalizedSeat] = dbPlayer.player_id;
+
+        // Persist normalization so future loads + clients are consistent
+        if (seatOffset === 1 && normalizedSeat !== dbPlayer.seat_number) {
+          seatFixPromises.push(
+            this.supabase
+              .from('poker_table_players')
+              .update({ seat_number: normalizedSeat })
+              .eq('table_id', this.id)
+              .eq('player_id', dbPlayer.player_id)
+              .then(({ error }) => {
+                if (error) {
+                  logger.warn('Failed to persist normalized seat number', {
+                    tableId: this.id,
+                    playerId: dbPlayer.player_id.substring(0, 8),
+                    error: error.message
+                  });
+                }
+              })
+          );
+        }
         
         logger.info('Loaded player from DB', {
           tableId: this.id,
           playerId: dbPlayer.player_id.substring(0, 8),
           name: player.name,
-          seatNumber: dbPlayer.seat_number,
+          seatNumber: player.seatNumber,
           stack: dbPlayer.stack
+        });
+      }
+
+      if (seatFixPromises.length > 0) {
+        await Promise.all(seatFixPromises);
+        logger.info('Seat number normalization persisted to DB', {
+          tableId: this.id,
+          updatedPlayers: seatFixPromises.length
         });
       }
       
@@ -940,16 +998,24 @@ export class PokerTable {
       activeCount: activePlayers.length
     });
     
-    if (activePlayers.length >= 2) {
-      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2025-12-29-fast-hands';
-      logger.info('checkStartHand: starting hand immediately', { build: BUILD_TAG });
-      this.pendingHandStart = true;
-      // Start immediately - no delay for fast gameplay
-      this.pendingHandStart = false;
-      this.startHand();
-    } else {
-      logger.info('checkStartHand: not enough players', { need: 2, have: activePlayers.length });
-    }
+     if (activePlayers.length >= 2) {
+       const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2025-12-29-fast-hands';
+       logger.info('checkStartHand: starting hand immediately', { build: BUILD_TAG });
+
+       this.pendingHandStart = true;
+
+       void this.startHand()
+         .catch((err) => {
+           // startHand() already handles most errors internally, but keep this for safety
+           logger.error('startHand promise rejected', { tableId: this.id, error: String(err) });
+         })
+         .finally(() => {
+           this.pendingHandStart = false;
+           logger.info('checkStartHand: pending cleared', { tableId: this.id });
+         });
+     } else {
+       logger.info('checkStartHand: not enough players', { need: 2, have: activePlayers.length });
+     }
   }
   
   /**
