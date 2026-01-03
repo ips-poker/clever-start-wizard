@@ -197,6 +197,8 @@ export default function OnlinePoker() {
       return;
     }
     
+    toast.loading('Загрузка стола...', { id: 'join-tournament' });
+    
     try {
       // Get player's table assignment
       const { data, error } = await supabase.rpc('get_player_tournament_table', {
@@ -204,25 +206,36 @@ export default function OnlinePoker() {
         p_player_id: playerId
       });
       
+      console.log('Tournament table assignment:', data);
+      
       if (error) throw error;
       
-      const assignment = data as { success: boolean; table_assigned?: boolean; table_id?: string; error?: string };
+      const assignment = data as { 
+        success: boolean; 
+        table_assigned?: boolean; 
+        table_id?: string; 
+        table_name?: string;
+        seat_number?: number;
+        error?: string 
+      };
       
       if (!assignment.success) {
-        toast.error(assignment.error || 'Ошибка получения рассадки');
+        toast.error(assignment.error || 'Ошибка получения рассадки', { id: 'join-tournament' });
         return;
       }
       
       if (!assignment.table_assigned || !assignment.table_id) {
-        toast.info('Ожидайте начала турнира. Вы будете автоматически посажены за стол.');
+        toast.info('Ожидайте начала турнира. Вы будете автоматически посажены за стол.', { id: 'join-tournament' });
         return;
       }
+      
+      toast.success(`Открываю ${assignment.table_name || 'стол'}...`, { id: 'join-tournament' });
       
       // Open the tournament table
       handleJoinTournamentTable(assignment.table_id);
     } catch (error: any) {
       console.error('Error joining tournament:', error);
-      toast.error('Ошибка входа в турнир: ' + error.message);
+      toast.error('Ошибка входа в турнир: ' + error.message, { id: 'join-tournament' });
     }
   };
 
@@ -238,11 +251,20 @@ export default function OnlinePoker() {
       
       const tableUrl = `/table/${tableId}?playerId=${playerId}&buyIn=0&tournament=true`;
       
-      window.open(
+      const popup = window.open(
         tableUrl,
         `poker_table_${tableId}`,
         `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
       );
+      
+      // Check if popup was blocked
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        toast.error('Popup заблокирован! Открываю стол на этой странице...');
+        // Fallback to embedded mode
+        setActiveTable({ id: tableId, buyIn: 0, isTournament: true });
+      } else {
+        toast.success('Стол открыт в новом окне');
+      }
     } else {
       setActiveTable({ id: tableId, buyIn: 0, isTournament: true });
     }

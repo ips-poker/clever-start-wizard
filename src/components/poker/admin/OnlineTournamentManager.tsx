@@ -318,6 +318,7 @@ export function OnlineTournamentManager() {
         max_players: newTournament.max_players,
         min_players: newTournament.min_players,
         level_duration: newTournament.level_duration,
+        players_per_table: newTournament.players_per_table,
         status: 'registration',
         // Extended settings
         tournament_format: newTournament.tournament_format,
