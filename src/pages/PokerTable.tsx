@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { OnlinePokerTable } from '@/components/poker/OnlinePokerTable';
-import { TournamentHUD } from '@/components/poker/TournamentHUD';
 import { TournamentMoveNotification } from '@/components/poker/TournamentMoveNotification';
 import { TournamentEliminationModal } from '@/components/poker/TournamentEliminationModal';
 import { useTournamentReconnect } from '@/hooks/useTournamentReconnect';
@@ -130,14 +129,7 @@ export default function PokerTable() {
   return (
     <div className="w-screen h-screen overflow-hidden relative bg-black">
       
-      {/* Tournament HUD */}
-      {tournamentId && (
-        <TournamentHUD 
-          tournamentId={tournamentId} 
-          currentPlayerId={playerId}
-          compact={true} 
-        />
-      )}
+      {/* Tournament HUD is rendered inside OnlinePokerTable -> FullscreenPokerTableWrapper */}
 
       {/* Tournament Move Notification */}
       {tournamentId && playerId && (
