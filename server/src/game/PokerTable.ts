@@ -1746,8 +1746,69 @@ export class PokerTable {
         phase: this.currentHand.phase,
         completed_at: new Date().toISOString()
       });
+      
+      // CRITICAL: Sync all player stacks to database after each hand
+      await this.syncPlayerStacksToDatabase();
     } catch (err) {
       logger.error('Failed to save hand history', { error: String(err) });
+    }
+  }
+  
+  /**
+   * Sync all player stacks to database after hand completion
+   * Updates both poker_table_players and online_poker_tournament_participants
+   */
+  private async syncPlayerStacksToDatabase(): Promise<void> {
+    try {
+      // Get tournament_id if this is a tournament table
+      const { data: tableData } = await this.supabase
+        .from('poker_tables')
+        .select('tournament_id, table_type')
+        .eq('id', this.id)
+        .single();
+      
+      const isTournament = tableData?.table_type === 'tournament' && tableData?.tournament_id;
+      const tournamentId = tableData?.tournament_id;
+      
+      // Update all player stacks in parallel
+      const updates: Promise<any>[] = [];
+      
+      for (const player of this.players.values()) {
+        // Update poker_table_players
+        updates.push(
+          this.supabase
+            .from('poker_table_players')
+            .update({ 
+              stack: player.stack,
+              status: player.status,
+              last_action_at: new Date().toISOString()
+            })
+            .eq('table_id', this.id)
+            .eq('player_id', player.id)
+        );
+        
+        // If tournament, also update participant chips
+        if (isTournament && tournamentId) {
+          updates.push(
+            this.supabase
+              .from('online_poker_tournament_participants')
+              .update({ chips: player.stack })
+              .eq('tournament_id', tournamentId)
+              .eq('player_id', player.id)
+          );
+        }
+      }
+      
+      await Promise.all(updates);
+      
+      logger.info('Synced player stacks to database', {
+        tableId: this.id,
+        playerCount: this.players.size,
+        isTournament,
+        tournamentId
+      });
+    } catch (err) {
+      logger.error('Failed to sync player stacks', { tableId: this.id, error: String(err) });
     }
   }
   
