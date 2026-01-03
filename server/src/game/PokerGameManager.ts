@@ -67,8 +67,13 @@ export class PokerGameManager {
           timeBankSeconds: tableData.time_bank_seconds || 60
         };
         
-        this.tables.set(tableData.id, new PokerTable(config, this.supabase));
-        logger.info(`Loaded table: ${tableData.name}`, { tableId: tableData.id });
+        const table = new PokerTable(config, this.supabase);
+        this.tables.set(tableData.id, table);
+        
+        // CRITICAL: Wait for players to load before continuing
+        await table.loadPlayersFromDatabase();
+        
+        logger.info(`Loaded table: ${tableData.name}`, { tableId: tableData.id, players: table.getPlayerCount() });
       }
       
       logger.info(`Loaded ${this.tables.size} active tables`);
@@ -227,6 +232,10 @@ export class PokerGameManager {
       
       const table = new PokerTable(config, this.supabase);
       this.tables.set(tableId, table);
+      
+      // CRITICAL: Wait for players to load from database before returning
+      // Constructor calls loadPlayersFromDatabase without await, so we need to call it again
+      await table.loadPlayersFromDatabase();
       
       logger.info(`Dynamically loaded table: ${tableData.name}`, { tableId });
       return table;

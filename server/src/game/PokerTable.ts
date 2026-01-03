@@ -107,8 +107,9 @@ export class PokerTable {
   /**
    * Load existing players from database on table initialization
    * CRITICAL: This ensures server state matches database after restart
+   * Made PUBLIC so loadTableIfNeeded can await it after construction
    */
-  private async loadPlayersFromDatabase(): Promise<void> {
+  public async loadPlayersFromDatabase(): Promise<void> {
     try {
       const { data: dbPlayers, error } = await this.supabase
         .from('poker_table_players')
