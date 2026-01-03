@@ -229,13 +229,42 @@ export class PokerTable {
       
       // CRITICAL: Auto-start hand if we have enough players loaded from DB
       // Use setTimeout to let constructor complete first
+      const tableId = this.id;
+      const playerCount = this.players.size;
+      
+      logger.info('Setting up auto-start timer', { 
+        tableId, 
+        playerCount,
+        hasCurrentHand: !!this.currentHand
+      });
+      
       setTimeout(() => {
-        if (!this.currentHand && this.players.size >= 2) {
+        const currentPlayerCount = this.players.size;
+        const activePlayers = Array.from(this.players.values()).filter(p => p.status === 'active' && p.stack > 0);
+        
+        logger.info('Auto-start timer fired', { 
+          tableId: this.id, 
+          playerCount: currentPlayerCount,
+          activePlayerCount: activePlayers.length,
+          hasCurrentHand: !!this.currentHand,
+          pendingHandStart: this.pendingHandStart,
+          players: activePlayers.map(p => ({ id: p.id.substring(0, 8), name: p.name, seat: p.seatNumber, stack: p.stack }))
+        });
+        
+        if (!this.currentHand && currentPlayerCount >= 2) {
           logger.info('Auto-starting hand after loading players from DB', { 
             tableId: this.id, 
-            playerCount: this.players.size 
+            playerCount: currentPlayerCount,
+            activePlayerCount: activePlayers.length
           });
           this.checkStartHand();
+        } else {
+          logger.info('Auto-start skipped', { 
+            tableId: this.id,
+            reason: this.currentHand ? 'hand_in_progress' : 'not_enough_players',
+            playerCount: currentPlayerCount,
+            hasCurrentHand: !!this.currentHand
+          });
         }
       }, 2000); // 2 second delay to ensure table is fully initialized
       
