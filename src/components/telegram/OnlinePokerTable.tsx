@@ -12,6 +12,8 @@ interface OnlinePokerTableProps {
   minBuyIn?: number;
   maxBuyIn?: number;
   playerBalance?: number;
+  isTournament?: boolean;
+  tournamentId?: string;
   onLeave: () => void;
   onBalanceUpdate?: () => void;
 }
@@ -25,22 +27,35 @@ export function OnlinePokerTable({
   minBuyIn = 200,
   maxBuyIn = 2000,
   playerBalance = 10000,
+  isTournament: propIsTournament,
+  tournamentId: propTournamentId,
   onLeave,
   onBalanceUpdate
 }: OnlinePokerTableProps) {
   const [maxSeats, setMaxSeats] = useState(6);
+  const [isTournament, setIsTournament] = useState(propIsTournament || false);
+  const [tournamentId, setTournamentId] = useState<string | null>(propTournamentId || null);
   
-  // Fetch max_players from table
+  // Fetch table config including tournament info
   useEffect(() => {
     const fetchTableConfig = async () => {
       const { data } = await supabase
         .from('poker_tables')
-        .select('max_players')
+        .select('max_players, tournament_id, table_type')
         .eq('id', tableId)
         .single();
       
-      if (data?.max_players) {
-        setMaxSeats(data.max_players);
+      if (data) {
+        if (data.max_players) {
+          setMaxSeats(data.max_players);
+        }
+        // Auto-detect tournament from table data
+        if (data.tournament_id) {
+          setTournamentId(data.tournament_id);
+          setIsTournament(true);
+        } else if (data.table_type === 'tournament') {
+          setIsTournament(true);
+        }
       }
     };
     
@@ -63,6 +78,8 @@ export function OnlinePokerTable({
       minBuyIn={minBuyIn}
       maxBuyIn={maxBuyIn}
       playerBalance={playerBalance}
+      isTournament={isTournament}
+      tournamentId={tournamentId || undefined}
       onLeave={onLeave}
       onBalanceUpdate={onBalanceUpdate}
       maxSeats={maxSeats}
