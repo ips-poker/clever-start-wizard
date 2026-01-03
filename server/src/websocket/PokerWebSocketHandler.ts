@@ -199,24 +199,35 @@ export class PokerWebSocketHandler {
     
     // Auto-subscribe to table if provided in URL
     if (tableId) {
-      // Try to get table, or load dynamically if not in memory
-      this.gameManager.loadTableIfNeeded(tableId).then(table => {
-        if (table) {
+      (async () => {
+        try {
+          // Try to get table, or load dynamically if not in memory
+          const table = await this.gameManager.loadTableIfNeeded(tableId);
+
+          if (!table) {
+            logger.warn('Table not found even after dynamic load attempt', { tableId });
+            this.send(ws, { type: 'error', error: 'Table not found', tableId });
+            return;
+          }
+
           this.connectionPool.subscribeToTable(ws, tableId);
           this.setupTableListeners(table);
-          
+
+          // IMPORTANT: Tournament seating may update poker_table_players directly (outside WS join flow).
+          // Ensure the connecting player is loaded from DB so they can see themselves immediately.
+          if (playerId) {
+            await table.ensurePlayerLoadedFromDatabase(playerId);
+          }
+
           // Send current state
           const state = playerId ? table.getPlayerState(playerId) : table.getPublicState();
           this.send(ws, { type: 'state', tableId, state });
           logger.info('Sent initial state for table', { tableId });
-        } else {
-          logger.warn('Table not found even after dynamic load attempt', { tableId });
-          this.send(ws, { type: 'error', error: 'Table not found', tableId });
+        } catch (err) {
+          logger.error('Error loading table', { tableId, error: String(err) });
+          this.send(ws, { type: 'error', error: 'Failed to load table', tableId });
         }
-      }).catch(err => {
-        logger.error('Error loading table', { tableId, error: String(err) });
-        this.send(ws, { type: 'error', error: 'Failed to load table', tableId });
-      });
+      })();
     }
     
     // Handle messages
