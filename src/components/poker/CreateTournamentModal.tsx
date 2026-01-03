@@ -168,6 +168,8 @@ export function CreateTournamentModal({ open, onClose, playerId, onCreated }: Cr
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="6">6-max</SelectItem>
+                  <SelectItem value="7">7-max</SelectItem>
+                  <SelectItem value="8">8-max</SelectItem>
                   <SelectItem value="9">9-max</SelectItem>
                 </SelectContent>
               </Select>
