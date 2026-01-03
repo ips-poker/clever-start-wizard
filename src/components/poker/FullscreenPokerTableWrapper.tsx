@@ -136,6 +136,7 @@ export function FullscreenPokerTableWrapper({
   useEffect(() => {
     if (!hasConnectedRef.current) {
       hasConnectedRef.current = true;
+      console.log('[FullscreenPokerTableWrapper] Props - isTournament:', isTournament, 'tournamentId:', tournamentId);
       connect();
     }
     return () => { 
@@ -547,7 +548,7 @@ export function FullscreenPokerTableWrapper({
           <TournamentHUD 
             tournamentId={tournamentId} 
             compact={true}
-            className="top-16"
+            className="!top-16"
           />
         )}
 
