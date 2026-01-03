@@ -809,9 +809,20 @@ export function createConfigFromDatabase(dbTournament: {
 // TOURNAMENT MANAGER CLASS
 // ==========================================
 
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 export class TournamentManager {
   private tournaments: Map<string, TournamentState> = new Map();
   private timerIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private supabase: SupabaseClient | null = null;
+  
+  /**
+   * Set Supabase client for database synchronization
+   */
+  setSupabase(supabase: SupabaseClient): void {
+    this.supabase = supabase;
+    logger.info('TournamentManager: Supabase client set for DB sync');
+  }
   
   /**
    * Create tournament from database record
@@ -937,6 +948,9 @@ export class TournamentManager {
     // Start timer
     this.startTimer(tournamentId);
     
+    // Sync initial level to database
+    this.syncLevelToDatabase(tournamentId, state);
+    
     logger.info('Tournament started', { tournamentId, players: state.players.length });
     
     return { success: true };
@@ -1024,7 +1038,7 @@ export class TournamentManager {
   }
   
   private startTimer(tournamentId: string): void {
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       const state = this.tournaments.get(tournamentId);
       if (!state || state.status !== 'running') {
         clearInterval(interval);
@@ -1037,10 +1051,67 @@ export class TournamentManager {
         const newState = advanceLevel(state);
         this.tournaments.set(tournamentId, newState);
         logger.info('Level advanced', { tournamentId, level: newState.currentLevel });
+        
+        // Sync level_end_at to database for frontend display
+        await this.syncLevelToDatabase(tournamentId, newState);
       }
     }, 1000);
     
     this.timerIntervals.set(tournamentId, interval);
+  }
+  
+  /**
+   * Sync tournament level info to database for frontend HUD display
+   */
+  private async syncLevelToDatabase(tournamentId: string, state: TournamentState): Promise<void> {
+    if (!this.supabase) {
+      logger.warn('TournamentManager: Cannot sync level - no Supabase client');
+      return;
+    }
+    
+    try {
+      const currentBlindLevel = state.config.blindStructure.find(l => l.level === state.currentLevel);
+      const levelEndAt = new Date(Date.now() + state.timeRemaining * 1000).toISOString();
+      const isBreak = currentBlindLevel?.isBreak || false;
+      
+      const { error } = await this.supabase
+        .from('online_poker_tournaments')
+        .update({
+          current_level: state.currentLevel,
+          level_end_at: levelEndAt,
+          small_blind: currentBlindLevel?.smallBlind || state.config.blindStructure[0]?.smallBlind || 25,
+          big_blind: currentBlindLevel?.bigBlind || state.config.blindStructure[0]?.bigBlind || 50,
+          ante: currentBlindLevel?.ante || 0,
+          status: isBreak ? 'break' : state.status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', tournamentId);
+      
+      if (error) {
+        logger.error('Failed to sync level to DB', { tournamentId, error: error.message });
+      } else {
+        logger.info('Level synced to DB', { 
+          tournamentId, 
+          level: state.currentLevel, 
+          levelEndAt,
+          blinds: `${currentBlindLevel?.smallBlind}/${currentBlindLevel?.bigBlind}`
+        });
+        
+        // Also update table blinds
+        if (!isBreak) {
+          await this.supabase
+            .from('poker_tables')
+            .update({
+              small_blind: currentBlindLevel?.smallBlind || 25,
+              big_blind: currentBlindLevel?.bigBlind || 50,
+              ante: currentBlindLevel?.ante || 0
+            })
+            .eq('tournament_id', tournamentId);
+        }
+      }
+    } catch (err) {
+      logger.error('Exception syncing level to DB', { tournamentId, error: (err as Error).message });
+    }
   }
   
   pauseTournament(tournamentId: string): { success: boolean } {
