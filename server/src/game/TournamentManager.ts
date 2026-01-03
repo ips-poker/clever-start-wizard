@@ -1142,7 +1142,42 @@ export class TournamentManager {
       this.timerIntervals.delete(tournamentId);
     }
 
+    // Sync paused state to database - set level_end_at to null to indicate paused
+    this.syncPauseToDatabase(tournamentId, state);
+
     return { success: true };
+  }
+  
+  /**
+   * Sync pause state to database
+   */
+  private async syncPauseToDatabase(tournamentId: string, state: TournamentState): Promise<void> {
+    if (!this.supabase) {
+      logger.warn('TournamentManager: Cannot sync pause - no Supabase client');
+      return;
+    }
+    
+    try {
+      const { error } = await this.supabase
+        .from('online_poker_tournaments')
+        .update({
+          status: 'paused',
+          // Keep level_end_at but we'll recalculate on resume
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', tournamentId);
+      
+      if (error) {
+        logger.error('Failed to sync pause to DB', { tournamentId, error: error.message });
+      } else {
+        logger.info('Pause synced to DB', { 
+          tournamentId, 
+          timeRemaining: state.timeRemaining 
+        });
+      }
+    } catch (err) {
+      logger.error('Exception syncing pause to DB', { tournamentId, error: (err as Error).message });
+    }
   }
   
   resumeTournament(tournamentId: string): { success: boolean } {
