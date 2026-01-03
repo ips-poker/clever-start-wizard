@@ -1,8 +1,9 @@
-import { Home, Trophy, TrendingUp, UserPlus, User, Settings } from "lucide-react";
+import { Home, Trophy, TrendingUp, UserPlus, User, Settings, Bell } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { NotificationCenter } from "@/components/notifications";
 
 export function MobileBottomNav() {
   const location = useLocation();
@@ -75,6 +76,14 @@ export function MobileBottomNav() {
       style={{ bottom: '16px' }}
     >
       <div className="flex items-center justify-center gap-2">
+        {/* Notification Center - left side */}
+        <div 
+          className="flex items-center justify-center px-3 py-2 backdrop-blur-md bg-background/40 border border-border/30 rounded-lg"
+          style={{ boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)" }}
+        >
+          <NotificationCenter />
+        </div>
+
         {navItems.map((item) => {
           const active = isActive(item.url);
           return (
