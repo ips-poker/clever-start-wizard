@@ -199,19 +199,24 @@ export class PokerWebSocketHandler {
     
     // Auto-subscribe to table if provided in URL
     if (tableId) {
-      const table = this.gameManager.getTable(tableId);
-      if (table) {
-        this.connectionPool.subscribeToTable(ws, tableId);
-        this.setupTableListeners(table);
-        
-        // Send current state
-        const state = playerId ? table.getPlayerState(playerId) : table.getPublicState();
-        this.send(ws, { type: 'state', tableId, state });
-        logger.info('Sent initial state for table', { tableId });
-      } else {
-        logger.warn('Table not found', { tableId });
-        this.send(ws, { type: 'error', error: 'Table not found', tableId });
-      }
+      // Try to get table, or load dynamically if not in memory
+      this.gameManager.loadTableIfNeeded(tableId).then(table => {
+        if (table) {
+          this.connectionPool.subscribeToTable(ws, tableId);
+          this.setupTableListeners(table);
+          
+          // Send current state
+          const state = playerId ? table.getPlayerState(playerId) : table.getPublicState();
+          this.send(ws, { type: 'state', tableId, state });
+          logger.info('Sent initial state for table', { tableId });
+        } else {
+          logger.warn('Table not found even after dynamic load attempt', { tableId });
+          this.send(ws, { type: 'error', error: 'Table not found', tableId });
+        }
+      }).catch(err => {
+        logger.error('Error loading table', { tableId, error: String(err) });
+        this.send(ws, { type: 'error', error: 'Failed to load table', tableId });
+      });
     }
     
     // Handle messages
@@ -371,9 +376,10 @@ export class PokerWebSocketHandler {
     
     const { tableId, playerId, playerName, seatNumber, buyIn } = result.data;
     
-    const table = this.gameManager.getTable(tableId);
+    // Try to get table, or load dynamically if not in memory
+    const table = await this.gameManager.loadTableIfNeeded(tableId);
     if (!table) {
-      logger.warn('Table not found for join', { tableId });
+      logger.warn('Table not found for join even after dynamic load', { tableId });
       this.sendError(ws, 'Table not found');
       return;
     }
@@ -440,7 +446,8 @@ export class PokerWebSocketHandler {
     
     const { tableId, playerId, actionType, amount } = result.data;
     
-    const table = this.gameManager.getTable(tableId);
+    // Try to get table, or load dynamically if not in memory
+    const table = await this.gameManager.loadTableIfNeeded(tableId);
     if (!table) {
       this.sendError(ws, 'Table not found');
       return;
@@ -472,9 +479,10 @@ export class PokerWebSocketHandler {
     
     const { tableId, playerId } = result.data;
     
-    const table = this.gameManager.getTable(tableId);
+    const table = await this.gameManager.loadTableIfNeeded(tableId);
     if (table) {
       await table.leaveTable(playerId);
+    }
     }
     
     // Remove from subscribers
@@ -495,7 +503,7 @@ export class PokerWebSocketHandler {
     
     const { tableId, playerId } = result.data;
     
-    const table = this.gameManager.getTable(tableId);
+    const table = await this.gameManager.loadTableIfNeeded(tableId);
     if (!table) {
       this.sendError(ws, 'Table not found');
       return;
@@ -524,7 +532,7 @@ export class PokerWebSocketHandler {
     
     const { tableId, playerId } = result.data;
     
-    const table = this.gameManager.getTable(tableId);
+    const table = await this.gameManager.loadTableIfNeeded(tableId);
     if (!table) {
       this.sendError(ws, 'Table not found');
       return;
@@ -562,7 +570,7 @@ export class PokerWebSocketHandler {
       return;
     }
     
-    const table = this.gameManager.getTable(tableId);
+    const table = await this.gameManager.loadTableIfNeeded(tableId);
     if (!table) {
       this.sendError(ws, 'Table not found');
       return;
@@ -584,7 +592,7 @@ export class PokerWebSocketHandler {
   private async handleGetState(ws: WebSocket, message: { tableId: string; playerId?: string }): Promise<void> {
     const { tableId, playerId } = message;
     
-    const table = this.gameManager.getTable(tableId);
+    const table = await this.gameManager.loadTableIfNeeded(tableId);
     if (!table) {
       this.sendError(ws, 'Table not found');
       return;
@@ -660,7 +668,7 @@ export class PokerWebSocketHandler {
       return;
     }
     
-    const table = this.gameManager.getTable(tableId);
+    const table = await this.gameManager.loadTableIfNeeded(tableId);
     if (!table) {
       this.sendError(ws, 'Table not found');
       return;
