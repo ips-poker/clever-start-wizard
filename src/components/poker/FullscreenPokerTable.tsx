@@ -32,6 +32,9 @@ import { PPPokerActionBadge } from './PPPokerActionBadge';
 import { PPPokerLevelBadge } from './PPPokerLevelBadge';
 import { PotCollectionAnimation } from './PotCollectionAnimation';
 import { WinnerChipCascade } from './WinnerChipCascade';
+import { BetCollectionAnimation } from './BetCollectionAnimation';
+import { ProfessionalShowdown } from './ProfessionalShowdown';
+import { usePhaseAnimation } from '@/hooks/usePhaseAnimation';
 import { getHandStrengthName } from '@/utils/handEvaluator';
 
 // ============= SUIT CONFIGURATION =============
@@ -1367,10 +1370,17 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   // Get personalization preferences
   const { preferences, currentTableTheme, currentCardBack } = usePokerPreferences();
   
+  // Professional phase animation hook
+  const { animationState, isAnimating: isPhaseAnimating } = usePhaseAnimation();
+  
   // Track phase changes for pot collection animation
   const prevPhaseRef = useRef(phase);
   const [isCollectingBets, setIsCollectingBets] = useState(false);
   const [collectionBets, setCollectionBets] = useState<Array<{ seatPosition: { x: number; y: number }; amount: number }>>([]);
+  
+  // Bet collection animation state (separate from pot collection)
+  const [betCollectionActive, setBetCollectionActive] = useState(false);
+  const [betCollectionPositions, setBetCollectionPositions] = useState<Array<{ x: number; y: number }>>([]);
   
   // Win distribution animation state
   const [winDistribution, setWinDistribution] = useState<{ winnerSeat: number; amount: number } | null>(null);
@@ -1486,7 +1496,42 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         />
       )}
       
-      {/* Center area - pot and community cards - vertically centered in table */}
+      {/* Bet collection animation */}
+      <BetCollectionAnimation
+        isCollecting={betCollectionActive}
+        betsToCollect={betCollectionPositions.map((pos, idx) => ({
+          playerId: `player-${idx}`,
+          seatNumber: idx,
+          amount: 100,
+          position: pos
+        }))}
+        onComplete={() => {
+          setBetCollectionActive(false);
+          setBetCollectionPositions([]);
+        }}
+      />
+      
+      {/* Professional Showdown overlay */}
+      {phase === 'showdown' && showdownPlayers && showdownPlayers.length > 0 && (
+        <ProfessionalShowdown
+          players={showdownPlayers.map(sp => {
+            const playerInfo = players.find(p => p.playerId === sp.playerId);
+            return {
+              playerId: sp.playerId,
+              name: playerInfo?.name || 'Player',
+              seatNumber: sp.seatNumber,
+              holeCards: sp.holeCards || [],
+              handName: sp.handName || '',
+              isWinner: winners?.some(w => w.playerId === sp.playerId) || false,
+              wonAmount: winners?.find(w => w.playerId === sp.playerId)?.amount,
+            };
+          })}
+          communityCards={communityCards}
+          pot={pot}
+          onComplete={() => {}}
+        />
+      )}
+      
       {(() => {
         const winnerPlayer = players.find(p => (p as any).isWinner);
         const winningCommIndices = (winnerPlayer as any)?.communityCardIndices || [];
