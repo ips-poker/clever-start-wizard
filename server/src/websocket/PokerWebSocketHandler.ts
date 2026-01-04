@@ -1330,6 +1330,19 @@ export class PokerWebSocketHandler {
       this.tournamentManager.eliminatePlayer(tournamentId, playerId, eliminatedBy);
       metrics.recordElimination();
       
+      // CRITICAL: Remove player from in-memory PokerTable
+      // Database already updated by RPC, need to sync in-memory state
+      if (result.table_id) {
+        const table = this.gameManager.getTable(result.table_id);
+        if (table) {
+          table.removeEliminatedPlayer(playerId);
+          logger.info('Removed eliminated player from in-memory table', { 
+            playerId: playerId.substring(0, 8), 
+            tableId: result.table_id 
+          });
+        }
+      }
+      
       // Process PKO bounty if applicable
       if (eliminatedBy) {
         try {

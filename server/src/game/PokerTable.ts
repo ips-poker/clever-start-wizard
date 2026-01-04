@@ -676,6 +676,34 @@ export class PokerTable {
   }
 
   /**
+   * Remove eliminated player from in-memory state (DB already updated)
+   * Used after tournament elimination RPC call
+   */
+  removeEliminatedPlayer(playerId: string): boolean {
+    const player = this.players.get(playerId);
+    if (!player) {
+      logger.warn('removeEliminatedPlayer: player not found', { playerId: playerId.substring(0, 8) });
+      return false;
+    }
+    
+    // Clear seat
+    if (player.seatNumber >= 0 && player.seatNumber < this.seats.length) {
+      this.seats[player.seatNumber] = null;
+    }
+    
+    // Remove from players map
+    this.players.delete(playerId);
+    
+    logger.info('Eliminated player removed from in-memory table', { 
+      playerId: playerId.substring(0, 8),
+      tableId: this.id
+    });
+    
+    this.emit('player_eliminated_removed', { playerId });
+    
+    return true;
+  }
+
    * Sit out - player will auto-fold when it's their turn
    */
   async sitOut(playerId: string): Promise<{ success: boolean; error?: string }> {
