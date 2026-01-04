@@ -2376,6 +2376,7 @@ export type Database = {
         Returns: boolean
       }
       cleanup_stuck_poker_hands: { Args: never; Returns: number }
+      cleanup_zero_stack_tournament_players: { Args: never; Returns: Json }
       complete_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
