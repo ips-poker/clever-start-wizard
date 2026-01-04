@@ -644,6 +644,21 @@ export function FullscreenPokerTableWrapper({
             )}
           </>
         )}
+        
+        {/* Fallback Blinds Display - shows when TournamentHUD is not available */}
+        {tableState && !tournamentId && (
+          <div className="absolute top-16 left-2 z-40">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 text-white text-xs font-medium">
+              <span className="text-white/60">Блайнды:</span>
+              <span className="text-amber-400 font-bold">
+                {(tableState.smallBlindAmount || 10).toLocaleString()}/{(tableState.bigBlindAmount || 20).toLocaleString()}
+              </span>
+              {(tableState.anteAmount ?? 0) > 0 && (
+                <span className="text-white/50">анте {tableState.anteAmount}</span>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Main poker table - optimized spacing for all UI elements */}
         {/* Dynamic top padding for header + safe area, pb-40: space for action panel + hero cards */}

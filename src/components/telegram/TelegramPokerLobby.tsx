@@ -87,6 +87,7 @@ export function TelegramPokerLobby({
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [myTournamentStatusById, setMyTournamentStatusById] = useState<Record<string, string>>({});
   const [activeTableId, setActiveTableId] = useState<string | null>(null);
+  const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
   const [activeBuyIn, setActiveBuyIn] = useState<number>(10000);
   const [showDemoTable, setShowDemoTable] = useState(false);
 
@@ -246,8 +247,9 @@ export function TelegramPokerLobby({
   };
 
   // Handle joining a tournament table by ID (from ActiveTournamentAssignments)
-  const handleJoinTournamentTable = (tableId: string) => {
+  const handleJoinTournamentTable = (tableId: string, tournamentId?: string) => {
     setActiveTableId(tableId);
+    setActiveTournamentId(tournamentId || null);
     setActiveBuyIn(0); // Tournament tables don't use buy-in
   };
 
@@ -275,11 +277,13 @@ export function TelegramPokerLobby({
         return;
       }
 
-      // Open the tournament table
+      // Open the tournament table with tournament info
       setActiveTableId(assignment.table_id);
+      setActiveTournamentId(tournamentId); // Pass tournament ID for TournamentHUD
       setActiveBuyIn(0); // Tournament tables don't use buy-in
       onJoinTournament?.(tournamentId);
       
+      console.log('[TelegramPokerLobby] Entering tournament table:', assignment.table_id, 'tournamentId:', tournamentId);
       toast.success(`Стол: ${assignment.table_name || 'Турнирный стол'}, место ${assignment.seat_number}`);
     } catch (error: any) {
       console.error('Error entering tournament:', error);
@@ -382,8 +386,11 @@ export function TelegramPokerLobby({
         playerName={playerName}
         playerAvatar={playerAvatar}
         buyIn={activeBuyIn}
+        isTournament={!!activeTournamentId}
+        tournamentId={activeTournamentId || undefined}
         onLeave={() => {
           setActiveTableId(null);
+          setActiveTournamentId(null);
           setActiveBuyIn(10000);
         }}
       />
