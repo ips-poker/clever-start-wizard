@@ -2,9 +2,15 @@
  * RPS Prize System for Online Tournaments
  * 
  * Система призов на базе RPS (Rating Points System):
- * - Валюта входа: Алмазы (1000₽ = 1000💎)
+ * - Валюта входа: Алмазы (100₽ = 500💎)
  * - Призы: RPS очки (1000₽ = 100 RPS)
  * - Топ-3: Входы на офлайн турниры
+ * 
+ * Конвертация:
+ * - 100₽ = 500💎 → 1₽ = 5💎
+ * - 1000₽ = 100 RPS → 1₽ = 0.1 RPS
+ * - Значит: 500💎 = 10 RPS → 1💎 = 0.02 RPS
+ * - Делитель: 50 (5000💎 = 100 RPS)
  * 
  * Автоматический расчёт структуры выплат по количеству участников:
  * • 2-9 игроков: 1 место (100%)
@@ -17,8 +23,9 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from './logger.js';
 
-// Константа конвертации: 1000₽ = 100 RPS
-const RPS_CONVERSION_RATE = 10; // делим на 10 для получения RPS
+// Конвертация: 100₽ = 500💎, 1000₽ = 100 RPS
+// 500💎 = 10 RPS → 5000💎 = 100 RPS → делитель = 50
+const RPS_CONVERSION_RATE = 50; // делим на 50 для получения RPS
 
 // Структуры выплат по количеству игроков
 const RPS_PAYOUT_STRUCTURES: Record<string, { places: number; percentages: number[] }> = {
@@ -71,7 +78,8 @@ class RPSPrizeSystem {
 
   /**
    * Конвертация алмазов в RPS
-   * 1000 алмазов = 100 RPS (конверсия 1:10)
+   * 100₽ = 500💎, 1000₽ = 100 RPS
+   * 500💎 = 10 RPS, 5000💎 = 100 RPS
    */
   convertDiamondsToRPS(diamonds: number): number {
     return Math.floor(diamonds / RPS_CONVERSION_RATE);
