@@ -198,9 +198,9 @@ class TournamentAutoStartService {
       throw new Error(`Failed to update tournament: ${updateError.message}`);
     }
 
-    // 2. Create tables using RPC function
+    // 2. Create tables using RPC function (correct function name)
     const { data: startResult, error: startError } = await this.supabase
-      .rpc('start_online_tournament_with_tables', {
+      .rpc('start_online_tournament_with_seating', {
         p_tournament_id: tournament.id
       });
 
