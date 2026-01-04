@@ -340,7 +340,9 @@ export function OnlineTournamentManager() {
         time_bank_initial: newTournament.time_bank_initial,
         time_bank_per_level: newTournament.time_bank_per_level,
         action_time_seconds: newTournament.action_time_seconds,
-        scheduled_start_at: newTournament.scheduled_start_at || null,
+        scheduled_start_at: newTournament.scheduled_start_at 
+          ? new Date(newTournament.scheduled_start_at).toISOString() 
+          : null,
         auto_start: newTournament.auto_start
       })
       .select('id')
@@ -977,8 +979,26 @@ export function OnlineTournamentManager() {
                   <Input
                     type="datetime-local"
                     value={newTournament.scheduled_start_at}
-                    onChange={(e) => setNewTournament(prev => ({ ...prev, scheduled_start_at: e.target.value }))}
+                    onChange={(e) => setNewTournament(prev => ({ 
+                      ...prev, 
+                      scheduled_start_at: e.target.value,
+                      auto_start: e.target.value ? true : prev.auto_start 
+                    }))}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={newTournament.auto_start}
+                      onChange={(e) => setNewTournament(prev => ({ ...prev, auto_start: e.target.checked }))}
+                      className="h-4 w-4 rounded"
+                    />
+                    Авто-старт
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Турнир начнётся автоматически по времени при достаточном кол-ве игроков
+                  </p>
                 </div>
               </div>
 
