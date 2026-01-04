@@ -53,31 +53,23 @@ export function BountyDisplay({
       // Get participant data with bounty info
       const { data: participant } = await supabase
         .from('online_poker_tournament_participants')
-        .select('*')
+        .select('player_id, knockouts_count, bounty_collected, bounty_value')
         .eq('tournament_id', tournamentId)
         .eq('player_id', playerId)
         .single();
 
       if (participant) {
-        // Calculate bounty info (50% of buy-in goes to bounty in PKO)
+        // Use new bounty columns from database
         const startingBounty = Math.floor((tournament.buy_in || 0) * 0.5);
         
-        // For now, we'll calculate based on elimination records
-        const { data: knockouts } = await supabase
-          .from('online_poker_tournament_participants')
-          .select('id')
-          .eq('tournament_id', tournamentId)
-          .eq('eliminated_by', playerId);
-
-        const knockoutCount = knockouts?.length || 0;
-        
-        // Progressive bounty: current bounty = starting + 50% of each collected bounty
-        const collectedBounties = knockoutCount * startingBounty * 0.5;
-        const currentBounty = startingBounty + collectedBounties;
+        // Use database-stored values if available, otherwise calculate
+        const knockoutCount = (participant as any).knockouts_count || 0;
+        const collectedBounties = (participant as any).bounty_collected || (knockoutCount * startingBounty * 0.5);
+        const currentBounty = (participant as any).bounty_value || (startingBounty + collectedBounties);
 
         setBountyInfo({
           currentBounty,
-          collectedBounties: knockoutCount * startingBounty * 0.5,
+          collectedBounties,
           knockouts: knockoutCount,
           startingBounty
         });

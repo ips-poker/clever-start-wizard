@@ -963,7 +963,9 @@ export function OnlineTournamentManager() {
                       <SelectItem value="freezeout">Freezeout (без ребаев)</SelectItem>
                       <SelectItem value="rebuy">Rebuy (с ребаями)</SelectItem>
                       <SelectItem value="knockout">Knockout (с нокаутами)</SelectItem>
+                      <SelectItem value="pko">PKO (Progressive Knockout)</SelectItem>
                       <SelectItem value="bounty">Bounty (с баунти)</SelectItem>
+                      <SelectItem value="satellite">Satellite (на билеты)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
