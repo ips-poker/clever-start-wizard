@@ -27,6 +27,8 @@ interface TournamentInfo {
   level_end_at: string | null;
   prize_pool: number;
   starting_chips: number;
+  late_registration_enabled?: boolean;
+  late_registration_level?: number;
 }
 
 interface LevelInfo {
@@ -445,6 +447,21 @@ export function TournamentHUD({
             </div>
           </div>
         </div>
+
+        {/* Late Registration Warning */}
+        {tournament.late_registration_enabled && 
+         tournament.current_level && 
+         tournament.late_registration_level && 
+         tournament.current_level <= tournament.late_registration_level && 
+         tournament.late_registration_level - tournament.current_level <= 2 && (
+          <div className="px-3 py-1.5 bg-emerald-500/20 border-t border-emerald-500/30">
+            <div className="flex items-center justify-center gap-1.5 text-xs">
+              <span className="text-emerald-400 font-medium animate-pulse">
+                ⏰ Late Reg закрывается через {tournament.late_registration_level - tournament.current_level + 1} ур.
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Status bar */}
         {tournament.status === 'break' && (
