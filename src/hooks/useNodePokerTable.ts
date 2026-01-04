@@ -546,6 +546,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // Fall through to update state
         case 'player_left':
         case 'playerLeft':
+          // Just state update, no special handling
+          if (data.state && tableId) {
+            setTableState(transformServerState(data.state, tableId));
+          }
+          break;
+
         case 'hand_started':
         case 'handStarted':  // Server sends camelCase
           // Clear showdown and ALL player cards when new hand starts
@@ -573,15 +579,38 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             };
           });
           setMyCards([]); // Clear my cards
-          // Fall through to process state
-          // eslint-disable-next-line no-fallthrough
-          // eslint-disable-next-line no-fallthrough
+          
+          // Process state if included
+          if (data.state && tableId) {
+            const stateData = data.state as Record<string, unknown>;
+            log('🎴 Hand started state:', JSON.stringify(stateData).substring(0, 500));
+            setTableState(transformServerState(data.state, tableId));
+            
+            if (stateData.myCards) {
+              setMyCards(stateData.myCards as string[]);
+            }
+            if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
+              setMySeat(stateData.mySeat as number);
+            }
+          }
+          break;
+
+        case 'bets_collected':
+          // PROFESSIONAL TIMING: Bets being collected before phase change
+          log('💰 Bets collected - chips moving to pot:', data);
+          // This event signals the visual animation of chips sliding to pot
+          // The actual phase_change follows after server delay
+          break;
+
         case 'phase_change':
         case 'phaseChange':
-          // These events include updated tableState - process it
+          // PROFESSIONAL TIMING: These events now include dealDelay and preDealDelay from server
           log(`📡 ${data.type} event received:`, {
             hasState: !!data.state,
-            stateKeys: data.state ? Object.keys(data.state as object) : []
+            stateKeys: data.state ? Object.keys(data.state as object) : [],
+            dealDelay: (data as any).dealDelay,
+            preDealDelay: (data as any).preDealDelay,
+            phase: (data as any).phase
           });
           
           if (data.state && tableId) {
@@ -628,10 +657,6 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
               setMySeat(stateData.mySeat as number);
             }
-          }
-          
-          if (data.type === 'hand_started' || data.type === 'handStarted') {
-            log('🎴 Hand started event:', JSON.stringify(data).substring(0, 500));
           }
           break;
 

@@ -159,11 +159,46 @@ Deno.serve(async (req) => {
       if (isBreak) {
         action = 'break_started';
         newStatus = 'break';
+        
+        // PROFESSIONAL TIMING: Notify all tables IMMEDIATELY that break is starting
+        // This prevents any new hands from starting and shows break banner
+        console.log(`Tournament ${tournament.name}: BREAK STARTING - broadcasting to all tables`);
+        
+        // Get all tournament tables and mark them for break
+        const { data: tables } = await supabase
+          .from('poker_tables')
+          .select('id')
+          .eq('tournament_id', tournament.id);
+        
+        if (tables && tables.length > 0) {
+          // Set all tables to 'break' status to prevent new hands
+          await supabase
+            .from('poker_tables')
+            .update({ 
+              status: 'break',
+              updated_at: new Date().toISOString()
+            })
+            .eq('tournament_id', tournament.id);
+          
+          console.log(`Tournament ${tournament.name}: Set ${tables.length} tables to break status`);
+        }
+        
       } else if (wasBreak) {
         action = 'break_ended';
         newStatus = 'running';
-        // IMPORTANT: When break ends, trigger immediate consolidation and hand restart
-        console.log(`Tournament ${tournament.name}: Break ended, triggering consolidation and hand restart`);
+        
+        // PROFESSIONAL TIMING: Resume play on all tables immediately
+        console.log(`Tournament ${tournament.name}: Break ended, resuming play on all tables`);
+        
+        // Reset all tables to 'waiting' so hands can start
+        await supabase
+          .from('poker_tables')
+          .update({ 
+            status: 'waiting',
+            updated_at: new Date().toISOString()
+          })
+          .eq('tournament_id', tournament.id);
+          
       } else {
         action = 'level_advanced';
         newStatus = 'running';
@@ -178,7 +213,8 @@ Deno.serve(async (req) => {
           big_blind: isBreak ? tournament.big_blind : nextLevel.big_blind,
           ante: isBreak ? tournament.ante : nextLevel.ante,
           level_end_at: newEndTime.toISOString(),
-          status: newStatus
+          status: newStatus,
+          updated_at: new Date().toISOString() // Trigger realtime subscription
         })
         .eq('id', tournament.id);
 
@@ -203,7 +239,10 @@ Deno.serve(async (req) => {
         }
       }
 
-      // 6. Проверяем нужна ли балансировка столов
+      // 6. Проверяем нужна ли балансировка столов (особенно важно после перерыва)
+      if (wasBreak || action === 'break_ended') {
+        console.log(`Tournament ${tournament.name}: Running table balancing after break end`);
+      }
       await checkAndBalanceTables(supabase, tournament.id);
 
       results.push({

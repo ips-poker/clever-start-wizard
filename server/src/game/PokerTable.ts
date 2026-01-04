@@ -1,6 +1,7 @@
 /**
  * Poker Table - Single table game logic
  * Uses Professional Poker Engine v3.0
+ * With Professional Timings (PokerStars/PPPoker style)
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -8,6 +9,7 @@ import { TableConfig } from './PokerGameManager.js';
 import { PokerEngineV3, ActionResult, GameType, GameConfig, evaluateHand } from './PokerEngineV3.js';
 import { logger } from '../utils/logger.js';
 import { makeBotDecision, getBotAggression, BotDecision } from './PokerBotAI.js';
+import { PROFESSIONAL_TIMINGS, ProfessionalTimings, calculatePhaseDelay } from '../config/pokerTimings.js';
 
 export interface Player {
   id: string;
@@ -69,6 +71,16 @@ export class PokerTable {
   
   private actionTimer: NodeJS.Timeout | null = null;
   private eventListeners: Set<TableEventCallback> = new Set();
+  
+  // Professional timing settings
+  private timings: ProfessionalTimings = PROFESSIONAL_TIMINGS;
+  
+  /**
+   * Utility: Promise-based delay for professional timing
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
   
   constructor(config: TableConfig, supabase: SupabaseClient) {
     this.id = config.id;
@@ -1096,13 +1108,8 @@ export class PokerTable {
       playerBet: player.currentBet
     });
     
-    // CRITICAL: Always emit state update so all clients see updated bets
-    this.emit('state_update', {
-      pot: this.currentHand?.pot || 0,
-      currentBet: this.currentHand?.currentBet || 0,
-      currentPlayerSeat: this.currentHand?.currentPlayerSeat,
-      phase: this.currentHand?.phase || 'preflop'
-    });
+    // PROFESSIONAL TIMING: Add delay after action for visual feedback (pot/bet animation)
+    const afterActionDelay = PROFESSIONAL_TIMINGS.afterAction;
     
     // Check if hand is complete
     if (result.handComplete && result.winners) {
@@ -1110,12 +1117,60 @@ export class PokerTable {
         winners: result.winners,
         pot: this.currentHand?.pot
       });
+      
+      // Delay before showing showdown result
+      await this.delay(afterActionDelay);
       await this.completeHand(result.winners);
+      
     } else if (result.phaseAdvanced && this.currentHand) {
+      // PROFESSIONAL TIMING: Phase transition with delays
+      const newPhase = this.currentHand.phase as 'flop' | 'turn' | 'river' | 'showdown';
+      const phaseDelay = calculatePhaseDelay(newPhase);
+      
+      logger.info('Phase advancing with professional delay', {
+        newPhase,
+        delayMs: afterActionDelay + phaseDelay,
+        communityCardsCount: this.currentHand.communityCards.length
+      });
+      
+      // First, emit that bets are being collected (chips slide to pot)
+      this.emit('bets_collected', {
+        pot: this.currentHand.pot,
+        phase: newPhase
+      });
+      
+      // Delay for chip collection animation
+      await this.delay(afterActionDelay);
+      
+      // Emit phase change with dealing delay for client animation
       this.emit('phase_change', {
-        phase: this.currentHand.phase,
+        phase: newPhase,
         communityCards: this.currentHand.communityCards,
-        pot: this.currentHand.pot
+        pot: this.currentHand.pot,
+        dealDelay: PROFESSIONAL_TIMINGS.phases[newPhase]?.perCardDelay || 0,
+        preDealDelay: PROFESSIONAL_TIMINGS.phases[newPhase]?.preDealDelay || 0
+      });
+      
+      // Wait for cards to be dealt visually before starting next action timer
+      await this.delay(phaseDelay);
+      
+      // Now emit state update after cards are visually dealt
+      this.emit('state_update', {
+        pot: this.currentHand.pot,
+        currentBet: 0, // Bets reset after phase
+        currentPlayerSeat: this.currentHand.currentPlayerSeat,
+        phase: newPhase
+      });
+      
+    } else {
+      // Normal state update without phase change - minimal delay
+      await this.delay(Math.min(afterActionDelay, 200));
+      
+      this.emit('state_update', {
+        pot: this.currentHand?.pot || 0,
+        currentBet: this.currentHand?.currentBet || 0,
+        currentPlayerSeat: this.currentHand?.currentPlayerSeat,
+        phase: this.currentHand?.phase || 'preflop'
       });
     }
     
@@ -1497,15 +1552,37 @@ export class PokerTable {
    */
   private async checkTournamentBreakAndStart(): Promise<void> {
     try {
-      // Check if this is a tournament table
+      // Check if this is a tournament table AND if table itself is on break
       const { data: tableData, error: tableError } = await this.supabase
         .from('poker_tables')
-        .select('tournament_id, table_type')
+        .select('tournament_id, table_type, status')
         .eq('id', this.id)
         .single();
 
       if (tableError) {
         throw tableError;
+      }
+
+      // PROFESSIONAL TIMING: Check table status first - if table is on break, don't start
+      if (tableData?.status === 'break') {
+        logger.info('checkStartHand: table is on BREAK status - delaying hand start', {
+          tableId: this.id,
+          tableStatus: tableData.status
+        });
+
+        // Emit break event to notify players
+        this.emit('tournament_break', {
+          tableId: this.id,
+          message: 'Перерыв. Раздачи возобновятся автоматически.'
+        });
+
+        // Retry after 5 seconds (faster polling for break end)
+        setTimeout(() => {
+          if (!this.currentHand) {
+            this.checkStartHand();
+          }
+        }, 5000);
+        return;
       }
 
       if (tableData?.table_type === 'tournament' && tableData?.tournament_id) {
@@ -1542,29 +1619,24 @@ export class PokerTable {
           });
 
           // Emit break event to notify players
-          this.emit({
-            type: 'tournament_break',
-            tableId: this.id,
-            data: {
-              tournamentId: tableData.tournament_id,
-              tournamentName: tournament?.name,
-              message: 'Турнир на перерыве. Раздачи возобновятся после перерыва.'
-            },
-            timestamp: Date.now()
+          this.emit('tournament_break', {
+            tournamentId: tableData.tournament_id,
+            tournamentName: tournament?.name,
+            message: 'Турнир на перерыве. Раздачи возобновятся после перерыва.'
           });
 
-          // Retry after 10 seconds to check if break ended
+          // Retry after 5 seconds (faster polling)
           setTimeout(() => {
             if (!this.currentHand) {
               this.checkStartHand();
             }
-          }, 10000);
+          }, 5000);
           return;
         }
       }
 
       // Not a tournament or not on break - start hand
-      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-04-break-fix';
+      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-04-pro-timings';
       logger.info('checkStartHand: starting hand immediately', { build: BUILD_TAG });
 
       await this.startHand();
