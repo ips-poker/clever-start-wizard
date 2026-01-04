@@ -26,11 +26,37 @@ export class PokerGameManager {
   private tables: Map<string, PokerTable> = new Map();
   private supabase: SupabaseClient;
   private saveInterval: NodeJS.Timeout | null = null;
+  private onTableLoadedCallbacks: Set<(table: PokerTable) => void> = new Set();
   
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
     this.startAutoSave();
     this.loadActiveTables();
+  }
+  
+  /**
+   * Register callback to be called when a new table is loaded
+   * Used by WebSocketHandler to setup event listeners
+   */
+  onTableLoaded(callback: (table: PokerTable) => void): void {
+    this.onTableLoadedCallbacks.add(callback);
+    // Also call for existing tables
+    for (const table of this.tables.values()) {
+      callback(table);
+    }
+  }
+  
+  /**
+   * Notify all callbacks when a table is loaded
+   */
+  private notifyTableLoaded(table: PokerTable): void {
+    for (const callback of this.onTableLoadedCallbacks) {
+      try {
+        callback(table);
+      } catch (err) {
+        logger.error('Error in onTableLoaded callback', { error: String(err) });
+      }
+    }
   }
   
   /**
@@ -72,6 +98,9 @@ export class PokerGameManager {
         
         // CRITICAL: Wait for players to load before continuing
         await table.loadPlayersFromDatabase();
+        
+        // Notify listeners about newly loaded table (for event subscriptions)
+        this.notifyTableLoaded(table);
         
         logger.info(`Loaded table: ${tableData.name}`, { tableId: tableData.id, players: table.getPlayerCount() });
       }
@@ -236,6 +265,10 @@ export class PokerGameManager {
       // CRITICAL: Wait for players to load from database before returning
       // Constructor calls loadPlayersFromDatabase without await, so we need to call it again
       await table.loadPlayersFromDatabase();
+      
+      // CRITICAL: Notify listeners about newly loaded table (for event subscriptions)
+      // This ensures elimination events are handled even if no human player connected yet
+      this.notifyTableLoaded(table);
       
       logger.info(`Dynamically loaded table: ${tableData.name}`, { tableId });
       return table;
