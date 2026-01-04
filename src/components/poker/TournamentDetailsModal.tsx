@@ -153,14 +153,16 @@ export function TournamentDetailsModal({
                       !isRegistered &&
                       playerBalance >= tournament.buy_in;
   const canUnregister = isRegistered && tournament.status === 'registration';
-  const canJoin = isRegistered && ['running', 'starting', 'final_table'].includes(tournament.status);
+  const canJoin = isRegistered && ['running', 'starting', 'final_table', 'break', 'hand_for_hand'].includes(tournament.status);
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
       registration: 'Регистрация открыта',
       starting: 'Турнир запускается',
       running: 'Идёт игра',
+      break: 'Перерыв',
       final_table: 'Финальный стол',
+      hand_for_hand: 'Hand-for-Hand',
       completed: 'Турнир завершён',
       cancelled: 'Турнир отменён'
     };

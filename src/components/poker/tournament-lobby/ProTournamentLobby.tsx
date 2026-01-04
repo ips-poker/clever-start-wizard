@@ -320,7 +320,7 @@ export function ProTournamentLobby({
   
   const canLateRegister = isLateRegOpen && !isRegistered && playerBalance >= tournament.buy_in;
   const canUnregister = isRegistered && tournament.status === 'registration';
-  const canJoin = isRegistered && ['running', 'starting', 'final_table'].includes(tournament.status);
+  const canJoin = isRegistered && ['running', 'starting', 'final_table', 'break', 'hand_for_hand'].includes(tournament.status);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
