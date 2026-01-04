@@ -2375,6 +2375,7 @@ export type Database = {
         Args: { player_record: Database["public"]["Tables"]["players"]["Row"] }
         Returns: boolean
       }
+      cleanup_stale_hands_and_consolidate: { Args: never; Returns: Json }
       cleanup_stuck_poker_hands: { Args: never; Returns: number }
       cleanup_zero_stack_tournament_players: { Args: never; Returns: Json }
       complete_tournament: {
@@ -2461,6 +2462,10 @@ export type Database = {
       ensure_player_balance: { Args: { p_player_id: string }; Returns: number }
       fix_stuck_tournament: { Args: { p_tournament_id: string }; Returns: Json }
       fix_tournament_seating: {
+        Args: { p_tournament_id: string }
+        Returns: Json
+      }
+      force_tournament_consolidation: {
         Args: { p_tournament_id: string }
         Returns: Json
       }
