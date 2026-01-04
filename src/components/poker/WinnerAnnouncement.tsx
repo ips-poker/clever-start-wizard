@@ -10,35 +10,50 @@ import { cn } from '@/lib/utils';
 
 interface Winner {
   playerId: string;
-  name: string;
+  name?: string;
+  playerName?: string;
   seatNumber: number;
   amount: number;
   handName?: string;
   holeCards?: string[];
+  newStack?: number;
 }
 
 interface WinnerAnnouncementProps {
   winners: Winner[];
   pot: number;
-  isVisible: boolean;
+  isVisible?: boolean;
+  isSplitPot?: boolean;
   onComplete?: () => void;
   className?: string;
   /** Display duration in ms */
   duration?: number;
   /** Position as percentage {x, y} */
   position?: { x: number; y: number };
+  /** Pot slide delay from server */
+  potSlideDelay?: number;
+  /** Highlight duration from server */
+  highlightDuration?: number;
+  /** Celebration duration from server */
+  celebrationDuration?: number;
 }
 
 // Professional winner announcement at table center
 export const WinnerAnnouncement = memo(function WinnerAnnouncement({
   winners,
   pot,
-  isVisible,
+  isVisible = true,
+  isSplitPot = false,
   onComplete,
   className,
   duration = 3000,
-  position = { x: 50, y: 40 }
+  position = { x: 50, y: 40 },
+  potSlideDelay,
+  highlightDuration,
+  celebrationDuration
 }: WinnerAnnouncementProps) {
+  // Calculate total duration from server timings or use default
+  const totalDuration = highlightDuration || celebrationDuration || duration;
   const [phase, setPhase] = useState<'enter' | 'display' | 'exit'>('enter');
 
   useEffect(() => {
@@ -58,24 +73,24 @@ export const WinnerAnnouncement = memo(function WinnerAnnouncement({
     // Exit phase before completion
     const exitTimer = setTimeout(() => {
       setPhase('exit');
-    }, duration - 300);
+    }, totalDuration - 300);
 
     // Complete callback
     const completeTimer = setTimeout(() => {
       onComplete?.();
-    }, duration);
+    }, totalDuration);
 
     return () => {
       clearTimeout(displayTimer);
       clearTimeout(exitTimer);
       clearTimeout(completeTimer);
     };
-  }, [isVisible, duration, onComplete]);
+  }, [isVisible, totalDuration, onComplete]);
 
   if (!isVisible || winners.length === 0) return null;
 
   const mainWinner = winners[0];
-  const isSplitPot = winners.length > 1;
+  const displaySplitPot = isSplitPot || winners.length > 1;
 
   return (
     <AnimatePresence>
@@ -161,7 +176,7 @@ export const WinnerAnnouncement = memo(function WinnerAnnouncement({
             className="text-center"
           >
             <p className="text-amber-400 font-bold text-lg">
-              {isSplitPot ? 'Сплит пот!' : mainWinner.name}
+              {displaySplitPot ? 'Сплит пот!' : (mainWinner.name || mainWinner.playerName || 'Победитель')}
             </p>
             {mainWinner.handName && (
               <p className="text-gray-400 text-sm">
@@ -188,14 +203,14 @@ export const WinnerAnnouncement = memo(function WinnerAnnouncement({
           </motion.div>
 
           {/* Split pot details */}
-          {isSplitPot && (
+          {displaySplitPot && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
               className="text-xs text-gray-400 text-center"
             >
-              {winners.map(w => w.name).join(' и ')}
+              {winners.map(w => w.name || w.playerName || 'Player').join(' и ')}
               <br />
               по {Math.floor(pot / winners.length).toLocaleString()} каждому
             </motion.div>

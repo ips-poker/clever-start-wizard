@@ -95,7 +95,9 @@ export function FullscreenPokerTableWrapper({
     rebuyAvailable, clearRebuyAvailable,
     tournamentBreak, clearTournamentBreak,
     // Professional timing data
-    betsBeingCollected, phaseTimings
+    betsBeingCollected, phaseTimings,
+    // Professional showdown and winner announcement
+    showdownReveals, winnerAnnouncement, clearWinnerAnnouncement
   } = pokerTable;
 
   // Check if player can join (not yet seated) - only for cash games
@@ -746,6 +748,8 @@ export function FullscreenPokerTableWrapper({
             winners={showdownResult?.winners}
             betsBeingCollected={betsBeingCollected}
             phaseTimings={phaseTimings}
+            showdownReveals={showdownReveals}
+            winnerAnnouncement={winnerAnnouncement}
           />
         </div>
 

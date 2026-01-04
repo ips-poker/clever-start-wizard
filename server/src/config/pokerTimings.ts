@@ -1,8 +1,9 @@
 /**
- * Professional Poker Timing Configuration
+ * Professional Poker Timing Configuration v2.0
  * Based on PokerStars / PPPoker / GGPoker standards
  * 
  * These delays create the polished feel of professional poker
+ * with synchronized animations between server and client
  */
 
 export interface PhaseTimings {
@@ -12,6 +13,28 @@ export interface PhaseTimings {
   perCardDelay: number;
   /** Delay after all cards dealt before action starts (ms) */
   postDealDelay: number;
+}
+
+export interface ShowdownTimings {
+  /** Delay before revealing each player's cards */
+  perPlayerReveal: number;
+  /** Time to display winning hand highlight */
+  winnerHighlight: number;
+  /** Time for pot collection animation */
+  potCollection: number;
+  /** Time for chips sliding to winner */
+  potSlideToWinner: number;
+  /** Time for winner celebration overlay */
+  winnerCelebration: number;
+}
+
+export interface BetCollectionTimings {
+  /** Time for chip stacks to slide to pot center */
+  slideToCenter: number;
+  /** Stagger delay per player for collection animation */
+  staggerPerPlayer: number;
+  /** Pause after all chips collected before next phase */
+  pauseAfterCollection: number;
 }
 
 export interface ProfessionalTimings {
@@ -27,14 +50,10 @@ export interface ProfessionalTimings {
   };
   
   /** Showdown timing (ms) */
-  showdown: {
-    /** Delay before revealing each player's cards */
-    perPlayerReveal: number;
-    /** Time to display winning hand highlight */
-    winnerHighlight: number;
-    /** Time for pot collection animation */
-    potCollection: number;
-  };
+  showdown: ShowdownTimings;
+  
+  /** Bet collection timing (ms) */
+  betCollection: BetCollectionTimings;
   
   /** Time between hands (ms) */
   betweenHands: number;
@@ -44,6 +63,12 @@ export interface ProfessionalTimings {
   
   /** Minimum time a hand must display before next (ms) */
   minimumHandDisplay: number;
+  
+  /** Delay before dealing hole cards (ms) */
+  preDealHoleCards: number;
+  
+  /** Delay per hole card dealt (ms) */
+  perHoleCard: number;
 }
 
 /**
@@ -77,14 +102,24 @@ export const PROFESSIONAL_TIMINGS: ProfessionalTimings = {
   },
   
   showdown: {
-    perPlayerReveal: 500,    // Time to reveal each player's cards
-    winnerHighlight: 2000,   // Time to highlight winning hand
-    potCollection: 1000,     // Pot slides to winner animation
+    perPlayerReveal: 600,    // Time to reveal each player's cards (with flip animation)
+    winnerHighlight: 2500,   // Time to highlight winning hand
+    potCollection: 800,      // Pot slides from center
+    potSlideToWinner: 600,   // Chips slide to winner
+    winnerCelebration: 2000, // Winner overlay display
+  },
+  
+  betCollection: {
+    slideToCenter: 500,      // Chips slide to pot center
+    staggerPerPlayer: 80,    // Stagger for realistic collection
+    pauseAfterCollection: 300, // Brief pause before next phase
   },
   
   betweenHands: 3000,        // 3 seconds between hands
   shuffleAnimation: 500,     // Shuffle sound/animation
   minimumHandDisplay: 2000,  // Minimum time to see showdown result
+  preDealHoleCards: 300,     // Pause before dealing hole cards
+  perHoleCard: 100,          // Time per hole card dealt
 };
 
 /**
@@ -117,20 +152,83 @@ export const TURBO_TIMINGS: ProfessionalTimings = {
   },
   
   showdown: {
-    perPlayerReveal: 250,
-    winnerHighlight: 1000,
-    potCollection: 500,
+    perPlayerReveal: 300,
+    winnerHighlight: 1200,
+    potCollection: 400,
+    potSlideToWinner: 300,
+    winnerCelebration: 1000,
+  },
+  
+  betCollection: {
+    slideToCenter: 250,
+    staggerPerPlayer: 40,
+    pauseAfterCollection: 150,
   },
   
   betweenHands: 1500,
   shuffleAnimation: 250,
   minimumHandDisplay: 1000,
+  preDealHoleCards: 150,
+  perHoleCard: 50,
+};
+
+/**
+ * Hyper-turbo for satellites and fast SNGs
+ */
+export const HYPER_TURBO_TIMINGS: ProfessionalTimings = {
+  afterAction: 100,
+  
+  phases: {
+    flop: {
+      preDealDelay: 150,
+      perCardDelay: 50,
+      postDealDelay: 100,
+    },
+    turn: {
+      preDealDelay: 150,
+      perCardDelay: 0,
+      postDealDelay: 75,
+    },
+    river: {
+      preDealDelay: 150,
+      perCardDelay: 0,
+      postDealDelay: 75,
+    },
+    showdown: {
+      preDealDelay: 100,
+      perCardDelay: 0,
+      postDealDelay: 0,
+    },
+  },
+  
+  showdown: {
+    perPlayerReveal: 200,
+    winnerHighlight: 800,
+    potCollection: 250,
+    potSlideToWinner: 200,
+    winnerCelebration: 600,
+  },
+  
+  betCollection: {
+    slideToCenter: 150,
+    staggerPerPlayer: 25,
+    pauseAfterCollection: 100,
+  },
+  
+  betweenHands: 1000,
+  shuffleAnimation: 150,
+  minimumHandDisplay: 600,
+  preDealHoleCards: 100,
+  perHoleCard: 30,
 };
 
 /**
  * Calculate total delay for phase transition
  */
-export function calculatePhaseDelay(phase: 'flop' | 'turn' | 'river' | 'showdown', timings: ProfessionalTimings = PROFESSIONAL_TIMINGS): number {
+export function calculatePhaseDelay(
+  phase: 'flop' | 'turn' | 'river' | 'showdown', 
+  timings: ProfessionalTimings = PROFESSIONAL_TIMINGS
+): number {
   const phaseTimings = timings.phases[phase];
   
   let totalDelay = phaseTimings.preDealDelay + phaseTimings.postDealDelay;
@@ -144,10 +242,42 @@ export function calculatePhaseDelay(phase: 'flop' | 'turn' | 'river' | 'showdown
 }
 
 /**
+ * Calculate total showdown delay based on number of players
+ */
+export function calculateShowdownDelay(
+  playerCount: number,
+  timings: ProfessionalTimings = PROFESSIONAL_TIMINGS
+): number {
+  const revealTime = playerCount * timings.showdown.perPlayerReveal;
+  const highlightTime = timings.showdown.winnerHighlight;
+  const potTime = timings.showdown.potCollection + timings.showdown.potSlideToWinner;
+  const celebrationTime = timings.showdown.winnerCelebration;
+  
+  return revealTime + highlightTime + potTime + celebrationTime;
+}
+
+/**
+ * Calculate bet collection delay based on number of active players
+ */
+export function calculateBetCollectionDelay(
+  playerCount: number,
+  timings: ProfessionalTimings = PROFESSIONAL_TIMINGS
+): number {
+  const slideTime = timings.betCollection.slideToCenter;
+  const staggerTime = playerCount * timings.betCollection.staggerPerPlayer;
+  const pauseTime = timings.betCollection.pauseAfterCollection;
+  
+  return slideTime + staggerTime + pauseTime;
+}
+
+/**
  * Get the appropriate timings based on table type
  */
 export function getTimingsForTableType(tableType: string): ProfessionalTimings {
-  if (tableType === 'turbo' || tableType === 'hyper') {
+  if (tableType === 'hyper' || tableType === 'hyper_turbo') {
+    return HYPER_TURBO_TIMINGS;
+  }
+  if (tableType === 'turbo') {
     return TURBO_TIMINGS;
   }
   return PROFESSIONAL_TIMINGS;

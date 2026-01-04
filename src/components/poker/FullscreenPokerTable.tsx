@@ -1338,7 +1338,37 @@ export interface FullscreenPokerTableProps {
   phaseTimings?: {
     dealDelay?: number;
     preDealDelay?: number;
+    postDealDelay?: number;
     phase?: string;
+  } | null;
+  // Professional showdown reveals
+  showdownReveals?: Array<{
+    playerId: string;
+    playerName: string;
+    seatNumber: number;
+    holeCards: string[];
+    handName?: string;
+    bestCards?: string[];
+    revealIndex: number;
+    revealDelay: number;
+    isWinner: boolean;
+  }>;
+  // Professional winner announcement
+  winnerAnnouncement?: {
+    winners: Array<{
+      playerId: string;
+      playerName: string;
+      seatNumber: number;
+      amount: number;
+      handName?: string;
+      newStack: number;
+    }>;
+    pot: number;
+    isSplitPot: boolean;
+    potSlideDelay: number;
+    highlightDuration: number;
+    celebrationDuration: number;
+    timestamp: number;
   } | null;
 }
 
@@ -1375,7 +1405,9 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   wideMode = false,
   // Professional timing from server
   betsBeingCollected,
-  phaseTimings
+  phaseTimings,
+  showdownReveals,
+  winnerAnnouncement
 }: FullscreenPokerTableProps) {
   // Use dynamic positions based on max seats
   // wideMode prop explicitly indicates Telegram Mini App context
@@ -1662,6 +1694,18 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
           </React.Fragment>
         );
       })}
+      
+      {/* Professional Winner Announcement with pot slide animation */}
+      {winnerAnnouncement && (
+        <WinnerAnnouncement
+          winners={winnerAnnouncement.winners}
+          pot={winnerAnnouncement.pot}
+          isSplitPot={winnerAnnouncement.isSplitPot}
+          potSlideDelay={winnerAnnouncement.potSlideDelay}
+          highlightDuration={winnerAnnouncement.highlightDuration}
+          celebrationDuration={winnerAnnouncement.celebrationDuration}
+        />
+      )}
     </div>
   );
 });
