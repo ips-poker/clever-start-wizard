@@ -287,17 +287,17 @@ async function checkAndBalanceTables(supabase: any, tournamentId: string): Promi
 
     console.log(`Tournament ${tournamentId}: ${totalPlayers} players, ${activeTables} tables, need ${minTablesNeeded} tables (max ${playersPerTable}/table)`);
 
-    // Всегда вызываем консолидацию - RPC функция сама решит что делать
+    // Вызываем force_tournament_consolidation которая сначала очистит зависшие раздачи
     if (activeTables > minTablesNeeded || activeTables > 1) {
-      console.log(`Tournament ${tournamentId}: Running consolidate_tournament_tables`);
-      const { data: result, error: rpcError } = await supabase.rpc('consolidate_tournament_tables', { 
+      console.log(`Tournament ${tournamentId}: Running force_tournament_consolidation`);
+      const { data: result, error: rpcError } = await supabase.rpc('force_tournament_consolidation', { 
         p_tournament_id: tournamentId 
       });
       
       if (rpcError) {
         console.error(`Error consolidating tables for tournament ${tournamentId}:`, rpcError);
       } else {
-        console.log(`Tournament ${tournamentId}: Consolidation result:`, JSON.stringify(result));
+        console.log(`Tournament ${tournamentId}: Force consolidation result:`, JSON.stringify(result));
       }
     }
   } catch (err) {
