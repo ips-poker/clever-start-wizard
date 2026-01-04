@@ -259,17 +259,58 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
     const pot = (state.pot ?? 0) as number;
     const currentBet = (state.currentBet ?? 0) as number;
-    const currentPlayerSeat = (state.currentPlayerSeat ?? null) as number | null;
-    const communityCards = (state.communityCards || []) as string[];
-    const dealerSeat = (state.dealerSeat ?? 0) as number;
-    const smallBlindSeat = (state.smallBlindSeat ?? 1) as number;
-    const bigBlindSeat = (state.bigBlindSeat ?? 2) as number;
+    const currentPlayerSeat = (state.currentPlayerSeat ?? (state as any).current_player_seat ?? null) as number | null;
+    const communityCards = (state.communityCards || (state as any).community_cards || []) as string[];
+
+    // Seats: accept both camelCase and snake_case from server
+    const dealerSeat = Number(state.dealerSeat ?? (state as any).dealer_seat ?? (state as any).buttonSeat ?? (state as any).button_seat ?? 0);
+
+    const rawSmallBlindSeat = (state as any).smallBlindSeat ?? (state as any).small_blind_seat ?? (state as any).sbSeat ?? (state as any).sb_seat;
+    const rawBigBlindSeat = (state as any).bigBlindSeat ?? (state as any).big_blind_seat ?? (state as any).bbSeat ?? (state as any).bb_seat;
+
+    // Compute SB/BB seats when server doesn't provide them (common cause of missing SB/BB badges)
+    const occupiedSeats = mappedPlayers
+      .map((p) => p.seatNumber)
+      .filter((n) => Number.isFinite(n)) as number[];
+
+    const seatCount = Math.max(
+      2,
+      Math.min(9, Math.max(dealerSeat, ...occupiedSeats, 0) + 1)
+    );
+
+    const occupied = new Set<number>(occupiedSeats);
+
+    const findNextOccupied = (start: number): number | null => {
+      for (let step = 1; step <= seatCount; step++) {
+        const seat = (start + step) % seatCount;
+        if (occupied.has(seat)) return seat;
+      }
+      return null;
+    };
+
+    let computedSBSeat: number | null = null;
+    let computedBBSeat: number | null = null;
+
+    if (occupiedSeats.length >= 2) {
+      const nextAfterDealer = findNextOccupied(dealerSeat);
+      // Heads-up: button is the small blind
+      if (occupiedSeats.length === 2) {
+        computedSBSeat = dealerSeat;
+        computedBBSeat = nextAfterDealer;
+      } else {
+        computedSBSeat = nextAfterDealer;
+        computedBBSeat = computedSBSeat !== null ? findNextOccupied(computedSBSeat) : null;
+      }
+    }
+
+    const smallBlindSeat = Number(rawSmallBlindSeat ?? computedSBSeat ?? 1);
+    const bigBlindSeat = Number(rawBigBlindSeat ?? computedBBSeat ?? 2);
 
     // Blinds from root state or nested config
-    const smallBlind = (state.smallBlind || config?.smallBlind || 10) as number;
-    const bigBlind = (state.bigBlind || config?.bigBlind || 20) as number;
-    const ante = (state.ante || config?.ante || 0) as number;
-    const actionTimer = (state.actionTimer || config?.actionTimeSeconds || 30) as number;
+    const smallBlind = (state.smallBlind || (state as any).small_blind || config?.smallBlind || 10) as number;
+    const bigBlind = (state.bigBlind || (state as any).big_blind || config?.bigBlind || 20) as number;
+    const ante = (state.ante || (state as any).ante_amount || config?.ante || 0) as number;
+    const actionTimer = (state.actionTimer || (state as any).action_timer || config?.actionTimeSeconds || 30) as number;
 
     // Get handId from server state (may be handId, hand_id, currentHandId, etc.)
     const handId = (state.handId || state.hand_id || state.currentHandId || state.current_hand_id) as string | undefined;
