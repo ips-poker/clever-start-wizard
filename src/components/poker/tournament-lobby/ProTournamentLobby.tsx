@@ -384,6 +384,8 @@ export function ProTournamentLobby({
                 playersRemaining={activePlayers.length}
                 totalPlayers={participants.length}
                 currentPlayerId={playerId}
+                buyIn={tournament.buy_in}
+                ticketsForTop={tournament.tickets_for_top || 0}
               />
             </TabsContent>
 
