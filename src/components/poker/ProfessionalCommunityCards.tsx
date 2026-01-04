@@ -73,7 +73,7 @@ const CardFace = memo(function CardFace({
       {/* CENTER - Large suit symbol (semi-transparent like HeroCards) */}
       <div className="absolute inset-0 flex items-center justify-center">
         <span 
-          className="text-4xl"
+          className="text-3xl"
           style={{ 
             color: suitColor, 
             opacity: isDimmed ? 0.15 : 0.2,
