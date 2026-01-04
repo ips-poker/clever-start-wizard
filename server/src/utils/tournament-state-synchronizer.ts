@@ -4,10 +4,12 @@
  * - Loads active tournaments on startup
  * - Syncs state changes to DB in real-time
  * - Handles server restart recovery
+ * - Auto-processes RPS payouts on completion
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from './logger.js';
+import { rpsPrizeSystem } from './rps-prize-system.js';
 
 interface TournamentSnapshot {
   id: string;
@@ -181,24 +183,37 @@ class TournamentStateSynchronizer {
   }
 
   /**
-   * Handle tournament completion
+   * Handle tournament completion - auto RPS payouts
    */
   private async handleTournamentCompletion(tournamentId: string): Promise<void> {
     if (!this.supabase) return;
 
-    logger.info(`[TournamentSync] Processing completion for tournament ${tournamentId}`);
+    logger.info(`[TournamentSync] Processing RPS payouts for completed tournament ${tournamentId}`);
 
     try {
-      // Verify all prizes are paid
-      const { data: unpaidPlayers } = await this.supabase
-        .from('online_poker_tournament_participants')
-        .select('player_id, finish_position, prize_amount')
+      // Check if payouts already processed
+      const { data: existingPayouts } = await this.supabase
+        .from('online_poker_tournament_payouts')
+        .select('player_id')
         .eq('tournament_id', tournamentId)
-        .gt('prize_amount', 0)
-        .is('eliminated_at', null); // Winners might not have eliminated_at set properly
+        .not('player_id', 'is', null)
+        .limit(1);
 
-      if (unpaidPlayers && unpaidPlayers.length > 0) {
-        logger.info(`[TournamentSync] ${unpaidPlayers.length} players awaiting prize payout`);
+      if (existingPayouts && existingPayouts.length > 0) {
+        logger.info(`[TournamentSync] Payouts already processed for ${tournamentId}`);
+        return;
+      }
+
+      // Process RPS payouts automatically
+      const payoutResults = await rpsPrizeSystem.processTournamentPayouts(tournamentId);
+      
+      if (payoutResults.length > 0) {
+        logger.info(`[TournamentSync] RPS payouts completed:`, {
+          tournamentId,
+          playersAwarded: payoutResults.length,
+          totalRPS: payoutResults.reduce((sum, r) => sum + r.rpsAwarded, 0),
+          offlineEntries: payoutResults.filter(r => r.offlineEntryAwarded).length
+        });
       }
 
       // Close all tournament tables
@@ -208,7 +223,7 @@ class TournamentStateSynchronizer {
         .eq('tournament_id', tournamentId);
 
     } catch (err) {
-      logger.error(`[TournamentSync] Error handling completion`, { error: String(err) });
+      logger.error(`[TournamentSync] Error handling completion`, { error: String(err), tournamentId });
     }
   }
 
