@@ -1375,6 +1375,7 @@ export class PokerTable {
   /**
    * Check if hand should start
    * CRITICAL: Uses pendingHandStart flag to prevent race conditions
+   * CRITICAL: Also checks if tournament is on break - no new hands during break
    */
   private checkStartHand(): void {
     logger.info('checkStartHand called', { 
@@ -1404,15 +1405,12 @@ export class PokerTable {
     });
     
      if (activePlayers.length >= 2) {
-       const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2025-12-29-fast-hands';
-       logger.info('checkStartHand: starting hand immediately', { build: BUILD_TAG });
-
+       // CRITICAL: Check if this is a tournament table on break
        this.pendingHandStart = true;
-
-       void this.startHand()
+       
+       void this.checkTournamentBreakAndStart()
          .catch((err) => {
-           // startHand() already handles most errors internally, but keep this for safety
-           logger.error('startHand promise rejected', { tableId: this.id, error: String(err) });
+           logger.error('checkTournamentBreakAndStart rejected', { tableId: this.id, error: String(err) });
          })
          .finally(() => {
            this.pendingHandStart = false;
@@ -1421,6 +1419,68 @@ export class PokerTable {
      } else {
        logger.info('checkStartHand: not enough players', { need: 2, have: activePlayers.length });
      }
+  }
+  
+  /**
+   * Check if tournament is on break before starting hand
+   * If on break, retry after 10 seconds
+   */
+  private async checkTournamentBreakAndStart(): Promise<void> {
+    try {
+      // Check if this is a tournament table
+      const { data: tableData } = await this.supabase
+        .from('poker_tables')
+        .select('tournament_id, table_type')
+        .eq('id', this.id)
+        .single();
+      
+      if (tableData?.table_type === 'tournament' && tableData?.tournament_id) {
+        // Check tournament status
+        const { data: tournament } = await this.supabase
+          .from('online_poker_tournaments')
+          .select('status, name')
+          .eq('id', tableData.tournament_id)
+          .single();
+        
+        if (tournament?.status === 'break') {
+          logger.info('checkStartHand: tournament is on BREAK - delaying hand start', {
+            tableId: this.id,
+            tournamentId: tableData.tournament_id,
+            tournamentName: tournament.name
+          });
+          
+          // Emit break event to notify players
+          this.emit({
+            type: 'tournament_break',
+            tableId: this.id,
+            data: {
+              tournamentId: tableData.tournament_id,
+              tournamentName: tournament.name,
+              message: 'Турнир на перерыве. Раздачи возобновятся после перерыва.'
+            },
+            timestamp: Date.now()
+          });
+          
+          // Retry after 10 seconds to check if break ended
+          setTimeout(() => {
+            if (!this.currentHand) {
+              this.checkStartHand();
+            }
+          }, 10000);
+          return;
+        }
+      }
+      
+      // Not a tournament or not on break - start hand
+      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2025-12-29-fast-hands';
+      logger.info('checkStartHand: starting hand immediately', { build: BUILD_TAG });
+      
+      await this.startHand();
+    } catch (err) {
+      logger.error('Error checking tournament break status', { tableId: this.id, error: String(err) });
+      // On error, try to start hand anyway
+      await this.startHand();
+    }
   }
   
   /**
