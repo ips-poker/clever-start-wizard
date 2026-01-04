@@ -96,6 +96,8 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
         supabase
           .from('poker_tables')
           .select('*')
+          .eq('table_type', 'cash')
+          .is('tournament_id', null)
           .in('status', ['waiting', 'playing'])
           .order('big_blind', { ascending: true }),
         supabase
