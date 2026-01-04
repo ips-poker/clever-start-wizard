@@ -1244,18 +1244,26 @@ export class PokerTable {
       playersInHand,
       this.config.bigBlind,
       aggression,
-      player.name // Pass bot name for personality
+      player.name, // Pass bot name for personality
+      this.currentHand.bigBlindSeat // Pass actual BB seat
     );
+
+    const isBigBlind = player.seatNumber === this.currentHand.bigBlindSeat;
+    const canCheck = Math.max(0, this.currentHand.currentBet - player.currentBet) === 0;
 
     logger.info('Bot AI decision', {
       tableId: this.id,
       playerId: player.id.substring(0, 8),
       name: player.name,
+      seatNumber: player.seatNumber,
+      isBigBlind,
+      bigBlindSeat: this.currentHand.bigBlindSeat,
       holeCards: player.holeCards,
       phase: this.currentHand.phase,
       pot: this.currentHand.pot,
       currentBet: this.currentHand.currentBet,
       playerBet: player.currentBet,
+      canCheck,
       stack: player.stack,
       action: decision.action,
       amount: decision.amount,
@@ -1326,11 +1334,7 @@ export class PokerTable {
     let delayMs: number;
     if (isBot) {
       delayMs = this.calculateBotThinkTime(player);
-    } else {
-      delayMs = this.config.actionTimeSeconds * 1000;
-    }
-
-    if (isBot) {
+      
       logger.info('Bot turn scheduled', {
         tableId: this.id,
         playerId: playerId.substring(0, 8),
@@ -1338,13 +1342,20 @@ export class PokerTable {
         name: player.name,
         delayMs
       });
+      
+      // CRITICAL: For bots, execute their decision after think delay (not timeout)
+      this.actionTimer = setTimeout(async () => {
+        await this.executeBotDecision(player);
+      }, delayMs);
+    } else {
+      delayMs = this.config.actionTimeSeconds * 1000;
+      
+      // For humans, use standard timeout
+      this.actionTimer = setTimeout(() => {
+        this.handleTimeout();
+      }, delayMs);
     }
-
-    this.actionTimer = setTimeout(() => {
-      this.handleTimeout();
-    }, delayMs);
   }
-  
   /**
    * Clear action timer
    */

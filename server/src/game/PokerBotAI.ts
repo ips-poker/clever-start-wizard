@@ -753,7 +753,8 @@ export function makeBotDecision(
   playersInHand: number,
   bigBlind: number,
   aggression: number = 50,
-  botName: string = 'Bot'
+  botName: string = 'Bot',
+  bigBlindSeat: number = -1 // Actual BB seat from hand
 ): BotDecision {
   const callAmount = Math.max(0, currentBet - myBet);
   const canCheck = callAmount === 0;
@@ -765,9 +766,8 @@ export function makeBotDecision(
   // Get bot personality for varied play styles
   const personality = getBotPersonality(botName);
   
-  // Check if we're the big blind
-  const bbSeat = (dealerSeat + 2) % totalPlayers;
-  const isBigBlind = seatNumber === bbSeat;
+  // Check if we're the big blind - use actual BB seat if provided
+  const isBigBlind = bigBlindSeat >= 0 ? seatNumber === bigBlindSeat : false;
   
   // Analyze hand
   const handAnalysis = analyzeHand(holeCards);
