@@ -159,24 +159,14 @@ export default function TelegramMiniApp() {
   }, []);
 
   return (
-    <div 
-      className="telegram-optimized"
-      style={{ 
-        width: '100%', 
-        height: 'calc(var(--vh, 1vh) * 100)',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        overflow: 'hidden',
-        // GPU acceleration for the entire app
-        transform: 'translateZ(0)',
-        WebkitTransform: 'translateZ(0)',
-        backfaceVisibility: 'hidden',
-        WebkitBackfaceVisibility: 'hidden',
-        // Optimize rendering
-        contain: 'layout paint'
-      }}
-    >
+    <div style={{ 
+      width: '100%', 
+      height: 'calc(var(--vh, 1vh) * 100)',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      overflow: 'hidden'
+    }}>
       <TelegramApp />
     </div>
   );

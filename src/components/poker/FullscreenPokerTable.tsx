@@ -34,10 +34,6 @@ import { PPPokerLevelBadge } from './PPPokerLevelBadge';
 import { PotCollectionAnimation } from './PotCollectionAnimation';
 import { WinnerChipCascade } from './WinnerChipCascade';
 import { BetCollectionAnimation, EnhancedBetCollectionAnimation } from './EnhancedBetCollectionAnimation';
-// Optimized animations for Telegram
-import { OptimizedBetCollectionAnimation } from './OptimizedBetCollectionAnimation';
-import { OptimizedWinnerAnimation } from './OptimizedWinnerAnimation';
-import { useTelegramPerformance } from '@/hooks/useTelegramPerformance';
 import { ProfessionalShowdown } from './ProfessionalShowdown';
 import { WinnerAnnouncement } from './WinnerAnnouncement';
 import { usePhaseAnimation } from '@/hooks/usePhaseAnimation';
@@ -1421,10 +1417,6 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   // Get personalization preferences
   const { preferences, currentTableTheme, currentCardBack } = usePokerPreferences();
   
-  // Performance optimization for Telegram
-  const perfFlags = useTelegramPerformance();
-  const useLightAnims = perfFlags.useLightweightAnimations || wideMode;
-  
   // Professional phase animation hook
   const { animationState, animatePhaseTransition, isAnimating: isPhaseAnimating } = usePhaseAnimation();
   
@@ -1550,71 +1542,36 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       <SyndikateTableFelt themeColor={currentTableTheme.color} wideMode={wideMode} />
       
       
-      {/* Pot collection animation - use optimized version for Telegram */}
-      {!useLightAnims ? (
-        <PotCollectionAnimation
-          isCollecting={isCollectingBets}
-          bets={collectionBets}
+      {/* Pot collection animation */}
+      <PotCollectionAnimation
+        isCollecting={isCollectingBets}
+        bets={collectionBets}
+        onComplete={() => {
+          setIsCollectingBets(false);
+          setCollectionBets([]);
+        }}
+      />
+      
+      {/* Win distribution animation - Premium chips cascade */}
+      {winDistribution && (
+        <WinnerChipCascade
+          isActive={true}
+          fromPosition={{ x: 50, y: 50 }}
+          toPosition={positions[winDistribution.winnerSeat]}
+          amount={winDistribution.amount}
+          onComplete={() => setWinDistribution(null)}
+        />
+      )}
+      
+      {/* Bet collection animation - using server timing data */}
+      {betCollectionData && betCollectionData.length > 0 && (
+        <BetCollectionAnimation
+          isCollecting={true}
+          betsToCollect={betCollectionData}
           onComplete={() => {
-            setIsCollectingBets(false);
-            setCollectionBets([]);
+            // Animation complete - server already clears state after 800ms
           }}
         />
-      ) : (
-        isCollectingBets && collectionBets.length > 0 && (
-          <OptimizedBetCollectionAnimation
-            isCollecting={true}
-            betsToCollect={collectionBets.map((b, i) => ({
-              playerId: `pot-${i}`,
-              seatNumber: i,
-              amount: b.amount,
-              position: b.seatPosition
-            }))}
-            onComplete={() => {
-              setIsCollectingBets(false);
-              setCollectionBets([]);
-            }}
-          />
-        )
-      )}
-      
-      {/* Win distribution animation - use optimized version for Telegram */}
-      {winDistribution && (
-        useLightAnims ? (
-          <OptimizedWinnerAnimation
-            isActive={true}
-            fromPosition={{ x: 50, y: 50 }}
-            toPosition={positions[winDistribution.winnerSeat]}
-            amount={winDistribution.amount}
-            onComplete={() => setWinDistribution(null)}
-          />
-        ) : (
-          <WinnerChipCascade
-            isActive={true}
-            fromPosition={{ x: 50, y: 50 }}
-            toPosition={positions[winDistribution.winnerSeat]}
-            amount={winDistribution.amount}
-            onComplete={() => setWinDistribution(null)}
-          />
-        )
-      )}
-      
-      {/* Bet collection animation - using server timing data, optimized for Telegram */}
-      {betCollectionData && betCollectionData.length > 0 && (
-        useLightAnims ? (
-          <OptimizedBetCollectionAnimation
-            isCollecting={true}
-            betsToCollect={betCollectionData}
-            duration={300}
-            onComplete={() => {}}
-          />
-        ) : (
-          <BetCollectionAnimation
-            isCollecting={true}
-            betsToCollect={betCollectionData}
-            onComplete={() => {}}
-          />
-        )
       )}
       
       {/* Winner announcement - compact in-table display */}
