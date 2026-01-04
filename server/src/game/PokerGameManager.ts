@@ -321,6 +321,176 @@ export class PokerGameManager {
     };
   }
   
+  // ==========================================
+  // PROFESSIONAL TABLE BALANCING
+  // ==========================================
+  
+  /**
+   * PROFESSIONAL: Balance tournament tables in memory
+   * Called after database RPC balances the tables
+   * Syncs server state with database changes
+   */
+  async syncTableBalancing(tournamentId: string): Promise<{
+    success: boolean;
+    moves: number;
+    error?: string;
+  }> {
+    try {
+      // Get all tournament tables from database
+      const { data: dbTables, error: tablesError } = await this.supabase
+        .from('poker_tables')
+        .select('id, name')
+        .eq('tournament_id', tournamentId)
+        .in('status', ['waiting', 'playing']);
+      
+      if (tablesError || !dbTables) {
+        return { success: false, moves: 0, error: tablesError?.message || 'No tables found' };
+      }
+      
+      let totalMoves = 0;
+      
+      for (const dbTable of dbTables) {
+        // Load or get table
+        let table = this.tables.get(dbTable.id);
+        if (!table) {
+          table = await this.loadTableIfNeeded(dbTable.id);
+        }
+        
+        if (!table) continue;
+        
+        // Get current players from database
+        const { data: dbPlayers } = await this.supabase
+          .from('poker_table_players')
+          .select('player_id, seat_number, stack, status')
+          .eq('table_id', dbTable.id);
+        
+        if (!dbPlayers) continue;
+        
+        // Find players that need to be removed (no longer in DB)
+        const dbPlayerIds = new Set(dbPlayers.map(p => p.player_id));
+        const currentPlayers = table.getPlayersForBalancing();
+        
+        for (const player of currentPlayers) {
+          if (!dbPlayerIds.has(player.playerId)) {
+            // Player was moved to another table by DB balancing
+            await table.removePlayerForRebalancing(player.playerId);
+            totalMoves++;
+            logger.info('Synced player removal after DB balance', {
+              tableId: dbTable.id,
+              playerId: player.playerId.substring(0, 8)
+            });
+          }
+        }
+        
+        // Find players that need to be added (in DB but not in memory)
+        const memoryPlayerIds = new Set(currentPlayers.map(p => p.playerId));
+        
+        for (const dbPlayer of dbPlayers) {
+          if (!memoryPlayerIds.has(dbPlayer.player_id)) {
+            // Player was moved to this table by DB balancing
+            // Fetch player name
+            const { data: playerData } = await this.supabase
+              .from('players')
+              .select('name, avatar_url')
+              .eq('id', dbPlayer.player_id)
+              .single();
+            
+            if (playerData) {
+              await table.addPlayerFromRebalancing(
+                dbPlayer.player_id,
+                playerData.name,
+                dbPlayer.stack,
+                dbPlayer.seat_number,
+                playerData.avatar_url
+              );
+              totalMoves++;
+              logger.info('Synced player addition after DB balance', {
+                tableId: dbTable.id,
+                playerId: dbPlayer.player_id.substring(0, 8)
+              });
+            }
+          }
+        }
+      }
+      
+      logger.info('Table balancing sync complete', {
+        tournamentId,
+        tables: dbTables.length,
+        moves: totalMoves
+      });
+      
+      return { success: true, moves: totalMoves };
+    } catch (err) {
+      logger.error('Error syncing table balancing', { 
+        tournamentId, 
+        error: String(err) 
+      });
+      return { success: false, moves: 0, error: String(err) };
+    }
+  }
+  
+  /**
+   * PROFESSIONAL: Move single player between tables
+   * Used for immediate balancing during late registration
+   */
+  async movePlayerBetweenTables(
+    playerId: string,
+    fromTableId: string,
+    toTableId: string,
+    toSeat: number
+  ): Promise<{ success: boolean; error?: string }> {
+    const fromTable = this.tables.get(fromTableId);
+    let toTable = this.tables.get(toTableId);
+    
+    if (!fromTable) {
+      return { success: false, error: 'Source table not found' };
+    }
+    
+    // Load target table if needed
+    if (!toTable) {
+      toTable = await this.loadTableIfNeeded(toTableId);
+      if (!toTable) {
+        return { success: false, error: 'Target table not found' };
+      }
+    }
+    
+    // Remove from source table
+    const removeResult = await fromTable.removePlayerForRebalancing(playerId);
+    if (!removeResult.success || !removeResult.player) {
+      return { success: false, error: removeResult.error || 'Failed to remove from source table' };
+    }
+    
+    // Add to target table
+    const addResult = await toTable.addPlayerFromRebalancing(
+      removeResult.player.id,
+      removeResult.player.name,
+      removeResult.player.stack,
+      toSeat,
+      removeResult.player.avatarUrl
+    );
+    
+    if (!addResult.success) {
+      // Rollback - add back to source table
+      await fromTable.addPlayerFromRebalancing(
+        removeResult.player.id,
+        removeResult.player.name,
+        removeResult.player.stack,
+        0, // Will find available seat
+        removeResult.player.avatarUrl
+      );
+      return { success: false, error: addResult.error || 'Failed to add to target table' };
+    }
+    
+    logger.info('Player moved between tables', {
+      playerId: playerId.substring(0, 8),
+      fromTableId,
+      toTableId,
+      toSeat
+    });
+    
+    return { success: true };
+  }
+  
   /**
    * Cleanup on shutdown
    */

@@ -2236,6 +2236,195 @@ export class PokerTable {
     }
   }
   
+  // ==========================================
+  // TOURNAMENT TABLE BALANCING
+  // ==========================================
+  
+  /**
+   * PROFESSIONAL: Remove player for table rebalancing
+   * Used when player is moved to another table by tournament balancer
+   * Returns player state for transfer to new table
+   */
+  async removePlayerForRebalancing(playerId: string): Promise<{
+    success: boolean;
+    player?: {
+      id: string;
+      name: string;
+      stack: number;
+      avatarUrl?: string;
+    };
+    error?: string;
+  }> {
+    const player = this.players.get(playerId);
+    if (!player) {
+      return { success: false, error: 'Player not at table' };
+    }
+    
+    // Cannot move player who is in active hand
+    if (this.currentHand && !player.isFolded && player.status === 'active') {
+      return { success: false, error: 'Player is in active hand' };
+    }
+    
+    const playerData = {
+      id: player.id,
+      name: player.name,
+      stack: player.stack,
+      avatarUrl: player.avatarUrl
+    };
+    
+    // Remove from local state
+    this.seats[player.seatNumber] = null;
+    this.players.delete(playerId);
+    
+    // Remove from database (will be added to new table)
+    try {
+      await this.supabase
+        .from('poker_table_players')
+        .delete()
+        .eq('table_id', this.id)
+        .eq('player_id', playerId);
+    } catch (err) {
+      logger.warn('DB error removing player for rebalancing', { 
+        playerId: playerId.substring(0, 8), 
+        error: String(err) 
+      });
+    }
+    
+    this.emit('player_moved_to_other_table', { 
+      playerId, 
+      playerName: player.name,
+      stack: player.stack 
+    });
+    
+    logger.info('Player removed for table rebalancing', {
+      tableId: this.id,
+      playerId: playerId.substring(0, 8),
+      playerName: player.name,
+      stack: player.stack
+    });
+    
+    return { success: true, player: playerData };
+  }
+  
+  /**
+   * PROFESSIONAL: Add player from another table (rebalancing)
+   * Player is immediately added without buy-in validation
+   */
+  async addPlayerFromRebalancing(
+    playerId: string,
+    playerName: string,
+    stack: number,
+    seatNumber: number,
+    avatarUrl?: string
+  ): Promise<{ success: boolean; error?: string }> {
+    // Validate seat
+    if (seatNumber < 0 || seatNumber >= this.config.maxPlayers) {
+      return { success: false, error: 'Invalid seat number' };
+    }
+    
+    if (this.seats[seatNumber] !== null) {
+      // Find any available seat
+      const availableSeat = this.seats.findIndex(s => s === null);
+      if (availableSeat === -1) {
+        return { success: false, error: 'No available seats' };
+      }
+      seatNumber = availableSeat;
+    }
+    
+    // Check if player already at table
+    if (this.players.has(playerId)) {
+      return { success: false, error: 'Player already at table' };
+    }
+    
+    const isBot = this.isBotName(playerName);
+    
+    const player: Player = {
+      id: playerId,
+      name: playerName,
+      avatarUrl: avatarUrl,
+      seatNumber,
+      stack,
+      status: 'active',
+      holeCards: [],
+      currentBet: 0,
+      isFolded: false,
+      isAllIn: false,
+      timeBank: isBot ? 0 : this.config.timeBankSeconds,
+      lastActionTime: null,
+      missedTurns: 0
+    };
+    
+    this.players.set(playerId, player);
+    this.seats[seatNumber] = playerId;
+    
+    // Save to database
+    try {
+      await this.supabase.from('poker_table_players').upsert({
+        table_id: this.id,
+        player_id: playerId,
+        seat_number: seatNumber,
+        stack: stack,
+        status: 'active'
+      }, {
+        onConflict: 'table_id,player_id'
+      });
+    } catch (err) {
+      logger.warn('DB error adding rebalanced player', { 
+        playerId: playerId.substring(0, 8), 
+        error: String(err) 
+      });
+    }
+    
+    this.emit('player_joined_from_other_table', { 
+      playerId, 
+      playerName, 
+      seatNumber, 
+      stack,
+      avatarUrl 
+    });
+    
+    logger.info('Player added from table rebalancing', {
+      tableId: this.id,
+      playerId: playerId.substring(0, 8),
+      playerName,
+      seatNumber,
+      stack
+    });
+    
+    // Check if we can start a hand now
+    if (!this.currentHand) {
+      this.checkStartHand();
+    }
+    
+    return { success: true };
+  }
+  
+  /**
+   * Get player info for balancing calculations
+   */
+  getPlayersForBalancing(): Array<{
+    playerId: string;
+    chips: number;
+    seatNumber: number;
+    isInHand: boolean;
+  }> {
+    return Array.from(this.players.values())
+      .filter(p => p.status === 'active' || p.status === 'disconnected')
+      .map(p => ({
+        playerId: p.id,
+        chips: p.stack,
+        seatNumber: p.seatNumber,
+        isInHand: !!this.currentHand && !p.isFolded
+      }));
+  }
+  
+  /**
+   * Get current dealer seat for balancing calculations
+   */
+  getCurrentDealerSeat(): number {
+    return this.dealerSeat;
+  }
+  
   // Utility methods
   getPlayerCount(): number {
     return this.players.size;
