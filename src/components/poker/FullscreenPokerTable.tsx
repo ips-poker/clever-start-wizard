@@ -27,13 +27,15 @@ import { PPPokerCompactCards } from './PPPokerCompactCards';
 import { PPPokerHeroCards } from './PPPokerHeroCards';
 import { PPPokerCommunityCards } from './PPPokerCommunityCards';
 import { CommunityCardAnimation } from './CommunityCardAnimation';
+import { ProfessionalCommunityCards } from './ProfessionalCommunityCards';
 import { PPPokerPotDisplay } from './PPPokerPotDisplay';
 import { PPPokerActionBadge } from './PPPokerActionBadge';
 import { PPPokerLevelBadge } from './PPPokerLevelBadge';
 import { PotCollectionAnimation } from './PotCollectionAnimation';
 import { WinnerChipCascade } from './WinnerChipCascade';
-import { BetCollectionAnimation } from './BetCollectionAnimation';
+import { BetCollectionAnimation, EnhancedBetCollectionAnimation } from './EnhancedBetCollectionAnimation';
 import { ProfessionalShowdown } from './ProfessionalShowdown';
+import { WinnerAnnouncement } from './WinnerAnnouncement';
 import { usePhaseAnimation } from '@/hooks/usePhaseAnimation';
 import { getHandStrengthName } from '@/utils/handEvaluator';
 
@@ -1540,24 +1542,23 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         />
       )}
       
-      {/* Professional Showdown overlay */}
-      {phase === 'showdown' && showdownPlayers && showdownPlayers.length > 0 && (
-        <ProfessionalShowdown
-          players={showdownPlayers.map(sp => {
-            const playerInfo = players.find(p => p.playerId === sp.playerId);
+      {/* Winner announcement - compact in-table display */}
+      {phase === 'showdown' && winners && winners.length > 0 && (
+        <WinnerAnnouncement
+          winners={winners.map(w => {
+            const player = players.find(p => p.playerId === w.playerId);
             return {
-              playerId: sp.playerId,
-              name: playerInfo?.name || 'Player',
-              seatNumber: sp.seatNumber,
-              holeCards: sp.holeCards || [],
-              handName: sp.handName || '',
-              isWinner: winners?.some(w => w.playerId === sp.playerId) || false,
-              wonAmount: winners?.find(w => w.playerId === sp.playerId)?.amount,
+              playerId: w.playerId,
+              name: player?.name || 'Победитель',
+              seatNumber: player?.seatNumber || 0,
+              amount: w.amount,
+              handName: w.handName || (player as any)?.handName,
+              holeCards: player?.holeCards
             };
           })}
-          communityCards={communityCards}
           pot={pot}
-          onComplete={() => {}}
+          isVisible={true}
+          position={{ x: 50, y: 35 }}
         />
       )}
       
@@ -1568,10 +1569,13 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         return (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-3 z-10">
             <PotDisplay pot={pot} blinds={`${smallBlind}/${bigBlind}`} displayFormat={preferences.displayFormat} />
-            <CommunityCards 
+            
+            {/* Professional Community Cards with server timing */}
+            <ProfessionalCommunityCards 
               cards={communityCards} 
               phase={phase} 
               winningCardIndices={winningCommIndices}
+              phaseTimings={phaseTimings}
             />
             
             {/* Tournament info bar - shown when tournament mode */}
