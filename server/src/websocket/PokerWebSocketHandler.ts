@@ -686,6 +686,10 @@ export class PokerWebSocketHandler {
       return;
     }
     
+    // CRITICAL: Ensure player is loaded from database (handles server restart scenario)
+    // This is important when server restarts and player reconnects - they may be in DB but not in memory
+    await table.ensurePlayerLoadedFromDatabase(playerId);
+    
     // Try to restore the player
     const restored = table.restoreDisconnectedPlayer(playerId);
     
@@ -710,17 +714,41 @@ export class PokerWebSocketHandler {
       });
     } else {
       // Player's seat was given up (timeout) or not found
-      this.send(ws, {
-        type: 'reconnect_failed',
-        tableId,
-        reason: 'seat_expired',
-        message: 'Ваше место было освобождено'
-      });
+      // FALLBACK: Check if player exists in memory and just return state
+      // This handles edge case where player was never marked as disconnected
+      const playerExists = table.hasPlayer(playerId);
       
-      logger.info('Player reconnect failed - seat expired', {
-        playerId: playerId.substring(0, 8),
-        tableId
-      });
+      if (playerExists) {
+        // Player is at table but wasn't in disconnected state - just send state
+        this.connectionPool.authenticateConnection(ws, playerId);
+        this.connectionPool.subscribeToTable(ws, tableId);
+        this.setupTableListeners(table);
+        
+        const state = table.getPlayerState(playerId);
+        this.send(ws, { 
+          type: 'reconnect_success', 
+          tableId, 
+          state,
+          message: 'Соединение восстановлено'
+        });
+        
+        logger.info('Player reconnected via fallback (was never disconnected)', {
+          playerId: playerId.substring(0, 8),
+          tableId
+        });
+      } else {
+        this.send(ws, {
+          type: 'reconnect_failed',
+          tableId,
+          reason: 'seat_expired',
+          message: 'Ваше место было освобождено'
+        });
+        
+        logger.info('Player reconnect failed - seat expired', {
+          playerId: playerId.substring(0, 8),
+          tableId
+        });
+      }
     }
   }
   

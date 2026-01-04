@@ -389,6 +389,13 @@ export class PokerTable {
   }
 
   /**
+   * Check if a player exists in memory
+   */
+  public hasPlayer(playerId: string): boolean {
+    return this.players.has(playerId);
+  }
+
+  /**
    * Map config game type to engine GameType
    */
   private mapGameType(configType: string): GameType {
