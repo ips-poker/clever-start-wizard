@@ -40,6 +40,9 @@ interface OnlineTournament {
   player_count?: number;
   late_registration_enabled?: boolean;
   late_registration_level?: number;
+  tickets_for_top?: number;
+  ticket_value?: number;
+  tournament_format?: string;
 }
 
 interface OnlineTournamentLobbyProps {
@@ -280,6 +283,10 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
     const canUnregister = isRegistered && tournament.status === 'registration';
     const canJoin = isRegistered && ['running', 'starting', 'final_table', 'break', 'hand_for_hand'].includes(tournament.status);
 
+    // Calculate RPS pool: buy_in / 50 * player_count = RPS points
+    const rpsPool = Math.floor((tournament.buy_in / 50) * (tournament.player_count || 0));
+    const hasTickets = (tournament.tickets_for_top || 0) > 0;
+
     return (
       <motion.div
         key={tournament.id}
@@ -310,19 +317,30 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
               {getStatusBadge(tournament.status)}
             </div>
 
-            <div className="grid grid-cols-3 gap-2 mb-3 text-sm">
+            <div className="grid grid-cols-2 gap-2 mb-2 text-sm">
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Coins className="h-3.5 w-3.5" />
-                <span>{tournament.buy_in.toLocaleString()}</span>
+                <span>{tournament.buy_in.toLocaleString()} 💎</span>
               </div>
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Users className="h-3.5 w-3.5" />
                 <span>{tournament.player_count}/{tournament.max_players}</span>
               </div>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Award className="h-3.5 w-3.5 text-amber-500" />
-                <span className="font-medium text-amber-500">{tournament.prize_pool.toLocaleString()}</span>
-              </div>
+            </div>
+
+            {/* RPS Pool and Tickets */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {rpsPool > 0 && (
+                <Badge variant="secondary" className="bg-amber-500/10 text-amber-500 border-amber-500/30 gap-1">
+                  <Award className="h-3 w-3" />
+                  {rpsPool.toLocaleString()} RPS
+                </Badge>
+              )}
+              {hasTickets && (
+                <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/30 gap-1">
+                  🎟️ Топ-{tournament.tickets_for_top} → входы
+                </Badge>
+              )}
             </div>
 
             <div className="flex gap-2">

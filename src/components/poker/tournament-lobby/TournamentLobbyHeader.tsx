@@ -38,6 +38,9 @@ interface TournamentStats {
   addon_enabled?: boolean;
   late_registration_enabled?: boolean;
   late_registration_level?: number;
+  tickets_for_top?: number;
+  ticket_value?: number;
+  tournament_format?: string;
 }
 
 interface TournamentLobbyHeaderProps {
@@ -63,6 +66,10 @@ export function TournamentLobbyHeader({ tournament, className }: TournamentLobby
     ? Math.floor(tournament.average_stack / tournament.big_blind) 
     : 0;
 
+  // Calculate RPS pool: buy_in / 50 * player_count = RPS points
+  const rpsPool = Math.floor((tournament.buy_in / 50) * tournament.player_count);
+  const hasTickets = (tournament.tickets_for_top || 0) > 0;
+
   return (
     <div className={cn("space-y-4", className)}>
       {/* Tournament Title & Status */}
@@ -83,16 +90,16 @@ export function TournamentLobbyHeader({ tournament, className }: TournamentLobby
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Buy-in & Prize Pool */}
+        {/* Buy-in & RPS Pool */}
         <div className="bg-card border rounded-lg p-3">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
             <Coins className="h-4 w-4" />
-            <span className="text-xs">Бай-ин / Призовой</span>
+            <span className="text-xs">Бай-ин / RPS Пул</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-lg font-bold">{tournament.buy_in.toLocaleString()}</span>
+            <span className="text-lg font-bold">{tournament.buy_in.toLocaleString()} 💎</span>
             <span className="text-muted-foreground">/</span>
-            <span className="text-lg font-bold text-amber-500">{tournament.prize_pool.toLocaleString()}</span>
+            <span className="text-lg font-bold text-amber-500">{rpsPool.toLocaleString()} RPS</span>
           </div>
         </div>
 
@@ -141,6 +148,14 @@ export function TournamentLobbyHeader({ tournament, className }: TournamentLobby
 
       {/* Secondary Stats */}
       <div className="flex flex-wrap gap-3 text-sm">
+        {/* Tickets for top places */}
+        {hasTickets && (
+          <div className="flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/30">
+            <span className="text-lg">🎟️</span>
+            <span className="text-emerald-400 font-medium">Топ-{tournament.tickets_for_top} → входы на офлайн</span>
+          </div>
+        )}
+
         <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-full">
           <Award className="h-3.5 w-3.5 text-amber-500" />
           <span className="text-muted-foreground">Стартовые фишки:</span>

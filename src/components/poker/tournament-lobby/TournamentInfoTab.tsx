@@ -13,7 +13,9 @@ import {
   Timer,
   Target,
   Shield,
-  Zap
+  Zap,
+  Award,
+  Ticket
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -68,6 +70,10 @@ interface TournamentDetails {
   started_at?: string;
   finished_at?: string;
   created_at: string;
+  
+  // Prizes
+  tickets_for_top?: number;
+  ticket_value?: number;
 }
 
 interface TournamentInfoTabProps {
@@ -128,6 +134,45 @@ export function TournamentInfoTab({ tournament, className }: TournamentInfoTabPr
         </div>
       )}
 
+      {/* Prizes Section - RPS Pool and Tickets */}
+      <div>
+        <h3 className="font-semibold mb-3 flex items-center gap-2">
+          <Award className="h-4 w-4 text-amber-500" />
+          Система призов
+        </h3>
+        <div className="bg-card border rounded-lg p-4 space-y-1">
+          <InfoRow 
+            icon={Coins} 
+            label="Бай-ин" 
+            value={`${tournament.buy_in.toLocaleString()} 💎`}
+          />
+          <Separator />
+          <InfoRow 
+            icon={Award} 
+            label="RPS пул" 
+            value={`${Math.floor((tournament.buy_in / 50) * tournament.player_count).toLocaleString()} RPS`}
+            valueClass="text-amber-500"
+          />
+          {tournament.tickets_for_top && tournament.tickets_for_top > 0 && (
+            <>
+              <Separator />
+              <InfoRow 
+                icon={Ticket} 
+                label="Билеты на офлайн" 
+                value={`Топ-${tournament.tickets_for_top} получают входы`}
+                valueClass="text-emerald-500"
+              />
+            </>
+          )}
+          <Separator />
+          <div className="py-2 text-xs text-muted-foreground">
+            <p>💎 Алмазы на деньги не меняются</p>
+            <p>📊 RPS очки = рейтинговые баллы</p>
+            <p>🎟️ Входы = участие в офлайн турнирах (90 дней)</p>
+          </div>
+        </div>
+      </div>
+
       {/* Basic Info */}
       <div>
         <h3 className="font-semibold mb-3 flex items-center gap-2">
@@ -142,30 +187,6 @@ export function TournamentInfoTab({ tournament, className }: TournamentInfoTabPr
               <Badge variant="outline">{getFormatLabel(tournament.tournament_format)}</Badge>
             }
           />
-          <Separator />
-          <InfoRow 
-            icon={Coins} 
-            label="Бай-ин" 
-            value={tournament.buy_in.toLocaleString()}
-          />
-          <Separator />
-          <InfoRow 
-            icon={Trophy} 
-            label="Призовой фонд" 
-            value={tournament.prize_pool.toLocaleString()}
-            valueClass="text-amber-500"
-          />
-          {tournament.guaranteed_prize_pool && tournament.guaranteed_prize_pool > 0 && (
-            <>
-              <Separator />
-              <InfoRow 
-                icon={Shield} 
-                label="Гарантированный приз" 
-                value={tournament.guaranteed_prize_pool.toLocaleString()}
-                valueClass="text-emerald-500"
-              />
-            </>
-          )}
           <Separator />
           <InfoRow 
             icon={Zap} 

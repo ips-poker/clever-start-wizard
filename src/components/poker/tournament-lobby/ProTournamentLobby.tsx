@@ -79,6 +79,8 @@ interface TournamentData {
   started_at: string | null;
   finished_at: string | null;
   created_at: string;
+  tickets_for_top: number | null;
+  ticket_value: number | null;
 }
 
 interface Participant {
@@ -269,7 +271,10 @@ export function ProTournamentLobby({
     players_remaining: activePlayers.length,
     average_stack: averageStack,
     largest_stack: largestStack,
-    smallest_stack: smallestStack
+    smallest_stack: smallestStack,
+    tickets_for_top: tournament.tickets_for_top || 0,
+    ticket_value: tournament.ticket_value || 0,
+    tournament_format: tournament.tournament_format
   };
 
   // Prepare players list
