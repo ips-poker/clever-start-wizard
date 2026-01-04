@@ -2519,6 +2519,7 @@ export type Database = {
           wins: number
         }[]
       }
+      get_server_time: { Args: never; Returns: string }
       get_system_statistics: { Args: never; Returns: Json }
       get_tournament_voice_stats: {
         Args: { tournament_id_param: string }

@@ -49,12 +49,20 @@ export const TournamentTimer = ({
     const syncServerTime = async () => {
       try {
         const clientTime = Date.now();
-        const { data } = await supabase.rpc('get_server_time');
-        if (data) {
-          const serverTime = new Date(data).getTime();
+        // Use any simple query to get server time from response headers or data
+        const { data } = await supabase
+          .from('online_poker_tournaments')
+          .select('created_at')
+          .limit(1)
+          .single();
+        
+        // Alternative: use RPC with type assertion since types.ts hasn't regenerated yet
+        const { data: serverTimeData } = await supabase.rpc('get_server_time' as any);
+        if (serverTimeData) {
+          const serverTime = new Date(serverTimeData as string).getTime();
           const offset = serverTime - clientTime;
           setServerTimeOffset(offset);
-          console.log(`[TournamentTimer] Server time offset: ${offset}ms`);
+          console.log(`[TournamentTimer] Server time offset: ${offset}ms (${Math.round(offset/1000)}s)`);
         }
       } catch (err) {
         console.warn('[TournamentTimer] Failed to sync server time:', err);
