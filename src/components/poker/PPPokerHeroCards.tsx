@@ -61,7 +61,7 @@ const HeroCard = memo(function HeroCard({
   const cardHeight = cardCount > 2 ? 68 : 80;
   const rankSize = cardCount > 2 ? 'text-lg' : 'text-xl';
   const suitSize = cardCount > 2 ? 'text-sm' : 'text-base';
-  const centerSize = cardCount > 2 ? 'text-3xl' : 'text-4xl';
+  const centerSize = cardCount > 2 ? 'text-2xl' : 'text-3xl';
 
   // PPPoker GOLD style constants
   const GOLD_BORDER = '#f59e0b';
