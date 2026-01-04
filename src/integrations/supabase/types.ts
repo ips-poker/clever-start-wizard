@@ -2449,6 +2449,10 @@ export type Database = {
       }
       ensure_diamond_wallet: { Args: { p_player_id: string }; Returns: number }
       ensure_player_balance: { Args: { p_player_id: string }; Returns: number }
+      fix_tournament_seating: {
+        Args: { p_tournament_id: string }
+        Returns: Json
+      }
       generate_online_tournament_payout_structure: {
         Args: { p_tournament_id: string }
         Returns: Json
@@ -2570,6 +2574,10 @@ export type Database = {
       }
       process_online_tournament_rebuy: {
         Args: { p_player_id: string; p_tournament_id: string }
+        Returns: Json
+      }
+      professional_balance_tables: {
+        Args: { p_tournament_id: string }
         Returns: Json
       }
       publish_tournament: {
