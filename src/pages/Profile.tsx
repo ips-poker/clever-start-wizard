@@ -71,67 +71,84 @@ export default function Profile() {
     if (!user) return;
 
     try {
-      let data, error;
-      
-      const userIdResult = await supabase
+      const { data: byUserId, error: byUserIdError } = await supabase
         .from('players')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (userIdResult.error && userIdResult.error.code === 'PGRST116') {
-        const emailResult = await supabase
+      if (byUserIdError) {
+        console.error('Error loading player by user_id:', byUserIdError);
+      }
+
+      if (byUserId) {
+        setPlayer(byUserId as Player);
+        return;
+      }
+
+      const email = user.email ?? null;
+      if (email) {
+        const { data: byEmail, error: byEmailError } = await supabase
           .from('players')
           .select('*')
-          .eq('email', user.email)
-          .single();
-        
-        data = emailResult.data;
-        error = emailResult.error;
-      } else {
-        data = userIdResult.data;
-        error = userIdResult.error;
-      }
+          .eq('email', email)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (error && error.code === 'PGRST116') {
-        const playerName = userProfile?.full_name || user.email?.split('@')[0] || 'Player';
-        
-        const { data: createResult, error: createError } = await supabase.rpc('create_player_safe', {
-          p_name: playerName,
-          p_email: user.email || null,
-          p_telegram: null,
-          p_avatar_url: userProfile?.avatar_url || null,
-          p_user_id: user.id
-        });
-
-        if (createError) {
-          console.error('Error creating player:', createError);
-          return;
+        if (byEmailError) {
+          console.error('Error loading player by email:', byEmailError);
         }
 
-        const result = createResult as { success: boolean; error?: string; player?: any; player_id?: string };
-        
-        if (!result?.success) {
-          if (result?.player_id) {
-            const { data: existingPlayer } = await supabase
-              .from('players')
-              .select('*')
-              .eq('id', result.player_id)
-              .single();
-            if (existingPlayer) {
-              setPlayer(existingPlayer);
-              return;
-            }
-          }
+        if (byEmail) {
+          setPlayer(byEmail as Player);
           return;
         }
-        
-        setPlayer(result.player);
-      } else if (error) {
-        console.error('Error loading player:', error);
-      } else {
-        setPlayer(data);
       }
+
+      const playerName = userProfile?.full_name || user.email?.split('@')[0] || 'Player';
+
+      const { data: createResult, error: createError } = await supabase.rpc('create_player_safe', {
+        p_name: playerName,
+        p_email: user.email || null,
+        p_telegram: null,
+        p_avatar_url: userProfile?.avatar_url || null,
+        p_user_id: user.id
+      });
+
+      if (createError) {
+        console.error('Error creating player:', createError);
+        toast.error('Не удалось создать профиль игрока');
+        return;
+      }
+
+      const result = createResult as { success: boolean; error?: string; player?: any; player_id?: string };
+
+      if (result?.success && result.player) {
+        setPlayer(result.player as Player);
+        return;
+      }
+
+      if (result?.player_id) {
+        const { data: existingPlayer, error: existingError } = await supabase
+          .from('players')
+          .select('*')
+          .eq('id', result.player_id)
+          .maybeSingle();
+
+        if (existingError) {
+          console.error('Error loading existing player:', existingError);
+        }
+
+        if (existingPlayer) {
+          setPlayer(existingPlayer as Player);
+          return;
+        }
+      }
+
+      toast.error(result?.error || 'Профиль игрока не найден');
     } catch (error) {
       console.error('Error in loadPlayerData:', error);
     } finally {

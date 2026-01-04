@@ -46,11 +46,17 @@ export default function OnlinePoker() {
     const checkPlayer = async () => {
       // If user is authenticated, find their player profile
       if (isAuthenticated && user) {
-        const { data: playerData } = await supabase
+        const { data: playerData, error: playerError } = await supabase
           .from('players')
           .select('id, name, avatar_url, telegram')
           .eq('user_id', user.id)
-          .single();
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (playerError) {
+          console.error('Error loading player by user_id:', playerError);
+        }
         
         if (playerData) {
           setPlayerId(playerData.id);
@@ -64,11 +70,17 @@ export default function OnlinePoker() {
         // Check if there's a player linked by telegram_id
         const telegramId = user.user_metadata?.telegram_id;
         if (telegramId) {
-          const { data: telegramPlayer } = await supabase
+          const { data: telegramPlayer, error: telegramError } = await supabase
             .from('players')
             .select('id, name, avatar_url')
             .eq('telegram', String(telegramId))
-            .single();
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (telegramError) {
+            console.error('Error loading player by telegram:', telegramError);
+          }
           
           if (telegramPlayer) {
             // Link player to user_id if not already linked
@@ -91,11 +103,15 @@ export default function OnlinePoker() {
       const savedPlayerId = localStorage.getItem('poker_player_id');
       
       if (savedPlayerId) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('players')
           .select('id, name, avatar_url')
           .eq('id', savedPlayerId)
-          .single();
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error loading player from localStorage:', error);
+        }
         
         if (data) {
           setPlayerId(data.id);
