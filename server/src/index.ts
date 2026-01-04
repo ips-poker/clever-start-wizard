@@ -213,6 +213,10 @@ const wss = new WebSocketServer({
 // Initialize WebSocket handler with tournament manager
 const wsHandler = new PokerWebSocketHandler(wss, gameManager, supabase, tournamentManager);
 
+// Connect tournament level service to broadcast break events via WebSocket
+tournamentLevelService.setBreakEventCallback((tournamentId, event) => {
+  wsHandler.broadcastBreakEvent(tournamentId, event);
+});
 // WebSocket connection rate limiting (increased for tournaments)
 const wsRateLimiter = new RateLimiterMemory({
   points: 300, // connections per minute per IP (increased for tournaments)

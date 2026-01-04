@@ -2,6 +2,7 @@
  * Tournament Level Service
  * Автоматически управляет уровнями блайндов для всех турниров
  * Работает как серверный cron - проверяет каждые 5 секунд
+ * Broadcast события перерыва через Supabase Realtime
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -16,15 +17,35 @@ interface TournamentLevel {
   is_break: boolean | null;
 }
 
+interface BreakEventCallback {
+  (tournamentId: string, event: {
+    type: 'break_starting' | 'break_started' | 'break_ended';
+    durationSeconds: number;
+    level: number;
+    tournamentName: string;
+  }): void;
+}
+
 class TournamentLevelService {
   private supabase: SupabaseClient | null = null;
   private interval: NodeJS.Timeout | null = null;
+  private warningInterval: NodeJS.Timeout | null = null;
   private isProcessing = false;
   private checkIntervalMs = 5000; // 5 seconds
+  private breakEventCallback: BreakEventCallback | null = null;
+  private warnedTournaments: Set<string> = new Set(); // Track warned tournaments to avoid duplicate warnings
 
   setSupabase(client: SupabaseClient): void {
     this.supabase = client;
     logger.info('[TournamentLevelService] Supabase client configured');
+  }
+
+  /**
+   * Set callback for break events - called by WebSocketHandler to broadcast to clients
+   */
+  setBreakEventCallback(callback: BreakEventCallback): void {
+    this.breakEventCallback = callback;
+    logger.info('[TournamentLevelService] Break event callback configured');
   }
 
   start(): void {
@@ -40,13 +61,87 @@ class TournamentLevelService {
 
     // Then check every 5 seconds
     this.interval = setInterval(() => this.checkAndAdvanceLevels(), this.checkIntervalMs);
+    
+    // Check for upcoming breaks every 10 seconds
+    this.warningInterval = setInterval(() => this.checkUpcomingBreaks(), 10000);
   }
 
   stop(): void {
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = null;
-      logger.info('[TournamentLevelService] Stopped');
+    }
+    if (this.warningInterval) {
+      clearInterval(this.warningInterval);
+      this.warningInterval = null;
+    }
+    logger.info('[TournamentLevelService] Stopped');
+  }
+
+  /**
+   * Check for tournaments approaching a break and warn players
+   */
+  private async checkUpcomingBreaks(): Promise<void> {
+    if (!this.supabase || !this.breakEventCallback) return;
+
+    try {
+      const now = new Date();
+      const warningThresholdMs = 60000; // Warn 60 seconds before break
+
+      // Find running tournaments
+      const { data: tournaments, error } = await this.supabase
+        .from('online_poker_tournaments')
+        .select('id, name, current_level, level_end_at')
+        .eq('status', 'running')
+        .not('level_end_at', 'is', null);
+
+      if (error || !tournaments) return;
+
+      for (const tournament of tournaments) {
+        const levelEndAt = new Date(tournament.level_end_at);
+        const timeUntilEnd = levelEndAt.getTime() - now.getTime();
+
+        // Skip if not within warning window or already warned
+        const warningKey = `${tournament.id}-${tournament.current_level}`;
+        if (timeUntilEnd > warningThresholdMs || timeUntilEnd < 0 || this.warnedTournaments.has(warningKey)) {
+          continue;
+        }
+
+        // Check if next level is a break
+        const nextLevel = tournament.current_level + 1;
+        const { data: nextLevelData } = await this.supabase
+          .from('online_poker_tournament_levels')
+          .select('is_break, duration')
+          .eq('tournament_id', tournament.id)
+          .eq('level', nextLevel)
+          .single();
+
+        if (nextLevelData?.is_break) {
+          // Mark as warned
+          this.warnedTournaments.add(warningKey);
+          
+          // Broadcast warning to all tables
+          logger.info(`[TournamentLevelService] Broadcasting break_starting for ${tournament.name}`, {
+            tournamentId: tournament.id,
+            secondsUntilBreak: Math.round(timeUntilEnd / 1000)
+          });
+
+          this.breakEventCallback(tournament.id, {
+            type: 'break_starting',
+            durationSeconds: nextLevelData.duration || 300,
+            level: nextLevel,
+            tournamentName: tournament.name
+          });
+        }
+      }
+
+      // Cleanup old warned tournaments (keep only last 100)
+      if (this.warnedTournaments.size > 100) {
+        const arr = Array.from(this.warnedTournaments);
+        this.warnedTournaments = new Set(arr.slice(-50));
+      }
+    } catch (err) {
+      logger.error('[TournamentLevelService] Error checking upcoming breaks', { error: String(err) });
     }
   }
 
@@ -193,6 +288,34 @@ class TournamentLevelService {
 
     if (tablesError) {
       logger.error(`[TournamentLevelService] Error updating tables for ${tournament.id}`, { error: tablesError.message });
+    }
+
+    // Broadcast break events to all clients via callback
+    if (this.breakEventCallback) {
+      if (action === 'break_started') {
+        logger.info(`[TournamentLevelService] Broadcasting break_started for ${tournament.name}`, {
+          tournamentId: tournament.id,
+          durationSeconds: duration
+        });
+        
+        this.breakEventCallback(tournament.id, {
+          type: 'break_started',
+          durationSeconds: duration,
+          level: currentLevel + 1,
+          tournamentName: tournament.name
+        });
+      } else if (action === 'break_ended') {
+        logger.info(`[TournamentLevelService] Broadcasting break_ended for ${tournament.name}`, {
+          tournamentId: tournament.id
+        });
+        
+        this.breakEventCallback(tournament.id, {
+          type: 'break_ended',
+          durationSeconds: 0,
+          level: currentLevel + 1,
+          tournamentName: tournament.name
+        });
+      }
     }
 
     // Trigger table balancing

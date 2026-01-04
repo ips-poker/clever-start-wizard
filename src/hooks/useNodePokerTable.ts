@@ -128,6 +128,16 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     timestamp: number;
   } | null>(null);
 
+  // Tournament break state
+  const [tournamentBreak, setTournamentBreak] = useState<{
+    type: 'break_starting' | 'break_started' | 'break_ended';
+    tournamentId: string;
+    tournamentName: string;
+    durationMinutes: number;
+    durationSeconds: number;
+    timestamp: number;
+  } | null>(null);
+
   // Refs
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptRef = useRef(0);
@@ -1356,6 +1366,31 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }
           break;
 
+        // TOURNAMENT BREAK EVENTS
+        case 'tournament_break':
+          {
+            const breakData = data as Record<string, unknown>;
+            const eventType = breakData.event as 'break_starting' | 'break_started' | 'break_ended';
+            
+            log('☕ Tournament break event:', eventType, breakData);
+            
+            if (eventType === 'break_ended') {
+              // Clear break state
+              setTournamentBreak(null);
+            } else {
+              // Set break state (starting or started)
+              setTournamentBreak({
+                type: eventType,
+                tournamentId: breakData.tournamentId as string,
+                tournamentName: breakData.tournamentName as string,
+                durationMinutes: (breakData.durationMinutes as number) || Math.floor((breakData.durationSeconds as number || 0) / 60),
+                durationSeconds: breakData.durationSeconds as number || 0,
+                timestamp: Date.now()
+              });
+            }
+          }
+          break;
+
         default:
           log('📨 Unknown message type:', data.type, data);
       }
@@ -1759,6 +1794,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     lastAction,
     rebuyAvailable,
     clearRebuyAvailable: () => setRebuyAvailable(null),
+    tournamentBreak,
+    clearTournamentBreak: () => setTournamentBreak(null),
 
     // Computed
     isMyTurn,
