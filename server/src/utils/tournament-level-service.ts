@@ -59,26 +59,33 @@ class TournamentLevelService {
       const now = new Date();
 
       // Find tournaments with expired level_end_at
+      // Also include tournaments that might be stuck (level_end_at much older than now)
       const { data: expiredTournaments, error: fetchError } = await this.supabase
         .from('online_poker_tournaments')
         .select('id, name, current_level, level_duration, level_end_at, status, small_blind, big_blind, ante')
-        .in('status', ['running', 'break'])
+        .in('status', ['running', 'break', 'in_progress', 'active'])
         .not('level_end_at', 'is', null)
         .lt('level_end_at', now.toISOString());
 
       if (fetchError) {
         logger.error('[TournamentLevelService] Error fetching tournaments', { error: fetchError.message });
+        this.isProcessing = false;
         return;
       }
 
       if (!expiredTournaments || expiredTournaments.length === 0) {
+        this.isProcessing = false;
         return; // No tournaments need advancement - silent return
       }
 
       logger.info(`[TournamentLevelService] Found ${expiredTournaments.length} tournaments with expired levels`);
 
       for (const tournament of expiredTournaments) {
-        await this.advanceTournamentLevel(tournament);
+        try {
+          await this.advanceTournamentLevel(tournament);
+        } catch (err) {
+          logger.error(`[TournamentLevelService] Error advancing tournament ${tournament.id}`, { error: String(err) });
+        }
       }
     } catch (err) {
       logger.error('[TournamentLevelService] Error in checkAndAdvanceLevels', { error: String(err) });
@@ -91,6 +98,16 @@ class TournamentLevelService {
     if (!this.supabase) return;
 
     const currentLevel = tournament.current_level || 1;
+    const now = new Date();
+    const levelEndAt = tournament.level_end_at ? new Date(tournament.level_end_at) : now;
+    const timeSinceExpiry = now.getTime() - levelEndAt.getTime();
+
+    logger.info(`[TournamentLevelService] Processing ${tournament.name}`, {
+      currentLevel,
+      status: tournament.status,
+      levelEndAt: tournament.level_end_at,
+      timeSinceExpiryMs: timeSinceExpiry
+    });
 
     // Get next level
     const { data: nextLevel, error: levelError } = await this.supabase
@@ -117,7 +134,10 @@ class TournamentLevelService {
 
         await this.supabase
           .from('online_poker_tournaments')
-          .update({ level_end_at: newEndTime.toISOString() })
+          .update({ 
+            level_end_at: newEndTime.toISOString(),
+            status: 'running' // Ensure status is running
+          })
           .eq('id', tournament.id);
       }
       return;

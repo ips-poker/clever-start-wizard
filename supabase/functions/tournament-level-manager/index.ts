@@ -71,16 +71,15 @@ Deno.serve(async (req) => {
     let query = supabase
       .from('online_poker_tournaments')
       .select('id, name, current_level, level_duration, level_end_at, status, small_blind, big_blind, ante')
-      .in('status', ['running', 'break'])
+      .in('status', ['running', 'break', 'in_progress', 'active'])
       .not('level_end_at', 'is', null);
 
     if (specificTournamentId) {
       // Direct call - process this specific tournament immediately
       query = query.eq('id', specificTournamentId).lt('level_end_at', now.toISOString());
     } else {
-      // Cron job - use 30 sec grace period as backup for VPS
-      const backupThreshold = new Date(now.getTime() - 30000);
-      query = query.lt('level_end_at', backupThreshold.toISOString());
+      // Cron job - process any expired tournament
+      query = query.lt('level_end_at', now.toISOString());
     }
 
     const { data: expiredTournaments, error: fetchError } = await query;
