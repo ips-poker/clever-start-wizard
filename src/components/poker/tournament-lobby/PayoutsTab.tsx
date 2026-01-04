@@ -30,6 +30,7 @@ interface PayoutsTabProps {
   currentPlayerId?: string;
   buyIn?: number;
   ticketsForTop?: number;
+  tournamentStatus?: string;
   className?: string;
 }
 
@@ -56,18 +57,22 @@ export function PayoutsTab({
   currentPlayerId,
   buyIn = 0,
   ticketsForTop = 0,
+  tournamentStatus = 'registration',
   className 
 }: PayoutsTabProps) {
-  const paidPlaces = payouts.length;
-  const bubblePosition = paidPlaces + 1;
-  const isOnBubble = playersRemaining === bubblePosition;
-  const inTheMoney = playersRemaining <= paidPlaces && paidPlaces > 0;
-
   // Calculate RPS pool (buy_in / 50 = RPS)
   const rpsPool = Math.floor(buyIn / 50) * totalPlayers;
   
-  // Get predicted structure based on player count
-  const predictedStructure = getRPSStructure(totalPlayers);
+  // Get structure based on player count
+  const rpsStructure = getRPSStructure(totalPlayers);
+  
+  // Use actual payouts if generated, otherwise use calculated structure
+  const hasActualPayouts = payouts.length > 0;
+  const paidPlaces = hasActualPayouts ? payouts.length : rpsStructure.places;
+  
+  const bubblePosition = paidPlaces + 1;
+  const isOnBubble = playersRemaining === bubblePosition;
+  const inTheMoney = playersRemaining <= paidPlaces && paidPlaces > 0;
 
   // Calculate total percentage
   const totalPercentage = payouts.reduce((sum, p) => sum + p.percentage, 0);
@@ -88,8 +93,10 @@ export function PayoutsTab({
     return 'bg-muted/30 border-transparent';
   };
 
-  // Show predicted structure when payouts not yet generated
-  const showPredicted = payouts.length === 0;
+  // Show as "preliminary" only during registration
+  const isRegistration = tournamentStatus === 'registration';
+  // If tournament already started, show calculated structure as final (not "preliminary")
+  const showCalculatedStructure = !hasActualPayouts;
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
@@ -117,7 +124,7 @@ export function PayoutsTab({
           <div className="bg-background/50 rounded-lg p-2 text-center">
             <Award className="h-4 w-4 mx-auto text-amber-500 mb-1" />
             <p className="text-muted-foreground text-xs">Призовых мест</p>
-            <p className="font-bold">{showPredicted ? predictedStructure.places : paidPlaces}</p>
+            <p className="font-bold">{paidPlaces}</p>
           </div>
           <div className="bg-background/50 rounded-lg p-2 text-center">
             <Ticket className="h-4 w-4 mx-auto text-primary mb-1" />
@@ -166,21 +173,23 @@ export function PayoutsTab({
         <div className="col-span-2">Место</div>
         <div className="col-span-4">Процент</div>
         <div className="col-span-3 text-right">RPS</div>
-        <div className="col-span-3 text-right">{showPredicted ? 'Бонус' : 'Игрок'}</div>
+        <div className="col-span-3 text-right">{showCalculatedStructure ? 'Бонус' : 'Игрок'}</div>
       </div>
 
       {/* Payouts List */}
       <ScrollArea className="flex-1">
         <div className="space-y-1">
-          {showPredicted ? (
-            // Show predicted structure
+          {showCalculatedStructure ? (
+            // Show calculated RPS structure
             <>
-              <div className="px-3 py-2 mb-2">
-                <Badge variant="outline" className="text-xs">
-                  Предварительная структура для {totalPlayers} игроков
-                </Badge>
-              </div>
-              {predictedStructure.percentages.map((percentage, index) => {
+              {isRegistration && (
+                <div className="px-3 py-2 mb-2">
+                  <Badge variant="outline" className="text-xs">
+                    Предварительная структура (может измениться при изменении числа участников)
+                  </Badge>
+                </div>
+              )}
+              {rpsStructure.percentages.map((percentage, index) => {
                 const position = index + 1;
                 const rpsAmount = Math.floor(rpsPool * percentage / 100);
                 const hasTicket = position <= ticketsForTop;
@@ -335,7 +344,8 @@ export function PayoutsTab({
       {/* Info Footer */}
       <div className="mt-3 pt-3 border-t text-xs text-muted-foreground space-y-1">
         <p>• {buyIn} 💎 = {Math.floor(buyIn / 50)} RPS за участника</p>
-        <p>• Структура призов рассчитывается автоматически при старте турнира</p>
+        <p>• Общий RPS пул: {rpsPool} RPS ({totalPlayers} участников)</p>
+        {isRegistration && <p>• Структура призов может измениться при изменении числа участников</p>}
       </div>
     </div>
   );
