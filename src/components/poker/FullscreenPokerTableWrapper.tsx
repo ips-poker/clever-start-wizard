@@ -41,6 +41,7 @@ interface FullscreenPokerTableWrapperProps {
   minBuyIn?: number;
   maxBuyIn?: number;
   playerBalance?: number;
+  isSpectator?: boolean;
   isTournament?: boolean;
   tournamentId?: string;
   onLeave?: () => void;
@@ -56,6 +57,7 @@ export function FullscreenPokerTableWrapper({
   minBuyIn = 200,
   maxBuyIn = 2000,
   playerBalance = 10000,
+  isSpectator = false,
   isTournament = false,
   tournamentId,
   onLeave,
@@ -102,9 +104,10 @@ export function FullscreenPokerTableWrapper({
 
   // Check if player can join (not yet seated) - only for cash games
   // Tournaments use auto-seating from participant data
+  // Spectators cannot join
   const canJoinTable = useMemo(() => {
-    return isConnected && !myPlayer && mySeat === null && !isTournament;
-  }, [isConnected, myPlayer, mySeat, isTournament]);
+    return isConnected && !myPlayer && mySeat === null && !isTournament && !isSpectator;
+  }, [isConnected, myPlayer, mySeat, isTournament, isSpectator]);
 
   // Table readiness hint (why hand isn't starting)
   const startHandHint = useMemo(() => {
@@ -163,9 +166,10 @@ export function FullscreenPokerTableWrapper({
   }, []);
 
   // Auto-join for tournament players - they already have assigned seats
+  // Skip for spectators - they just watch
   const hasAutoJoinedRef = useRef(false);
   useEffect(() => {
-    if (!isTournament || !tournamentId || !isConnected || myPlayer || hasAutoJoinedRef.current) {
+    if (!isTournament || !tournamentId || !isConnected || myPlayer || hasAutoJoinedRef.current || isSpectator) {
       return;
     }
 
@@ -764,8 +768,8 @@ export function FullscreenPokerTableWrapper({
           </div>
         )}
 
-        {/* Action buttons - Professional Panel */}
-        {myPlayer && (
+        {/* Action buttons - Professional Panel (hidden for spectators) */}
+        {myPlayer && !isSpectator && (
           <ProActionPanel
             isMyTurn={isMyTurn}
             canCheck={canCheck}

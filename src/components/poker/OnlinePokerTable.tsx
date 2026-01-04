@@ -57,6 +57,7 @@ export function OnlinePokerTable({
       minBuyIn={minBuyIn}
       maxBuyIn={maxBuyIn}
       playerBalance={playerBalance}
+      isSpectator={isSpectator}
       isTournament={isTournament}
       tournamentId={tournamentId}
       onLeave={onLeave}
