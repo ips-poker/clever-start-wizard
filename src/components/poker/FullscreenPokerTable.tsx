@@ -1328,6 +1328,16 @@ export interface FullscreenPokerTableProps {
   // Table configuration
   maxSeats?: number;
   wideMode?: boolean; // For Telegram Mini App - wider table
+  // Professional timing from server
+  betsBeingCollected?: {
+    bets: Array<{ playerId: string; seatNumber: number; amount: number }>;
+    timestamp: number;
+  } | null;
+  phaseTimings?: {
+    dealDelay?: number;
+    preDealDelay?: number;
+    phase?: string;
+  } | null;
 }
 
 export const FullscreenPokerTable = memo(function FullscreenPokerTable({
@@ -1360,7 +1370,10 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   ante,
   // Table config
   maxSeats = 6,
-  wideMode = false
+  wideMode = false,
+  // Professional timing from server
+  betsBeingCollected,
+  phaseTimings
 }: FullscreenPokerTableProps) {
   // Use dynamic positions based on max seats
   // wideMode prop explicitly indicates Telegram Mini App context
@@ -1371,19 +1384,39 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   const { preferences, currentTableTheme, currentCardBack } = usePokerPreferences();
   
   // Professional phase animation hook
-  const { animationState, isAnimating: isPhaseAnimating } = usePhaseAnimation();
+  const { animationState, animatePhaseTransition, isAnimating: isPhaseAnimating } = usePhaseAnimation();
   
   // Track phase changes for pot collection animation
   const prevPhaseRef = useRef(phase);
   const [isCollectingBets, setIsCollectingBets] = useState(false);
   const [collectionBets, setCollectionBets] = useState<Array<{ seatPosition: { x: number; y: number }; amount: number }>>([]);
   
-  // Bet collection animation state (separate from pot collection)
-  const [betCollectionActive, setBetCollectionActive] = useState(false);
-  const [betCollectionPositions, setBetCollectionPositions] = useState<Array<{ x: number; y: number }>>([]);
-  
   // Win distribution animation state
   const [winDistribution, setWinDistribution] = useState<{ winnerSeat: number; amount: number } | null>(null);
+  
+  // Convert server betsBeingCollected to visual positions for animation
+  const betCollectionData = useMemo(() => {
+    if (!betsBeingCollected || betsBeingCollected.bets.length === 0) {
+      return null;
+    }
+    
+    return betsBeingCollected.bets.map(bet => {
+      // Calculate visual position for this player
+      let visualPos = 0;
+      if (heroSeat !== null) {
+        visualPos = (bet.seatNumber - heroSeat + maxPlayers) % maxPlayers;
+      } else {
+        visualPos = (bet.seatNumber + preferences.preferredSeatRotation) % maxPlayers;
+      }
+      const pos = positions[visualPos] || { x: 50, y: 50 };
+      return {
+        playerId: bet.playerId,
+        seatNumber: bet.seatNumber,
+        amount: bet.amount,
+        position: pos
+      };
+    });
+  }, [betsBeingCollected, heroSeat, maxPlayers, positions, preferences.preferredSeatRotation]);
   
   // Trigger win distribution animation when winners change
   useEffect(() => {
@@ -1496,20 +1529,16 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         />
       )}
       
-      {/* Bet collection animation */}
-      <BetCollectionAnimation
-        isCollecting={betCollectionActive}
-        betsToCollect={betCollectionPositions.map((pos, idx) => ({
-          playerId: `player-${idx}`,
-          seatNumber: idx,
-          amount: 100,
-          position: pos
-        }))}
-        onComplete={() => {
-          setBetCollectionActive(false);
-          setBetCollectionPositions([]);
-        }}
-      />
+      {/* Bet collection animation - using server timing data */}
+      {betCollectionData && betCollectionData.length > 0 && (
+        <BetCollectionAnimation
+          isCollecting={true}
+          betsToCollect={betCollectionData}
+          onComplete={() => {
+            // Animation complete - server already clears state after 800ms
+          }}
+        />
+      )}
       
       {/* Professional Showdown overlay */}
       {phase === 'showdown' && showdownPlayers && showdownPlayers.length > 0 && (

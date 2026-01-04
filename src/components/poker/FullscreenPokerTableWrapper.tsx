@@ -93,7 +93,9 @@ export function FullscreenPokerTableWrapper({
     isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
     connect, disconnect, joinTable, fold, check, call, raise, allIn, addChips, sitOut, sitIn,
     rebuyAvailable, clearRebuyAvailable,
-    tournamentBreak, clearTournamentBreak
+    tournamentBreak, clearTournamentBreak,
+    // Professional timing data
+    betsBeingCollected, phaseTimings
   } = pokerTable;
 
   // Check if player can join (not yet seated) - only for cash games
@@ -742,6 +744,8 @@ export function FullscreenPokerTableWrapper({
             wideMode={wideMode}
             showdownPlayers={showdownResult?.showdownPlayers}
             winners={showdownResult?.winners}
+            betsBeingCollected={betsBeingCollected}
+            phaseTimings={phaseTimings}
           />
         </div>
 

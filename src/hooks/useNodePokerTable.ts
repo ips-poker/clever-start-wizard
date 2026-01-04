@@ -138,6 +138,19 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     timestamp: number;
   } | null>(null);
 
+  // Professional timing: bets being collected animation
+  const [betsBeingCollected, setBetsBeingCollected] = useState<{
+    bets: Array<{ playerId: string; seatNumber: number; amount: number }>;
+    timestamp: number;
+  } | null>(null);
+
+  // Professional timing: phase transition delays from server
+  const [phaseTimings, setPhaseTimings] = useState<{
+    dealDelay?: number;
+    preDealDelay?: number;
+    phase?: string;
+  } | null>(null);
+
   // Refs
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptRef = useRef(0);
@@ -598,8 +611,52 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'bets_collected':
           // PROFESSIONAL TIMING: Bets being collected before phase change
           log('💰 Bets collected - chips moving to pot:', data);
-          // This event signals the visual animation of chips sliding to pot
-          // The actual phase_change follows after server delay
+          // Extract bet positions from event data
+          {
+            const eventData = (data.data || data) as Record<string, unknown>;
+            const bets = (eventData.bets || eventData.collectedBets) as Array<{
+              playerId?: string;
+              seatNumber?: number;
+              amount?: number;
+            }> | undefined;
+            
+            if (bets && bets.length > 0) {
+              setBetsBeingCollected({
+                bets: bets.map(b => ({
+                  playerId: b.playerId || '',
+                  seatNumber: b.seatNumber ?? 0,
+                  amount: b.amount ?? 0
+                })),
+                timestamp: Date.now()
+              });
+              
+              // Auto-clear after animation completes (800ms)
+              setTimeout(() => {
+                setBetsBeingCollected(null);
+              }, 800);
+            } else {
+              // Fallback: use current player bets from table state
+              const currentPlayers = tableStateRef.current?.players || [];
+              const currentBets = currentPlayers
+                .filter(p => p.betAmount > 0)
+                .map(p => ({
+                  playerId: p.playerId,
+                  seatNumber: p.seatNumber,
+                  amount: p.betAmount
+                }));
+              
+              if (currentBets.length > 0) {
+                setBetsBeingCollected({
+                  bets: currentBets,
+                  timestamp: Date.now()
+                });
+                
+                setTimeout(() => {
+                  setBetsBeingCollected(null);
+                }, 800);
+              }
+            }
+          }
           break;
 
         case 'phase_change':
@@ -612,6 +669,27 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             preDealDelay: (data as any).preDealDelay,
             phase: (data as any).phase
           });
+          
+          // Extract professional timings from server
+          {
+            const dealDelay = (data as any).dealDelay as number | undefined;
+            const preDealDelay = (data as any).preDealDelay as number | undefined;
+            const eventPhase = ((data as any).phase || (data.state as any)?.phase) as string | undefined;
+            
+            if (dealDelay !== undefined || preDealDelay !== undefined) {
+              setPhaseTimings({
+                dealDelay,
+                preDealDelay,
+                phase: eventPhase
+              });
+              
+              // Clear timings after use
+              const totalDelay = (preDealDelay || 0) + (dealDelay || 0) + 500;
+              setTimeout(() => {
+                setPhaseTimings(null);
+              }, totalDelay);
+            }
+          }
           
           if (data.state && tableId) {
             const stateData = data.state as Record<string, unknown>;
@@ -1821,6 +1899,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     clearRebuyAvailable: () => setRebuyAvailable(null),
     tournamentBreak,
     clearTournamentBreak: () => setTournamentBreak(null),
+    
+    // Professional timing
+    betsBeingCollected,
+    phaseTimings,
 
     // Computed
     isMyTurn,
