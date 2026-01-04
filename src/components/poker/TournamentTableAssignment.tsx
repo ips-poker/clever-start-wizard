@@ -238,7 +238,7 @@ export function ActiveTournamentAssignments({ playerId, onJoinTable }: ActiveTou
       if (error) throw error;
 
       const activeTournaments = (data || [])
-        .filter(p => p.tournament && ['registration', 'running', 'final_table'].includes((p.tournament as any).status))
+        .filter(p => p.tournament && ['registration', 'running', 'late_registration', 'final_table'].includes((p.tournament as any).status))
         .map(p => ({
           id: (p.tournament as any).id,
           name: (p.tournament as any).name,
