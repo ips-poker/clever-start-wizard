@@ -312,7 +312,74 @@ export class PokerGameManager {
   private startAutoSave(): void {
     this.saveInterval = setInterval(() => {
       this.saveAllGames();
+      // Also check for stuck tables every 30 seconds
+      this.checkStuckTables();
     }, 30000); // Save every 30 seconds
+  }
+  
+  /**
+   * Check for stuck tables and restart them
+   * A table is considered stuck if action_started_at is more than 2 minutes old
+   */
+  private async checkStuckTables(): Promise<void> {
+    try {
+      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      
+      // Find hands that are stuck (action_started_at > 2 minutes and not completed)
+      const { data: stuckHands, error } = await this.supabase
+        .from('poker_hands')
+        .select('id, table_id, action_started_at, phase')
+        .lt('action_started_at', twoMinutesAgo)
+        .is('completed_at', null);
+      
+      if (error || !stuckHands || stuckHands.length === 0) {
+        return;
+      }
+      
+      for (const hand of stuckHands) {
+        logger.warn('Found stuck hand - attempting recovery', {
+          handId: hand.id,
+          tableId: hand.table_id,
+          phase: hand.phase,
+          actionStartedAt: hand.action_started_at
+        });
+        
+        // Check if table is in memory
+        const table = this.tables.get(hand.table_id);
+        if (table) {
+          // Table exists - trigger action timeout to move game forward
+          logger.info('Triggering timeout recovery for stuck table', { tableId: hand.table_id });
+          // Force table to restart hand checking
+          table.forceRecovery();
+        } else {
+          // Table not in memory - mark hand as completed (aborted)
+          logger.warn('Table not in memory - marking stuck hand as aborted', { 
+            tableId: hand.table_id, 
+            handId: hand.id 
+          });
+          
+          await this.supabase
+            .from('poker_hands')
+            .update({ 
+              completed_at: new Date().toISOString(),
+              phase: 'aborted'
+            })
+            .eq('id', hand.id);
+          
+          // Reset table status
+          await this.supabase
+            .from('poker_tables')
+            .update({ 
+              current_hand_id: null, 
+              status: 'waiting',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', hand.table_id);
+        }
+      }
+    } catch (err) {
+      logger.error('Error checking stuck tables', { error: String(err) });
+    }
   }
   
   /**

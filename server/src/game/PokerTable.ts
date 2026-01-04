@@ -1715,6 +1715,43 @@ export class PokerTable {
         }))
       });
       
+      // CRITICAL: Save hand to database at START (not just at completion)
+      // This ensures current_hand_id always points to existing record
+      try {
+        await this.supabase.from('poker_hands').insert({
+          id: this.currentHand.id,
+          table_id: this.id,
+          hand_number: this.currentHand.handNumber,
+          dealer_seat: this.currentHand.dealerSeat,
+          small_blind_seat: this.currentHand.smallBlindSeat,
+          big_blind_seat: this.currentHand.bigBlindSeat,
+          community_cards: this.currentHand.communityCards,
+          pot: this.currentHand.pot,
+          phase: this.currentHand.phase,
+          current_bet: this.currentHand.currentBet,
+          current_player_seat: this.currentHand.currentPlayerSeat,
+          action_started_at: new Date().toISOString()
+          // completed_at is NULL - hand is in progress
+        });
+        
+        // Also update poker_tables.current_hand_id
+        await this.supabase
+          .from('poker_tables')
+          .update({
+            current_hand_id: this.currentHand.id,
+            status: 'playing',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', this.id);
+          
+        logger.info('Hand saved to database at start', {
+          tableId: this.id,
+          handId: this.currentHand.id
+        });
+      } catch (dbErr) {
+        logger.warn('Failed to save hand at start (continuing anyway)', { error: String(dbErr) });
+      }
+      
       // Start action timer
       this.startActionTimer();
       
@@ -2025,7 +2062,8 @@ export class PokerTable {
     if (!this.currentHand) return;
     
     try {
-      await this.supabase.from('poker_hands').insert({
+      // Use upsert since hand was already created at start
+      await this.supabase.from('poker_hands').upsert({
         id: this.currentHand.id,
         table_id: this.id,
         hand_number: this.currentHand.handNumber,
@@ -2035,8 +2073,10 @@ export class PokerTable {
         community_cards: this.currentHand.communityCards,
         pot: this.currentHand.pot,
         phase: this.currentHand.phase,
+        current_bet: this.currentHand.currentBet,
+        current_player_seat: null, // Hand is complete
         completed_at: new Date().toISOString()
-      });
+      }, { onConflict: 'id' });
       
       // CRITICAL: Sync all player stacks to database after each hand
       await this.syncPlayerStacksToDatabase();
@@ -2612,5 +2652,63 @@ export class PokerTable {
   
   isHandInProgress(): boolean {
     return this.currentHand !== null;
+  }
+  
+  /**
+   * Force recovery for stuck table
+   * Called by PokerGameManager when table is detected as stuck
+   */
+  forceRecovery(): void {
+    logger.warn('Force recovery initiated for stuck table', {
+      tableId: this.id,
+      hasCurrentHand: !!this.currentHand,
+      currentPlayerSeat: this.currentHand?.currentPlayerSeat
+    });
+    
+    // Clear any existing timer
+    this.clearActionTimer();
+    
+    if (this.currentHand && this.currentHand.currentPlayerSeat !== null) {
+      // Force timeout for current player
+      this.handleTimeout();
+    } else if (this.currentHand) {
+      // Hand exists but no current player - complete the hand
+      logger.warn('Force completing stuck hand (no current player)', { 
+        tableId: this.id, 
+        handId: this.currentHand.id 
+      });
+      
+      // Find any remaining active players
+      const activePlayers = Array.from(this.players.values())
+        .filter(p => !p.isFolded && p.stack > 0);
+      
+      if (activePlayers.length === 1) {
+        // Award pot to last remaining player
+        const winner = activePlayers[0];
+        this.completeHand([{
+          playerId: winner.id,
+          amount: this.currentHand.pot,
+          handRank: 'Last standing'
+        }]);
+      } else if (activePlayers.length === 0) {
+        // No active players - just reset
+        this.currentHand = null;
+        this.checkStartHand();
+      } else {
+        // Multiple players but stuck - force fold everyone except first
+        logger.warn('Force folding to recover stuck hand', { tableId: this.id });
+        for (let i = 1; i < activePlayers.length; i++) {
+          activePlayers[i].isFolded = true;
+        }
+        this.completeHand([{
+          playerId: activePlayers[0].id,
+          amount: this.currentHand.pot,
+          handRank: 'Recovery win'
+        }]);
+      }
+    } else {
+      // No current hand - try to start one
+      this.checkStartHand();
+    }
   }
 }
