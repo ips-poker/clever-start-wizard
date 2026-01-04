@@ -86,6 +86,13 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
     };
   }, [playerId]);
 
+  useEffect(() => {
+    // If player already registered, default to "My" tab instead of empty registration list
+    if (activeTab === 'registration' && myRegistrations.size > 0) {
+      setActiveTab('my');
+    }
+  }, [myRegistrations, activeTab]);
+
   const fetchTournaments = async () => {
     try {
       const { data, error } = await supabase
@@ -241,6 +248,8 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
       registration: { label: 'Регистрация', variant: 'default' },
       starting: { label: 'Запускается', variant: 'secondary' },
       running: { label: 'Идёт игра', variant: 'destructive' },
+      break: { label: 'Перерыв', variant: 'secondary' },
+      hand_for_hand: { label: 'Hand-for-Hand', variant: 'destructive' },
       final_table: { label: 'Финальный стол', variant: 'destructive' },
       completed: { label: 'Завершён', variant: 'outline' },
       cancelled: { label: 'Отменён', variant: 'outline' }
@@ -251,7 +260,7 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
 
   const filteredTournaments = tournaments.filter(t => {
     if (activeTab === 'registration') return t.status === 'registration';
-    if (activeTab === 'running') return ['running', 'final_table', 'starting'].includes(t.status);
+    if (activeTab === 'running') return ['running', 'final_table', 'starting', 'break', 'hand_for_hand'].includes(t.status);
     if (activeTab === 'completed') return t.status === 'completed';
     if (activeTab === 'my') return myRegistrations.has(t.id);
     return true;
