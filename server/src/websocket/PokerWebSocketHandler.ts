@@ -1632,4 +1632,61 @@ export class PokerWebSocketHandler {
     
     logger.info('PokerWebSocketHandler shutdown complete');
   }
+
+  /**
+   * Broadcast break events to all tables in a tournament
+   * Called by TournamentLevelService when break starts/ends
+   */
+  broadcastBreakEvent(
+    tournamentId: string, 
+    event: {
+      type: 'break_starting' | 'break_started' | 'break_ended';
+      durationSeconds: number;
+      level: number;
+      tournamentName: string;
+    }
+  ): void {
+    const message = {
+      type: 'tournament_break',
+      event: event.type,
+      tournamentId,
+      tournamentName: event.tournamentName,
+      durationSeconds: event.durationSeconds,
+      durationMinutes: Math.floor(event.durationSeconds / 60),
+      level: event.level,
+      timestamp: Date.now()
+    };
+
+    // Broadcast to all tournament subscribers
+    const tournamentSent = this.connectionPool.broadcastToTournament(tournamentId, message);
+    
+    // Also get all tables for this tournament and broadcast to them
+    // This ensures players at tables get the message even if not subscribed to tournament channel
+    (async () => {
+      try {
+        const { data: tables } = await this.supabase
+          .from('poker_tables')
+          .select('id')
+          .eq('tournament_id', tournamentId);
+        
+        if (tables) {
+          for (const table of tables) {
+            this.broadcastToTable(table.id, message);
+          }
+          
+          logger.info('Break event broadcast complete', {
+            tournamentId,
+            eventType: event.type,
+            tablesCount: tables.length,
+            tournamentSubscribers: tournamentSent
+          });
+        }
+      } catch (err) {
+        logger.error('Error broadcasting break event to tables', { 
+          tournamentId, 
+          error: String(err) 
+        });
+      }
+    })();
+  }
 }

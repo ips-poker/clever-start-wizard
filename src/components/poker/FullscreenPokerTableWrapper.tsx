@@ -28,6 +28,7 @@ import { TournamentRebuyDialog } from './TournamentRebuyDialog';
 import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
 import { ProTournamentLobby } from './tournament-lobby';
 import { TimeBankIndicator } from './TimeBankIndicator';
+import { TournamentBreakBanner } from './TournamentBreakBanner';
 
 
 // Syndikate branding
@@ -91,7 +92,8 @@ export function FullscreenPokerTableWrapper({
   const {
     isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
     connect, disconnect, joinTable, fold, check, call, raise, allIn, addChips, sitOut, sitIn,
-    rebuyAvailable, clearRebuyAvailable
+    rebuyAvailable, clearRebuyAvailable,
+    tournamentBreak, clearTournamentBreak
   } = pokerTable;
 
   // Check if player can join (not yet seated) - only for cash games
@@ -552,6 +554,14 @@ export function FullscreenPokerTableWrapper({
           lastError={error || undefined}
           onReconnectNow={() => connect()}
         />
+
+        {/* Tournament Break Banner */}
+        {isTournament && tournamentBreak && (
+          <TournamentBreakBanner 
+            breakInfo={tournamentBreak}
+            onDismiss={clearTournamentBreak}
+          />
+        )}
 
         {/* Header - with safe area inset for Telegram fullscreen */}
         <div 
