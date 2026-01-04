@@ -258,11 +258,16 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     // Also check config for old format fallback
     const rawPhase = (state.phase || config?.phase || 'waiting') as string;
     const normalizedPhase = (() => {
-      const p = String(rawPhase).toLowerCase();
+      const p0 = String(rawPhase).toLowerCase().trim();
+      const p = p0.replace(/[\s-]+/g, '_');
+
       if (p === 'no_hand' || p === 'nohand' || p === 'idle' || p === 'lobby') return 'waiting';
-      if (p === 'waiting' || p === 'preflop' || p === 'flop' || p === 'turn' || p === 'river' || p === 'showdown') {
+      if (p === 'pre_flop' || p === 'preflop') return 'preflop';
+
+      if (p === 'waiting' || p === 'flop' || p === 'turn' || p === 'river' || p === 'showdown') {
         return p as TableState['phase'];
       }
+
       // Unknown phase from server -> treat as waiting (safe default)
       return 'waiting';
     })();
@@ -324,8 +329,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     const actionTimer = Number((state as any).actionTimer ?? (state as any).action_timer ?? config?.actionTimeSeconds ?? 30);
 
     // If server doesn't include blinds as per-player bets, show them client-side on preflop
+    const isPreflopLike =
+      normalizedPhase === 'preflop' ||
+      (normalizedPhase === 'waiting' && communityCards.length === 0 && (pot > 0 || currentBet > 0));
+
     const players = mappedPlayers.map((p) => {
-      if (normalizedPhase !== 'preflop') return p;
+      if (!isPreflopLike) return p;
       if (p.isFolded || p.isSittingOut || p.isDisconnected) return p;
       if (p.betAmount > 0) return p;
 

@@ -1550,18 +1550,37 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               displayFormat={preferences.displayFormat}
             />
 
-            {/* Bet amount - anchored to avatar center in table coordinates */}
-            {!!player?.betAmount && player.betAmount > 0 && (
-              <PPPokerChipStack
-                amount={player.betAmount}
-                seatPosition={pos}
-                bigBlind={bigBlind}
-                animated={true}
-                isHero={isHeroSeat}
-                calibratedOffset={getBetOffset(idx, positions.length, isTelegramMiniApp())}
-                displayFormat={preferences.displayFormat}
-              />
-            )}
+            {/* Bet amount (incl. SB/BB fallback) - anchored to avatar center in table coordinates */}
+            {(() => {
+              const bet = player?.betAmount ?? 0;
+              const isPreflopLike =
+                phase === 'preflop' ||
+                (phase === 'waiting' && communityCards.length === 0 && pot > 0);
+
+              const blindBet =
+                isPreflopLike && bet <= 0
+                  ? player?.seatNumber === smallBlindSeat
+                    ? smallBlind
+                    : player?.seatNumber === bigBlindSeat
+                      ? bigBlind
+                      : 0
+                  : 0;
+
+              const amountToShow = bet > 0 ? bet : blindBet;
+              if (!amountToShow || amountToShow <= 0) return null;
+
+              return (
+                <PPPokerChipStack
+                  amount={amountToShow}
+                  seatPosition={pos}
+                  bigBlind={bigBlind}
+                  animated={true}
+                  isHero={isHeroSeat}
+                  calibratedOffset={getBetOffset(idx, positions.length, isTelegramMiniApp())}
+                  displayFormat={preferences.displayFormat}
+                />
+              );
+            })()}
           </React.Fragment>
         );
       })}
