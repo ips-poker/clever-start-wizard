@@ -2089,6 +2089,23 @@ export class PokerTable {
         completed_at: new Date().toISOString()
       }, { onConflict: 'id' });
       
+      // CRITICAL: Clear current_hand_id from poker_tables to allow consolidation
+      // This was the main bug blocking table balancing during breaks
+      await this.supabase
+        .from('poker_tables')
+        .update({
+          current_hand_id: null,
+          status: 'waiting',
+          current_dealer_seat: this.dealerSeat,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', this.id);
+      
+      logger.info('Hand history saved and current_hand_id cleared', {
+        tableId: this.id,
+        handId: this.currentHand.id
+      });
+      
       // CRITICAL: Sync all player stacks to database after each hand
       await this.syncPlayerStacksToDatabase();
     } catch (err) {
