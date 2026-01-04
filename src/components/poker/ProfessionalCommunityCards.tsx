@@ -2,7 +2,7 @@
  * Professional Community Cards with PokerStars-style delayed animations
  * Uses phaseTimings from server for synchronized card reveals
  */
-import React, { memo, useState, useEffect, useRef, useMemo } from 'react';
+import React, { memo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
 
@@ -362,10 +362,9 @@ export const ProfessionalCommunityCards = memo(function ProfessionalCommunityCar
   const useFourColor = preferences.cardStyle === 'fourcolor';
   
   // Track phase transitions to detect new cards
-  // CRITICAL: Use ref to track previous phase synchronously to avoid flash
-  const prevPhaseRef = useRef<string | null>(null);
-  const dealtCardsRef = useRef<Set<number>>(new Set());
-  const [animationComplete, setAnimationComplete] = useState<Set<number>>(new Set());
+  const prevPhaseRef = useRef(phase);
+  const prevCardCountRef = useRef(0);
+  const [newCardIndices, setNewCardIndices] = useState<Set<number>>(new Set());
   
   // Determine visible card count based on phase
   const visibleCount = phase === 'flop' ? 3 : phase === 'turn' ? 4 : (phase === 'river' || phase === 'showdown') ? 5 : 0;
@@ -376,62 +375,36 @@ export const ProfessionalCommunityCards = memo(function ProfessionalCommunityCar
   const dealDelay = phaseTimings?.dealDelay ?? 
     (phase === 'flop' ? 150 : 0);
 
-  // SYNCHRONOUS detection of new cards - before render
-  // This prevents the flash where cards appear before animation starts
-  const newCardIndices = useMemo(() => {
-    const newIndices = new Set<number>();
+  // Detect phase changes and mark new cards
+  useEffect(() => {
     const prevPhase = prevPhaseRef.current;
+    const prevCount = prevCardCountRef.current;
     
-    // If phase changed, determine which cards are new
     if (phase !== prevPhase) {
-      if (phase === 'flop' && prevPhase !== 'flop' && prevPhase !== 'turn' && prevPhase !== 'river' && prevPhase !== 'showdown') {
-        // Entering flop - cards 0,1,2 are new if not already dealt
-        [0, 1, 2].forEach(i => {
-          if (!dealtCardsRef.current.has(i)) newIndices.add(i);
-        });
+      prevPhaseRef.current = phase;
+      
+      if (phase === 'flop' && prevPhase !== 'flop') {
+        setNewCardIndices(new Set([0, 1, 2]));
       } else if (phase === 'turn' && prevPhase === 'flop') {
-        // Entering turn - card 3 is new
-        if (!dealtCardsRef.current.has(3)) newIndices.add(3);
+        setNewCardIndices(new Set([3]));
       } else if (phase === 'river' && prevPhase === 'turn') {
-        // Entering river - card 4 is new
-        if (!dealtCardsRef.current.has(4)) newIndices.add(4);
+        setNewCardIndices(new Set([4]));
+      } else {
+        setNewCardIndices(new Set());
       }
     }
     
-    return newIndices;
-  }, [phase]);
-
-  // Update refs after render
-  useEffect(() => {
-    // Mark cards as dealt
-    for (let i = 0; i < visibleCount; i++) {
-      dealtCardsRef.current.add(i);
-    }
-    
-    // Update previous phase ref
-    prevPhaseRef.current = phase;
-    
-    // Clear animation complete flags for new cards after animation
+    // Clear new card flags after animation completes
     if (newCardIndices.size > 0) {
-      const totalAnimTime = preDealDelay + (dealDelay * 3) + 600;
+      const totalAnimTime = preDealDelay + (dealDelay * 3) + 500;
       const timer = setTimeout(() => {
-        setAnimationComplete(prev => {
-          const next = new Set(prev);
-          newCardIndices.forEach(i => next.add(i));
-          return next;
-        });
+        setNewCardIndices(new Set());
       }, totalAnimTime);
       return () => clearTimeout(timer);
     }
-  }, [phase, visibleCount, preDealDelay, dealDelay, newCardIndices]);
-
-  // Reset dealt cards when going back to preflop
-  useEffect(() => {
-    if (phase === 'preflop' || phase === 'waiting' || !phase) {
-      dealtCardsRef.current = new Set();
-      setAnimationComplete(new Set());
-    }
-  }, [phase]);
+    
+    prevCardCountRef.current = visibleCount;
+  }, [phase, visibleCount, preDealDelay, dealDelay, newCardIndices.size]);
 
   const isShowdown = phase === 'showdown';
   const hasWinningInfo = winningCardIndices.length > 0;
@@ -443,8 +416,7 @@ export const ProfessionalCommunityCards = memo(function ProfessionalCommunityCar
         const card = cards[idx];
         const isWinning = winningCardIndices.includes(idx);
         const isDimmed = isShowdown && hasWinningInfo && !isWinning;
-        // Card is new if it's in the newCardIndices and animation hasn't completed
-        const isNewCard = newCardIndices.has(idx) && !animationComplete.has(idx);
+        const isNewCard = newCardIndices.has(idx);
 
         if (!isVisible || !card) {
           return (

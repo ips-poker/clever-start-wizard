@@ -1642,7 +1642,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         const winningCommIndices = (winnerPlayer as any)?.communityCardIndices || [];
         
         return (
-          <div className="absolute left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2 z-10">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-3 z-10">
             <PotDisplay pot={pot} blinds={`${smallBlind}/${bigBlind}`} displayFormat={preferences.displayFormat} />
             
             {/* Professional Community Cards with server timing */}
