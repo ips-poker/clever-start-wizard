@@ -6,7 +6,7 @@ import { TournamentMoveNotification } from '@/components/poker/TournamentMoveNot
 import { TournamentEliminationModal } from '@/components/poker/TournamentEliminationModal';
 import { useTournamentReconnect } from '@/hooks/useTournamentReconnect';
 import { supabase } from '@/integrations/supabase/client';
-import { X, RefreshCw } from 'lucide-react';
+import { X, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function PokerTable() {
@@ -23,6 +23,7 @@ export default function PokerTable() {
   const [tournamentId, setTournamentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentTableId, setCurrentTableId] = useState<string | null>(tableId || null);
+  const [isSpectator, setIsSpectator] = useState(false);
 
   // Tournament reconnect logic
   const {
@@ -54,6 +55,20 @@ export default function PokerTable() {
         setTableName(tableData.name);
         setTournamentId(tableData.tournament_id);
         document.title = `${tableData.name} - Syndikate Poker`;
+        
+        // Check if player is eliminated from this tournament (spectator mode)
+        if (tableData.tournament_id) {
+          const { data: participantData } = await supabase
+            .from('online_poker_tournament_participants')
+            .select('status')
+            .eq('tournament_id', tableData.tournament_id)
+            .eq('player_id', playerId)
+            .single();
+          
+          if (participantData?.status === 'eliminated') {
+            setIsSpectator(true);
+          }
+        }
       }
 
       // Fetch player balance
@@ -72,6 +87,30 @@ export default function PokerTable() {
 
     fetchData();
   }, [currentTableId, tableId, playerId]);
+  
+  // Subscribe to elimination status changes
+  useEffect(() => {
+    if (!tournamentId || !playerId) return;
+    
+    const channel = supabase
+      .channel(`spectator-check-${playerId}-${tournamentId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'online_poker_tournament_participants',
+        filter: `player_id=eq.${playerId}`
+      }, (payload) => {
+        const newData = payload.new as { status?: string };
+        if (newData.status === 'eliminated') {
+          setIsSpectator(true);
+        }
+      })
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tournamentId, playerId]);
 
   // Handle table move notification
   const handleJoinNewTable = useCallback((newTableId: string) => {
@@ -148,6 +187,16 @@ export default function PokerTable() {
         />
       )}
 
+      {/* Spectator indicator */}
+      {isSpectator && (
+        <div className="absolute top-8 left-1/2 -translate-x-1/2 z-50">
+          <div className="flex items-center gap-2 px-4 py-1.5 bg-blue-500/20 border border-blue-500/40 rounded-full backdrop-blur-sm">
+            <Eye className="h-4 w-4 text-blue-400" />
+            <span className="text-blue-400 text-sm font-medium">Режим наблюдателя</span>
+          </div>
+        </div>
+      )}
+
       {/* Window controls - for popup window */}
       <div 
         className="absolute top-0 left-0 right-0 h-7 z-50 flex items-center justify-between px-2"
@@ -178,6 +227,7 @@ export default function PokerTable() {
           playerId={playerId}
           buyIn={buyIn}
           playerBalance={playerBalance}
+          isSpectator={isSpectator}
           isTournament={isTournament || !!tournamentId}
           tournamentId={tournamentId || undefined}
           onLeave={handleLeaveTable}
