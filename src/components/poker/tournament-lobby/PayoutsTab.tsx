@@ -99,7 +99,8 @@ export function PayoutsTab({
   const showCalculatedStructure = !hasActualPayouts;
 
   return (
-    <div className={cn("flex flex-col h-full", className)}>
+    <ScrollArea className={cn("h-full", className)}>
+      <div className="flex flex-col pr-4">
       {/* Prize Pool Summary */}
       <div className="mb-4 p-4 bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/20 rounded-lg">
         <div className="flex items-center justify-between mb-3">
@@ -177,7 +178,7 @@ export function PayoutsTab({
       </div>
 
       {/* Payouts List */}
-      <ScrollArea className="flex-1">
+      <div className="flex-1">
         <div className="space-y-1">
           {showCalculatedStructure ? (
             // Show calculated RPS structure
@@ -339,7 +340,7 @@ export function PayoutsTab({
             })
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Info Footer */}
       <div className="mt-3 pt-3 border-t text-xs text-muted-foreground space-y-1">
@@ -347,6 +348,7 @@ export function PayoutsTab({
         <p>• Общий RPS пул: {rpsPool} RPS ({totalPlayers} участников)</p>
         {isRegistration && <p>• Структура призов может измениться при изменении числа участников</p>}
       </div>
-    </div>
+      </div>
+    </ScrollArea>
   );
 }

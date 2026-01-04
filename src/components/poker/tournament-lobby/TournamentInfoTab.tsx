@@ -1,7 +1,8 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
   Trophy,
   Calendar,
   Clock,
@@ -126,7 +127,8 @@ export function TournamentInfoTab({ tournament, className }: TournamentInfoTabPr
   );
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <ScrollArea className={cn("h-full", className)}>
+      <div className="space-y-6 pr-4">
       {/* Tournament Description */}
       {tournament.description && (
         <div className="p-4 bg-muted/30 rounded-lg">
@@ -366,6 +368,7 @@ export function TournamentInfoTab({ tournament, className }: TournamentInfoTabPr
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </ScrollArea>
   );
 }
