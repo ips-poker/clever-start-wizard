@@ -269,7 +269,7 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
                         (tournament.player_count || 0) < tournament.max_players &&
                         !isRegistered;
     const canUnregister = isRegistered && tournament.status === 'registration';
-    const canJoin = isRegistered && ['running', 'starting', 'final_table'].includes(tournament.status);
+    const canJoin = isRegistered && ['running', 'starting', 'final_table', 'break', 'hand_for_hand'].includes(tournament.status);
 
     return (
       <motion.div
