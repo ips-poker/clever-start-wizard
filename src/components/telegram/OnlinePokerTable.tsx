@@ -35,32 +35,51 @@ export function OnlinePokerTable({
   const [maxSeats, setMaxSeats] = useState(6);
   const [isTournament, setIsTournament] = useState(propIsTournament || false);
   const [tournamentId, setTournamentId] = useState<string | null>(propTournamentId || null);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Fetch table config including tournament info
+  // Fetch table config including tournament info - with priority to props
   useEffect(() => {
+    // If props already provide tournament info, use them immediately
+    if (propIsTournament && propTournamentId) {
+      setIsTournament(true);
+      setTournamentId(propTournamentId);
+      setIsLoading(false);
+      return;
+    }
+    
     const fetchTableConfig = async () => {
-      const { data } = await supabase
-        .from('poker_tables')
-        .select('max_players, tournament_id, table_type')
-        .eq('id', tableId)
-        .single();
-      
-      if (data) {
-        if (data.max_players) {
-          setMaxSeats(data.max_players);
+      try {
+        const { data, error } = await supabase
+          .from('poker_tables')
+          .select('max_players, tournament_id, table_type')
+          .eq('id', tableId)
+          .single();
+        
+        if (error) {
+          console.error('[OnlinePokerTable] Error fetching table config:', error);
+          return;
         }
-        // Auto-detect tournament from table data
-        if (data.tournament_id) {
-          setTournamentId(data.tournament_id);
-          setIsTournament(true);
-        } else if (data.table_type === 'tournament') {
-          setIsTournament(true);
+        
+        if (data) {
+          console.log('[OnlinePokerTable] Table config:', data);
+          if (data.max_players) {
+            setMaxSeats(data.max_players);
+          }
+          // Auto-detect tournament from table data
+          if (data.tournament_id) {
+            setTournamentId(data.tournament_id);
+            setIsTournament(true);
+          } else if (data.table_type === 'tournament') {
+            setIsTournament(true);
+          }
         }
+      } finally {
+        setIsLoading(false);
       }
     };
     
     fetchTableConfig();
-  }, [tableId]);
+  }, [tableId, propIsTournament, propTournamentId]);
   
   if (!playerId) {
     return (
