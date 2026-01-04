@@ -38,6 +38,7 @@ import { spectatorManager } from './utils/spectator-manager.js';
 import { actionTimeoutGuard } from './utils/action-timeout-guard.js';
 import { handHistoryService } from './utils/hand-history-service.js';
 import { realtimeEventBroadcaster } from './utils/realtime-events.js';
+import { tournamentLevelService } from './utils/tournament-level-service.js';
 
 // Process-level error handlers
 process.on('uncaughtException', (error) => {
@@ -85,6 +86,10 @@ const gameManager = new PokerGameManager(supabase);
 // Initialize tournament manager with Supabase for DB sync
 const tournamentManager = new TournamentManager();
 tournamentManager.setSupabase(supabase);
+
+// Initialize tournament level service for automatic blind advancement
+tournamentLevelService.setSupabase(supabase);
+tournamentLevelService.start();
 
 // Setup API routes
 setupRoutes(app, gameManager, supabase);
@@ -274,6 +279,9 @@ alertManager.start(10000); // Check every 10 seconds
 const gracefulShutdown = async () => {
   logger.info('Shutting down gracefully...');
   
+  // Stop tournament level service
+  tournamentLevelService.stop();
+  
   // Stop alert manager
   alertManager.stop();
   
@@ -357,6 +365,7 @@ server.listen(config.port, () => {
   logger.info(`💎 Prize payout system ready`);
   logger.info(`⏱️ Action timeout guard active (0.5s grace period)`);
   logger.info(`📜 Hand history service ready (HUD stats enabled)`);
+  logger.info(`🎯 Tournament level service running (5s check interval)`);
   logger.info(`✅ Server ready for 300+ tables, 2700+ players, 5000+ spectators`);
   
   // Send PM2 ready signal
@@ -365,4 +374,4 @@ server.listen(config.port, () => {
   }
 });
 
-export { app, server, wss, tournamentManager, prizePayoutSystem, handForHandManager, spectatorManager, actionTimeoutGuard, handHistoryService };
+export { app, server, wss, tournamentManager, prizePayoutSystem, handForHandManager, spectatorManager, actionTimeoutGuard, handHistoryService, tournamentLevelService };
