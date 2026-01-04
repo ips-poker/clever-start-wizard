@@ -169,7 +169,14 @@ export function TournamentHUD({
       })
       .subscribe();
 
+    // Fallback polling (important for Telegram WebView where realtime WS can suspend)
+    const pollInterval = setInterval(() => {
+      fetchTournament();
+      fetchParticipants();
+    }, 15000);
+
     return () => {
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
   }, [tournamentId, tournament?.current_level, currentPlayerId, tournament?.big_blind]);

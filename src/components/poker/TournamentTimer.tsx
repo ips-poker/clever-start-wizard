@@ -154,6 +154,42 @@ export const TournamentTimer = ({
     };
   }, [tournamentId, currentLevel, levels, isMuted, lastLevelEndAt, onLevelChange]);
 
+  // Fallback polling (important for Telegram WebView where realtime WS can suspend)
+  useEffect(() => {
+    if (!tournamentId) return;
+
+    let cancelled = false;
+
+    const poll = async () => {
+      try {
+        const { data: tourney } = await supabase
+          .from('online_poker_tournaments')
+          .select('*')
+          .eq('id', tournamentId)
+          .single();
+
+        if (!cancelled && tourney) {
+          setTournament(tourney);
+          setIsPaused(tourney.status === 'paused');
+          setCurrentLevel(tourney.current_level || 1);
+          setLastLevelEndAt(tourney.level_end_at);
+        }
+      } catch (err) {
+        // Silent: polling is best-effort
+        console.warn('[TournamentTimer] Polling failed:', err);
+      }
+    };
+
+    // Run once immediately, then keep updating
+    poll();
+    const interval = setInterval(poll, 15000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [tournamentId]);
+
   // Calculate time remaining from level_end_at (single source of truth)
   // Uses serverTimeOffset to correct for client clock drift
   useEffect(() => {
