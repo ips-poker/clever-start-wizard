@@ -13,17 +13,56 @@ export default function PokerTable() {
   const { tableId } = useParams<{ tableId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
-  const playerId = searchParams.get('playerId') || localStorage.getItem('poker_player_id');
+
+  // If playerId is explicitly provided in URL, we respect it (useful for testbots).
+  // Otherwise, we resolve the "real" player for the signed-in user and avoid accidentally using a TestBot id.
+  const urlPlayerId = searchParams.get('playerId');
+  const [playerId, setPlayerId] = useState<string | null>(
+    urlPlayerId || localStorage.getItem('poker_player_id')
+  );
+
   const buyIn = parseInt(searchParams.get('buyIn') || '0', 10);
   const isTournament = searchParams.get('tournament') === 'true';
-  
   const [playerBalance, setPlayerBalance] = useState(0);
   const [tableName, setTableName] = useState('');
   const [tournamentId, setTournamentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentTableId, setCurrentTableId] = useState<string | null>(tableId || null);
   const [isSpectator, setIsSpectator] = useState(false);
+
+  // If user is authenticated and we didn't explicitly request a playerId in the URL,
+  // prefer the "real" player (non-TestBot) for this user.
+  useEffect(() => {
+    if (urlPlayerId) return;
+
+    let cancelled = false;
+
+    (async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user;
+      if (!user) return;
+
+      const { data } = await supabase
+        .from('players')
+        .select('id, name')
+        .eq('user_id', user.id)
+        .not('name', 'ilike', 'TestBot%')
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (data?.id && data.id !== playerId) {
+        setPlayerId(data.id);
+        localStorage.setItem('poker_player_id', data.id);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [urlPlayerId, playerId]);
 
   // Tournament reconnect logic
   const {
