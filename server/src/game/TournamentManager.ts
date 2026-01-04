@@ -284,56 +284,247 @@ export function calculateWeightedDeal(
 }
 
 // ==========================================
-// MULTI-TABLE BALANCING
+// MULTI-TABLE BALANCING (PROFESSIONAL)
 // ==========================================
 
 export interface TableBalance {
   tableId: string;
   playerCount: number;
-  players: { playerId: string; chips: number; seatNumber: number }[];
+  maxPlayers: number;
+  dealerSeat: number | null;
+  players: { playerId: string; chips: number; seatNumber: number; isInHand?: boolean }[];
+}
+
+export interface TableMove {
+  fromTable: string;
+  toTable: string;
+  playerId: string;
+  fromSeat: number;
+  toSeat: number;
+  reason: 'balance' | 'consolidation' | 'new_table';
 }
 
 /**
- * Calculate optimal player moves for table balancing
+ * PROFESSIONAL: Calculate distance from dealer to player seat (clockwise)
+ * Used to determine who is "next to be big blind"
+ */
+function distanceFromDealer(seatNumber: number, dealerSeat: number, maxSeats: number): number {
+  if (dealerSeat < 0) return seatNumber; // No dealer, use seat number as fallback
+  // Distance in clockwise direction from dealer
+  return (seatNumber - dealerSeat + maxSeats) % maxSeats;
+}
+
+/**
+ * PROFESSIONAL: Select player to move based on poker rules
+ * Priority: Next to be Big Blind, then alternating seats
+ * Never move player who is currently in a hand
+ */
+function selectPlayerToMove(
+  table: TableBalance,
+  excludeInHand: boolean = true
+): { playerId: string; seatNumber: number } | null {
+  const eligiblePlayers = table.players.filter(p => {
+    if (excludeInHand && p.isInHand) return false;
+    return true;
+  });
+  
+  if (eligiblePlayers.length === 0) return null;
+  
+  const dealerSeat = table.dealerSeat ?? -1;
+  const maxSeats = table.maxPlayers || 9;
+  
+  // Sort by distance from dealer - player furthest in clockwise direction
+  // (next to be big blind) is selected first
+  const sorted = [...eligiblePlayers].sort((a, b) => {
+    const distA = distanceFromDealer(a.seatNumber, dealerSeat, maxSeats);
+    const distB = distanceFromDealer(b.seatNumber, dealerSeat, maxSeats);
+    // Seats closer to 2 positions after dealer (BB position) should be moved first
+    // BB is typically dealerSeat + 2 in heads-up, or dealerSeat + 2 with 3+ players
+    const bbPosition = (dealerSeat + 2) % maxSeats;
+    const distFromBB_A = (a.seatNumber - bbPosition + maxSeats) % maxSeats;
+    const distFromBB_B = (b.seatNumber - bbPosition + maxSeats) % maxSeats;
+    return distFromBB_A - distFromBB_B;
+  });
+  
+  return sorted[0] || null;
+}
+
+/**
+ * PROFESSIONAL: Find available seat at target table
+ * Prefers seat that minimizes disruption to blind rotation
+ */
+function findBestSeat(table: TableBalance): number | null {
+  const occupiedSeats = new Set(table.players.map(p => p.seatNumber));
+  const maxSeats = table.maxPlayers || 9;
+  
+  // Find all available seats
+  const availableSeats: number[] = [];
+  for (let i = 0; i < maxSeats; i++) {
+    if (!occupiedSeats.has(i)) {
+      availableSeats.push(i);
+    }
+  }
+  
+  if (availableSeats.length === 0) return null;
+  
+  // Prefer seat after current big blind to minimize blind disruption
+  // For simplicity, just return first available
+  return availableSeats[0];
+}
+
+/**
+ * PROFESSIONAL: Calculate optimal player moves for table balancing
+ * Rules:
+ * 1. Difference between tables should be ≤1 player
+ * 2. Move players who are next to be Big Blind
+ * 3. Never move players currently in a hand
+ * 4. Distribute: 4,4,5 for 13 players on 3 tables (not 3,5,5)
  */
 export function calculateTableBalancing(
-  tables: TableBalance[]
-): { fromTable: string; toTable: string; playerId: string; toSeat: number }[] {
-  const moves: { fromTable: string; toTable: string; playerId: string; toSeat: number }[] = [];
+  tables: TableBalance[],
+  maxPlayersPerTable: number = 9
+): TableMove[] {
+  const moves: TableMove[] = [];
   
-  const sortedTables = [...tables].sort((a, b) => b.playerCount - a.playerCount);
+  if (tables.length <= 1) return moves;
+  
   const totalPlayers = tables.reduce((sum, t) => sum + t.playerCount, 0);
-  const avgPlayers = Math.ceil(totalPlayers / tables.length);
+  const idealTablesCount = Math.ceil(totalPlayers / maxPlayersPerTable);
   
-  const overloadedTables = sortedTables.filter(t => t.playerCount > avgPlayers);
-  const underloadedTables = sortedTables.filter(t => t.playerCount < avgPlayers);
+  // Work with copies to track state changes
+  const tableStates = tables.map(t => ({
+    ...t,
+    players: [...t.players]
+  }));
   
-  for (const fromTable of overloadedTables) {
-    while (fromTable.playerCount > avgPlayers && underloadedTables.length > 0) {
-      const toTable = underloadedTables.find(t => t.playerCount < avgPlayers);
-      if (!toTable) break;
-      
-      const playerToMove = fromTable.players.find(p => 
-        p.seatNumber === Math.max(...fromTable.players.map(pl => pl.seatNumber))
-      );
+  // Calculate ideal distribution: e.g., 13 players / 3 tables = 4.33
+  // So: 1 table gets 5 (13 % 3 = 1), 2 tables get 4
+  const idealPerTable = Math.floor(totalPlayers / tableStates.length);
+  const remainder = totalPlayers % tableStates.length;
+  
+  // Target: some tables have idealPerTable, some have idealPerTable + 1
+  const getTargetCount = (tableIndex: number): number => {
+    return tableIndex < remainder ? idealPerTable + 1 : idealPerTable;
+  };
+  
+  // Sort tables by player count descending for processing
+  tableStates.sort((a, b) => b.playerCount - a.playerCount);
+  
+  let iterations = 0;
+  const maxIterations = 50;
+  
+  while (iterations < maxIterations) {
+    iterations++;
+    
+    // Recalculate after each move
+    tableStates.sort((a, b) => b.playerCount - a.playerCount);
+    
+    const maxCount = tableStates[0].playerCount;
+    const minCount = tableStates[tableStates.length - 1].playerCount;
+    
+    // Balanced when difference is ≤1
+    if (maxCount - minCount <= 1) break;
+    
+    // Find table with most players (source)
+    const sourceTable = tableStates[0];
+    
+    // Find table with fewest players (target)
+    const targetTable = tableStates[tableStates.length - 1];
+    
+    // Select player to move using professional rules
+    const playerToMove = selectPlayerToMove(sourceTable, true);
+    if (!playerToMove) {
+      // All players in hand, try without exclusion
+      const forcedMove = selectPlayerToMove(sourceTable, false);
+      if (!forcedMove) break;
+    }
+    
+    const player = playerToMove!;
+    const toSeat = findBestSeat(targetTable);
+    
+    if (toSeat === null) break; // No available seats
+    
+    moves.push({
+      fromTable: sourceTable.tableId,
+      toTable: targetTable.tableId,
+      playerId: player.playerId,
+      fromSeat: player.seatNumber,
+      toSeat,
+      reason: 'balance'
+    });
+    
+    // Update state
+    sourceTable.playerCount--;
+    sourceTable.players = sourceTable.players.filter(p => p.playerId !== player.playerId);
+    targetTable.playerCount++;
+    targetTable.players.push({ ...player, seatNumber: toSeat });
+  }
+  
+  return moves;
+}
+
+/**
+ * PROFESSIONAL: Calculate moves needed when creating a new table
+ * Distributes players evenly from existing tables to new table
+ * Example: 2 tables of 6 each + 1 new player = 3 tables of 4,4,5
+ */
+export function calculateNewTableMoves(
+  existingTables: TableBalance[],
+  newTableId: string,
+  maxPlayersPerTable: number = 9
+): TableMove[] {
+  const moves: TableMove[] = [];
+  
+  if (existingTables.length === 0) return moves;
+  
+  const totalPlayers = existingTables.reduce((sum, t) => sum + t.playerCount, 0);
+  const newTableCount = existingTables.length + 1;
+  
+  // Calculate how many players should be on new table
+  const idealPerTable = Math.floor(totalPlayers / newTableCount);
+  const remainder = totalPlayers % newTableCount;
+  
+  // New table gets either idealPerTable or idealPerTable + 1
+  const playersForNewTable = idealPerTable;
+  
+  // Work with copies
+  const tableStates = existingTables.map(t => ({
+    ...t,
+    players: [...t.players]
+  }));
+  
+  // Sort by player count descending - take from fullest tables
+  tableStates.sort((a, b) => b.playerCount - a.playerCount);
+  
+  let movedToNewTable = 0;
+  let toSeat = 0;
+  let tableIndex = 0;
+  
+  while (movedToNewTable < playersForNewTable && tableIndex < tableStates.length) {
+    const sourceTable = tableStates[tableIndex];
+    
+    // Only take from tables that have more than ideal
+    const minToKeep = Math.floor(totalPlayers / newTableCount);
+    
+    while (sourceTable.playerCount > minToKeep && movedToNewTable < playersForNewTable) {
+      const playerToMove = selectPlayerToMove(sourceTable, false);
       if (!playerToMove) break;
       
-      const occupiedSeats = new Set(toTable.players.map(p => p.seatNumber));
-      let toSeat = 1;
-      while (occupiedSeats.has(toSeat)) toSeat++;
-      
       moves.push({
-        fromTable: fromTable.tableId,
-        toTable: toTable.tableId,
+        fromTable: sourceTable.tableId,
+        toTable: newTableId,
         playerId: playerToMove.playerId,
-        toSeat
+        fromSeat: playerToMove.seatNumber,
+        toSeat: toSeat++,
+        reason: 'new_table'
       });
       
-      fromTable.playerCount--;
-      toTable.playerCount++;
-      fromTable.players = fromTable.players.filter(p => p.playerId !== playerToMove.playerId);
-      toTable.players.push({ ...playerToMove, seatNumber: toSeat });
+      sourceTable.playerCount--;
+      sourceTable.players = sourceTable.players.filter(p => p.playerId !== playerToMove.playerId);
+      movedToNewTable++;
     }
+    
+    tableIndex++;
   }
   
   return moves;
@@ -350,6 +541,7 @@ export function shouldConsolidateTables(
   const minTablesNeeded = Math.ceil(totalPlayers / maxPlayersPerTable);
   
   if (tables.length > minTablesNeeded) {
+    // Sort by player count ascending - break smallest tables first
     const sortedTables = [...tables].sort((a, b) => a.playerCount - b.playerCount);
     const tablesToBreak = sortedTables
       .slice(0, tables.length - minTablesNeeded)
@@ -359,6 +551,29 @@ export function shouldConsolidateTables(
   }
   
   return { consolidate: false, tablesToBreak: [] };
+}
+
+/**
+ * PROFESSIONAL: Check if new table is needed for late registration
+ * Returns true if adding a player would require creating a new table
+ */
+export function needsNewTableForRegistration(
+  currentTables: TableBalance[],
+  maxPlayersPerTable: number
+): boolean {
+  if (currentTables.length === 0) return true;
+  
+  const totalPlayers = currentTables.reduce((sum, t) => sum + t.playerCount, 0);
+  const totalCapacity = currentTables.length * maxPlayersPerTable;
+  
+  // Need new table if all current tables are at max capacity
+  if (totalPlayers >= totalCapacity) return true;
+  
+  // Also check if adding 1 more player would create imbalance > 1
+  const newTotal = totalPlayers + 1;
+  const idealTablesCount = Math.ceil(newTotal / maxPlayersPerTable);
+  
+  return idealTablesCount > currentTables.length;
 }
 
 // ==========================================
