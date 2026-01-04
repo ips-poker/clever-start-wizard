@@ -56,46 +56,60 @@ export function BountyLeaderboard({
       const bounty = Math.floor((tournament.buy_in || 0) * 0.5);
       setStartingBounty(bounty);
 
-      // Get all participants
-      const { data: participants } = await supabase
-        .from('online_poker_tournament_participants')
-        .select(`
-          player_id,
-          players:player_id (
-            id,
-            name,
-            avatar_url
-          )
-        `)
-        .eq('tournament_id', tournamentId);
+      // Use new RPC function for efficient bounty leaderboard
+      const { data: leaderboardData, error: rpcError } = await supabase
+        .rpc('get_pko_bounty_leaderboard', {
+          p_tournament_id: tournamentId,
+          p_limit: 20
+        });
 
-      if (!participants) return;
-
-      // Count knockouts for each player
-      const hunterData: BountyHunter[] = [];
-
-      for (const p of participants) {
-        const { count } = await supabase
+      if (rpcError || !leaderboardData) {
+        // Fallback to direct query if RPC fails
+        const { data: participants } = await supabase
           .from('online_poker_tournament_participants')
-          .select('id', { count: 'exact' })
+          .select(`
+            player_id,
+            knockouts_count,
+            bounty_collected,
+            bounty_value,
+            players:player_id (
+              id,
+              name,
+              avatar_url
+            )
+          `)
           .eq('tournament_id', tournamentId)
-          .eq('eliminated_by', p.player_id);
+          .gt('knockouts_count', 0)
+          .order('knockouts_count', { ascending: false });
 
-        const knockouts = count || 0;
-        const player = p.players as any;
-
-        if (knockouts > 0) {
-          hunterData.push({
-            playerId: p.player_id,
-            playerName: player?.name || 'Unknown',
-            avatarUrl: player?.avatar_url || null,
-            knockouts,
-            bountiesCollected: knockouts * bounty * 0.5,
-            currentBounty: bounty + (knockouts * bounty * 0.5),
-            isCurrentPlayer: p.player_id === currentPlayerId
+        if (participants) {
+          const hunterData: BountyHunter[] = participants.map(p => {
+            const player = p.players as any;
+            return {
+              playerId: p.player_id,
+              playerName: player?.name || 'Unknown',
+              avatarUrl: player?.avatar_url || null,
+              knockouts: p.knockouts_count || 0,
+              bountiesCollected: p.bounty_collected || 0,
+              currentBounty: p.bounty_value || bounty,
+              isCurrentPlayer: p.player_id === currentPlayerId
+            };
           });
+          setHunters(hunterData);
         }
+        return;
       }
+
+      // Use RPC result
+      const hunterData: BountyHunter[] = (leaderboardData as any[]).map(h => ({
+        playerId: h.player_id,
+        playerName: h.player_name || 'Unknown',
+        avatarUrl: h.avatar_url || null,
+        knockouts: h.knockouts || 0,
+        bountiesCollected: h.bounty_collected || 0,
+        currentBounty: h.current_bounty || bounty,
+        isCurrentPlayer: h.player_id === currentPlayerId
+      }));
 
       // Sort by knockouts (most first)
       hunterData.sort((a, b) => b.knockouts - a.knockouts);

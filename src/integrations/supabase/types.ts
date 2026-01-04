@@ -700,11 +700,14 @@ export type Database = {
       online_poker_tournament_participants: {
         Row: {
           addons_count: number | null
+          bounty_collected: number | null
+          bounty_value: number | null
           chips: number | null
           eliminated_at: string | null
           eliminated_by: string | null
           finish_position: number | null
           id: string
+          knockouts_count: number | null
           player_id: string
           prize_amount: number | null
           rebuys_count: number | null
@@ -716,11 +719,14 @@ export type Database = {
         }
         Insert: {
           addons_count?: number | null
+          bounty_collected?: number | null
+          bounty_value?: number | null
           chips?: number | null
           eliminated_at?: string | null
           eliminated_by?: string | null
           finish_position?: number | null
           id?: string
+          knockouts_count?: number | null
           player_id: string
           prize_amount?: number | null
           rebuys_count?: number | null
@@ -732,11 +738,14 @@ export type Database = {
         }
         Update: {
           addons_count?: number | null
+          bounty_collected?: number | null
+          bounty_value?: number | null
           chips?: number | null
           eliminated_at?: string | null
           eliminated_by?: string | null
           finish_position?: number | null
           id?: string
+          knockouts_count?: number | null
           player_id?: string
           prize_amount?: number | null
           rebuys_count?: number | null
@@ -2461,6 +2470,17 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: undefined
       }
+      get_pko_bounty_leaderboard: {
+        Args: { p_limit?: number; p_tournament_id: string }
+        Returns: {
+          avatar_url: string
+          bounty_collected: number
+          current_bounty: number
+          knockouts: number
+          player_id: string
+          player_name: string
+        }[]
+      }
       get_player_available_entries: {
         Args: { p_player_id: string }
         Returns: number
@@ -2574,6 +2594,14 @@ export type Database = {
       }
       process_online_tournament_rebuy: {
         Args: { p_player_id: string; p_tournament_id: string }
+        Returns: Json
+      }
+      process_pko_knockout: {
+        Args: {
+          p_eliminated_player_id: string
+          p_eliminator_player_id: string
+          p_tournament_id: string
+        }
         Returns: Json
       }
       professional_balance_tables: {

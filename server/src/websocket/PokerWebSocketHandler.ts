@@ -21,6 +21,7 @@ import { metrics } from '../utils/metrics.js';
 import { supabaseCircuitBreaker } from '../utils/circuit-breaker.js';
 import { loadManager, LoadLevel } from '../utils/load-manager.js';
 import { createHandForHandIntegration, HandForHandIntegration } from '../utils/hand-for-hand-integration.js';
+import { pkoBountyService } from '../utils/pko-bounty-service.js';
 import { z } from 'zod';
 
 // Message schemas
@@ -1328,6 +1329,29 @@ export class PokerWebSocketHandler {
       
       this.tournamentManager.eliminatePlayer(tournamentId, playerId, eliminatedBy);
       metrics.recordElimination();
+      
+      // Process PKO bounty if applicable
+      if (eliminatedBy) {
+        try {
+          const bountyResult = await pkoBountyService.processKnockout(tournamentId, playerId, eliminatedBy);
+          if (bountyResult) {
+            // Broadcast bounty event
+            const bountyMessage = {
+              type: 'pko_knockout',
+              tournamentId,
+              eliminatedPlayerId: playerId,
+              eliminatorPlayerId: eliminatedBy,
+              bountyAmount: bountyResult.bountyAmount,
+              collectedAmount: bountyResult.collectedAmount,
+              timestamp: Date.now()
+            };
+            messageQueue.enqueueBroadcast(subscribers, bountyMessage, 'high');
+            logger.info('PKO knockout processed', bountyResult);
+          }
+        } catch (bountyErr) {
+          logger.warn('PKO bounty processing failed', { error: String(bountyErr) });
+        }
+      }
       
       // Broadcast elimination event
       const subscribers = this.connectionPool.getTournamentSubscribers(tournamentId);
