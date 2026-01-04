@@ -251,6 +251,44 @@ export function TelegramPokerLobby({
     setActiveBuyIn(0); // Tournament tables don't use buy-in
   };
 
+  // Handle entering a running tournament - find player's assigned table and open it
+  const handleEnterTournament = async (tournamentId: string) => {
+    if (!playerId) {
+      toast.error('Необходимо войти в систему');
+      return;
+    }
+
+    setJoiningId(tournamentId);
+    try {
+      // Use RPC to get player's table assignment
+      const { data, error } = await supabase.rpc('get_player_tournament_table', {
+        p_tournament_id: tournamentId,
+        p_player_id: playerId
+      });
+
+      if (error) throw error;
+
+      const assignment = data as { success: boolean; table_id?: string; table_name?: string; seat_number?: number; error?: string } | null;
+
+      if (!assignment?.success || !assignment?.table_id) {
+        toast.error(assignment?.error || 'Стол ещё не назначен. Подождите начала турнира.');
+        return;
+      }
+
+      // Open the tournament table
+      setActiveTableId(assignment.table_id);
+      setActiveBuyIn(0); // Tournament tables don't use buy-in
+      onJoinTournament?.(tournamentId);
+      
+      toast.success(`Стол: ${assignment.table_name || 'Турнирный стол'}, место ${assignment.seat_number}`);
+    } catch (error: any) {
+      console.error('Error entering tournament:', error);
+      toast.error(error.message || 'Не удалось войти в турнир');
+    } finally {
+      setJoiningId(null);
+    }
+  };
+
   const handleJoinTournament = async (tournament: OnlineTournament) => {
     if (!playerId) {
       toast.error('Необходимо войти в систему');
@@ -260,7 +298,8 @@ export function TelegramPokerLobby({
     const existingStatus = myTournamentStatusById[tournament.id];
     if (existingStatus) {
       if (existingStatus === 'playing') {
-        onJoinTournament?.(tournament.id);
+        // Player is playing - find their table and enter
+        await handleEnterTournament(tournament.id);
         return;
       }
       toast.info(existingStatus === 'eliminated' ? 'Вы уже выбыли из турнира' : 'Вы уже зарегистрированы');
@@ -589,7 +628,7 @@ export function TelegramPokerLobby({
                         return (
                           <Button
                             onClick={() => {
-                              if (canEnter) onJoinTournament?.(tournament.id);
+                              if (canEnter) handleEnterTournament(tournament.id);
                               else handleJoinTournament(tournament);
                             }}
                             disabled={disabled}

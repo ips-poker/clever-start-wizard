@@ -24,6 +24,7 @@ import { BountyDisplay } from './BountyDisplay';
 import { KnockoutNotification, KnockoutEvent } from './KnockoutNotification';
 import { BountyLeaderboard } from './BountyLeaderboard';
 import { RebuyDialog } from './RebuyDialog';
+import { TournamentRebuyDialog } from './TournamentRebuyDialog';
 import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
 import { ProTournamentLobby } from './tournament-lobby';
 import { TimeBankIndicator } from './TimeBankIndicator';
@@ -89,7 +90,8 @@ export function FullscreenPokerTableWrapper({
   
   const {
     isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
-    connect, disconnect, joinTable, fold, check, call, raise, allIn, addChips, sitOut, sitIn
+    connect, disconnect, joinTable, fold, check, call, raise, allIn, addChips, sitOut, sitIn,
+    rebuyAvailable, clearRebuyAvailable
   } = pokerTable;
 
   // Check if player can join (not yet seated) - only for cash games
@@ -305,6 +307,16 @@ export function FullscreenPokerTableWrapper({
     }
     prevIsMyTurnRef.current = isMyTurn;
   }, [isMyTurn, sounds]);
+
+  // Auto-show rebuy dialog when tournament rebuy is available
+  useEffect(() => {
+    if (rebuyAvailable && isTournament) {
+      setShowRebuyDialog(true);
+      toast.info(`Ребай доступен! Осталось ${rebuyAvailable.timeoutSeconds} сек`, {
+        duration: 5000
+      });
+    }
+  }, [rebuyAvailable, isTournament]);
 
   // Cashout - return diamonds when leaving table
   const performCashout = useCallback(async () => {
@@ -752,18 +764,41 @@ export function FullscreenPokerTableWrapper({
           maxSeats={maxSeats}
         />
 
-        {/* Rebuy Dialog */}
-        <RebuyDialog
-          isOpen={showRebuyDialog}
-          onClose={() => setShowRebuyDialog(false)}
-          onConfirm={handleRebuyConfirm}
-          currentSeat={mySeat ?? 0}
-          currentStack={myPlayer?.stack ?? 0}
-          minBuyIn={minBuyIn}
-          maxBuyIn={maxBuyIn}
-          playerBalance={playerBalance}
-          bigBlind={tableState?.bigBlindAmount || 20}
-        />
+        {/* Rebuy Dialog (Cash Game) */}
+        {!isTournament && (
+          <RebuyDialog
+            isOpen={showRebuyDialog}
+            onClose={() => setShowRebuyDialog(false)}
+            onConfirm={handleRebuyConfirm}
+            currentSeat={mySeat ?? 0}
+            currentStack={myPlayer?.stack ?? 0}
+            minBuyIn={minBuyIn}
+            maxBuyIn={maxBuyIn}
+            playerBalance={playerBalance}
+            bigBlind={tableState?.bigBlindAmount || 20}
+          />
+        )}
+
+        {/* Tournament Rebuy Dialog */}
+        {isTournament && rebuyAvailable && (
+          <TournamentRebuyDialog
+            isOpen={showRebuyDialog || !!rebuyAvailable}
+            onClose={() => {
+              setShowRebuyDialog(false);
+              clearRebuyAvailable();
+            }}
+            tournamentId={rebuyAvailable.tournamentId}
+            playerId={playerId}
+            tableId={tableId}
+            timeoutSeconds={rebuyAvailable.timeoutSeconds}
+            timestamp={rebuyAvailable.timestamp}
+            onRebuySuccess={(newChips) => {
+              setActualBuyIn(newChips);
+              clearRebuyAvailable();
+            }}
+            onLeave={handleLeave}
+          />
+        )}
 
         {/* Side menu */}
         <AnimatePresence>
