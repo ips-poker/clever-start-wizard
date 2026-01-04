@@ -31,9 +31,9 @@ import { ProfessionalCommunityCards } from './ProfessionalCommunityCards';
 import { PPPokerPotDisplay } from './PPPokerPotDisplay';
 import { PPPokerActionBadge } from './PPPokerActionBadge';
 import { PPPokerLevelBadge } from './PPPokerLevelBadge';
-import { PotCollectionAnimation } from './PotCollectionAnimation';
+// PotCollectionAnimation removed - using BetCollectionAnimation only for performance
 import { WinnerChipCascade } from './WinnerChipCascade';
-import { BetCollectionAnimation, EnhancedBetCollectionAnimation } from './EnhancedBetCollectionAnimation';
+import { BetCollectionAnimation } from './EnhancedBetCollectionAnimation';
 import { ProfessionalShowdown } from './ProfessionalShowdown';
 import { WinnerAnnouncement } from './WinnerAnnouncement';
 import { usePhaseAnimation } from '@/hooks/usePhaseAnimation';
@@ -948,24 +948,21 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
   const feltGradient = themeGradient || `radial-gradient(ellipse at 50% 40%, ${themeColor} 0%, ${themeColor}dd 25%, ${themeColor}bb 45%, ${themeColor}99 65%, ${themeColor}77 85%, ${themeColor}55 100%)`;
   
   return (
-    <div className="absolute inset-0 overflow-hidden">
-      {/* Transparent background - uses parent's tech theme */}
-      
-      {/* Glowing ambient effect behind table - vertical stadium shape */}
+    <div className="absolute inset-0 overflow-hidden will-change-auto">
+      {/* OPTIMIZED: Removed heavy blur(40px) glow - using simpler gradient with wider spread */}
       <div 
         className="absolute"
         style={{
-          top: '8%',
+          top: '6%',
           left: sideMargin.glow,
           right: sideMargin.glow,
-          bottom: '8%',
+          bottom: '6%',
           borderRadius: '45% / 25%',
-          background: `radial-gradient(ellipse at 50% 50%, ${themeColor}50 0%, transparent 70%)`,
-          filter: 'blur(40px)'
+          background: `radial-gradient(ellipse at 50% 50%, ${themeColor}30 0%, ${themeColor}15 40%, transparent 70%)`
         }}
       />
       
-      {/* Outer metallic rail - VERTICAL stadium shape like hockey rink */}
+      {/* Outer metallic rail - OPTIMIZED: reduced box-shadow complexity */}
       <div 
         className="absolute"
         style={{
@@ -975,12 +972,12 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
           bottom: '6%',
           borderRadius: '45% / 22%',
           background: 'linear-gradient(180deg, #5a6a7a 0%, #3d4a5a 20%, #2a3440 50%, #3d4a5a 80%, #5a6a7a 100%)',
-          boxShadow: '0 10px 60px rgba(0,0,0,0.9), 0 0 80px rgba(0,0,0,0.4), inset 0 2px 20px rgba(255,255,255,0.15)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.7), inset 0 1px 10px rgba(255,255,255,0.1)',
           border: '1px solid rgba(255,255,255,0.08)'
         }}
       />
       
-      {/* Leather padding rail */}
+      {/* Leather padding rail - OPTIMIZED: reduced inset shadows */}
       <div 
         className="absolute"
         style={{
@@ -990,11 +987,11 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
           bottom: '7%',
           borderRadius: '44% / 21%',
           background: 'linear-gradient(180deg, #3a2820 0%, #2a1a14 30%, #1a0f0a 60%, #2a1a14 85%, #3a2820 100%)',
-          boxShadow: 'inset 0 5px 30px rgba(0,0,0,0.8), inset 0 -5px 20px rgba(0,0,0,0.4)'
+          boxShadow: 'inset 0 3px 15px rgba(0,0,0,0.6)'
         }}
       />
       
-      {/* Inner metal trim */}
+      {/* Inner metal trim - OPTIMIZED: minimal shadow */}
       <div 
         className="absolute"
         style={{
@@ -1004,12 +1001,11 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
           bottom: '9%',
           borderRadius: '42% / 20%',
           background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 50%, #1a202c 100%)',
-          boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)',
           border: '1px solid rgba(212,175,55,0.2)'
         }}
       />
       
-      {/* Main felt surface - vertical stadium oval */}
+      {/* Main felt surface - OPTIMIZED: reduced box-shadow complexity */}
       <div 
         className="absolute"
         style={{
@@ -1019,20 +1015,14 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
           bottom: '10%',
           borderRadius: '40% / 18%',
           background: feltGradient,
-          boxShadow: 'inset 0 0 80px rgba(0,0,0,0.35), inset 0 -40px 80px rgba(0,0,0,0.2), inset 0 30px 50px rgba(255,255,255,0.02)'
+          boxShadow: 'inset 0 0 40px rgba(0,0,0,0.25)'
         }}
       >
-        {/* Subtle felt texture */}
-        <div className="absolute inset-0 opacity-[0.03]"
-          style={{
-            borderRadius: 'inherit',
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`
-          }}
-        />
+        {/* REMOVED: Heavy SVG noise texture filter for mobile performance */}
         
-        {/* Center logo */}
+        {/* Center logo - OPTIMIZED: removed drop-shadow filter */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2">
-          <img src={syndikateLogo} alt="" className="w-28 h-auto opacity-[0.08] drop-shadow-lg"/>
+          <img src={syndikateLogo} alt="" className="w-28 h-auto opacity-[0.08]"/>
           <span className="text-white/[0.04] font-black text-xl tracking-[0.4em] uppercase">
             Poker
           </span>
@@ -1041,32 +1031,15 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         {/* Decorative horizontal line */}
         <div className="absolute top-1/2 -translate-y-1/2 left-[15%] right-[15%] h-px bg-gradient-to-r from-transparent via-white/[0.03] to-transparent"/>
         
-        {/* Corner decorations - positioned for vertical shape */}
-        {[
-          { top: '12%', left: sideMargin.corners },
-          { top: '12%', right: sideMargin.corners },
-          { bottom: '12%', left: sideMargin.corners },
-          { bottom: '12%', right: sideMargin.corners }
-        ].map((pos, i) => (
-          <div 
-            key={i}
-            className="absolute w-6 h-6 opacity-[0.04]"
-            style={{ 
-              ...pos,
-              border: '1px solid white',
-              borderRadius: '50%'
-            }}
-          />
-        ))}
+        {/* REMOVED: Corner decorations for mobile performance */}
       </div>
       
-      {/* Ambient glow from pot area */}
+      {/* Ambient glow from pot area - OPTIMIZED: removed blur filter, using larger gradient */}
       <div 
-        className="absolute left-1/2 -translate-x-1/2 w-32 h-24 pointer-events-none"
+        className="absolute left-1/2 -translate-x-1/2 w-48 h-32 pointer-events-none"
         style={{
-          top: '40%',
-          background: 'radial-gradient(ellipse, rgba(251,191,36,0.1) 0%, transparent 70%)',
-          filter: 'blur(20px)'
+          top: '35%',
+          background: 'radial-gradient(ellipse, rgba(251,191,36,0.08) 0%, rgba(251,191,36,0.03) 40%, transparent 60%)'
         }}
       />
       
@@ -1542,35 +1515,26 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       <SyndikateTableFelt themeColor={currentTableTheme.color} wideMode={wideMode} />
       
       
-      {/* Pot collection animation */}
-      <PotCollectionAnimation
-        isCollecting={isCollectingBets}
-        bets={collectionBets}
-        onComplete={() => {
-          setIsCollectingBets(false);
-          setCollectionBets([]);
-        }}
-      />
+      {/* Single bet collection animation - using server timing data (removed duplicate PotCollectionAnimation) */}
+      {betCollectionData && betCollectionData.length > 0 && (
+        <BetCollectionAnimation
+          isCollecting={true}
+          betsToCollect={betCollectionData}
+          onComplete={() => {
+            setIsCollectingBets(false);
+            setCollectionBets([]);
+          }}
+        />
+      )}
       
-      {/* Win distribution animation - Premium chips cascade */}
-      {winDistribution && (
+      {/* Win distribution animation - Premium chips cascade (only when no bet collection in progress) */}
+      {winDistribution && !betCollectionData && (
         <WinnerChipCascade
           isActive={true}
           fromPosition={{ x: 50, y: 50 }}
           toPosition={positions[winDistribution.winnerSeat]}
           amount={winDistribution.amount}
           onComplete={() => setWinDistribution(null)}
-        />
-      )}
-      
-      {/* Bet collection animation - using server timing data */}
-      {betCollectionData && betCollectionData.length > 0 && (
-        <BetCollectionAnimation
-          isCollecting={true}
-          betsToCollect={betCollectionData}
-          onComplete={() => {
-            // Animation complete - server already clears state after 800ms
-          }}
         />
       )}
       
