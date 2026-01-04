@@ -9,7 +9,14 @@ import { TableConfig } from './PokerGameManager.js';
 import { PokerEngineV3, ActionResult, GameType, GameConfig, evaluateHand } from './PokerEngineV3.js';
 import { logger } from '../utils/logger.js';
 import { makeBotDecision, getBotAggression, BotDecision } from './PokerBotAI.js';
-import { PROFESSIONAL_TIMINGS, ProfessionalTimings, calculatePhaseDelay } from '../config/pokerTimings.js';
+import { 
+  PROFESSIONAL_TIMINGS, 
+  ProfessionalTimings, 
+  calculatePhaseDelay,
+  calculateBetCollectionDelay,
+  calculateShowdownDelay,
+  getTimingsForTableType
+} from '../config/pokerTimings.js';
 
 export interface Player {
   id: string;
@@ -105,6 +112,9 @@ export class PokerTable {
     
     this.engine = new PokerEngineV3(gameType, engineConfig);
     this.seats = new Array(config.maxPlayers).fill(null);
+    
+    // PROFESSIONAL: Set timings based on table type (turbo/hyper/standard)
+    this.timings = getTimingsForTableType(config.tableType || 'standard');
     
     // CRITICAL: Load existing players from database and sync state
     this.loadPlayersFromDatabase();
@@ -1133,22 +1143,38 @@ export class PokerTable {
         communityCardsCount: this.currentHand.communityCards.length
       });
       
-      // First, emit that bets are being collected (chips slide to pot)
+      // PROFESSIONAL: Collect bets with positions for animation
+      const betPositions: { seatNumber: number; amount: number }[] = [];
+      for (const player of this.players.values()) {
+        if (player.currentBet > 0) {
+          betPositions.push({
+            seatNumber: player.seatNumber,
+            amount: player.currentBet
+          });
+        }
+      }
+      
+      // Emit enhanced bets_collected with positions
       this.emit('bets_collected', {
         pot: this.currentHand.pot,
-        phase: newPhase
+        phase: newPhase,
+        betPositions,
+        collectionDelay: this.timings.betCollection.slideToCenter,
+        staggerDelay: this.timings.betCollection.staggerPerPlayer
       });
       
       // Delay for chip collection animation
-      await this.delay(afterActionDelay);
+      const collectionTime = calculateBetCollectionDelay(betPositions.length, this.timings);
+      await this.delay(collectionTime);
       
       // Emit phase change with dealing delay for client animation
       this.emit('phase_change', {
         phase: newPhase,
         communityCards: this.currentHand.communityCards,
         pot: this.currentHand.pot,
-        dealDelay: PROFESSIONAL_TIMINGS.phases[newPhase]?.perCardDelay || 0,
-        preDealDelay: PROFESSIONAL_TIMINGS.phases[newPhase]?.preDealDelay || 0
+        dealDelay: this.timings.phases[newPhase]?.perCardDelay || 0,
+        preDealDelay: this.timings.phases[newPhase]?.preDealDelay || 0,
+        postDealDelay: this.timings.phases[newPhase]?.postDealDelay || 0
       });
       
       // Wait for cards to be dealt visually before starting next action timer
@@ -2057,6 +2083,36 @@ export class PokerTable {
       }
     }
     
+    // PROFESSIONAL: Sequential showdown reveal with timing
+    if (isShowdown && showdownPlayers.length > 0) {
+      // Emit showdown_reveal for each player sequentially with delay info
+      this.emit('showdown_start', {
+        handNumber: this.handNumber,
+        playerCount: showdownPlayers.length,
+        totalRevealTime: showdownPlayers.length * this.timings.showdown.perPlayerReveal,
+        communityCards: this.currentHand?.communityCards
+      });
+      
+      // Emit each player reveal with staggered timing
+      for (let i = 0; i < showdownPlayers.length; i++) {
+        const sp = showdownPlayers[i];
+        this.emit('showdown_reveal', {
+          playerId: sp.playerId,
+          playerName: sp.name,
+          seatNumber: sp.seatNumber,
+          holeCards: sp.holeCards,
+          handName: sp.handName,
+          bestCards: sp.bestCards,
+          revealIndex: i,
+          revealDelay: i * this.timings.showdown.perPlayerReveal,
+          isWinner: winners.some(w => w.playerId === sp.playerId)
+        });
+      }
+      
+      // Wait for all reveals
+      await this.delay(showdownPlayers.length * this.timings.showdown.perPlayerReveal);
+    }
+    
     // Log what we're about to send
     logger.info('=== EMITTING hand_complete EVENT ===', {
       tableId: this.id,
@@ -2073,6 +2129,32 @@ export class PokerTable {
       pot: this.currentHand?.pot,
       communityCards: this.currentHand?.communityCards
     });
+    
+    // PROFESSIONAL: Winner announcement with pot slide animation
+    const winnerAnnouncements = winners.map(w => {
+      const player = this.players.get(w.playerId);
+      return {
+        playerId: w.playerId,
+        playerName: player?.name || 'Unknown',
+        seatNumber: player?.seatNumber ?? 0,
+        amount: w.amount,
+        handName: w.handName,
+        newStack: player?.stack || 0
+      };
+    });
+    
+    this.emit('winner_announcement', {
+      handNumber: this.handNumber,
+      winners: winnerAnnouncements,
+      pot: this.currentHand?.pot,
+      isSplitPot: winners.length > 1,
+      potSlideDelay: this.timings.showdown.potSlideToWinner,
+      highlightDuration: this.timings.showdown.winnerHighlight,
+      celebrationDuration: this.timings.showdown.winnerCelebration
+    });
+    
+    // Wait for winner highlight animation
+    await this.delay(this.timings.showdown.winnerHighlight);
     
     this.emit('hand_complete', {
       handNumber: this.handNumber,
@@ -2114,6 +2196,9 @@ export class PokerTable {
       });
     }
     
+    // Wait for winner celebration before resetting
+    await this.delay(this.timings.showdown.winnerCelebration);
+    
     // CRITICAL: Reset all player states for clean slate before next hand
     // This prevents cards/bets from previous hand showing for new players
     for (const player of this.players.values()) {
@@ -2134,8 +2219,8 @@ export class PokerTable {
       isHandActive: false
     });
     
-    // Check for next hand after showdown display time (3 seconds to see winning hand)
-    setTimeout(() => this.checkStartHand(), 3000);
+    // Check for next hand after professional between-hands delay
+    setTimeout(() => this.checkStartHand(), this.timings.betweenHands);
   }
   
   /**

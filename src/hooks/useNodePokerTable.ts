@@ -148,7 +148,39 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const [phaseTimings, setPhaseTimings] = useState<{
     dealDelay?: number;
     preDealDelay?: number;
+    postDealDelay?: number;
     phase?: string;
+  } | null>(null);
+
+  // Professional: showdown reveal sequence
+  const [showdownReveals, setShowdownReveals] = useState<Array<{
+    playerId: string;
+    playerName: string;
+    seatNumber: number;
+    holeCards: string[];
+    handName?: string;
+    bestCards?: string[];
+    revealIndex: number;
+    revealDelay: number;
+    isWinner: boolean;
+  }>>([]);
+
+  // Professional: winner announcement with pot slide
+  const [winnerAnnouncement, setWinnerAnnouncement] = useState<{
+    winners: Array<{
+      playerId: string;
+      playerName: string;
+      seatNumber: number;
+      amount: number;
+      handName?: string;
+      newStack: number;
+    }>;
+    pot: number;
+    isSplitPot: boolean;
+    potSlideDelay: number;
+    highlightDuration: number;
+    celebrationDuration: number;
+    timestamp: number;
   } | null>(null);
 
   // Refs
@@ -1494,6 +1526,176 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }
           break;
 
+        // PROFESSIONAL TIMING: Enhanced bet collection with positions
+        case 'bets_collected':
+          {
+            const betsData = data as Record<string, unknown>;
+            const betPositions = betsData.betPositions as Array<{ seatNumber: number; amount: number }> | undefined;
+            
+            log('💰 Bets collected:', betsData);
+            
+            if (betPositions && betPositions.length > 0) {
+              setBetsBeingCollected({
+                bets: betPositions.map(bp => ({
+                  playerId: '',  // Not needed, we use seatNumber
+                  seatNumber: bp.seatNumber,
+                  amount: bp.amount
+                })),
+                timestamp: Date.now()
+              });
+              
+              // Auto-clear after collection animation
+              const collectionDelay = (betsData.collectionDelay as number || 500) + 
+                (betPositions.length * ((betsData.staggerDelay as number) || 80));
+              setTimeout(() => {
+                setBetsBeingCollected(null);
+              }, collectionDelay + 200);
+            }
+          }
+          break;
+
+        // PROFESSIONAL TIMING: Phase change with card dealing delays
+        case 'phase_change':
+          {
+            const phaseData = data as Record<string, unknown>;
+            log('🎴 Phase change:', phaseData);
+            
+            setPhaseTimings({
+              dealDelay: phaseData.dealDelay as number | undefined,
+              preDealDelay: phaseData.preDealDelay as number | undefined,
+              postDealDelay: phaseData.postDealDelay as number | undefined,
+              phase: phaseData.phase as string | undefined
+            });
+            
+            // Update community cards
+            if (phaseData.communityCards && tableId) {
+              setTableState(prev => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  phase: phaseData.phase as TableState['phase'] || prev.phase,
+                  communityCards: phaseData.communityCards as string[],
+                  pot: (phaseData.pot as number) ?? prev.pot
+                };
+              });
+            }
+          }
+          break;
+
+        // PROFESSIONAL: Showdown start event
+        case 'showdown_start':
+          {
+            const showdownData = data as Record<string, unknown>;
+            log('🎭 Showdown starting:', showdownData);
+            
+            // Clear previous reveals
+            setShowdownReveals([]);
+            
+            // Set showdown phase
+            setTableState(prev => {
+              if (!prev) return prev;
+              return { ...prev, phase: 'showdown' };
+            });
+          }
+          break;
+
+        // PROFESSIONAL: Sequential card reveal for each player
+        case 'showdown_reveal':
+          {
+            const revealData = data as Record<string, unknown>;
+            log('🃏 Showdown reveal:', revealData);
+            
+            setShowdownReveals(prev => [
+              ...prev,
+              {
+                playerId: revealData.playerId as string,
+                playerName: revealData.playerName as string || 'Unknown',
+                seatNumber: revealData.seatNumber as number,
+                holeCards: revealData.holeCards as string[],
+                handName: revealData.handName as string | undefined,
+                bestCards: revealData.bestCards as string[] | undefined,
+                revealIndex: revealData.revealIndex as number || prev.length,
+                revealDelay: revealData.revealDelay as number || 0,
+                isWinner: revealData.isWinner as boolean || false
+              }
+            ]);
+            
+            // Update player's hole cards in table state
+            setTableState(prev => {
+              if (!prev) return prev;
+              const revealedPlayerId = revealData.playerId as string;
+              
+              return {
+                ...prev,
+                players: prev.players.map(p => 
+                  p.playerId === revealedPlayerId
+                    ? {
+                        ...p,
+                        holeCards: revealData.holeCards as string[],
+                        handName: revealData.handName as string | undefined,
+                        bestCards: revealData.bestCards as string[] | undefined,
+                        isWinner: revealData.isWinner as boolean || false
+                      }
+                    : p
+                )
+              };
+            });
+          }
+          break;
+
+        // PROFESSIONAL: Winner announcement with pot slide animation
+        case 'winner_announcement':
+          {
+            const winnerData = data as Record<string, unknown>;
+            log('🏆 Winner announcement:', winnerData);
+            
+            const winners = winnerData.winners as Array<{
+              playerId: string;
+              playerName: string;
+              seatNumber: number;
+              amount: number;
+              handName?: string;
+              newStack: number;
+            }> || [];
+            
+            setWinnerAnnouncement({
+              winners,
+              pot: winnerData.pot as number || 0,
+              isSplitPot: winnerData.isSplitPot as boolean || winners.length > 1,
+              potSlideDelay: winnerData.potSlideDelay as number || 600,
+              highlightDuration: winnerData.highlightDuration as number || 2500,
+              celebrationDuration: winnerData.celebrationDuration as number || 2000,
+              timestamp: Date.now()
+            });
+            
+            // Mark winners in table state
+            setTableState(prev => {
+              if (!prev) return prev;
+              const winnerIds = new Set(winners.map(w => w.playerId));
+              
+              return {
+                ...prev,
+                players: prev.players.map(p => 
+                  winnerIds.has(p.playerId)
+                    ? { ...p, isWinner: true }
+                    : p
+                )
+              };
+            });
+            
+            // Auto-clear winner announcement after celebration
+            const totalDuration = 
+              (winnerData.potSlideDelay as number || 600) +
+              (winnerData.highlightDuration as number || 2500) +
+              (winnerData.celebrationDuration as number || 2000);
+            
+            setTimeout(() => {
+              setWinnerAnnouncement(null);
+              setShowdownReveals([]);
+            }, totalDuration);
+          }
+          break;
+
         default:
           log('📨 Unknown message type:', data.type, data);
       }
@@ -1903,6 +2105,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     // Professional timing
     betsBeingCollected,
     phaseTimings,
+    showdownReveals,
+    winnerAnnouncement,
+    clearWinnerAnnouncement: () => setWinnerAnnouncement(null),
 
     // Computed
     isMyTurn,
