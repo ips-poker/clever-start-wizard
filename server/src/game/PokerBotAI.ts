@@ -25,7 +25,7 @@ interface BotPersonality {
   looseness: number; // How many hands they play 20-80
   bluffFrequency: number; // 5-40
   slowplayFrequency: number; // 10-40
-  threeБетFrequency: number; // 5-25
+  threeBetFrequency: number; // 5-25
 }
 
 interface HandAnalysis {
@@ -373,7 +373,7 @@ function getBotPersonality(botName: string): BotPersonality {
       break;
   }
   
-  return { style, aggression, looseness, bluffFrequency, slowplayFrequency, threeБетFrequency: threeBetFrequency };
+  return { style, aggression, looseness, bluffFrequency, slowplayFrequency, threeBetFrequency };
 }
 
 /**
@@ -466,7 +466,7 @@ function preflopStrategy(
     if (isRaised) {
       // 3-bet based on personality
       if ((position === 'late' || position === 'button') && 
-          Math.random() * 100 < personality.threeБетFrequency) {
+          Math.random() * 100 < personality.threeBetFrequency) {
         return { action: 'raise', amount: threeBetSize, reasoning: 'Strong hand in position - 3-bet', confidence: 75 };
       }
       if (callAmount < stack * 0.15) {
