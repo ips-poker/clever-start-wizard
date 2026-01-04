@@ -135,10 +135,12 @@ export class PokerWebSocketHandler {
     // Start metrics collection (every 10 seconds)
     this.metricsInterval = setInterval(() => this.collectMetrics(), 10000);
     
-    // Setup table event listeners for existing tables
-    for (const table of gameManager.getAllTables()) {
+    // CRITICAL: Register callback to setup event listeners when tables are loaded
+    // This ensures elimination events are handled even for tables loaded dynamically
+    // (e.g., tournament tables where bots play before any human connects)
+    gameManager.onTableLoaded((table) => {
       this.setupTableListeners(table);
-    }
+    });
     
     // Listen for load level changes
     loadManager.onLoadChange((level) => {
@@ -148,7 +150,7 @@ export class PokerWebSocketHandler {
     // Load active tournaments from database
     this.loadActiveTournaments();
     
-    logger.info('PokerWebSocketHandler v3.2 initialized with Hand-for-Hand support');
+    logger.info('PokerWebSocketHandler v3.3 initialized with auto table listener setup');
   }
   
   /**
