@@ -781,41 +781,136 @@ export class PokerWebSocketHandler {
   
   /**
    * Handle tournament elimination event when players have zero chips
+   * FIXED: Check tournament_id presence instead of table_type to correctly identify tournament tables
    */
   private async handleTournamentEliminationEvent(
     tableId: string, 
     data: { tableId: string; players: { playerId: string; seatNumber: number; name: string }[] }
   ): Promise<void> {
     try {
-      // Get tournament ID for this table
+      // Get tournament ID for this table - check tournament_id presence, not table_type
       const { data: tableData, error } = await this.supabase
         .from('poker_tables')
         .select('tournament_id, table_type')
         .eq('id', tableId)
         .single();
       
-      if (error || !tableData?.tournament_id || tableData.table_type !== 'tournament') {
+      // FIXED: A table is a tournament table if it has tournament_id, regardless of table_type
+      if (error || !tableData?.tournament_id) {
         // Not a tournament table, skip elimination logic
+        if (data.players.length > 0) {
+          logger.debug('Non-tournament table elimination skipped', { tableId, players: data.players.length });
+        }
         return;
       }
       
       const tournamentId = tableData.tournament_id;
       
+      // Check if rebuy is available for this tournament
+      const { data: tournamentData } = await this.supabase
+        .from('online_poker_tournaments')
+        .select('rebuy_enabled, rebuy_end_level, current_level, status')
+        .eq('id', tournamentId)
+        .single();
+      
+      const rebuyAvailable = tournamentData?.rebuy_enabled && 
+        tournamentData?.current_level <= (tournamentData?.rebuy_end_level || 0) &&
+        ['running', 'break'].includes(tournamentData?.status || '');
+      
       logger.info('Processing tournament eliminations', {
         tableId,
         tournamentId,
-        eliminatedCount: data.players.length
+        tableType: tableData.table_type,
+        eliminatedCount: data.players.length,
+        rebuyAvailable
       });
       
       // Process each eliminated player
       for (const eliminatedPlayer of data.players) {
-        await this.handleTournamentElimination(tournamentId, eliminatedPlayer.playerId);
-        
-        // Notify Hand-for-Hand integration about elimination
-        await this.handForHandIntegration.playerEliminated(tournamentId, eliminatedPlayer.playerId);
+        if (rebuyAvailable) {
+          // Mark player as awaiting rebuy decision - don't eliminate yet
+          await this.handlePlayerRebuyWindow(tournamentId, tableId, eliminatedPlayer.playerId);
+        } else {
+          // No rebuy available - eliminate immediately
+          await this.handleTournamentElimination(tournamentId, eliminatedPlayer.playerId);
+          
+          // Notify Hand-for-Hand integration about elimination
+          await this.handForHandIntegration.playerEliminated(tournamentId, eliminatedPlayer.playerId);
+        }
       }
     } catch (err) {
       logger.error('Error handling tournament elimination event', { tableId, error: String(err) });
+    }
+  }
+  
+  /**
+   * Handle rebuy window for eliminated player
+   * Player has limited time to rebuy or be eliminated
+   */
+  private async handlePlayerRebuyWindow(
+    tournamentId: string, 
+    tableId: string, 
+    playerId: string
+  ): Promise<void> {
+    const REBUY_WINDOW_SECONDS = 30;
+    
+    try {
+      // Update player status to 'rebuy_pending' in poker_table_players
+      await this.supabase
+        .from('poker_table_players')
+        .update({ 
+          status: 'sitting_out',
+          stack: 0
+        })
+        .eq('table_id', tableId)
+        .eq('player_id', playerId);
+      
+      // Broadcast rebuy opportunity to the player
+      this.broadcastToTable(tableId, {
+        type: 'rebuy_available',
+        playerId,
+        tournamentId,
+        timeoutSeconds: REBUY_WINDOW_SECONDS,
+        timestamp: Date.now()
+      });
+      
+      logger.info('Rebuy window opened for player', { 
+        tournamentId, 
+        playerId, 
+        timeoutSeconds: REBUY_WINDOW_SECONDS 
+      });
+      
+      // Set timeout to eliminate if no rebuy
+      setTimeout(async () => {
+        try {
+          // Check if player still has 0 chips (didn't rebuy)
+          const { data: player } = await this.supabase
+            .from('poker_table_players')
+            .select('stack, status')
+            .eq('table_id', tableId)
+            .eq('player_id', playerId)
+            .maybeSingle();
+          
+          if (player && player.stack === 0) {
+            logger.info('Rebuy timeout - eliminating player', { tournamentId, playerId });
+            await this.handleTournamentElimination(tournamentId, playerId);
+            await this.handForHandIntegration.playerEliminated(tournamentId, playerId);
+            
+            // Broadcast elimination
+            this.broadcastToTable(tableId, {
+              type: 'player_eliminated',
+              playerId,
+              reason: 'rebuy_timeout',
+              timestamp: Date.now()
+            });
+          }
+        } catch (err) {
+          logger.error('Error in rebuy timeout handler', { error: String(err) });
+        }
+      }, REBUY_WINDOW_SECONDS * 1000);
+      
+    } catch (err) {
+      logger.error('Error opening rebuy window', { tournamentId, playerId, error: String(err) });
     }
   }
   

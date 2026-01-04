@@ -120,6 +120,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [showdownResult, setShowdownResult] = useState<ShowdownResult | null>(null);
   const [lastAction, setLastAction] = useState<{ playerId: string; action: string; amount?: number } | null>(null);
+  
+  // Tournament rebuy state
+  const [rebuyAvailable, setRebuyAvailable] = useState<{
+    tournamentId: string;
+    timeoutSeconds: number;
+    timestamp: number;
+  } | null>(null);
 
   // Refs
   const wsRef = useRef<WebSocket | null>(null);
@@ -1223,6 +1230,47 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             };
           });
           break;
+        
+        case 'rebuy_available':
+          // Tournament rebuy opportunity - player has limited time to rebuy or be eliminated
+          log('💰 Rebuy available:', data);
+          {
+            const rebuyData = data as Record<string, unknown>;
+            const targetPlayerId = rebuyData.playerId as string;
+            
+            // Only show rebuy UI if this is for us
+            if (targetPlayerId === playerId) {
+              setRebuyAvailable({
+                tournamentId: rebuyData.tournamentId as string,
+                timeoutSeconds: rebuyData.timeoutSeconds as number || 30,
+                timestamp: Date.now()
+              });
+            }
+          }
+          break;
+        
+        case 'player_eliminated':
+          // Player was eliminated from tournament
+          log('💀 Player eliminated:', data);
+          {
+            const elimData = data as Record<string, unknown>;
+            const eliminatedPlayerId = elimData.playerId as string;
+            
+            // If we were eliminated, clear rebuy state
+            if (eliminatedPlayerId === playerId) {
+              setRebuyAvailable(null);
+            }
+            
+            // Update player in state
+            setTableState((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                players: prev.players.filter(p => p.playerId !== eliminatedPlayerId)
+              };
+            });
+          }
+          break;
 
         default:
           log('📨 Unknown message type:', data.type, data);
@@ -1625,6 +1673,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     chatMessages,
     showdownResult,
     lastAction,
+    rebuyAvailable,
+    clearRebuyAvailable: () => setRebuyAvailable(null),
 
     // Computed
     isMyTurn,
