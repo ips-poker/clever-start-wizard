@@ -531,7 +531,18 @@ export function calculateNewTableMoves(
 }
 
 /**
- * Check if tables should be consolidated
+ * PROFESSIONAL: Check if tables should be consolidated
+ * Uses the exact max players per table from tournament config
+ * 
+ * Examples for maxPlayersPerTable = 9:
+ * - 19 players on 3 tables (6,6,7) - NO consolidation (needs 3 tables)
+ * - 18 players on 3 tables (6,6,6) - CONSOLIDATE to 2 tables (9,9)
+ * - 17 players on 3 tables - CONSOLIDATE to 2 tables (8,9)
+ * 
+ * Examples for maxPlayersPerTable = 6:
+ * - 13 players on 3 tables (4,4,5) - NO consolidation (needs 3 tables)
+ * - 12 players on 3 tables (4,4,4) - CONSOLIDATE to 2 tables (6,6)
+ * - 11 players on 3 tables - CONSOLIDATE to 2 tables (5,6)
  */
 export function shouldConsolidateTables(
   tables: TableBalance[],
@@ -540,16 +551,32 @@ export function shouldConsolidateTables(
   const totalPlayers = tables.reduce((sum, t) => sum + t.playerCount, 0);
   const minTablesNeeded = Math.ceil(totalPlayers / maxPlayersPerTable);
   
+  console.log(`[TableBalance] Consolidation check: ${totalPlayers} players, ${tables.length} tables, max ${maxPlayersPerTable}/table -> need ${minTablesNeeded} tables`);
+  
   if (tables.length > minTablesNeeded) {
     // Sort by player count ascending - break smallest tables first
-    const sortedTables = [...tables].sort((a, b) => a.playerCount - b.playerCount);
+    // Also prefer tables without active hands
+    const sortedTables = [...tables].sort((a, b) => {
+      // First by player count
+      if (a.playerCount !== b.playerCount) {
+        return a.playerCount - b.playerCount;
+      }
+      // Then prefer tables without dealer (no active hand likely)
+      if (a.dealerSeat === null && b.dealerSeat !== null) return -1;
+      if (b.dealerSeat === null && a.dealerSeat !== null) return 1;
+      return 0;
+    });
+    
     const tablesToBreak = sortedTables
       .slice(0, tables.length - minTablesNeeded)
       .map(t => t.tableId);
     
+    console.log(`[TableBalance] Consolidating: closing ${tablesToBreak.length} tables`);
+    
     return { consolidate: true, tablesToBreak };
   }
   
+  console.log(`[TableBalance] No consolidation needed`);
   return { consolidate: false, tablesToBreak: [] };
 }
 
