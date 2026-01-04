@@ -46,13 +46,19 @@ export default function OnlinePoker() {
     const checkPlayer = async () => {
       // If user is authenticated, find their player profile
       if (isAuthenticated && user) {
-        const { data: playerData, error: playerError } = await supabase
+        // First try to find a non-bot player (real player account)
+        const { data: realPlayerData, error: realPlayerError } = await supabase
           .from('players')
           .select('id, name, avatar_url, telegram')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
+          .not('name', 'ilike', 'TestBot%')
+          .order('created_at', { ascending: true })
           .limit(1)
           .maybeSingle();
+
+        // If no real player found, fall back to any player (including bots)
+        const playerData = realPlayerData;
+        const playerError = realPlayerError;
 
         if (playerError) {
           console.error('Error loading player by user_id:', playerError);
