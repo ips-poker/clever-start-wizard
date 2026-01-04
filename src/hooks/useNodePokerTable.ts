@@ -209,38 +209,48 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     const playersRaw = (state.players || []) as Record<string, unknown>[];
     
     const mappedPlayers: PokerPlayer[] = playersRaw.map((p) => {
-      const betAmount = (p.betAmount || p.currentBet || p.bet_amount || 0) as number;
-      
+      // Bet amount: accept multiple server shapes
+      const betAmount = Number(
+        (p as any).betAmount ??
+          (p as any).currentBet ??
+          (p as any).bet_amount ??
+          (p as any).roundBet ??
+          (p as any).round_bet ??
+          (p as any).streetBet ??
+          (p as any).street_bet ??
+          0
+      );
+
       // Debug: log player bets
       if (betAmount > 0) {
-        log('💰 Player bet:', { 
-          name: p.name, 
-          betAmount, 
-          stack: p.stack,
-          isFolded: p.isFolded
+        log('💰 Player bet:', {
+          name: (p as any).name,
+          betAmount,
+          stack: (p as any).stack,
+          isFolded: (p as any).isFolded
         });
       }
-      
+
       return {
-        playerId: (p.playerId || p.id) as string,
-        name: (p.name || 'Player') as string,
-        avatarUrl: (p.avatarUrl || p.avatar) as string | undefined,
-        seatNumber: (p.seatNumber ?? p.seat_number ?? 0) as number,
-        stack: (p.stack || 0) as number,
+        playerId: ((p as any).playerId || (p as any).id) as string,
+        name: ((p as any).name || 'Player') as string,
+        avatarUrl: ((p as any).avatarUrl || (p as any).avatar) as string | undefined,
+        seatNumber: ((p as any).seatNumber ?? (p as any).seat_number ?? 0) as number,
+        stack: ((p as any).stack || 0) as number,
         betAmount,
-        totalBetInHand: (p.totalBetInHand || betAmount || 0) as number,
-        holeCards: (p.holeCards || p.cards || []) as string[],
-        isFolded: (p.isFolded || p.is_folded || false) as boolean,
-        isAllIn: (p.isAllIn || p.is_all_in || false) as boolean,
-        isActive: (p.isActive !== false && p.status !== 'disconnected' && p.status !== 'folded' && p.status !== 'sitting_out') as boolean,
-        isDisconnected: (p.status === 'disconnected') as boolean,
-        isSittingOut: (p.isSittingOut || p.is_sitting_out || p.status === 'sitting_out') as boolean,
-        missedTurns: (p.missedTurns || p.missed_turns || 0) as number,
-        timeBankRemaining: (p.timeBank || 60) as number,
+        totalBetInHand: (((p as any).totalBetInHand ?? (p as any).total_bet_in_hand) ?? betAmount ?? 0) as number,
+        holeCards: (((p as any).holeCards || (p as any).cards) ?? []) as string[],
+        isFolded: (((p as any).isFolded ?? (p as any).is_folded) || false) as boolean,
+        isAllIn: (((p as any).isAllIn ?? (p as any).is_all_in) || false) as boolean,
+        isActive: ((p as any).isActive !== false && (p as any).status !== 'disconnected' && (p as any).status !== 'folded' && (p as any).status !== 'sitting_out') as boolean,
+        isDisconnected: ((p as any).status === 'disconnected') as boolean,
+        isSittingOut: (((p as any).isSittingOut ?? (p as any).is_sitting_out) || (p as any).status === 'sitting_out') as boolean,
+        missedTurns: (((p as any).missedTurns ?? (p as any).missed_turns) || 0) as number,
+        timeBankRemaining: (((p as any).timeBank ?? (p as any).time_bank_remaining) || 60) as number,
         // Showdown fields
-        handName: (p.handName || p.handRank || p.hand_rank) as string | undefined,
-        isWinner: Boolean(p.isWinner || (p.wonAmount as number) > 0 || (p.won_amount as number) > 0),
-        bestCards: (p.bestCards || []) as string[]
+        handName: ((p as any).handName || (p as any).handRank || (p as any).hand_rank) as string | undefined,
+        isWinner: Boolean((p as any).isWinner || ((p as any).wonAmount as number) > 0 || ((p as any).won_amount as number) > 0),
+        bestCards: (((p as any).bestCards ?? (p as any).best_cards) || []) as string[]
       };
     });
 
@@ -273,10 +283,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       .map((p) => p.seatNumber)
       .filter((n) => Number.isFinite(n)) as number[];
 
-    const seatCount = Math.max(
-      2,
-      Math.min(9, Math.max(dealerSeat, ...occupiedSeats, 0) + 1)
-    );
+    const seatCount = Math.max(2, Math.min(9, Math.max(dealerSeat, ...occupiedSeats, 0) + 1));
 
     const occupied = new Set<number>(occupiedSeats);
 
@@ -307,13 +314,40 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     const bigBlindSeat = Number(rawBigBlindSeat ?? computedBBSeat ?? 2);
 
     // Blinds from root state or nested config
-    const smallBlind = (state.smallBlind || (state as any).small_blind || config?.smallBlind || 10) as number;
-    const bigBlind = (state.bigBlind || (state as any).big_blind || config?.bigBlind || 20) as number;
-    const ante = (state.ante || (state as any).ante_amount || config?.ante || 0) as number;
-    const actionTimer = (state.actionTimer || (state as any).action_timer || config?.actionTimeSeconds || 30) as number;
+    const smallBlind = Number(
+      (state as any).smallBlind ?? (state as any).small_blind ?? (state as any).sb ?? config?.smallBlind ?? 10
+    );
+    const bigBlind = Number(
+      (state as any).bigBlind ?? (state as any).big_blind ?? (state as any).bb ?? config?.bigBlind ?? 20
+    );
+    const ante = Number((state as any).ante ?? (state as any).ante_amount ?? config?.ante ?? 0);
+    const actionTimer = Number((state as any).actionTimer ?? (state as any).action_timer ?? config?.actionTimeSeconds ?? 30);
+
+    // If server doesn't include blinds as per-player bets, show them client-side on preflop
+    const players = mappedPlayers.map((p) => {
+      if (normalizedPhase !== 'preflop') return p;
+      if (p.isFolded || p.isSittingOut || p.isDisconnected) return p;
+      if (p.betAmount > 0) return p;
+
+      if (p.seatNumber === smallBlindSeat && smallBlind > 0) {
+        return {
+          ...p,
+          betAmount: smallBlind,
+          totalBetInHand: Math.max(p.totalBetInHand ?? 0, smallBlind)
+        };
+      }
+      if (p.seatNumber === bigBlindSeat && bigBlind > 0) {
+        return {
+          ...p,
+          betAmount: bigBlind,
+          totalBetInHand: Math.max(p.totalBetInHand ?? 0, bigBlind)
+        };
+      }
+      return p;
+    });
 
     // Get handId from server state (may be handId, hand_id, currentHandId, etc.)
-    const handId = (state.handId || state.hand_id || state.currentHandId || state.current_hand_id) as string | undefined;
+    const handId = (state.handId || (state as any).hand_id || (state as any).currentHandId || (state as any).current_hand_id) as string | undefined;
 
     return {
       tableId: tblId,
@@ -326,14 +360,14 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       dealerSeat,
       smallBlindSeat,
       bigBlindSeat,
-      players: mappedPlayers,
-      minRaise: (state.minRaise || bigBlind * 2) as number,
+      players,
+      minRaise: ((state as any).minRaise || bigBlind * 2) as number,
       smallBlindAmount: smallBlind,
       bigBlindAmount: bigBlind,
       anteAmount: ante,
       actionTimer,
-      timeRemaining: state.timeRemaining as number | null | undefined,
-      playersNeeded: (state.playersNeeded || 0) as number
+      timeRemaining: (state as any).timeRemaining as number | null | undefined,
+      playersNeeded: ((state as any).playersNeeded || 0) as number
     };
   }, []);
 
