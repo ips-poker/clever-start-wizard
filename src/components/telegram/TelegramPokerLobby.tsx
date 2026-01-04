@@ -85,8 +85,8 @@ export function TelegramPokerLobby({
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [joiningId, setJoiningId] = useState<string | null>(null);
-  const [registeredTournaments, setRegisteredTournaments] = useState<Set<string>>(new Set());
-const [activeTableId, setActiveTableId] = useState<string | null>(null);
+  const [myTournamentStatusById, setMyTournamentStatusById] = useState<Record<string, string>>({});
+  const [activeTableId, setActiveTableId] = useState<string | null>(null);
   const [activeBuyIn, setActiveBuyIn] = useState<number>(10000);
   const [showDemoTable, setShowDemoTable] = useState(false);
 
@@ -106,7 +106,7 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
             *,
             online_poker_tournament_participants(count)
           `)
-          .in('status', ['registration', 'late_registration', 'running'])
+          .in('status', ['registration', 'late_registration', 'starting', 'running', 'break', 'hand_for_hand', 'final_table'])
           .order('registration_start', { ascending: true })
       ]);
 
@@ -133,17 +133,19 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
         setTournaments(tournamentsWithCount);
       }
 
-      // Получаем регистрации текущего игрока
+      // Получаем участия/регистрации текущего игрока
       if (playerId) {
-        const { data: regs } = await supabase
+        const { data: regs, error: regsError } = await supabase
           .from('online_poker_tournament_participants')
-          .select('tournament_id')
+          .select('tournament_id,status')
           .eq('player_id', playerId)
-          .eq('status', 'registered');
-        
-        if (regs) {
-          setRegisteredTournaments(new Set(regs.map(r => r.tournament_id)));
-        }
+          .in('status', ['registered', 'playing', 'eliminated']);
+
+        if (regsError) throw regsError;
+
+        const statusById: Record<string, string> = {};
+        for (const r of regs || []) statusById[r.tournament_id] = r.status;
+        setMyTournamentStatusById(statusById);
       }
     } catch (error) {
       console.error('Error fetching poker data:', error);
@@ -255,8 +257,13 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
       return;
     }
 
-    if (registeredTournaments.has(tournament.id)) {
-      toast.info('Вы уже зарегистрированы');
+    const existingStatus = myTournamentStatusById[tournament.id];
+    if (existingStatus) {
+      if (existingStatus === 'playing') {
+        onJoinTournament?.(tournament.id);
+        return;
+      }
+      toast.info(existingStatus === 'eliminated' ? 'Вы уже выбыли из турнира' : 'Вы уже зарегистрированы');
       return;
     }
 
@@ -279,7 +286,7 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
       if (error) throw error;
 
       toast.success(`Вы зарегистрировались на ${tournament.name}!`);
-      setRegisteredTournaments(prev => new Set([...prev, tournament.id]));
+      setMyTournamentStatusById((prev) => ({ ...prev, [tournament.id]: 'registered' }));
       onJoinTournament?.(tournament.id);
       fetchData();
     } catch (error: any) {
@@ -564,40 +571,61 @@ const [activeTableId, setActiveTableId] = useState<string | null>(null);
                       </div>
 
                       {/* Action Button */}
-                      <Button
-                        onClick={() => handleJoinTournament(tournament)}
-                        disabled={
-                          joiningId === tournament.id || 
-                          registeredTournaments.has(tournament.id) ||
-                          tournament.status === 'running' ||
-                          (tournament.participant_count || 0) >= tournament.max_players
-                        }
-                        className={`w-full ${
-                          registeredTournaments.has(tournament.id)
-                            ? 'bg-green-600 hover:bg-green-700'
-                            : 'bg-syndikate-orange hover:bg-syndikate-orange-glow'
-                        }`}
-                        size="sm"
-                      >
-                        {joiningId === tournament.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        ) : registeredTournaments.has(tournament.id) ? (
-                          <>
-                            <CircleDot className="h-4 w-4 mr-2" />
-                            Зарегистрирован
-                          </>
-                        ) : tournament.status === 'running' ? (
-                          <>
-                            <Play className="h-4 w-4 mr-2" />
-                            Турнир идёт
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            Регистрация
-                          </>
-                        )}
-                      </Button>
+                      {(() => {
+                        const myStatus = myTournamentStatusById[tournament.id];
+                        const isMine = !!myStatus;
+                        const canEnter =
+                          isMine &&
+                          myStatus !== 'eliminated' &&
+                          ['starting', 'running', 'break', 'hand_for_hand', 'final_table'].includes(tournament.status);
+                        const canRegister =
+                          !isMine &&
+                          ['registration', 'late_registration'].includes(tournament.status) &&
+                          playerBalance >= tournament.buy_in &&
+                          (tournament.participant_count || 0) < tournament.max_players;
+
+                        const disabled = joiningId === tournament.id || !(canEnter || canRegister);
+
+                        return (
+                          <Button
+                            onClick={() => {
+                              if (canEnter) onJoinTournament?.(tournament.id);
+                              else handleJoinTournament(tournament);
+                            }}
+                            disabled={disabled}
+                            className={`w-full ${
+                              isMine
+                                ? 'bg-green-600 hover:bg-green-700'
+                                : 'bg-syndikate-orange hover:bg-syndikate-orange-glow'
+                            }`}
+                            size="sm"
+                          >
+                            {joiningId === tournament.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : canEnter ? (
+                              <>
+                                <Play className="h-4 w-4 mr-2" />
+                                Войти в турнир
+                              </>
+                            ) : isMine ? (
+                              <>
+                                <CircleDot className="h-4 w-4 mr-2" />
+                                {myStatus === 'eliminated' ? 'Выбыли' : 'Зарегистрирован'}
+                              </>
+                            ) : ['starting', 'running', 'break', 'hand_for_hand', 'final_table'].includes(tournament.status) ? (
+                              <>
+                                <Play className="h-4 w-4 mr-2" />
+                                Турнир идёт
+                              </>
+                            ) : (
+                              <>
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                Регистрация
+                              </>
+                            )}
+                          </Button>
+                        );
+                      })()}
                     </CardContent>
                   </Card>
                 </motion.div>
