@@ -1163,6 +1163,60 @@ export class PokerTable {
   }
 
   /**
+   * Calculate human-like thinking time for bots
+   * Varies based on game phase, stack size, and decision complexity
+   */
+  private calculateBotThinkTime(player: Player): number {
+    if (!this.currentHand) return 1500;
+    
+    const phase = this.currentHand.phase;
+    const callAmount = Math.max(0, this.currentHand.currentBet - player.currentBet);
+    const potSize = this.currentHand.pot;
+    const stack = player.stack;
+    
+    // Base think time varies by phase (preflop is faster, river slower)
+    let baseTime: number;
+    switch (phase) {
+      case 'preflop':
+        baseTime = 1200 + Math.random() * 1500; // 1.2-2.7s
+        break;
+      case 'flop':
+        baseTime = 1500 + Math.random() * 2000; // 1.5-3.5s
+        break;
+      case 'turn':
+        baseTime = 1800 + Math.random() * 2500; // 1.8-4.3s
+        break;
+      case 'river':
+        baseTime = 2000 + Math.random() * 3000; // 2.0-5.0s
+        break;
+      default:
+        baseTime = 1500;
+    }
+    
+    // Add time for big decisions (facing large bets)
+    if (callAmount > 0) {
+      const potOddsPressure = callAmount / Math.max(potSize, 1);
+      if (potOddsPressure > 0.5) {
+        baseTime += 800 + Math.random() * 1200; // Big decision
+      } else if (potOddsPressure > 0.25) {
+        baseTime += 400 + Math.random() * 800; // Medium decision
+      }
+    }
+    
+    // All-in decisions take longer
+    if (callAmount >= stack * 0.5) {
+      baseTime += 1000 + Math.random() * 1500;
+    }
+    
+    // Add random personality variation per bot
+    const personalityFactor = 0.7 + (getBotAggression(player.name) / 100) * 0.6; // 0.7-1.3x
+    baseTime *= personalityFactor;
+    
+    // Clamp between 1-6 seconds
+    return Math.min(6000, Math.max(1000, Math.floor(baseTime)));
+  }
+
+  /**
    * Execute professional bot AI decision
    */
   private async executeBotDecision(player: Player): Promise<void> {
@@ -1175,7 +1229,7 @@ export class PokerTable {
       p => !p.isFolded && p.status === 'active'
     ).length;
 
-    // Make AI decision
+    // Make AI decision - pass bot name for personality-based decisions
     const decision = makeBotDecision(
       player.holeCards,
       this.currentHand.communityCards,
@@ -1189,7 +1243,8 @@ export class PokerTable {
       this.config.maxPlayers,
       playersInHand,
       this.config.bigBlind,
-      aggression
+      aggression,
+      player.name // Pass bot name for personality
     );
 
     logger.info('Bot AI decision', {
@@ -1267,9 +1322,13 @@ export class PokerTable {
 
     const isBot = this.isBotPlayer(player);
 
-    const delayMs = isBot
-      ? 500 + Math.floor(Math.random() * 900) // bots act fast so table actually plays
-      : this.config.actionTimeSeconds * 1000;
+    // Calculate bot think time - varies by situation to seem more human
+    let delayMs: number;
+    if (isBot) {
+      delayMs = this.calculateBotThinkTime(player);
+    } else {
+      delayMs = this.config.actionTimeSeconds * 1000;
+    }
 
     if (isBot) {
       logger.info('Bot turn scheduled', {
