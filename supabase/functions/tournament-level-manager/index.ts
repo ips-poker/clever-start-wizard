@@ -240,50 +240,64 @@ Deno.serve(async (req) => {
 
 /**
  * Проверяет и балансирует столы турнира
+ * Всегда вызывает RPC функцию consolidate_tournament_tables которая сама решает нужна ли консолидация
  */
 async function checkAndBalanceTables(supabase: any, tournamentId: string): Promise<void> {
   try {
-    // Получаем все активные столы турнира с количеством игроков
+    // Получаем players_per_table из турнира
+    const { data: tournament, error: tournamentError } = await supabase
+      .from('online_poker_tournaments')
+      .select('players_per_table')
+      .eq('id', tournamentId)
+      .single();
+
+    if (tournamentError) {
+      console.error(`Error fetching tournament ${tournamentId}:`, tournamentError);
+      return;
+    }
+
+    const playersPerTable = tournament?.players_per_table || 6;
+
+    // Получаем все активные столы турнира (waiting и playing)
     const { data: tables, error } = await supabase
       .from('poker_tables')
-      .select(`
-        id,
-        max_players,
-        poker_table_players!inner(player_id, seat_number, stack)
-      `)
+      .select('id, status')
+      .eq('tournament_id', tournamentId)
+      .in('status', ['waiting', 'playing']);
+
+    if (error) {
+      console.error(`Error fetching tables for tournament ${tournamentId}:`, error);
+      return;
+    }
+
+    // Считаем активных игроков в турнире
+    const { count: totalPlayers, error: countError } = await supabase
+      .from('online_poker_tournament_participants')
+      .select('id', { count: 'exact', head: true })
       .eq('tournament_id', tournamentId)
       .eq('status', 'playing');
 
-    if (error || !tables || tables.length <= 1) return;
+    if (countError) {
+      console.error(`Error counting players for tournament ${tournamentId}:`, countError);
+      return;
+    }
 
-    // Считаем игроков на каждом столе
-    const tableStats = tables.map((t: any) => ({
-      tableId: t.id,
-      playerCount: t.poker_table_players?.length || 0,
-      maxPlayers: t.max_players,
-      players: t.poker_table_players || []
-    }));
+    const activeTables = tables?.length || 0;
+    const minTablesNeeded = Math.ceil((totalPlayers || 0) / playersPerTable);
 
-    // Проверяем нужна ли консолидация
-    const totalPlayers = tableStats.reduce((sum: number, t: any) => sum + t.playerCount, 0);
-    const avgPlayers = totalPlayers / tableStats.length;
-    const maxPlayersPerTable = tableStats[0]?.maxPlayers || 9;
+    console.log(`Tournament ${tournamentId}: ${totalPlayers} players, ${activeTables} tables, need ${minTablesNeeded} tables (max ${playersPerTable}/table)`);
 
-    // Если можно уместить всех на меньшее количество столов
-    const minTablesNeeded = Math.ceil(totalPlayers / maxPlayersPerTable);
-    
-    if (tableStats.length > minTablesNeeded && minTablesNeeded > 0) {
-      console.log(`Tournament ${tournamentId}: Need to consolidate from ${tableStats.length} to ${minTablesNeeded} tables`);
-      // Вызываем функцию консолидации
-      await supabase.rpc('consolidate_tournament_tables', { p_tournament_id: tournamentId });
-    } else {
-      // Просто балансируем существующие столы
-      const maxDiff = Math.max(...tableStats.map((t: any) => t.playerCount)) - 
-                      Math.min(...tableStats.map((t: any) => t.playerCount));
+    // Всегда вызываем консолидацию - RPC функция сама решит что делать
+    if (activeTables > minTablesNeeded || activeTables > 1) {
+      console.log(`Tournament ${tournamentId}: Running consolidate_tournament_tables`);
+      const { data: result, error: rpcError } = await supabase.rpc('consolidate_tournament_tables', { 
+        p_tournament_id: tournamentId 
+      });
       
-      if (maxDiff > 1) {
-        console.log(`Tournament ${tournamentId}: Balancing tables (diff: ${maxDiff})`);
-        await supabase.rpc('balance_tournament_tables', { p_tournament_id: tournamentId });
+      if (rpcError) {
+        console.error(`Error consolidating tables for tournament ${tournamentId}:`, rpcError);
+      } else {
+        console.log(`Tournament ${tournamentId}: Consolidation result:`, JSON.stringify(result));
       }
     }
   } catch (err) {
