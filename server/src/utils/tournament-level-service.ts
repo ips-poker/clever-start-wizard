@@ -167,9 +167,10 @@ class TournamentLevelService {
       .from('online_poker_tournaments')
       .update({
         current_level: currentLevel + 1,
-        small_blind: isBreak ? tournament.small_blind : nextLevel.small_blind,
-        big_blind: isBreak ? tournament.big_blind : nextLevel.big_blind,
-        ante: isBreak ? tournament.ante : nextLevel.ante,
+        // IMPORTANT: for break levels we still write the "break" blinds (usually 0/0)
+        small_blind: nextLevel.small_blind,
+        big_blind: nextLevel.big_blind,
+        ante: nextLevel.ante,
         level_end_at: newEndTime.toISOString(),
         status: newStatus
       })
@@ -180,20 +181,18 @@ class TournamentLevelService {
       return;
     }
 
-    // Update all tournament tables with new blinds (if not break)
-    if (!isBreak) {
-      const { error: tablesError } = await this.supabase
-        .from('poker_tables')
-        .update({
-          small_blind: nextLevel.small_blind,
-          big_blind: nextLevel.big_blind,
-          ante: nextLevel.ante || 0
-        })
-        .eq('tournament_id', tournament.id);
+    // Keep tables in sync with tournament level (including break levels)
+    const { error: tablesError } = await this.supabase
+      .from('poker_tables')
+      .update({
+        small_blind: nextLevel.small_blind,
+        big_blind: nextLevel.big_blind,
+        ante: nextLevel.ante || 0
+      })
+      .eq('tournament_id', tournament.id);
 
-      if (tablesError) {
-        logger.error(`[TournamentLevelService] Error updating tables for ${tournament.id}`, { error: tablesError.message });
-      }
+    if (tablesError) {
+      logger.error(`[TournamentLevelService] Error updating tables for ${tournament.id}`, { error: tablesError.message });
     }
 
     // Trigger table balancing
@@ -206,8 +205,8 @@ class TournamentLevelService {
     logger.info(`[TournamentLevelService] ${tournament.name}: ${action}`, {
       previousLevel: currentLevel,
       newLevel: currentLevel + 1,
-      smallBlind: isBreak ? tournament.small_blind : nextLevel.small_blind,
-      bigBlind: isBreak ? tournament.big_blind : nextLevel.big_blind,
+      smallBlind: nextLevel.small_blind,
+      bigBlind: nextLevel.big_blind,
       isBreak,
       duration
     });

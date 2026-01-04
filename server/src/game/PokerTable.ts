@@ -1428,39 +1428,61 @@ export class PokerTable {
   private async checkTournamentBreakAndStart(): Promise<void> {
     try {
       // Check if this is a tournament table
-      const { data: tableData } = await this.supabase
+      const { data: tableData, error: tableError } = await this.supabase
         .from('poker_tables')
         .select('tournament_id, table_type')
         .eq('id', this.id)
         .single();
-      
+
+      if (tableError) {
+        throw tableError;
+      }
+
       if (tableData?.table_type === 'tournament' && tableData?.tournament_id) {
-        // Check tournament status
-        const { data: tournament } = await this.supabase
+        // Check tournament status + current level
+        const { data: tournament, error: tournamentError } = await this.supabase
           .from('online_poker_tournaments')
-          .select('status, name')
+          .select('status, name, current_level')
           .eq('id', tableData.tournament_id)
           .single();
-        
-        if (tournament?.status === 'break') {
+
+        if (tournamentError) {
+          throw tournamentError;
+        }
+
+        // Extra safety: treat current level marked as break as a break (even if status is wrong)
+        let isBreakLevel = false;
+        if (tournament?.current_level) {
+          const { data: levelRow } = await this.supabase
+            .from('online_poker_tournament_levels')
+            .select('is_break')
+            .eq('tournament_id', tableData.tournament_id)
+            .eq('level', tournament.current_level)
+            .single();
+          isBreakLevel = levelRow?.is_break === true;
+        }
+
+        const isTournamentBreak = tournament?.status === 'break' || isBreakLevel;
+
+        if (isTournamentBreak) {
           logger.info('checkStartHand: tournament is on BREAK - delaying hand start', {
             tableId: this.id,
             tournamentId: tableData.tournament_id,
-            tournamentName: tournament.name
+            tournamentName: tournament?.name
           });
-          
+
           // Emit break event to notify players
           this.emit({
             type: 'tournament_break',
             tableId: this.id,
             data: {
               tournamentId: tableData.tournament_id,
-              tournamentName: tournament.name,
+              tournamentName: tournament?.name,
               message: 'Турнир на перерыве. Раздачи возобновятся после перерыва.'
             },
             timestamp: Date.now()
           });
-          
+
           // Retry after 10 seconds to check if break ended
           setTimeout(() => {
             if (!this.currentHand) {
@@ -1470,16 +1492,20 @@ export class PokerTable {
           return;
         }
       }
-      
+
       // Not a tournament or not on break - start hand
-      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2025-12-29-fast-hands';
+      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-04-break-fix';
       logger.info('checkStartHand: starting hand immediately', { build: BUILD_TAG });
-      
+
       await this.startHand();
     } catch (err) {
-      logger.error('Error checking tournament break status', { tableId: this.id, error: String(err) });
-      // On error, try to start hand anyway
-      await this.startHand();
+      logger.error('Error checking tournament break status - delaying hand start', { tableId: this.id, error: String(err) });
+      // Safer behavior: if we can't verify tournament state, do NOT start a new hand.
+      setTimeout(() => {
+        if (!this.currentHand) {
+          this.checkStartHand();
+        }
+      }, 10000);
     }
   }
   
