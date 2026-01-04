@@ -2014,8 +2014,8 @@ export class PokerTable {
       isHandActive: false
     });
     
-    // Check for next hand after showdown display time (1 second for fast gameplay)
-    setTimeout(() => this.checkStartHand(), 1000);
+    // Check for next hand after showdown display time (3 seconds to see winning hand)
+    setTimeout(() => this.checkStartHand(), 3000);
   }
   
   /**
