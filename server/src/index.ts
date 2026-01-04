@@ -42,6 +42,7 @@ import { tournamentLevelService } from './utils/tournament-level-service.js';
 import { tournamentAutoStartService } from './utils/tournament-auto-start-service.js';
 import { pkoBountyService } from './utils/pko-bounty-service.js';
 import { satelliteTournamentService } from './utils/satellite-tournament-service.js';
+import { rpsPrizeSystem } from './utils/rps-prize-system.js';
 
 // Process-level error handlers
 process.on('uncaughtException', (error) => {
@@ -103,6 +104,9 @@ pkoBountyService.setSupabase(supabase);
 
 // Initialize satellite tournament service
 satelliteTournamentService.setSupabase(supabase);
+
+// Initialize RPS prize system
+rpsPrizeSystem.setSupabase(supabase);
 
 // Setup API routes
 setupRoutes(app, gameManager, supabase);
@@ -385,6 +389,7 @@ server.listen(config.port, () => {
   logger.info(`🚀 Tournament auto-start service running (10s check interval)`);
   logger.info(`💰 PKO Bounty service ready`);
   logger.info(`🎫 Satellite tournament service ready`);
+  logger.info(`🏆 RPS Prize system ready (auto RPS payouts)`);
   logger.info(`✅ Server ready for 300+ tables, 2700+ players, 5000+ spectators`);
   
   // Send PM2 ready signal
@@ -393,4 +398,4 @@ server.listen(config.port, () => {
   }
 });
 
-export { app, server, wss, tournamentManager, prizePayoutSystem, handForHandManager, spectatorManager, actionTimeoutGuard, handHistoryService, tournamentLevelService, tournamentAutoStartService, pkoBountyService, satelliteTournamentService };
+export { app, server, wss, tournamentManager, prizePayoutSystem, handForHandManager, spectatorManager, actionTimeoutGuard, handHistoryService, tournamentLevelService, tournamentAutoStartService, pkoBountyService, satelliteTournamentService, rpsPrizeSystem };

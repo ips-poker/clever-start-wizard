@@ -4,18 +4,21 @@
  * - Bounty calculation and distribution
  * - Knockout tracking
  * - Real-time bounty updates
- * - Diamond wallet integration
+ * - RPS points integration (not diamonds)
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from './logger.js';
 
+// RPS conversion: 1000₽ (1000 diamonds) = 100 RPS
+const RPS_CONVERSION_RATE = 10;
+
 export interface BountyInfo {
   playerId: string;
   playerName: string;
-  currentBounty: number;
-  startingBounty: number;
-  collectedBounties: number;
+  currentBounty: number; // In RPS points
+  startingBounty: number; // In RPS points
+  collectedBounties: number; // In RPS points
   knockouts: number;
   isEliminated: boolean;
 }
@@ -24,9 +27,9 @@ export interface KnockoutEvent {
   tournamentId: string;
   eliminatedPlayerId: string;
   eliminatedByPlayerId: string;
-  bountyAmount: number;
-  collectedAmount: number; // 50% of bounty
-  addedToBounty: number; // 50% of bounty added to winner's bounty
+  bountyAmount: number; // In RPS points
+  collectedRPS: number; // 50% of bounty awarded immediately
+  addedToBountyRPS: number; // 50% added to winner's bounty
   timestamp: Date;
 }
 
@@ -62,8 +65,16 @@ class PKOBountyService {
   }
 
   /**
-   * Calculate starting bounty for a tournament
-   * Standard PKO: 50% of buy-in goes to bounty
+   * Calculate starting bounty for a tournament (in RPS points)
+   * Standard PKO: 50% of buy-in goes to bounty, converted to RPS
+   */
+  calculateStartingBountyRPS(buyIn: number, bountyPercentage: number = 50): number {
+    const bountyDiamonds = Math.floor(buyIn * (bountyPercentage / 100));
+    return Math.floor(bountyDiamonds / RPS_CONVERSION_RATE);
+  }
+
+  /**
+   * Legacy method for diamond bounty (deprecated, use RPS)
    */
   calculateStartingBounty(buyIn: number, bountyPercentage: number = 50): number {
     return Math.floor(buyIn * (bountyPercentage / 100));
@@ -132,7 +143,7 @@ class PKOBountyService {
   }
 
   /**
-   * Process knockout event
+   * Process knockout event - awards RPS points
    * Called when a player is eliminated
    */
   async processKnockout(
@@ -161,108 +172,141 @@ class PKOBountyService {
       return null;
     }
 
-    const startingBounty = this.calculateStartingBounty(tournament.buy_in);
+    // Calculate bounty in RPS
+    const startingBountyRPS = this.calculateStartingBountyRPS(tournament.buy_in);
 
-    // Get eliminated player's current bounty (starting + accumulated)
-    const { data: eliminatedPlayer } = await this.supabase
-      .from('online_poker_tournament_participants')
-      .select('player_id')
-      .eq('tournament_id', tournamentId)
-      .eq('player_id', eliminatedPlayerId)
-      .single();
-
-    if (!eliminatedPlayer) {
-      logger.error(`[PKOBountyService] Eliminated player not found: ${eliminatedPlayerId}`);
-      return null;
-    }
-
-    // Count how many players the eliminated player has knocked out
+    // Get eliminated player's knockouts to calculate accumulated bounty
     const { count: eliminatedKnockouts } = await this.supabase
       .from('online_poker_tournament_participants')
       .select('*', { count: 'exact', head: true })
       .eq('tournament_id', tournamentId)
       .eq('eliminated_by', eliminatedPlayerId);
 
-    const accumulatedBounty = (eliminatedKnockouts || 0) * startingBounty * 0.5;
-    const totalBounty = startingBounty + accumulatedBounty;
+    const accumulatedBountyRPS = (eliminatedKnockouts || 0) * Math.floor(startingBountyRPS * 0.5);
+    const totalBountyRPS = startingBountyRPS + accumulatedBountyRPS;
 
-    // Split: 50% to eliminator, 50% added to eliminator's bounty
-    const collectedAmount = Math.floor(totalBounty * 0.5);
-    const addedToBounty = Math.floor(totalBounty * 0.5);
+    // Split: 50% to eliminator immediately as RPS, 50% added to eliminator's bounty value
+    const collectedRPS = Math.floor(totalBountyRPS * 0.5);
+    const addedToBountyRPS = Math.floor(totalBountyRPS * 0.5);
 
     const knockoutEvent: KnockoutEvent = {
       tournamentId,
       eliminatedPlayerId,
       eliminatedByPlayerId: eliminatorPlayerId,
-      bountyAmount: totalBounty,
-      collectedAmount,
-      addedToBounty,
+      bountyAmount: totalBountyRPS,
+      collectedRPS,
+      addedToBountyRPS,
       timestamp: new Date()
     };
+
+    // Award RPS to eliminator immediately
+    await this.awardBountyRPS(eliminatorPlayerId, collectedRPS, tournamentId);
+
+    // Update participant stats
+    await this.updateParticipantBountyStats(tournamentId, eliminatorPlayerId, collectedRPS);
 
     logger.info(`[PKOBountyService] Knockout processed in ${tournament.name}`, {
       eliminator: eliminatorPlayerId,
       eliminated: eliminatedPlayerId,
-      bounty: totalBounty,
-      collected: collectedAmount
+      bountyRPS: totalBountyRPS,
+      collectedRPS
     });
-
-    // Credit diamonds to eliminator (if using diamond economy)
-    await this.creditBountyToPlayer(eliminatorPlayerId, collectedAmount, tournamentId);
 
     return knockoutEvent;
   }
 
   /**
-   * Credit bounty diamonds to player
+   * Award bounty RPS to player's elo_rating
+   */
+  private async awardBountyRPS(
+    playerId: string,
+    rpsPoints: number,
+    tournamentId: string
+  ): Promise<void> {
+    if (!this.supabase || rpsPoints <= 0) return;
+
+    try {
+      // Get player's current rating
+      const { data: player } = await this.supabase
+        .from('players')
+        .select('id, elo_rating, name')
+        .eq('id', playerId)
+        .single();
+
+      if (!player) {
+        logger.error(`[PKOBountyService] Player not found: ${playerId}`);
+        return;
+      }
+
+      // Add RPS to elo_rating
+      const newRating = (player.elo_rating || 1000) + rpsPoints;
+
+      await this.supabase
+        .from('players')
+        .update({ 
+          elo_rating: newRating,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', playerId);
+
+      logger.info(`[PKOBountyService] Awarded ${rpsPoints} RPS bounty to ${player.name}`, {
+        playerId,
+        oldRating: player.elo_rating,
+        newRating,
+        tournamentId
+      });
+
+    } catch (err) {
+      logger.error(`[PKOBountyService] Error awarding bounty RPS`, { error: String(err), playerId });
+    }
+  }
+
+  /**
+   * Update participant bounty stats in DB
+   */
+  private async updateParticipantBountyStats(
+    tournamentId: string,
+    eliminatorId: string,
+    collectedRPS: number
+  ): Promise<void> {
+    if (!this.supabase) return;
+
+    try {
+      const { data: participant } = await this.supabase
+        .from('online_poker_tournament_participants')
+        .select('knockouts_count, bounty_collected, bounty_value')
+        .eq('tournament_id', tournamentId)
+        .eq('player_id', eliminatorId)
+        .single();
+
+      if (participant) {
+        await this.supabase
+          .from('online_poker_tournament_participants')
+          .update({
+            knockouts_count: (participant.knockouts_count || 0) + 1,
+            bounty_collected: (participant.bounty_collected || 0) + collectedRPS,
+            bounty_value: (participant.bounty_value || 0) + Math.floor(collectedRPS) // 50% added to own bounty
+          })
+          .eq('tournament_id', tournamentId)
+          .eq('player_id', eliminatorId);
+      }
+    } catch (err) {
+      logger.error(`[PKOBountyService] Error updating participant stats`, { error: String(err) });
+    }
+  }
+
+  /**
+   * @deprecated Use awardBountyRPS instead - diamonds are no longer used for bounties
+   * Credit bounty diamonds to player (legacy, not called)
    */
   private async creditBountyToPlayer(
     playerId: string,
     amount: number,
     tournamentId: string
   ): Promise<void> {
-    if (!this.supabase || amount <= 0) return;
-
-    try {
-      // Check if player has a diamond wallet
-      const { data: wallet } = await this.supabase
-        .from('diamond_wallets')
-        .select('id, balance')
-        .eq('player_id', playerId)
-        .single();
-
-      if (wallet) {
-        // Update wallet balance
-        const newBalance = wallet.balance + amount;
-
-        await this.supabase
-          .from('diamond_wallets')
-          .update({
-            balance: newBalance,
-            total_won: wallet.balance + amount,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', wallet.id);
-
-        // Create transaction record
-        await this.supabase
-          .from('diamond_transactions')
-          .insert({
-            wallet_id: wallet.id,
-            player_id: playerId,
-            amount,
-            balance_before: wallet.balance,
-            balance_after: newBalance,
-            transaction_type: 'bounty_win',
-            description: `PKO Bounty - Tournament knockout`,
-            reference_id: tournamentId
-          });
-
-        logger.info(`[PKOBountyService] Credited ${amount} diamonds to player ${playerId}`);
-      }
-    } catch (err) {
-      logger.error(`[PKOBountyService] Error crediting bounty`, { error: String(err), playerId, amount });
-    }
+    // Deprecated - bounties now paid in RPS points to elo_rating
+    // This method exists only for backwards compatibility
+    logger.warn(`[PKOBountyService] creditBountyToPlayer is deprecated, use RPS system`);
   }
 
   /**
@@ -282,15 +326,15 @@ class PKOBountyService {
   }
 
   /**
-   * Calculate total bounty pool for tournament
+   * Calculate total bounty pool for tournament (in RPS)
    */
-  async getTotalBountyPool(tournamentId: string): Promise<{
-    totalPool: number;
-    collectedBounties: number;
-    remainingBounties: number;
+  async getTotalBountyPoolRPS(tournamentId: string): Promise<{
+    totalPoolRPS: number;
+    collectedBountiesRPS: number;
+    remainingBountiesRPS: number;
   }> {
     if (!this.supabase) {
-      return { totalPool: 0, collectedBounties: 0, remainingBounties: 0 };
+      return { totalPoolRPS: 0, collectedBountiesRPS: 0, remainingBountiesRPS: 0 };
     }
 
     const { data: tournament } = await this.supabase
@@ -300,7 +344,7 @@ class PKOBountyService {
       .single();
 
     if (!tournament) {
-      return { totalPool: 0, collectedBounties: 0, remainingBounties: 0 };
+      return { totalPoolRPS: 0, collectedBountiesRPS: 0, remainingBountiesRPS: 0 };
     }
 
     // Count participants
@@ -315,20 +359,36 @@ class PKOBountyService {
       .eq('tournament_id', tournamentId)
       .eq('status', 'eliminated');
 
-    const startingBounty = this.calculateStartingBounty(tournament.buy_in);
-    const totalPool = (totalPlayers || 0) * startingBounty;
-    const collectedBounties = (eliminatedPlayers || 0) * startingBounty * 0.5;
-    const remainingBounties = totalPool - collectedBounties;
+    const startingBountyRPS = this.calculateStartingBountyRPS(tournament.buy_in);
+    const totalPoolRPS = (totalPlayers || 0) * startingBountyRPS;
+    const collectedBountiesRPS = (eliminatedPlayers || 0) * Math.floor(startingBountyRPS * 0.5);
+    const remainingBountiesRPS = totalPoolRPS - collectedBountiesRPS;
 
     return {
-      totalPool,
-      collectedBounties,
-      remainingBounties
+      totalPoolRPS,
+      collectedBountiesRPS,
+      remainingBountiesRPS
     };
   }
 
   /**
-   * Finalize PKO tournament - distribute remaining bounties
+   * Legacy method for diamond pool (deprecated)
+   */
+  async getTotalBountyPool(tournamentId: string): Promise<{
+    totalPool: number;
+    collectedBounties: number;
+    remainingBounties: number;
+  }> {
+    const rpsPool = await this.getTotalBountyPoolRPS(tournamentId);
+    return {
+      totalPool: rpsPool.totalPoolRPS,
+      collectedBounties: rpsPool.collectedBountiesRPS,
+      remainingBounties: rpsPool.remainingBountiesRPS
+    };
+  }
+
+  /**
+   * Finalize PKO tournament - distribute winner's remaining bounty as RPS
    */
   async finalizeTournament(tournamentId: string): Promise<void> {
     if (!this.supabase) return;
@@ -336,20 +396,31 @@ class PKOBountyService {
     const isPKO = await this.isPKOTournament(tournamentId);
     if (!isPKO) return;
 
-    // Get winner (last remaining player or finish_position = 1)
+    // Get winner (finish_position = 1)
     const { data: winner } = await this.supabase
       .from('online_poker_tournament_participants')
-      .select('player_id')
+      .select('player_id, bounty_value')
       .eq('tournament_id', tournamentId)
       .eq('finish_position', 1)
       .single();
 
     if (winner) {
-      // Winner gets their own remaining bounty
-      const bounty = await this.getPlayerBounty(tournamentId, winner.player_id);
-      if (bounty) {
-        await this.creditBountyToPlayer(winner.player_id, bounty.currentBounty, tournamentId);
-        logger.info(`[PKOBountyService] Winner ${winner.player_id} received own bounty: ${bounty.currentBounty}`);
+      // Winner gets their own remaining bounty as RPS
+      const { data: tournament } = await this.supabase
+        .from('online_poker_tournaments')
+        .select('buy_in')
+        .eq('id', tournamentId)
+        .single();
+
+      if (tournament) {
+        const startingBountyRPS = this.calculateStartingBountyRPS(tournament.buy_in);
+        const accumulatedBountyRPS = winner.bounty_value || 0;
+        const totalRemainingBounty = startingBountyRPS + accumulatedBountyRPS;
+
+        if (totalRemainingBounty > 0) {
+          await this.awardBountyRPS(winner.player_id, totalRemainingBounty, tournamentId);
+          logger.info(`[PKOBountyService] Winner ${winner.player_id} received remaining bounty: ${totalRemainingBounty} RPS`);
+        }
       }
     }
   }
