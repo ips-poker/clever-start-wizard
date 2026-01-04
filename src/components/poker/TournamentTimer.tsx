@@ -40,8 +40,28 @@ export const TournamentTimer = ({
   const [isMuted, setIsMuted] = useState(false);
   const [tournament, setTournament] = useState<any>(null);
   const [lastLevelEndAt, setLastLevelEndAt] = useState<string | null>(null);
+  const [serverTimeOffset, setServerTimeOffset] = useState(0); // Offset between client and server time
   const audioContextRef = useRef<AudioContext | null>(null);
   const lastAnnouncedTimeRef = useRef<number | null>(null);
+
+  // Sync server time once on mount to handle client clock drift
+  useEffect(() => {
+    const syncServerTime = async () => {
+      try {
+        const clientTime = Date.now();
+        const { data } = await supabase.rpc('get_server_time');
+        if (data) {
+          const serverTime = new Date(data).getTime();
+          const offset = serverTime - clientTime;
+          setServerTimeOffset(offset);
+          console.log(`[TournamentTimer] Server time offset: ${offset}ms`);
+        }
+      } catch (err) {
+        console.warn('[TournamentTimer] Failed to sync server time:', err);
+      }
+    };
+    syncServerTime();
+  }, []);
 
   // Load tournament and levels
   useEffect(() => {
@@ -127,6 +147,7 @@ export const TournamentTimer = ({
   }, [tournamentId, currentLevel, levels, isMuted, lastLevelEndAt, onLevelChange]);
 
   // Calculate time remaining from level_end_at (single source of truth)
+  // Uses serverTimeOffset to correct for client clock drift
   useEffect(() => {
     if (!lastLevelEndAt || isPaused || tournament?.status !== 'running') {
       setTimeRemaining(null);
@@ -135,8 +156,9 @@ export const TournamentTimer = ({
 
     const updateTimer = () => {
       const endTime = new Date(lastLevelEndAt).getTime();
-      const now = Date.now();
-      const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
+      // Use corrected time (client time + server offset)
+      const correctedNow = Date.now() + serverTimeOffset;
+      const remaining = Math.max(0, Math.floor((endTime - correctedNow) / 1000));
       setTimeRemaining(remaining);
     };
 
@@ -144,7 +166,7 @@ export const TournamentTimer = ({
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [lastLevelEndAt, isPaused, tournament?.status]);
+  }, [lastLevelEndAt, isPaused, tournament?.status, serverTimeOffset]);
 
   // Sound notifications based on timeRemaining
   useEffect(() => {
