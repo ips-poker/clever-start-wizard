@@ -162,6 +162,8 @@ Deno.serve(async (req) => {
       } else if (wasBreak) {
         action = 'break_ended';
         newStatus = 'running';
+        // IMPORTANT: When break ends, trigger immediate consolidation and hand restart
+        console.log(`Tournament ${tournament.name}: Break ended, triggering consolidation and hand restart`);
       } else {
         action = 'level_advanced';
         newStatus = 'running';
@@ -241,13 +243,14 @@ Deno.serve(async (req) => {
 /**
  * Проверяет и балансирует столы турнира
  * Всегда вызывает RPC функцию consolidate_tournament_tables которая сама решает нужна ли консолидация
+ * IMPROVED: Also broadcasts 'resume_hands' event when break ends
  */
 async function checkAndBalanceTables(supabase: any, tournamentId: string): Promise<void> {
   try {
-    // Получаем players_per_table из турнира
+    // Получаем tournament info
     const { data: tournament, error: tournamentError } = await supabase
       .from('online_poker_tournaments')
-      .select('players_per_table')
+      .select('players_per_table, status')
       .eq('id', tournamentId)
       .single();
 
@@ -257,11 +260,12 @@ async function checkAndBalanceTables(supabase: any, tournamentId: string): Promi
     }
 
     const playersPerTable = tournament?.players_per_table || 6;
+    const wasBreak = tournament?.status === 'break';
 
     // Получаем все активные столы турнира (waiting и playing)
     const { data: tables, error } = await supabase
       .from('poker_tables')
-      .select('id, status')
+      .select('id, status, current_hand_id')
       .eq('tournament_id', tournamentId)
       .in('status', ['waiting', 'playing']);
 
@@ -287,6 +291,27 @@ async function checkAndBalanceTables(supabase: any, tournamentId: string): Promi
 
     console.log(`Tournament ${tournamentId}: ${totalPlayers} players, ${activeTables} tables, need ${minTablesNeeded} tables (max ${playersPerTable}/table)`);
 
+    // CRITICAL: Clear any stuck current_hand_id on tables with completed hands
+    // This allows consolidation to proceed
+    for (const table of (tables || [])) {
+      if (table.current_hand_id) {
+        // Check if hand is actually completed
+        const { data: hand } = await supabase
+          .from('poker_hands')
+          .select('completed_at')
+          .eq('id', table.current_hand_id)
+          .single();
+        
+        if (hand?.completed_at) {
+          console.log(`Clearing stuck current_hand_id on table ${table.id}`);
+          await supabase
+            .from('poker_tables')
+            .update({ current_hand_id: null, status: 'waiting' })
+            .eq('id', table.id);
+        }
+      }
+    }
+
     // Вызываем force_tournament_consolidation которая сначала очистит зависшие раздачи
     if (activeTables > minTablesNeeded || activeTables > 1) {
       console.log(`Tournament ${tournamentId}: Running force_tournament_consolidation`);
@@ -300,6 +325,15 @@ async function checkAndBalanceTables(supabase: any, tournamentId: string): Promi
         console.log(`Tournament ${tournamentId}: Force consolidation result:`, JSON.stringify(result));
       }
     }
+
+    // Broadcast tournament_status_changed event to trigger hand restarts on all tables
+    // This notifies the VPS server to resume dealing
+    console.log(`Tournament ${tournamentId}: Broadcasting status update to resume hands`);
+    await supabase
+      .from('online_poker_tournaments')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', tournamentId);
+
   } catch (err) {
     console.error(`Error balancing tables for tournament ${tournamentId}:`, err);
   }

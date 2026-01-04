@@ -192,8 +192,10 @@ export const TournamentTimer = ({
 
   // Calculate time remaining from level_end_at (single source of truth)
   // Uses serverTimeOffset to correct for client clock drift
+  // FIXED: Also calculate during 'break' status for proper countdown
   useEffect(() => {
-    if (!lastLevelEndAt || isPaused || tournament?.status !== 'running') {
+    const activeStatuses = ['running', 'break', 'in_progress', 'active'];
+    if (!lastLevelEndAt || isPaused || !activeStatuses.includes(tournament?.status || '')) {
       setTimeRemaining(null);
       return;
     }

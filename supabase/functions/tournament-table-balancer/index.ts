@@ -63,10 +63,11 @@ Deno.serve(async (req) => {
     }
 
     // Get tournaments to process
+    // IMPROVED: Also process 'break' status for table consolidation during breaks
     let tournamentsQuery = supabase
       .from('online_poker_tournaments')
       .select('id, name, players_per_table, status')
-      .in('status', ['running', 'final_table']);
+      .in('status', ['running', 'final_table', 'break']);
     
     if (specificTournamentId) {
       tournamentsQuery = tournamentsQuery.eq('id', specificTournamentId);
@@ -134,12 +135,14 @@ Deno.serve(async (req) => {
         const idealTables = Math.ceil(totalPlayers / playersPerTable);
         
         // Final table: all remaining players fit on one table
-        if (activeTables === 1 && totalPlayers <= playersPerTable && tournament.status === 'running') {
+        // IMPROVED: Allow transition during 'break' status as well
+        if (activeTables === 1 && totalPlayers <= playersPerTable && 
+            (tournament.status === 'running' || tournament.status === 'break')) {
           await supabase
             .from('online_poker_tournaments')
             .update({ status: 'final_table' })
             .eq('id', tournament.id)
-            .eq('status', 'running');
+            .in('status', ['running', 'break']);
           
           console.log(`Tournament ${tournament.name} is now at FINAL TABLE (${totalPlayers} players)`);
         }
