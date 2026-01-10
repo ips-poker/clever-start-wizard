@@ -48,15 +48,26 @@ const MiniCard = memo(function MiniCard({
   isWinning?: boolean;
 }) {
   const config = SIZE_CONFIG[size];
+  const [isFlipped, setIsFlipped] = React.useState(false);
+  
+  // Delay the flip animation so card appears face-down first
+  React.useEffect(() => {
+    if (!faceDown && card && card !== 'XX' && card !== '??') {
+      const flipDelay = 150 + index * 100; // Card appears, then flips
+      const timer = setTimeout(() => setIsFlipped(true), flipDelay);
+      return () => clearTimeout(timer);
+    } else {
+      setIsFlipped(false);
+    }
+  }, [card, faceDown, index]);
   
   if (faceDown || !card || card === 'XX' || card === '??') {
     return (
       <motion.div
-        initial={{ scale: 0, opacity: 0, rotateY: 180 }}
+        initial={{ scale: 0, opacity: 0 }}
         animate={{ 
           scale: 1, 
           opacity: 1, 
-          rotateY: 0,
           rotate: rotation,
           x: offsetX
         }}
@@ -102,83 +113,130 @@ const MiniCard = memo(function MiniCard({
 
   return (
     <motion.div
-      initial={{ scale: 0, opacity: 0, rotateY: 180 }}
+      initial={{ scale: 0, opacity: 0, rotate: rotation, x: offsetX }}
       animate={{ 
         scale: 1, 
-        opacity: 1, 
-        rotateY: 0,
+        opacity: 1,
         rotate: rotation,
         x: offsetX
       }}
       transition={{ 
-        delay: index * 0.1, 
+        delay: index * 0.08, 
         type: 'spring', 
         stiffness: 400, 
         damping: 25 
       }}
-      className={cn(
-        "relative shadow-lg",
-        isWinning && "ring-2 ring-yellow-400 ring-offset-1 ring-offset-transparent"
-      )}
+      className="relative"
       style={{
         width: config.w,
         height: config.h,
-        borderRadius: 4,
-        background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
-        border: isWinning ? '2px solid #fbbf24' : '1px solid #e0e0e0',
-        transformOrigin: 'bottom center',
-        boxShadow: isWinning 
-          ? '0 0 12px rgba(251, 191, 36, 0.5), 0 4px 8px rgba(0,0,0,0.2)'
-          : '0 2px 6px rgba(0,0,0,0.2)'
+        perspective: 600,
+        transformOrigin: 'bottom center'
       }}
     >
-      {/* Center content */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span 
-          className="font-bold leading-none"
-          style={{ 
-            fontSize: config.fontSize, 
-            color: suitInfo.color 
-          }}
-        >
-          {rank}
-        </span>
-        <span 
-          style={{ 
-            fontSize: config.suitSize, 
-            color: suitInfo.color,
-            marginTop: -2
-          }}
-        >
-          {suitInfo.symbol}
-        </span>
-      </div>
-      
-      {/* Corner pip - horizontal */}
-      <div 
-        className="absolute top-0.5 left-0.5 flex items-center gap-0.5 leading-none"
-        style={{ color: suitInfo.color }}
+      {/* 3D flip container */}
+      <motion.div
+        className="relative w-full h-full"
+        style={{ transformStyle: 'preserve-3d' }}
+        animate={{ rotateY: isFlipped ? 0 : 180 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
       >
-        <span style={{ fontSize: config.fontSize * 0.5, fontWeight: 600 }}>{rank}</span>
-        <span style={{ fontSize: config.suitSize * 0.4 }}>{suitInfo.symbol}</span>
-      </div>
+        {/* Card Back (visible when not flipped) */}
+        <div
+          className="absolute inset-0 shadow-lg overflow-hidden"
+          style={{
+            width: config.w,
+            height: config.h,
+            borderRadius: 4,
+            backfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg)',
+            background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+            border: '1px solid #e5e7eb'
+          }}
+        >
+          {/* Grid pattern */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,122,0,0.12) 2px, rgba(255,122,0,0.12) 3px),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,122,0,0.12) 2px, rgba(255,122,0,0.12) 3px)
+              `
+            }}
+          />
+          <div className="absolute inset-0.5 rounded-sm border border-orange-400/30" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="font-display font-black text-[10px]" style={{ color: '#ff7a00', opacity: 0.5 }}>S</span>
+          </div>
+        </div>
 
-      {/* Glossy effect */}
-      <div 
-        className="absolute inset-0 pointer-events-none rounded"
-        style={{
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 40%)'
-        }}
-      />
-      
-      {/* Winning glow animation */}
-      {isWinning && (
-        <motion.div
-          className="absolute inset-0 rounded bg-yellow-400/20 pointer-events-none"
-          animate={{ opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 1, repeat: Infinity }}
-        />
-      )}
+        {/* Card Front (visible when flipped) */}
+        <div
+          className={cn(
+            "absolute inset-0 shadow-lg",
+            isWinning && "ring-2 ring-yellow-400 ring-offset-1 ring-offset-transparent"
+          )}
+          style={{
+            width: config.w,
+            height: config.h,
+            borderRadius: 4,
+            backfaceVisibility: 'hidden',
+            background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+            border: isWinning ? '2px solid #fbbf24' : '1px solid #e0e0e0',
+            boxShadow: isWinning 
+              ? '0 0 12px rgba(251, 191, 36, 0.5), 0 4px 8px rgba(0,0,0,0.2)'
+              : '0 2px 6px rgba(0,0,0,0.2)'
+          }}
+        >
+          {/* Center content */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span 
+              className="font-bold leading-none"
+              style={{ 
+                fontSize: config.fontSize, 
+                color: suitInfo.color 
+              }}
+            >
+              {rank}
+            </span>
+            <span 
+              style={{ 
+                fontSize: config.suitSize, 
+                color: suitInfo.color,
+                marginTop: -2
+              }}
+            >
+              {suitInfo.symbol}
+            </span>
+          </div>
+          
+          {/* Corner pip */}
+          <div 
+            className="absolute top-0.5 left-0.5 flex items-center gap-0.5 leading-none"
+            style={{ color: suitInfo.color }}
+          >
+            <span style={{ fontSize: config.fontSize * 0.5, fontWeight: 600 }}>{rank}</span>
+            <span style={{ fontSize: config.suitSize * 0.4 }}>{suitInfo.symbol}</span>
+          </div>
+
+          {/* Glossy effect */}
+          <div 
+            className="absolute inset-0 pointer-events-none rounded"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 40%)'
+            }}
+          />
+          
+          {/* Winning glow animation */}
+          {isWinning && (
+            <motion.div
+              className="absolute inset-0 rounded bg-yellow-400/20 pointer-events-none"
+              animate={{ opacity: [0.2, 0.4, 0.2] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            />
+          )}
+        </div>
+      </motion.div>
     </motion.div>
   );
 });
