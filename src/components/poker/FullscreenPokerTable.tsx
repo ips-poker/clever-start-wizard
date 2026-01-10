@@ -1411,7 +1411,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
 }: FullscreenPokerTableProps) {
   // Реактивно отслеживаем обновления калибровки для пересчёта позиций
   const [calibrationVersion, setCalibrationVersion] = useState(globalCalibrationCache.version);
-  
+
   useEffect(() => {
     // Подписываемся на обновления калибровки
     const unsubscribe = subscribeToCalibration(() => {
@@ -1419,17 +1419,27 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
     });
     return unsubscribe;
   }, []);
-  
+
   // Use dynamic positions based on max seats
   // wideMode prop explicitly indicates Telegram Mini App context
   const maxPlayers = maxSeats;
-  
+
   // Позиции пересчитываются при изменении calibrationVersion
   const positions = useMemo(() => {
     return getSeatPositions(maxPlayers, wideMode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxPlayers, wideMode, calibrationVersion]);
-  
+
+  // DEBUG (temporary): helps verify what coordinates are used at first render
+  useEffect(() => {
+    try {
+      const mode = wideMode ? 'telegram' : 'desktop';
+      console.log('[SeatPositions] mode=', mode, 'maxPlayers=', maxPlayers, 'calVer=', calibrationVersion, 'p0=', positions?.[0]);
+    } catch {
+      // ignore
+    }
+  }, [positions, wideMode, maxPlayers, calibrationVersion]);
+
   // Get personalization preferences
   const { preferences, currentTableTheme, currentCardBack } = usePokerPreferences();
   

@@ -103,30 +103,27 @@ export function useCalibrationSync() {
   // Синхронизировать калибровку (localStorage -> Supabase -> глобальный кеш)
   const syncCalibration = useCallback(async () => {
     setIsLoading(true);
-    
-    // 1. Загружаем из Supabase (источник истины)
-    const supabaseData = await loadFromSupabase();
-    
-    if (supabaseData) {
-      // Обновляем глобальный кеш для FullscreenPokerTable
-      setGlobalCalibrationCache(supabaseData.positions, supabaseData.betOffsets);
-      setCalibration(supabaseData);
+
+    // 1) Пробуем Supabase (источник истины)
+    const supabaseData1 = await loadFromSupabase();
+    if (supabaseData1) {
+      setGlobalCalibrationCache(supabaseData1.positions, supabaseData1.betOffsets);
+      setCalibration(supabaseData1);
       setIsLoading(false);
-      return supabaseData;
+      return supabaseData1;
     }
-    
-    // 2. Fallback: пробуем загрузить из localStorage (для десктопа)
+
+    // 2) Fallback: localStorage (актуально для popup/desktop)
     try {
       const positionsStr = localStorage.getItem('syndikate_seat_positions');
       const betOffsetsStr = localStorage.getItem('syndikate_bet_offsets');
-      
+
       if (positionsStr || betOffsetsStr) {
         const localData: CalibrationData = {
           positions: positionsStr ? JSON.parse(positionsStr) : null,
-          betOffsets: betOffsetsStr ? JSON.parse(betOffsetsStr) : null
+          betOffsets: betOffsetsStr ? JSON.parse(betOffsetsStr) : null,
         };
-        
-        // Обновляем глобальный кеш
+
         setGlobalCalibrationCache(localData.positions, localData.betOffsets);
         setCalibration(localData);
         setIsLoading(false);
@@ -135,8 +132,19 @@ export function useCalibrationSync() {
     } catch (err) {
       console.warn('[CalibrationSync] Failed to load from localStorage:', err);
     }
-    
-    // 3. Нет данных - устанавливаем loaded = true с null данными
+
+    // 3) Telegram/WebView кейс: localStorage может быть пустым, а Supabase иногда отвечает чуть позже.
+    // Делаем один быстрый ретрай, чтобы не рисовать стол на дефолтных координатах.
+    await new Promise((r) => setTimeout(r, 900));
+    const supabaseData2 = await loadFromSupabase();
+    if (supabaseData2) {
+      setGlobalCalibrationCache(supabaseData2.positions, supabaseData2.betOffsets);
+      setCalibration(supabaseData2);
+      setIsLoading(false);
+      return supabaseData2;
+    }
+
+    // 4) Нет данных - устанавливаем loaded = true с null данными
     // Это важно чтобы компоненты не ждали вечно загрузки
     setGlobalCalibrationCache(null, null);
     setIsLoading(false);
