@@ -23,8 +23,9 @@ export { EliminationAnimation, type EliminationData } from './EliminationAnimati
 export { ActionTimeIndicator, ActionTimeBadge } from './ActionTimeIndicator';
 export { TimeBankIndicator, TimeBankBadge } from './TimeBankIndicator';
 
-// Phase 3: Hand-for-Hand, Final Table, Prize Payouts
+// Phase 3: Hand-for-Hand mode
 export { HandForHandOverlay, useHandForHandStatus } from './HandForHandOverlay';
 export { ImprovedHandForHandOverlay, type HandForHandStatus } from './ImprovedHandForHandOverlay';
-export { FinalTableOverlay, type FinalTableTransition } from './FinalTableOverlay';
-export { PrizePayoutOverlay, type PrizePayoutData } from './PrizePayoutOverlay';
+
+// Tournament sounds - exported from hooks
+export { useTournamentSounds, playTournamentSound, type TournamentSoundType } from '@/hooks/useTournamentSounds';

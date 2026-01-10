@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useNodePokerTable, PokerPlayer, TableState } from '@/hooks/useNodePokerTable';
 import { usePokerSounds } from '@/hooks/usePokerSounds';
+import { useTournamentSounds } from '@/hooks/useTournamentSounds';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
 import { useCalibrationSync } from '@/hooks/useCalibrationSync';
 import { PokerErrorBoundary } from './PokerErrorBoundary';
@@ -89,6 +90,7 @@ export function FullscreenPokerTableWrapper({
   useCalibrationSync();
   
   const sounds = usePokerSounds();
+  const tournamentSounds = useTournamentSounds({ enabled: soundEnabled && isTournament, volume: 0.5 });
   const hasConnectedRef = useRef(false);
 
   // Use Node.js WebSocket server
@@ -135,6 +137,48 @@ export function FullscreenPokerTableWrapper({
   }, [tableState?.players]);
 
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
+
+  // Tournament sounds effects
+  useEffect(() => {
+    if (!isTournament || !soundEnabled) return;
+    
+    // Play break sounds
+    if (tournamentBreak) {
+      if (tournamentBreak.type === 'break_started') {
+        tournamentSounds.playSound('break_start');
+      }
+    }
+  }, [tournamentBreak, isTournament, soundEnabled, tournamentSounds]);
+
+  // Play elimination sound
+  useEffect(() => {
+    if (!isTournament || !soundEnabled || !eliminationData) return;
+    tournamentSounds.playSound('player_eliminated');
+  }, [eliminationData, isTournament, soundEnabled, tournamentSounds]);
+
+  // Play "your turn" sound and time warning
+  const prevTimeRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!soundEnabled || !isMyTurn) return;
+    
+    // Your turn notification
+    if (isMyTurn && prevTimeRef.current === null && turnTimeRemaining !== null) {
+      if (isTournament) {
+        tournamentSounds.playSound('your_turn');
+      } else {
+        sounds.playTurn?.();
+      }
+    }
+    
+    // Time warning at 5 seconds
+    if (turnTimeRemaining === 5 && prevTimeRef.current !== 5) {
+      if (isTournament) {
+        tournamentSounds.playSound('time_warning');
+      }
+    }
+    
+    prevTimeRef.current = turnTimeRemaining;
+  }, [isMyTurn, turnTimeRemaining, soundEnabled, isTournament, sounds, tournamentSounds]);
 
   // Timer effect
   useEffect(() => {
