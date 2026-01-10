@@ -136,6 +136,9 @@ export function useCalibrationSync() {
       console.warn('[CalibrationSync] Failed to load from localStorage:', err);
     }
     
+    // 3. Нет данных - устанавливаем loaded = true с null данными
+    // Это важно чтобы компоненты не ждали вечно загрузки
+    setGlobalCalibrationCache(null, null);
     setIsLoading(false);
     return null;
   }, [loadFromSupabase]);
