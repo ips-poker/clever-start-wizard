@@ -646,17 +646,7 @@ export function FullscreenPokerTableWrapper({
           />
         )}
 
-        {/* Action Time Indicator - Shows when it's player's turn with urgency */}
-        {isMyTurn && turnTimeRemaining !== null && (
-          <ActionTimeIndicator
-            timeRemaining={turnTimeRemaining}
-            totalTime={tableState?.actionTimer || 30}
-            isTimeBankActive={isTimeBankActive}
-            timeBankRemaining={myPlayer?.timeBankRemaining}
-            showOverlay={turnTimeRemaining <= 5}
-            size="normal"
-          />
-        )}
+        {/* Action Time Indicator removed - пульсирующее кольцо вокруг аватара в SmoothAvatarTimer */}
 
         {/* Header - with safe area inset for Telegram fullscreen */}
         <div 
