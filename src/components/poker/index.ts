@@ -22,3 +22,9 @@ export { TournamentBreakOverlay } from './TournamentBreakOverlay';
 export { EliminationAnimation, type EliminationData } from './EliminationAnimation';
 export { ActionTimeIndicator, ActionTimeBadge } from './ActionTimeIndicator';
 export { TimeBankIndicator, TimeBankBadge } from './TimeBankIndicator';
+
+// Phase 3: Hand-for-Hand, Final Table, Prize Payouts
+export { HandForHandOverlay, useHandForHandStatus } from './HandForHandOverlay';
+export { ImprovedHandForHandOverlay, type HandForHandStatus } from './ImprovedHandForHandOverlay';
+export { FinalTableOverlay, type FinalTableTransition } from './FinalTableOverlay';
+export { PrizePayoutOverlay, type PrizePayoutData } from './PrizePayoutOverlay';
