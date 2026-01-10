@@ -1083,6 +1083,69 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             showdownStartTimeRef.current = Date.now();
             const thisShowdownToken = showdownTokenRef.current;
 
+            // CRITICAL DEBUG: Log all hand evaluations for debugging hand ranking issues
+            const evaluatedPlayers = showdownPlayers?.map((sp) => {
+              const computed = communityCards
+                ? evaluateShowdown(sp.holeCards, communityCards, false)
+                : null;
+              return {
+                playerId: sp.playerId,
+                name: sp.name,
+                holeCards: sp.holeCards,
+                serverHandName: sp.handName,
+                computedHandName: computed?.handName,
+                computedBestCards: computed?.bestFiveCards,
+                isWinner: winners.some(w => w.playerId === sp.playerId)
+              };
+            });
+            
+            console.log('🎯 [HAND EVALUATION DEBUG] All players at showdown:', {
+              communityCards,
+              players: evaluatedPlayers,
+              serverWinners: winners.map(w => ({
+                playerId: w.playerId?.substring(0, 8),
+                amount: w.amount,
+                serverHandName: w.handName
+              }))
+            });
+            
+            // Check for potential hand ranking inconsistencies
+            if (evaluatedPlayers && evaluatedPlayers.length > 1) {
+              const handRankOrder = ['High Card', 'Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House', 'Four of a Kind', 'Straight Flush', 'Royal Flush'];
+              
+              for (const ep of evaluatedPlayers) {
+                if (ep.isWinner && ep.computedHandName) {
+                  const winnerRank = handRankOrder.indexOf(ep.computedHandName);
+                  
+                  for (const other of evaluatedPlayers) {
+                    if (!other.isWinner && other.computedHandName) {
+                      const loserRank = handRankOrder.indexOf(other.computedHandName);
+                      
+                      // ALERT if computed loser has stronger hand than computed winner
+                      if (loserRank > winnerRank) {
+                        console.error('🚨 [HAND RANKING BUG DETECTED] Loser has stronger computed hand than winner!', {
+                          winner: {
+                            name: ep.name,
+                            holeCards: ep.holeCards,
+                            handName: ep.computedHandName,
+                            rank: winnerRank
+                          },
+                          loser: {
+                            name: other.name,
+                            holeCards: other.holeCards,
+                            handName: other.computedHandName,
+                            rank: loserRank
+                          },
+                          communityCards,
+                          serverWinners: winners
+                        });
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
             setShowdownResult({
               winners: winners.map((w) => {
                 const winnerPlayer = showdownPlayers?.find((sp) => sp.playerId === w.playerId);
