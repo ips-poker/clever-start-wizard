@@ -1,11 +1,11 @@
 /**
- * Tournament Break Overlay
- * Full-screen overlay displayed on poker table during tournament breaks
- * PokerStars-style professional break display
+ * TournamentBreakOverlay - Professional full-screen break overlay
+ * PokerStars-style with countdown, tournament info, and animations
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coffee, Clock, Users, Trophy, Pause } from 'lucide-react';
+import { Coffee, Clock, Users, Trophy, Pause, Play, TrendingUp, Timer } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TournamentBreakOverlayProps {
   breakInfo: {
@@ -18,7 +18,9 @@ interface TournamentBreakOverlayProps {
   } | null;
   tournamentInfo?: {
     playersRemaining?: number;
+    totalPlayers?: number;
     averageStack?: number;
+    biggestStack?: number;
     currentLevel?: number;
     nextBlindsSB?: number;
     nextBlindsBB?: number;
@@ -26,11 +28,12 @@ interface TournamentBreakOverlayProps {
   };
 }
 
-export function TournamentBreakOverlay({ 
+export const TournamentBreakOverlay = memo(function TournamentBreakOverlay({ 
   breakInfo,
   tournamentInfo
 }: TournamentBreakOverlayProps) {
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const [isEnding, setIsEnding] = useState(false);
 
   useEffect(() => {
     if (!breakInfo || breakInfo.type !== 'break_started') {
@@ -44,6 +47,7 @@ export function TournamentBreakOverlay({
       const now = Date.now();
       const remaining = Math.max(0, Math.floor((breakEndTime - now) / 1000));
       setTimeRemaining(remaining);
+      setIsEnding(remaining <= 30 && remaining > 0);
     };
 
     updateTimer();
@@ -57,12 +61,29 @@ export function TournamentBreakOverlay({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Only show for active break (not break_starting or break_ended)
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(0)}K`;
+    return num.toLocaleString();
+  };
+
+  // Progress for circular timer
+  const progress = useMemo(() => {
+    if (!breakInfo) return 100;
+    return Math.max(0, Math.min(100, (timeRemaining / breakInfo.durationSeconds) * 100));
+  }, [timeRemaining, breakInfo]);
+
+  // Timer color based on remaining time
+  const timerColor = useMemo(() => {
+    if (timeRemaining <= 10) return { stroke: '#ef4444', text: 'text-red-400' };
+    if (timeRemaining <= 30) return { stroke: '#f59e0b', text: 'text-amber-400' };
+    return { stroke: '#22c55e', text: 'text-emerald-400' };
+  }, [timeRemaining]);
+
+  // Only show for active break
   if (!breakInfo || breakInfo.type !== 'break_started') {
     return null;
   }
-
-  const isEnding = timeRemaining <= 30;
 
   return (
     <AnimatePresence>
@@ -71,172 +92,288 @@ export function TournamentBreakOverlay({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="absolute inset-0 z-40 flex items-center justify-center"
-        style={{
-          background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.85) 100%)'
-        }}
       >
-        {/* Central break card */}
+        {/* Gradient background with blur */}
+        <div 
+          className="absolute inset-0 backdrop-blur-sm"
+          style={{
+            background: 'radial-gradient(ellipse at center, rgba(16,40,32,0.92) 0%, rgba(10,20,20,0.96) 100%)'
+          }}
+        />
+
+        {/* Animated background particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(15)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-1 bg-emerald-400/20 rounded-full"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                y: [0, -40, 0],
+                opacity: [0.2, 0.5, 0.2],
+                scale: [1, 1.5, 1],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Main content container */}
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', damping: 20 }}
-          className="relative max-w-lg w-full mx-4"
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+          className="relative max-w-xl w-full mx-4"
         >
           {/* Animated glow ring */}
           <motion.div
-            className="absolute -inset-4 rounded-3xl opacity-30"
+            className="absolute -inset-4 rounded-3xl pointer-events-none"
             animate={{ 
               boxShadow: isEnding 
-                ? ['0 0 30px rgba(251,191,36,0.5)', '0 0 60px rgba(251,191,36,0.3)', '0 0 30px rgba(251,191,36,0.5)']
-                : ['0 0 30px rgba(34,197,94,0.3)', '0 0 50px rgba(34,197,94,0.2)', '0 0 30px rgba(34,197,94,0.3)']
+                ? ['0 0 40px rgba(251,191,36,0.4)', '0 0 80px rgba(251,191,36,0.2)', '0 0 40px rgba(251,191,36,0.4)']
+                : ['0 0 40px rgba(34,197,94,0.25)', '0 0 70px rgba(34,197,94,0.15)', '0 0 40px rgba(34,197,94,0.25)']
             }}
             transition={{ duration: 2, repeat: Infinity }}
           />
 
-          <div className="relative bg-gradient-to-b from-slate-800/95 to-slate-900/95 rounded-2xl border border-white/10 backdrop-blur-md overflow-hidden shadow-2xl">
+          <div className="relative bg-gradient-to-b from-slate-800/95 to-slate-900/98 rounded-2xl border border-white/10 backdrop-blur-md overflow-hidden shadow-2xl">
+            
             {/* Header */}
-            <div className={`px-6 py-4 border-b border-white/10 ${isEnding ? 'bg-amber-500/20' : 'bg-emerald-500/10'}`}>
-              <div className="flex items-center gap-3">
-                <div className={`p-3 rounded-full ${isEnding ? 'bg-amber-500/30' : 'bg-emerald-500/20'}`}>
-                  {isEnding ? (
-                    <motion.div
-                      animate={{ rotate: [0, -10, 10, 0] }}
-                      transition={{ duration: 0.5, repeat: Infinity }}
-                    >
-                      <Pause className="h-7 w-7 text-amber-400" />
-                    </motion.div>
-                  ) : (
-                    <Coffee className="h-7 w-7 text-emerald-400" />
-                  )}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white">
-                    {isEnding ? 'Перерыв заканчивается!' : 'Перерыв'}
-                  </h2>
-                  <p className="text-white/60 text-sm truncate max-w-[200px]">
-                    {breakInfo.tournamentName}
-                  </p>
-                </div>
-              </div>
+            <div className={cn(
+              "px-6 py-5 border-b border-white/10 text-center",
+              isEnding ? "bg-amber-500/15" : "bg-emerald-500/10"
+            )}>
+              <motion.div
+                className={cn(
+                  "inline-flex items-center justify-center w-16 h-16 rounded-full mb-3",
+                  isEnding ? "bg-amber-500/20" : "bg-emerald-500/15"
+                )}
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                {isEnding ? (
+                  <motion.div
+                    animate={{ rotate: [0, -10, 10, 0] }}
+                    transition={{ duration: 0.5, repeat: Infinity }}
+                  >
+                    <Play className={cn("h-8 w-8", timerColor.text)} />
+                  </motion.div>
+                ) : (
+                  <Coffee className="h-8 w-8 text-emerald-400" />
+                )}
+              </motion.div>
+              
+              <h2 className="text-2xl font-bold text-white mb-1">
+                {isEnding ? 'Перерыв заканчивается!' : 'Перерыв'}
+              </h2>
+              <p className="text-white/60 text-sm truncate">
+                {breakInfo.tournamentName}
+              </p>
             </div>
 
-            {/* Timer */}
+            {/* Circular Timer */}
             <div className="px-6 py-8 flex flex-col items-center">
-              <div className="flex items-center gap-3 mb-2">
-                <Clock className={`h-6 w-6 ${isEnding ? 'text-amber-400' : 'text-emerald-400'}`} />
-                <span className="text-white/60 uppercase tracking-wider text-sm font-medium">
-                  До начала раздач
-                </span>
+              <div className="relative w-44 h-44">
+                {/* SVG circular progress */}
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  {/* Background circle */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="42"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.1)"
+                    strokeWidth="5"
+                  />
+                  {/* Progress circle */}
+                  <motion.circle
+                    cx="50"
+                    cy="50"
+                    r="42"
+                    fill="none"
+                    stroke={timerColor.stroke}
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 42}`}
+                    animate={{
+                      strokeDashoffset: `${2 * Math.PI * 42 * (1 - progress / 100)}`
+                    }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </svg>
+                
+                {/* Center content */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <Clock className={cn("w-5 h-5 mb-1", timerColor.text)} />
+                  <motion.span
+                    className={cn("text-5xl font-bold font-mono tabular-nums", timerColor.text)}
+                    animate={isEnding ? { scale: [1, 1.05, 1] } : {}}
+                    transition={{ duration: 0.5, repeat: isEnding ? Infinity : 0 }}
+                  >
+                    {formatTime(timeRemaining)}
+                  </motion.span>
+                  <span className="text-white/40 text-xs mt-1">осталось</span>
+                </div>
+
+                {/* Pulsing ring when ending */}
+                {isEnding && (
+                  <motion.div
+                    className="absolute inset-0 rounded-full border-2 border-amber-500/50"
+                    animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  />
+                )}
               </div>
-              
-              <motion.div
-                className={`text-6xl font-mono font-bold tracking-wider ${
-                  isEnding ? 'text-amber-400' : 'text-emerald-400'
-                }`}
-                animate={isEnding ? { scale: [1, 1.05, 1] } : {}}
-                transition={{ duration: 1, repeat: Infinity }}
-              >
-                {formatTime(timeRemaining)}
-              </motion.div>
 
               {isEnding && (
                 <motion.p
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mt-3 text-amber-400/80 text-sm font-medium"
+                  className="mt-4 text-amber-400/90 text-sm font-medium"
                 >
                   Приготовьтесь к продолжению игры
                 </motion.p>
               )}
             </div>
 
-            {/* Tournament info */}
+            {/* Tournament stats */}
             {tournamentInfo && (
-              <div className="px-6 pb-6">
-                <div className="grid grid-cols-3 gap-3">
-                  {tournamentInfo.playersRemaining && (
-                    <div className="bg-white/5 rounded-lg p-3 text-center">
-                      <Users className="h-4 w-4 text-white/40 mx-auto mb-1" />
-                      <p className="text-lg font-bold text-white">{tournamentInfo.playersRemaining}</p>
-                      <p className="text-[10px] text-white/50 uppercase">Игроков</p>
-                    </div>
+              <div className="px-6 pb-5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {tournamentInfo.playersRemaining !== undefined && (
+                    <StatCard
+                      icon={<Users className="h-4 w-4 text-blue-400" />}
+                      label="Игроков"
+                      value={tournamentInfo.totalPlayers 
+                        ? `${tournamentInfo.playersRemaining}/${tournamentInfo.totalPlayers}`
+                        : tournamentInfo.playersRemaining.toString()
+                      }
+                    />
                   )}
                   
-                  {tournamentInfo.averageStack && (
-                    <div className="bg-white/5 rounded-lg p-3 text-center">
-                      <Trophy className="h-4 w-4 text-white/40 mx-auto mb-1" />
-                      <p className="text-lg font-bold text-white">
-                        {Math.round(tournamentInfo.averageStack).toLocaleString()}
-                      </p>
-                      <p className="text-[10px] text-white/50 uppercase">Avg Stack</p>
-                    </div>
+                  {tournamentInfo.averageStack !== undefined && (
+                    <StatCard
+                      icon={<TrendingUp className="h-4 w-4 text-emerald-400" />}
+                      label="Avg Stack"
+                      value={formatNumber(tournamentInfo.averageStack)}
+                    />
                   )}
                   
-                  {tournamentInfo.currentLevel && (
-                    <div className="bg-white/5 rounded-lg p-3 text-center">
-                      <div className="h-4 w-4 mx-auto mb-1 text-white/40 flex items-center justify-center text-xs font-bold">
-                        LVL
-                      </div>
-                      <p className="text-lg font-bold text-white">{tournamentInfo.currentLevel}</p>
-                      <p className="text-[10px] text-white/50 uppercase">Уровень</p>
-                    </div>
+                  {tournamentInfo.biggestStack !== undefined && (
+                    <StatCard
+                      icon={<Trophy className="h-4 w-4 text-amber-400" />}
+                      label="Лидер"
+                      value={formatNumber(tournamentInfo.biggestStack)}
+                    />
+                  )}
+                  
+                  {tournamentInfo.currentLevel !== undefined && (
+                    <StatCard
+                      icon={<Timer className="h-4 w-4 text-purple-400" />}
+                      label="Уровень"
+                      value={tournamentInfo.currentLevel.toString()}
+                    />
                   )}
                 </div>
 
-                {/* Next blinds info */}
+                {/* Next level blinds */}
                 {(tournamentInfo.nextBlindsSB || tournamentInfo.nextBlindsBB) && (
-                  <div className="mt-3 bg-amber-500/10 rounded-lg p-3 border border-amber-500/20">
-                    <p className="text-amber-400/80 text-xs uppercase tracking-wider mb-1 text-center">
-                      Блайнды после перерыва
+                  <motion.div
+                    className="mt-4 bg-amber-500/10 rounded-lg p-4 border border-amber-500/20"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <p className="text-amber-400/70 text-xs uppercase tracking-wider mb-2 text-center font-medium">
+                      После перерыва — Следующий уровень
                     </p>
-                    <p className="text-center text-white font-bold">
-                      {tournamentInfo.nextBlindsSB?.toLocaleString()} / {tournamentInfo.nextBlindsBB?.toLocaleString()}
-                      {tournamentInfo.nextAnte ? ` (ante ${tournamentInfo.nextAnte})` : ''}
+                    <p className="text-center text-white font-bold text-lg">
+                      {formatNumber(tournamentInfo.nextBlindsSB || 0)} / {formatNumber(tournamentInfo.nextBlindsBB || 0)}
+                      {tournamentInfo.nextAnte ? (
+                        <span className="text-amber-400 ml-2">
+                          (ante {formatNumber(tournamentInfo.nextAnte)})
+                        </span>
+                      ) : null}
                     </p>
-                  </div>
+                  </motion.div>
                 )}
               </div>
             )}
 
-            {/* Bottom indicator */}
-            <div className="px-6 pb-4">
+            {/* Bottom sync indicator */}
+            <div className="px-6 py-4 border-t border-white/5">
               <div className="flex items-center justify-center gap-2 text-white/40 text-xs">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span>Все столы синхронизированы</span>
+                {isEnding ? (
+                  <>
+                    <Play className="w-3 h-3 text-amber-400" />
+                    <span className="text-amber-400">Игра скоро возобновится</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <span>Все столы синхронизированы</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Floating coffee cups animation */}
+        {/* Floating coffee cups */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {[...Array(5)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute text-white/10"
+              className="absolute text-white/5"
               initial={{ 
-                x: Math.random() * 100 - 50 + '%', 
+                x: `${10 + Math.random() * 80}%`, 
                 y: '110%',
-                rotate: Math.random() * 40 - 20
+                rotate: Math.random() * 30 - 15
               }}
               animate={{ 
                 y: '-10%',
-                rotate: Math.random() * 40 - 20
+                rotate: Math.random() * 30 - 15
               }}
               transition={{ 
-                duration: 15 + Math.random() * 10,
+                duration: 18 + Math.random() * 12,
                 repeat: Infinity,
-                delay: i * 3,
+                delay: i * 4,
                 ease: 'linear'
               }}
             >
-              <Coffee className="h-8 w-8" />
+              <Coffee className="h-10 w-10" />
             </motion.div>
           ))}
         </div>
       </motion.div>
     </AnimatePresence>
   );
+});
+
+// Stat card mini component
+interface StatCardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
 }
+
+const StatCard = memo(function StatCard({ icon, label, value }: StatCardProps) {
+  return (
+    <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+      <div className="flex items-center justify-center gap-1.5 mb-1">
+        {icon}
+        <span className="text-white/40 text-[10px] uppercase">{label}</span>
+      </div>
+      <span className="text-white font-bold">{value}</span>
+    </div>
+  );
+});
 
 export default TournamentBreakOverlay;
