@@ -755,47 +755,9 @@ export function FullscreenPokerTableWrapper({
           </div>
         )}
 
-        {/* Table canvas (calibration coordinate space) */}
-        <div className="absolute inset-0">
-          {isCalibrationLoading ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-10 h-10 border-4 border-white/20 border-t-amber-400 rounded-full animate-spin" />
-                <span className="text-white/60 text-sm">Загрузка стола...</span>
-              </div>
-            </div>
-          ) : (
-            <FullscreenPokerTable
-              tableState={tableState}
-              players={formattedPlayers}
-              heroSeat={heroSeatForUI}
-              heroCards={myCards}
-              communityCards={displayCommunityCards}
-              pot={potValue}
-              phase={displayPhase}
-              dealerSeat={dealerSeat}
-              smallBlindSeat={smallBlindSeat}
-              bigBlindSeat={bigBlindSeat}
-              currentPlayerSeat={currentPlayerSeat}
-              turnTimeRemaining={turnTimeRemaining || undefined}
-              smallBlind={tableState?.smallBlindAmount || 10}
-              bigBlind={tableState?.bigBlindAmount || 20}
-              canJoinTable={canJoinTable}
-              onSeatClick={handleSeatClick}
-              maxSeats={maxSeats}
-              wideMode={wideMode}
-              showdownPlayers={showdownResult?.showdownPlayers}
-              winners={showdownResult?.winners}
-              betsBeingCollected={betsBeingCollected}
-              phaseTimings={phaseTimings}
-              showdownReveals={showdownReveals}
-              winnerAnnouncement={winnerAnnouncement}
-            />
-          )}
-        </div>
-
-        {/* UI overlays (safe areas, hints, controls) - must NOT shift table coordinates */}
-        <div
+        {/* Main poker table - optimized spacing for all UI elements */}
+        {/* Dynamic top padding for header + safe area, pb-40: space for action panel + hero cards */}
+        <div 
           className="absolute inset-0 pb-40"
           style={{
             paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 56px)'
@@ -844,17 +806,54 @@ export function FullscreenPokerTableWrapper({
             </div>
           )}
 
-          {/* Seat rotation control - when not playing */}
-          {!myPlayer && (
-            <div className="pointer-events-auto absolute top-20 left-1/2 -translate-x-1/2 z-20">
-              <SeatRotationControl
-                currentRotation={preferences.preferredSeatRotation}
-                maxSeats={maxSeats}
-                onChange={handleRotationChange}
-              />
+          {/* Ожидаем загрузку калибровки позиций перед рендером стола */}
+          {isCalibrationLoading ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-10 h-10 border-4 border-white/20 border-t-amber-400 rounded-full animate-spin" />
+                <span className="text-white/60 text-sm">Загрузка стола...</span>
+              </div>
             </div>
+          ) : (
+            <FullscreenPokerTable
+              tableState={tableState}
+              players={formattedPlayers}
+              heroSeat={heroSeatForUI}
+              heroCards={myCards}
+              communityCards={displayCommunityCards}
+              pot={potValue}
+              phase={displayPhase}
+              dealerSeat={dealerSeat}
+              smallBlindSeat={smallBlindSeat}
+              bigBlindSeat={bigBlindSeat}
+              currentPlayerSeat={currentPlayerSeat}
+              turnTimeRemaining={turnTimeRemaining || undefined}
+              smallBlind={tableState?.smallBlindAmount || 10}
+              bigBlind={tableState?.bigBlindAmount || 20}
+              canJoinTable={canJoinTable}
+              onSeatClick={handleSeatClick}
+              maxSeats={maxSeats}
+              wideMode={wideMode}
+              showdownPlayers={showdownResult?.showdownPlayers}
+              winners={showdownResult?.winners}
+              betsBeingCollected={betsBeingCollected}
+              phaseTimings={phaseTimings}
+              showdownReveals={showdownReveals}
+              winnerAnnouncement={winnerAnnouncement}
+            />
           )}
         </div>
+
+        {/* Seat rotation control - when not playing */}
+        {!myPlayer && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20">
+            <SeatRotationControl
+              currentRotation={preferences.preferredSeatRotation}
+              maxSeats={maxSeats}
+              onChange={handleRotationChange}
+            />
+          </div>
+        )}
 
         {/* Action buttons - Professional Panel (hidden for spectators) */}
         {myPlayer && !isSpectator && (
