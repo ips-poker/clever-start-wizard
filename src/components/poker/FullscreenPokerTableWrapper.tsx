@@ -139,15 +139,21 @@ export function FullscreenPokerTableWrapper({
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
 
   // Tournament sounds effects
+  const prevBreakTypeRef = useRef<string | null>(null);
   useEffect(() => {
     if (!isTournament || !soundEnabled) return;
     
     // Play break sounds
     if (tournamentBreak) {
-      if (tournamentBreak.type === 'break_started') {
+      if (tournamentBreak.type === 'break_started' && prevBreakTypeRef.current !== 'break_started') {
         tournamentSounds.playSound('break_start');
       }
+    } else if (prevBreakTypeRef.current === 'break_started') {
+      // Break just ended
+      tournamentSounds.playSound('break_end');
     }
+    
+    prevBreakTypeRef.current = tournamentBreak?.type || null;
   }, [tournamentBreak, isTournament, soundEnabled, tournamentSounds]);
 
   // Play elimination sound
