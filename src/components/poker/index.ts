@@ -16,3 +16,4 @@ export { OnlinePokerManagement } from './OnlinePokerManagement';
 export { BetCollectionAnimation } from './BetCollectionAnimation';
 export { ProfessionalShowdown } from './ProfessionalShowdown';
 export { TournamentBreakBanner } from './TournamentBreakBanner';
+export { TournamentBreakOverlay } from './TournamentBreakOverlay';
