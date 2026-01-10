@@ -30,6 +30,8 @@ import { ProTournamentLobby } from './tournament-lobby';
 import { TimeBankIndicator } from './TimeBankIndicator';
 import { TournamentBreakBanner } from './TournamentBreakBanner';
 import { TournamentBreakOverlay } from './TournamentBreakOverlay';
+import { EliminationAnimation } from './EliminationAnimation';
+import { ActionTimeIndicator } from './ActionTimeIndicator';
 
 
 // Syndikate branding
@@ -97,6 +99,8 @@ export function FullscreenPokerTableWrapper({
     connect, disconnect, joinTable, fold, check, call, raise, allIn, addChips, sitOut, sitIn,
     rebuyAvailable, clearRebuyAvailable,
     tournamentBreak, clearTournamentBreak,
+    // Elimination data for professional animation
+    eliminationData, clearEliminationData,
     // Professional timing data
     betsBeingCollected, phaseTimings,
     // Professional showdown and winner announcement
@@ -576,6 +580,31 @@ export function FullscreenPokerTableWrapper({
         {isTournament && tournamentBreak && tournamentBreak.type === 'break_started' && (
           <TournamentBreakOverlay 
             breakInfo={tournamentBreak}
+          />
+        )}
+
+        {/* Elimination Animation - Professional PokerStars-style elimination display */}
+        {isTournament && eliminationData && (
+          <EliminationAnimation
+            elimination={eliminationData}
+            currentPlayerId={playerId}
+            onComplete={clearEliminationData}
+            onViewResults={() => {
+              clearEliminationData();
+              setShowTournamentLobby(true);
+            }}
+          />
+        )}
+
+        {/* Action Time Indicator - Shows when it's player's turn with urgency */}
+        {isMyTurn && turnTimeRemaining !== null && (
+          <ActionTimeIndicator
+            timeRemaining={turnTimeRemaining}
+            totalTime={tableState?.actionTimer || 30}
+            isTimeBankActive={isTimeBankActive}
+            timeBankRemaining={myPlayer?.timeBankRemaining}
+            showOverlay={turnTimeRemaining <= 5}
+            size="normal"
           />
         )}
 
