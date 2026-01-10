@@ -17,3 +17,8 @@ export { BetCollectionAnimation } from './BetCollectionAnimation';
 export { ProfessionalShowdown } from './ProfessionalShowdown';
 export { TournamentBreakBanner } from './TournamentBreakBanner';
 export { TournamentBreakOverlay } from './TournamentBreakOverlay';
+
+// Phase 2: Professional animations
+export { EliminationAnimation } from './EliminationAnimation';
+export { ActionTimeIndicator, ActionTimeBadge } from './ActionTimeIndicator';
+export { TimeBankIndicator, TimeBankBadge } from './TimeBankIndicator';
