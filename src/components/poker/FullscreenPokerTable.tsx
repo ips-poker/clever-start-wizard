@@ -271,8 +271,8 @@ function getBetOffsetsConfig(): { desktop: Record<number, Array<{ x: number; y: 
   }
 }
 
-// Функция получения позиций с учётом калибровки
-function getCalibratedPositions(mode: 'desktop' | 'telegram'): Record<number, Array<{ x: number; y: number }>> {
+// Функция получения позиций с учётом калибровки (экспортируем для использования в других компонентах)
+export function getCalibratedPositions(mode: 'desktop' | 'telegram'): Record<number, Array<{ x: number; y: number }>> {
   const calibration = getCalibrationConfig();
   if (calibration && calibration[mode]) {
     // Мержим с defaults на случай если не все количества игроков откалиброваны
@@ -280,6 +280,11 @@ function getCalibratedPositions(mode: 'desktop' | 'telegram'): Record<number, Ar
     return { ...defaults, ...calibration[mode] };
   }
   return mode === 'desktop' ? DEFAULT_SEAT_POSITIONS_BY_COUNT : DEFAULT_TELEGRAM_SEAT_POSITIONS_BY_COUNT;
+}
+
+// Проверить, загружена ли калибровка
+export function isCalibrationLoaded(): boolean {
+  return globalCalibrationCache.loaded;
 }
 
 // Функция получения смещений ставок
@@ -594,20 +599,18 @@ const PlayerSeat = memo(function PlayerSeat({
     return false;
   }, [player, showdownWinners]);
   
-  // Empty seat
+  // Empty seat - без transition чтобы позиция применялась мгновенно
   if (!player) {
     return (
-      <motion.div
+      <div
         className="absolute -translate-x-1/2 -translate-y-1/2 z-10"
         style={{ left: `${position.x}%`, top: `${position.y}%` }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
         onClick={() => canJoin && onSeatClick?.(seatNumber)}
       >
         <div 
           className={cn(
-            "rounded-full flex items-center justify-center transition-all",
-            canJoin ? "cursor-pointer" : "cursor-default"
+            "rounded-full flex items-center justify-center",
+            canJoin ? "cursor-pointer hover:scale-110 active:scale-95" : "cursor-default"
           )}
           style={{
             width: avatarSize,
@@ -616,6 +619,7 @@ const PlayerSeat = memo(function PlayerSeat({
               ? 'radial-gradient(circle, rgba(34,197,94,0.15) 0%, rgba(0,0,0,0.6) 100%)'
               : 'rgba(0,0,0,0.3)',
             border: canJoin ? '2px dashed rgba(34,197,94,0.5)' : '2px dashed rgba(255,255,255,0.15)',
+            transition: 'transform 0.15s ease-out' // только для hover/active, не для позиции
           }}
         >
           <span className={cn(
@@ -625,7 +629,7 @@ const PlayerSeat = memo(function PlayerSeat({
             {canJoin ? 'Сесть' : ''}
           </span>
         </div>
-      </motion.div>
+      </div>
     );
   }
 

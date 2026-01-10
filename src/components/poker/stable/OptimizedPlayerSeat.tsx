@@ -99,12 +99,13 @@ const EmptySeat = memo(function EmptySeat({
 }: { 
   position: { x: number; y: number };
 }) {
+  // Без transition-all чтобы позиция применялась мгновенно при обновлении калибровки
   return (
     <div
       className="absolute w-14 h-14 -translate-x-1/2 -translate-y-1/2"
       style={{ left: `${position.x}%`, top: `${position.y}%` }}
     >
-      <div className="w-full h-full rounded-full border-2 border-dashed border-white/20 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+      <div className="w-full h-full rounded-full border-2 border-dashed border-white/20 flex items-center justify-center bg-black/30 backdrop-blur-sm hover:scale-110 active:scale-95" style={{ transition: 'transform 0.15s ease-out' }}>
         <span className="text-white/40 text-xs font-medium">Sit</span>
       </div>
     </div>
