@@ -25,32 +25,88 @@ import {
   getSuitColor
 } from '@/utils/pokerEngine';
 import { useCalibrationSync, useCalibrationVersion } from '@/hooks/useCalibrationSync';
-import { subscribeToCalibration, getCalibrationVersion } from '@/components/poker/FullscreenPokerTable';
+import { 
+  subscribeToCalibration, 
+  getCalibrationVersion, 
+  getCalibratedPositions,
+  isCalibrationLoaded 
+} from '@/components/poker/FullscreenPokerTable';
 
 // Дефолтные позиции для Telegram (6 мест) - используются как fallback
-const DEFAULT_TELEGRAM_POSITIONS: Array<{ x: number; y: number }> = [
-  { x: 50, y: 86 },   // Seat 0 - Hero (bottom center)
-  { x: 14, y: 64 },   // Seat 1 - Left bottom
-  { x: 14, y: 36 },   // Seat 2 - Left top
-  { x: 50, y: 14 },   // Seat 3 - Top center
-  { x: 86, y: 36 },   // Seat 4 - Right top
-  { x: 86, y: 64 },   // Seat 5 - Right bottom
-];
+const DEFAULT_TELEGRAM_POSITIONS: Record<number, Array<{ x: number; y: number }>> = {
+  2: [
+    { x: 50, y: 86 },
+    { x: 50, y: 14 },
+  ],
+  3: [
+    { x: 50, y: 86 },
+    { x: 14, y: 50 },
+    { x: 86, y: 50 },
+  ],
+  4: [
+    { x: 50, y: 86 },
+    { x: 14, y: 50 },
+    { x: 50, y: 14 },
+    { x: 86, y: 50 },
+  ],
+  5: [
+    { x: 50, y: 86 },
+    { x: 14, y: 64 },
+    { x: 14, y: 36 },
+    { x: 86, y: 36 },
+    { x: 86, y: 64 },
+  ],
+  6: [
+    { x: 50, y: 86 },   // Seat 0 - Hero (bottom center)
+    { x: 14, y: 64 },   // Seat 1 - Left bottom
+    { x: 14, y: 36 },   // Seat 2 - Left top
+    { x: 50, y: 14 },   // Seat 3 - Top center
+    { x: 86, y: 36 },   // Seat 4 - Right top
+    { x: 86, y: 64 },   // Seat 5 - Right bottom
+  ],
+  7: [
+    { x: 50, y: 86 },
+    { x: 14, y: 68 },
+    { x: 14, y: 50 },
+    { x: 14, y: 32 },
+    { x: 86, y: 32 },
+    { x: 86, y: 50 },
+    { x: 86, y: 68 },
+  ],
+  8: [
+    { x: 50, y: 86 },
+    { x: 14, y: 68 },
+    { x: 14, y: 50 },
+    { x: 14, y: 32 },
+    { x: 50, y: 14 },
+    { x: 86, y: 32 },
+    { x: 86, y: 50 },
+    { x: 86, y: 68 },
+  ],
+  9: [
+    { x: 50, y: 86 },
+    { x: 12, y: 74 },
+    { x: 12, y: 54 },
+    { x: 12, y: 34 },
+    { x: 38, y: 14 },
+    { x: 62, y: 14 },
+    { x: 88, y: 34 },
+    { x: 88, y: 54 },
+    { x: 88, y: 74 },
+  ],
+};
 
-// Функция получения калиброванных позиций для Telegram
+// Функция получения калиброванных позиций для Telegram - использует глобальный кеш калибровки
 function getTelegramSeatPositions(maxSeats: number = 6): Array<{ x: number; y: number }> {
-  try {
-    const saved = localStorage.getItem('syndikate_seat_positions');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed?.telegram?.[maxSeats]) {
-        return parsed.telegram[maxSeats];
-      }
-    }
-  } catch {
-    // Fallback to defaults
+  // Используем централизованную функцию из FullscreenPokerTable
+  const calibratedPositions = getCalibratedPositions('telegram');
+  
+  if (calibratedPositions[maxSeats]) {
+    return calibratedPositions[maxSeats];
   }
-  return DEFAULT_TELEGRAM_POSITIONS;
+  
+  // Fallback на дефолтные позиции
+  return DEFAULT_TELEGRAM_POSITIONS[maxSeats] || DEFAULT_TELEGRAM_POSITIONS[6];
 }
 
 interface TelegramMobileTableProps {
@@ -282,8 +338,9 @@ export function TelegramMobileTable({
     const player = players.find(p => p.seat_number === seatIndex);
     const isMe = player?.player?.id === playerId;
     
-    // Получаем калиброванную позицию
-    const position = seatPositions[seatIndex] || DEFAULT_TELEGRAM_POSITIONS[seatIndex] || { x: 50, y: 50 };
+    // Получаем калиброванную позицию - seatPositions это Array<{x,y}>
+    const defaultPos = DEFAULT_TELEGRAM_POSITIONS[maxSeats]?.[seatIndex] || { x: 50, y: 50 };
+    const position = seatPositions[seatIndex] || defaultPos;
     
     return (
       <div 
