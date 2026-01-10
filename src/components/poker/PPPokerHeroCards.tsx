@@ -314,7 +314,7 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
   const isShowdown = gamePhase === 'showdown';
 
   return (
-    <div className="absolute left-full ml-1.5 top-1/2 -translate-y-1/2 flex flex-col items-start gap-0.5 z-10">
+    <div className="absolute left-full ml-1.5 top-[calc(100%+6px)] flex flex-col items-start gap-0.5 z-10">
       {/* Cards row with overlap */}
       <div className="flex">
         {cards.map((card, idx) => {
