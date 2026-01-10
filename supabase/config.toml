@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.issue-tournament-tickets]
 verify_jwt = false
+
+[functions.poker-reconnect-repair]
+verify_jwt = false
