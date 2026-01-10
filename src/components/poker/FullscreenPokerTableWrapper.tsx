@@ -572,11 +572,16 @@ export function FullscreenPokerTableWrapper({
   const currentPlayerSeat = tableState?.currentPlayerSeat ?? null;
 
   // Robust hero seat detection (Telegram Mini App sometimes gets wrong mySeat)
+  // IMPORTANT: пока игрок НЕ сидит за столом (myPlayer отсутствует), heroSeat должен быть null.
+  // Иначе произойдёт "поворот" мест относительно фантомного heroSeat, из-за чего пустые места/кнопки "Сесть"
+  // будут не совпадать с реальными координатами из калибровки.
   const heroSeatForUI = useMemo(() => {
+    if (!myPlayer) return null;
+
     const pid = String(playerId);
     const seatFromPlayers = tableState?.players?.find((p) => String(p.playerId) === pid)?.seatNumber;
     return typeof seatFromPlayers === 'number' ? seatFromPlayers : mySeat;
-  }, [tableState?.players, playerId, mySeat]);
+  }, [tableState?.players, playerId, mySeat, myPlayer]);
 
   // Betting info
   // Server sends minRaise as TOTAL bet amount (not delta)
