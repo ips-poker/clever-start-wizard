@@ -1454,110 +1454,113 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   // Win distribution animation state
   const [winDistribution, setWinDistribution] = useState<{ winnerSeat: number; amount: number } | null>(null);
   
+  // Когда heroSeat ещё неизвестен (зритель/до посадки), мы НЕ применяем preferredSeatRotation.
+  // Калибровка в админке задаёт «реальные» координаты мест (seatNumber -> (x,y)).
+  // Поэтому до посадки отображаем места строго по seatNumber, иначе пустые кружки “прыгают”.
+  const spectatorRotationOffset = 0;
+
   // Convert server betsBeingCollected to visual positions for animation
   const betCollectionData = useMemo(() => {
     if (!betsBeingCollected || betsBeingCollected.bets.length === 0) {
       return null;
     }
-    
-    return betsBeingCollected.bets.map(bet => {
+
+    return betsBeingCollected.bets.map((bet) => {
       // Calculate visual position for this player
       let visualPos = 0;
       if (heroSeat !== null) {
         visualPos = (bet.seatNumber - heroSeat + maxPlayers) % maxPlayers;
       } else {
-        visualPos = (bet.seatNumber + preferences.preferredSeatRotation) % maxPlayers;
+        visualPos = (bet.seatNumber + spectatorRotationOffset) % maxPlayers;
       }
+
       const pos = positions[visualPos] || { x: 50, y: 50 };
       return {
         playerId: bet.playerId,
         seatNumber: bet.seatNumber,
         amount: bet.amount,
-        position: pos
+        position: pos,
       };
     });
-  }, [betsBeingCollected, heroSeat, maxPlayers, positions, preferences.preferredSeatRotation]);
-  
+  }, [betsBeingCollected, heroSeat, maxPlayers, positions]);
+
   // Trigger win distribution animation when winners change
   useEffect(() => {
     if (winners && winners.length > 0 && phase === 'showdown') {
       const winner = winners[0];
       // Find winner's seat
-      const winnerPlayer = players.find(p => p.playerId === winner.playerId);
+      const winnerPlayer = players.find((p) => p.playerId === winner.playerId);
       if (winnerPlayer) {
         // Calculate visual position
         let visualPos = 0;
         if (heroSeat !== null) {
           visualPos = (winnerPlayer.seatNumber - heroSeat + maxPlayers) % maxPlayers;
         } else {
-          visualPos = (winnerPlayer.seatNumber + preferences.preferredSeatRotation) % maxPlayers;
+          visualPos = (winnerPlayer.seatNumber + spectatorRotationOffset) % maxPlayers;
         }
         setWinDistribution({ winnerSeat: visualPos, amount: winner.amount });
       }
     } else {
       setWinDistribution(null);
     }
-  }, [winners, phase, players, heroSeat, maxPlayers, preferences.preferredSeatRotation]);
-  
-  
+  }, [winners, phase, players, heroSeat, maxPlayers]);
+
   // Detect phase change and trigger collection animation
   useEffect(() => {
     const prevPhase = prevPhaseRef.current;
     const phasesOrder = ['preflop', 'flop', 'turn', 'river', 'showdown'];
     const prevIndex = phasesOrder.indexOf(prevPhase);
     const currIndex = phasesOrder.indexOf(phase);
-    
+
     // Phase advanced (not reset) - collect bets
     if (currIndex > prevIndex && prevIndex >= 0) {
       // Gather all player bets for animation
       const betsToCollect = players
-        .filter(p => p.betAmount > 0)
-        .map(p => {
+        .filter((p) => p.betAmount > 0)
+        .map((p) => {
           // Find visual position for this player
           let visualPos = 0;
           if (heroSeat !== null) {
             // Hero always at position 0 - no rotation offset when hero is seated
             visualPos = (p.seatNumber - heroSeat + maxPlayers) % maxPlayers;
           } else {
-            visualPos = (p.seatNumber + preferences.preferredSeatRotation) % maxPlayers;
+            visualPos = (p.seatNumber + spectatorRotationOffset) % maxPlayers;
           }
           return {
             seatPosition: positions[visualPos],
-            amount: p.betAmount
+            amount: p.betAmount,
           };
         });
-      
+
       if (betsToCollect.length > 0) {
         setCollectionBets(betsToCollect);
         setIsCollectingBets(true);
         onPotCollect?.();
       }
     }
-    
+
     prevPhaseRef.current = phase;
-  }, [phase, players, heroSeat, preferences.preferredSeatRotation, positions, maxPlayers]);
-  
-  
-  // Build players array positioned relative to hero with rotation preference
+  }, [phase, players, heroSeat, positions, maxPlayers, onPotCollect]);
+
+  // Build players array positioned relative to hero
   const positionedPlayers = useMemo(() => {
     const result: (PokerPlayer | null)[] = new Array(maxPlayers).fill(null);
-    const rotationOffset = preferences.preferredSeatRotation;
-    
-    players.forEach(player => {
+
+    players.forEach((player) => {
       let visualPosition: number;
       if (heroSeat !== null) {
         // Hero always at position 0 (bottom center) - no rotation offset when hero is seated
         visualPosition = (player.seatNumber - heroSeat + maxPlayers) % maxPlayers;
       } else {
-        // No hero seated - apply rotation preference
-        visualPosition = (player.seatNumber + rotationOffset) % maxPlayers;
+        // До посадки показываем «реальную» раскладку (seatNumber -> позиция)
+        visualPosition = (player.seatNumber + spectatorRotationOffset) % maxPlayers;
       }
       result[visualPosition] = player;
     });
-    
+
     return result;
-  }, [players, heroSeat, maxPlayers, preferences.preferredSeatRotation]);
-  
+  }, [players, heroSeat, maxPlayers]);
+
 
   return (
     <div className="relative w-full h-full">
@@ -1649,11 +1652,10 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         const player = positionedPlayers[idx];
 
         // IMPORTANT: seatNumber passed to PlayerSeat/empty-seat click MUST map to the real (server) seat number.
-        // When heroSeat is null we still apply preferredSeatRotation for visual layout (see positionedPlayers).
-        // So we need to invert that rotation here, otherwise empty seats will not match calibrated avatar positions.
+        // Пока heroSeat неизвестен, визуальный индекс = реальный seatNumber (строго по калибровке).
         const actualSeatNumber = heroSeat !== null
           ? (idx + heroSeat) % maxPlayers
-          : (idx - preferences.preferredSeatRotation + maxPlayers) % maxPlayers;
+          : idx;
 
         const isHeroSeat = idx === 0 && heroSeat !== null;
 
