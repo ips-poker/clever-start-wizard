@@ -604,9 +604,208 @@ export function FullscreenPokerTableWrapper({
 
   return (
     <PokerErrorBoundary>
-      <div className="absolute inset-0 overflow-hidden">
-        {/* Table canvas (калибровка мест в % от полного холста) */}
-        <div className="absolute inset-0">
+      <div 
+        className="absolute inset-0 overflow-hidden"
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px))',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px))'
+        }}
+      >
+        {/* Connection status */}
+        <ConnectionStatusBanner 
+          status={connectionStatus as any}
+          lastError={error || undefined}
+          onReconnectNow={() => connect()}
+        />
+
+        {/* Tournament Break Banner - floating notification */}
+        {isTournament && tournamentBreak && tournamentBreak.type === 'break_starting' && (
+          <TournamentBreakBanner 
+            breakInfo={tournamentBreak}
+            onDismiss={clearTournamentBreak}
+          />
+        )}
+        
+        {/* Tournament Break Overlay - full table overlay during active break */}
+        {isTournament && tournamentBreak && tournamentBreak.type === 'break_started' && (
+          <TournamentBreakOverlay 
+            breakInfo={tournamentBreak}
+          />
+        )}
+
+        {/* Elimination Animation - Professional PokerStars-style elimination display */}
+        {isTournament && eliminationData && (
+          <EliminationAnimation
+            elimination={eliminationData}
+            currentPlayerId={playerId}
+            onComplete={clearEliminationData}
+            onViewResults={() => {
+              clearEliminationData();
+              setShowTournamentLobby(true);
+            }}
+          />
+        )}
+
+        {/* Action Time Indicator removed - пульсирующее кольцо вокруг аватара в SmoothAvatarTimer */}
+
+        {/* Header - with safe area inset for Telegram fullscreen */}
+        <div 
+          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 bg-gradient-to-b from-black/60 to-transparent"
+          style={{
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 12px)'
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
+              onClick={() => setShowMenu(!showMenu)}
+            >
+              {showMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            
+            <img src={syndikateLogo} alt="Syndikate" className="h-8 drop-shadow-lg" />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
+              onClick={() => setSoundEnabled(!soundEnabled)}
+            >
+              {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-amber-400 hover:bg-black/60"
+              onClick={() => setShowPersonalSettings(true)}
+            >
+              <Palette className="h-5 w-5" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
+              onClick={() => setShowSettings(true)}
+            >
+              <Settings2 className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Tournament HUD - only show for tournament tables */}
+        {isTournament && tournamentId && (
+          <>
+            <TournamentHUD 
+              tournamentId={tournamentId}
+              currentPlayerId={playerId}
+              compact={true}
+              className="!top-16"
+              onOpenLobby={() => setShowTournamentLobby(true)}
+            />
+            
+            {/* PKO Bounty Display - shows player's current bounty */}
+            <BountyDisplay
+              tournamentId={tournamentId}
+              playerId={playerId}
+              compact={true}
+              className="absolute top-16 right-2 z-40"
+            />
+            
+            {/* Knockout notification for PKO tournaments */}
+            <KnockoutNotification
+              event={knockoutEvent}
+              currentPlayerId={playerId}
+              onComplete={() => setKnockoutEvent(null)}
+            />
+            
+            {/* Time Bank Indicator for tournaments */}
+            {myPlayer && (
+              <TimeBankIndicator
+                timeBankRemaining={myPlayer.timeBankRemaining ?? 30}
+                timeBankInitial={30}
+                timeBankPerLevel={5}
+                isMyTurn={isMyTurn}
+                isTimeBankActive={isTimeBankActive}
+                actionTimeRemaining={turnTimeRemaining ?? undefined}
+                onUseTimeBank={() => setIsTimeBankActive(true)}
+                size="md"
+              />
+            )}
+          </>
+        )}
+        
+        {/* Fallback Blinds Display - shows when TournamentHUD is not available */}
+        {tableState && !tournamentId && (
+          <div className="absolute top-16 left-2 z-40">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 text-white text-xs font-medium">
+              <span className="text-white/60">Блайнды:</span>
+              <span className="text-amber-400 font-bold">
+                {(tableState.smallBlindAmount || 10).toLocaleString()}/{(tableState.bigBlindAmount || 20).toLocaleString()}
+              </span>
+              {(tableState.anteAmount ?? 0) > 0 && (
+                <span className="text-white/50">анте {tableState.anteAmount}</span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Main poker table - optimized spacing for all UI elements */}
+        {/* Dynamic top padding for header + safe area, pb-40: space for action panel + hero cards */}
+        <div 
+          className="absolute inset-0 pb-40"
+          style={{
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 56px)'
+          }}
+        >
+          {/* Why there is no hand yet */}
+          {tableState?.phase === 'waiting' && !startHandHint.canStart && (
+            <div className="pointer-events-none absolute left-1/2 top-3 z-20 w-[min(520px,calc(100%-24px))] -translate-x-1/2">
+              <div className="rounded-xl bg-black/60 backdrop-blur-md border border-white/10 px-4 py-3 shadow-lg">
+                <div className="text-sm text-white/90 font-medium">
+                  Ожидание раздачи: нужно {startHandHint.required} активных игрока (сейчас {startHandHint.activeCount}).
+                </div>
+                {startHandHint.sittingOutPlayers.length > 0 && (
+                  <div className="mt-1 text-xs text-white/70">
+                    Вне игры (Sit Out): {startHandHint.sittingOutPlayers.map(p => p.name || p.playerId.slice(0, 8)).join(', ')}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* If YOU are sitting out OR disconnected - show a prominent "Return" button */}
+          {(myPlayer?.isSittingOut || myPlayer?.isDisconnected) && (
+            <div className="pointer-events-auto absolute left-1/2 bottom-44 z-30 -translate-x-1/2">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="flex flex-col items-center gap-2"
+              >
+                <div className="text-white/70 text-sm bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm">
+                  {myPlayer?.isDisconnected ? 'Соединение потеряно' : 'Вы вне игры'}
+                </div>
+                <Button
+                  variant="default"
+                  size="lg"
+                  className="rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-8 py-3 shadow-lg shadow-emerald-500/30"
+                  onClick={() => {
+                    sitIn();
+                    toast.success('Вы вернулись в игру');
+                  }}
+                >
+                  <RotateCcw className="h-5 w-5 mr-2" />
+                  Вернуться в игру
+                </Button>
+              </motion.div>
+            </div>
+          )}
+
           {/* Ожидаем загрузку калибровки позиций перед рендером стола */}
           {isCalibrationLoading ? (
             <div className="absolute inset-0 flex items-center justify-center">
@@ -645,235 +844,36 @@ export function FullscreenPokerTableWrapper({
           )}
         </div>
 
-        {/* UI overlay layer (safe-area), не влияет на координаты стола */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px))',
-            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px))'
-          }}
-        >
-          {/* Connection status */}
-          <div className="pointer-events-auto">
-            <ConnectionStatusBanner
-              status={connectionStatus as any}
-              lastError={error || undefined}
-              onReconnectNow={() => connect()}
+        {/* Seat rotation control - when not playing */}
+        {!myPlayer && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20">
+            <SeatRotationControl
+              currentRotation={preferences.preferredSeatRotation}
+              maxSeats={maxSeats}
+              onChange={handleRotationChange}
             />
           </div>
+        )}
 
-          {/* Tournament Break Banner - floating notification */}
-          {isTournament && tournamentBreak && tournamentBreak.type === 'break_starting' && (
-            <div className="pointer-events-auto">
-              <TournamentBreakBanner breakInfo={tournamentBreak} onDismiss={clearTournamentBreak} />
-            </div>
-          )}
-
-          {/* Tournament Break Overlay - full table overlay during active break */}
-          {isTournament && tournamentBreak && tournamentBreak.type === 'break_started' && (
-            <div className="pointer-events-auto">
-              <TournamentBreakOverlay breakInfo={tournamentBreak} />
-            </div>
-          )}
-
-          {/* Elimination Animation - Professional PokerStars-style elimination display */}
-          {isTournament && eliminationData && (
-            <div className="pointer-events-auto">
-              <EliminationAnimation
-                elimination={eliminationData}
-                currentPlayerId={playerId}
-                onComplete={clearEliminationData}
-                onViewResults={() => {
-                  clearEliminationData();
-                  setShowTournamentLobby(true);
-                }}
-              />
-            </div>
-          )}
-
-          {/* Header - with safe area inset for Telegram fullscreen */}
-          <div
-            className="pointer-events-auto absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 bg-gradient-to-b from-black/60 to-transparent"
-            style={{ paddingTop: '12px' }}
-          >
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
-                onClick={() => setShowMenu(!showMenu)}
-              >
-                {showMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
-
-              <img src={syndikateLogo} alt="Syndikate" className="h-8 drop-shadow-lg" />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
-                onClick={() => setSoundEnabled(!soundEnabled)}
-              >
-                {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-amber-400 hover:bg-black/60"
-                onClick={() => setShowPersonalSettings(true)}
-              >
-                <Palette className="h-5 w-5" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
-                onClick={() => setShowSettings(true)}
-              >
-                <Settings2 className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Tournament HUD - only show for tournament tables */}
-          {isTournament && tournamentId && (
-            <div className="pointer-events-auto">
-              <TournamentHUD
-                tournamentId={tournamentId}
-                currentPlayerId={playerId}
-                compact={true}
-                className="!top-16"
-                onOpenLobby={() => setShowTournamentLobby(true)}
-              />
-
-              {/* PKO Bounty Display - shows player's current bounty */}
-              <BountyDisplay
-                tournamentId={tournamentId}
-                playerId={playerId}
-                compact={true}
-                className="absolute top-16 right-2 z-40"
-              />
-
-              {/* Knockout notification for PKO tournaments */}
-              <KnockoutNotification
-                event={knockoutEvent}
-                currentPlayerId={playerId}
-                onComplete={() => setKnockoutEvent(null)}
-              />
-
-              {/* Time Bank Indicator for tournaments */}
-              {myPlayer && (
-                <TimeBankIndicator
-                  timeBankRemaining={myPlayer.timeBankRemaining ?? 30}
-                  timeBankInitial={30}
-                  timeBankPerLevel={5}
-                  isMyTurn={isMyTurn}
-                  isTimeBankActive={isTimeBankActive}
-                  actionTimeRemaining={turnTimeRemaining ?? undefined}
-                  onUseTimeBank={() => setIsTimeBankActive(true)}
-                  size="md"
-                />
-              )}
-            </div>
-          )}
-
-          {/* Fallback Blinds Display - shows when TournamentHUD is not available */}
-          {tableState && !tournamentId && (
-            <div className="absolute top-16 left-2 z-40">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 text-white text-xs font-medium">
-                <span className="text-white/60">Блайнды:</span>
-                <span className="text-amber-400 font-bold">
-                  {(tableState.smallBlindAmount || 10).toLocaleString()}/{(tableState.bigBlindAmount || 20).toLocaleString()}
-                </span>
-                {(tableState.anteAmount ?? 0) > 0 && (
-                  <span className="text-white/50">анте {tableState.anteAmount}</span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Overlays that should avoid header/action panel */}
-          <div className="absolute inset-0 pb-40" style={{ paddingTop: '56px' }}>
-            {/* Why there is no hand yet */}
-            {tableState?.phase === 'waiting' && !startHandHint.canStart && (
-              <div className="pointer-events-none absolute left-1/2 top-3 z-20 w-[min(520px,calc(100%-24px))] -translate-x-1/2">
-                <div className="rounded-xl bg-black/60 backdrop-blur-md border border-white/10 px-4 py-3 shadow-lg">
-                  <div className="text-sm text-white/90 font-medium">
-                    Ожидание раздачи: нужно {startHandHint.required} активных игрока (сейчас {startHandHint.activeCount}).
-                  </div>
-                  {startHandHint.sittingOutPlayers.length > 0 && (
-                    <div className="mt-1 text-xs text-white/70">
-                      Вне игры (Sit Out): {startHandHint.sittingOutPlayers.map(p => p.name || p.playerId.slice(0, 8)).join(', ')}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* If YOU are sitting out OR disconnected - show a prominent "Return" button */}
-            {(myPlayer?.isSittingOut || myPlayer?.isDisconnected) && (
-              <div className="pointer-events-auto absolute left-1/2 bottom-44 z-30 -translate-x-1/2">
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="flex flex-col items-center gap-2"
-                >
-                  <div className="text-white/70 text-sm bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm">
-                    {myPlayer?.isDisconnected ? 'Соединение потеряно' : 'Вы вне игры'}
-                  </div>
-                  <Button
-                    variant="default"
-                    size="lg"
-                    className="rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-8 py-3 shadow-lg shadow-emerald-500/30"
-                    onClick={() => {
-                      sitIn();
-                      toast.success('Вы вернулись в игру');
-                    }}
-                  >
-                    <RotateCcw className="h-5 w-5 mr-2" />
-                    Вернуться в игру
-                  </Button>
-                </motion.div>
-              </div>
-            )}
-          </div>
-
-          {/* Seat rotation control - when not playing */}
-          {!myPlayer && (
-            <div className="pointer-events-auto absolute top-20 left-1/2 -translate-x-1/2 z-20">
-              <SeatRotationControl
-                currentRotation={preferences.preferredSeatRotation}
-                maxSeats={maxSeats}
-                onChange={handleRotationChange}
-              />
-            </div>
-          )}
-
-          {/* Action buttons - Professional Panel (hidden for spectators) */}
-          {myPlayer && !isSpectator && (
-            <div className="pointer-events-auto">
-              <ProActionPanel
-                isMyTurn={isMyTurn}
-                canCheck={canCheck}
-                callAmount={callAmount}
-                minRaise={minRaiseAmount}
-                maxRaise={maxRaiseAmount}
-                currentBet={currentBetValue}
-                pot={potValue}
-                myStack={myPlayer.stack}
-                onFold={fold}
-                onCheck={check}
-                onCall={call}
-                onRaise={raise}
-                onAllIn={allIn}
-              />
-            </div>
-          )}
-        </div>
+        {/* Action buttons - Professional Panel (hidden for spectators) */}
+        {myPlayer && !isSpectator && (
+          <ProActionPanel
+            isMyTurn={isMyTurn}
+            canCheck={canCheck}
+            callAmount={callAmount}
+            minRaise={minRaiseAmount}
+            maxRaise={maxRaiseAmount}
+            currentBet={currentBetValue}
+            pot={potValue}
+            myStack={myPlayer.stack}
+            onFold={fold}
+            onCheck={check}
+            onCall={call}
+            onRaise={raise}
+            onAllIn={allIn}
+          />
+        )}
+        
         {/* Buy-in Dialog */}
         <BuyInDialog
           isOpen={showBuyInDialog}
@@ -931,10 +931,7 @@ export function FullscreenPokerTableWrapper({
               initial={{ x: -300, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -300, opacity: 0 }}
-              className="absolute left-0 bottom-0 w-64 bg-black/90 backdrop-blur-xl z-40 p-4"
-              style={{
-                top: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 64px)'
-              }}
+              className="absolute left-0 top-16 bottom-0 w-64 bg-black/90 backdrop-blur-xl z-40 p-4"
             >
               <div className="space-y-2">
                 <Button
