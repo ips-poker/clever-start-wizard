@@ -183,6 +183,24 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     timestamp: number;
   } | null>(null);
 
+  // Professional: elimination data for animation
+  const [eliminationData, setEliminationData] = useState<{
+    playerId: string;
+    playerName: string;
+    playerAvatar?: string | null;
+    finishPosition: number;
+    totalPlayers: number;
+    prizeAmount?: number;
+    prizeType?: 'diamonds' | 'tickets' | 'rps';
+    tournamentName: string;
+    eliminatedBy?: {
+      id: string;
+      name: string;
+      avatar?: string | null;
+    };
+    timestamp: number;
+  } | null>(null);
+
   // Refs
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptRef = useRef(0);
@@ -1568,18 +1586,58 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           break;
         
         case 'player_eliminated':
-          // Player was eliminated from tournament
+          // Player was eliminated from tournament - with full elimination data
           log('💀 Player eliminated:', data);
           {
             const elimData = data as Record<string, unknown>;
-            const eliminatedPlayerId = elimData.playerId as string;
+            const eliminatedPlayerId = (elimData.playerId || elimData.player_id) as string;
+            const eliminatedPlayerName = (elimData.playerName || elimData.player_name || 'Player') as string;
+            const finishPosition = (elimData.finishPosition || elimData.finish_position || 0) as number;
+            const totalPlayers = (elimData.totalPlayers || elimData.total_players || 0) as number;
+            const prizeAmount = (elimData.prizeAmount || elimData.prize_amount || elimData.prize || 0) as number;
+            const prizeType = (elimData.prizeType || elimData.prize_type || 'diamonds') as 'diamonds' | 'tickets' | 'rps';
+            const tournamentName = (elimData.tournamentName || elimData.tournament_name || 'Tournament') as string;
+            const eliminatedBy = elimData.eliminatedBy as { id: string; name: string; avatar?: string | null } | undefined;
             
             // If we were eliminated, clear rebuy state
             if (eliminatedPlayerId === playerId) {
               setRebuyAvailable(null);
             }
             
-            // Update player in state
+            // Set elimination data for animation
+            setEliminationData({
+              playerId: eliminatedPlayerId,
+              playerName: eliminatedPlayerName,
+              playerAvatar: (elimData.playerAvatar || elimData.player_avatar) as string | null | undefined,
+              finishPosition,
+              totalPlayers,
+              prizeAmount: prizeAmount > 0 ? prizeAmount : undefined,
+              prizeType: prizeAmount > 0 ? prizeType : undefined,
+              tournamentName,
+              eliminatedBy,
+              timestamp: Date.now()
+            });
+            
+            // Update player in state - remove from table
+            setTableState((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                players: prev.players.filter(p => p.playerId !== eliminatedPlayerId)
+              };
+            });
+          }
+          break;
+
+        case 'player_eliminated_from_table':
+          // Quick table-only elimination event (e.g., rebuy timeout)
+          // Just remove player from table state, animation handled by main player_eliminated
+          {
+            const elimData = data as Record<string, unknown>;
+            const eliminatedPlayerId = (elimData.playerId || elimData.player_id) as string;
+            
+            log('💀 Player removed from table:', eliminatedPlayerId);
+            
             setTableState((prev) => {
               if (!prev) return prev;
               return {
@@ -2190,6 +2248,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     clearRebuyAvailable: () => setRebuyAvailable(null),
     tournamentBreak,
     clearTournamentBreak: () => setTournamentBreak(null),
+    
+    // Elimination data for animation
+    eliminationData,
+    clearEliminationData: () => setEliminationData(null),
     
     // Professional timing
     betsBeingCollected,
