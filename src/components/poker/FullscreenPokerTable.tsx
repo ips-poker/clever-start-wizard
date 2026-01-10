@@ -197,14 +197,37 @@ let globalCalibrationCache: {
   positions: { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null;
   betOffsets: { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null;
   loaded: boolean;
-} = { positions: null, betOffsets: null, loaded: false };
+  version: number;
+} = { positions: null, betOffsets: null, loaded: false, version: 0 };
+
+// Слушатели для реактивного обновления позиций
+const calibrationListeners = new Set<() => void>();
+
+// Функция подписки на обновления калибровки
+export function subscribeToCalibration(callback: () => void): () => void {
+  calibrationListeners.add(callback);
+  return () => { calibrationListeners.delete(callback); };
+}
+
+// Функция для уведомления о загрузке калибровки
+export function triggerCalibrationUpdate() {
+  globalCalibrationCache.version++;
+  calibrationListeners.forEach(cb => cb());
+}
 
 // Экспортируем функцию для установки кеша из хука
 export function setGlobalCalibrationCache(
   positions: { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null,
   betOffsets: { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null
 ) {
-  globalCalibrationCache = { positions, betOffsets, loaded: true };
+  globalCalibrationCache = { positions, betOffsets, loaded: true, version: globalCalibrationCache.version + 1 };
+  // Уведомляем все компоненты об обновлении
+  triggerCalibrationUpdate();
+}
+
+// Получить текущую версию калибровки (для dependency в useMemo)
+export function getCalibrationVersion(): number {
+  return globalCalibrationCache.version;
 }
 
 function getCalibrationConfig(): { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null {
@@ -1382,10 +1405,26 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   showdownReveals,
   winnerAnnouncement
 }: FullscreenPokerTableProps) {
+  // Реактивно отслеживаем обновления калибровки для пересчёта позиций
+  const [calibrationVersion, setCalibrationVersion] = useState(globalCalibrationCache.version);
+  
+  useEffect(() => {
+    // Подписываемся на обновления калибровки
+    const unsubscribe = subscribeToCalibration(() => {
+      setCalibrationVersion(globalCalibrationCache.version);
+    });
+    return unsubscribe;
+  }, []);
+  
   // Use dynamic positions based on max seats
   // wideMode prop explicitly indicates Telegram Mini App context
   const maxPlayers = maxSeats;
-  const positions = getSeatPositions(maxPlayers, wideMode);
+  
+  // Позиции пересчитываются при изменении calibrationVersion
+  const positions = useMemo(() => {
+    return getSeatPositions(maxPlayers, wideMode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [maxPlayers, wideMode, calibrationVersion]);
   
   // Get personalization preferences
   const { preferences, currentTableTheme, currentCardBack } = usePokerPreferences();

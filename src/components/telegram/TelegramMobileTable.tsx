@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,34 @@ import {
   RANK_NAMES,
   getSuitColor
 } from '@/utils/pokerEngine';
+import { useCalibrationSync, useCalibrationVersion } from '@/hooks/useCalibrationSync';
+import { subscribeToCalibration, getCalibrationVersion } from '@/components/poker/FullscreenPokerTable';
+
+// Дефолтные позиции для Telegram (6 мест) - используются как fallback
+const DEFAULT_TELEGRAM_POSITIONS: Array<{ x: number; y: number }> = [
+  { x: 50, y: 86 },   // Seat 0 - Hero (bottom center)
+  { x: 14, y: 64 },   // Seat 1 - Left bottom
+  { x: 14, y: 36 },   // Seat 2 - Left top
+  { x: 50, y: 14 },   // Seat 3 - Top center
+  { x: 86, y: 36 },   // Seat 4 - Right top
+  { x: 86, y: 64 },   // Seat 5 - Right bottom
+];
+
+// Функция получения калиброванных позиций для Telegram
+function getTelegramSeatPositions(maxSeats: number = 6): Array<{ x: number; y: number }> {
+  try {
+    const saved = localStorage.getItem('syndikate_seat_positions');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed?.telegram?.[maxSeats]) {
+        return parsed.telegram[maxSeats];
+      }
+    }
+  } catch {
+    // Fallback to defaults
+  }
+  return DEFAULT_TELEGRAM_POSITIONS;
+}
 
 interface TelegramMobileTableProps {
   tableId: string;
@@ -69,6 +97,25 @@ export function TelegramMobileTable({
   const [myHandEvaluation, setMyHandEvaluation] = useState<HandEvaluation | null>(null);
   const [showActions, setShowActions] = useState(false);
   const [betAmount, setBetAmount] = useState(0);
+  
+  // Синхронизация калибровки для Telegram
+  useCalibrationSync();
+  
+  // Реактивно отслеживаем обновления калибровки
+  const [calibrationVersion, setCalibrationVersion] = useState(getCalibrationVersion());
+  useEffect(() => {
+    const unsubscribe = subscribeToCalibration(() => {
+      setCalibrationVersion(getCalibrationVersion());
+    });
+    return unsubscribe;
+  }, []);
+  
+  // Позиции мест с учётом калибровки
+  const maxSeats = table?.max_players || 6;
+  const seatPositions = useMemo(() => {
+    return getTelegramSeatPositions(maxSeats);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [maxSeats, calibrationVersion]);
 
   useEffect(() => {
     fetchTableData();
@@ -228,12 +275,25 @@ export function TelegramMobileTable({
     );
   };
 
-  const renderPlayerSeat = (seatNumber: number, position: string) => {
-    const player = players.find(p => p.seat_number === seatNumber);
+  // Рендер места игрока с использованием калиброванных координат
+  const renderPlayerSeat = (seatIndex: number) => {
+    // seatIndex - это визуальный индекс (0-based), seat_number в БД может быть 1-based
+    // Ищем игрока по seat_number который соответствует seatIndex (с учётом 0-based)
+    const player = players.find(p => p.seat_number === seatIndex);
     const isMe = player?.player?.id === playerId;
     
+    // Получаем калиброванную позицию
+    const position = seatPositions[seatIndex] || DEFAULT_TELEGRAM_POSITIONS[seatIndex] || { x: 50, y: 50 };
+    
     return (
-      <div className={`absolute ${position} flex flex-col items-center`}>
+      <div 
+        key={`seat-${seatIndex}`}
+        className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2"
+        style={{ 
+          left: `${position.x}%`, 
+          top: `${position.y}%`,
+        }}
+      >
         <div className={`
           w-14 h-14 rounded-full border-2 overflow-hidden
           ${isMe ? 'border-syndikate-orange ring-2 ring-syndikate-orange/50' : 'border-border'}
@@ -432,13 +492,8 @@ export function TelegramMobileTable({
             </div>
           </div>
 
-          {/* Player Seats for vertical table */}
-          {renderPlayerSeat(1, 'bottom-0 left-1/2 -translate-x-1/2 translate-y-10')}
-          {renderPlayerSeat(2, 'bottom-[30%] left-0 -translate-x-6')}
-          {renderPlayerSeat(3, 'top-[30%] left-0 -translate-x-6')}
-          {renderPlayerSeat(4, 'top-0 left-1/2 -translate-x-1/2 -translate-y-10')}
-          {renderPlayerSeat(5, 'top-[30%] right-0 translate-x-6')}
-          {renderPlayerSeat(6, 'bottom-[30%] right-0 translate-x-6')}
+          {/* Player Seats for vertical table - using calibrated positions */}
+          {Array.from({ length: maxSeats }, (_, i) => renderPlayerSeat(i))}
         </div>
 
         {/* My Cards */}

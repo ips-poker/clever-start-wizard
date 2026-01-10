@@ -3,10 +3,11 @@
 // ============================================
 // Синхронизация калибровки позиций игроков через Supabase
 // Решает проблему изолированного localStorage в Telegram mini-app
+// ВАЖНО: Теперь реактивно триггерит перерендер при загрузке калибровки
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { setGlobalCalibrationCache } from '@/components/poker/FullscreenPokerTable';
+import { setGlobalCalibrationCache, subscribeToCalibration, getCalibrationVersion } from '@/components/poker/FullscreenPokerTable';
 
 interface CalibrationData {
   positions: {
@@ -20,6 +21,21 @@ interface CalibrationData {
 }
 
 const CALIBRATION_SETTING_KEY = 'poker_table_calibration';
+
+// Хук для реактивного отслеживания обновлений калибровки
+export function useCalibrationVersion() {
+  const [version, setVersion] = useState(getCalibrationVersion());
+  
+  useEffect(() => {
+    // Подписываемся на обновления калибровки
+    const unsubscribe = subscribeToCalibration(() => {
+      setVersion(getCalibrationVersion());
+    });
+    return unsubscribe;
+  }, []);
+  
+  return version;
+}
 
 export function useCalibrationSync() {
   const [isLoading, setIsLoading] = useState(true);
