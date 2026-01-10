@@ -1430,15 +1430,6 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxPlayers, wideMode, calibrationVersion]);
 
-  // DEBUG (temporary): helps verify what coordinates are used at first render
-  useEffect(() => {
-    try {
-      const mode = wideMode ? 'telegram' : 'desktop';
-      console.log('[SeatPositions] mode=', mode, 'maxPlayers=', maxPlayers, 'calVer=', calibrationVersion, 'p0=', positions?.[0]);
-    } catch {
-      // ignore
-    }
-  }, [positions, wideMode, maxPlayers, calibrationVersion]);
 
   // Get personalization preferences
   const { preferences, currentTableTheme, currentCardBack } = usePokerPreferences();
