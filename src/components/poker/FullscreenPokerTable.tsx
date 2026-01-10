@@ -748,7 +748,16 @@ const PlayerSeat = memo(function PlayerSeat({
           // Get winning card indices - from player object (calculated by hook)
           const playerWinningIndices = (player as any).winningCardIndices || [];
           
-          // Showdown render - no debug logging in production
+          // Debug: log showdown data
+          if (shouldReveal) {
+            console.log('[PlayerSeat] Showdown render:', {
+              playerName: player.name,
+              isWinner: (player as any).isWinner,
+              winningCardIndices: playerWinningIndices,
+              handName: (player as any).handName,
+              displayCards
+            });
+          }
           
           // Position cards ON the avatar corner, pointing towards table center
           const isOnRightSide = position.x > 50;
@@ -1424,7 +1433,15 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxPlayers, wideMode, calibrationVersion]);
 
-  // Seat positions are computed based on mode and calibration
+  // DEBUG (temporary): helps verify what coordinates are used at first render
+  useEffect(() => {
+    try {
+      const mode = wideMode ? 'telegram' : 'desktop';
+      console.log('[SeatPositions] mode=', mode, 'maxPlayers=', maxPlayers, 'calVer=', calibrationVersion, 'p0=', positions?.[0]);
+    } catch {
+      // ignore
+    }
+  }, [positions, wideMode, maxPlayers, calibrationVersion]);
 
   // Get personalization preferences
   const { preferences, currentTableTheme, currentCardBack } = usePokerPreferences();

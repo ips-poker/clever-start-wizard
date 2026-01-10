@@ -65,7 +65,12 @@ export function TournamentHUD({
 
   // Fetch tournament data
   useEffect(() => {
-    if (!tournamentId) return;
+    if (!tournamentId) {
+      console.log('[TournamentHUD] No tournamentId provided');
+      return;
+    }
+    
+    console.log('[TournamentHUD] Fetching tournament:', tournamentId);
 
     const fetchTournament = async () => {
       const { data, error } = await supabase
@@ -73,6 +78,8 @@ export function TournamentHUD({
         .select('*')
         .eq('id', tournamentId)
         .single();
+      
+      console.log('[TournamentHUD] Tournament data:', data, 'Error:', error);
 
       if (!error && data) {
         setTournament(data);
@@ -194,13 +201,14 @@ export function TournamentHUD({
       // If time expired and tournament is running, trigger level advancement
       if (remaining === 0 && !hasTriggeredAdvance && tournament.status === 'running') {
         hasTriggeredAdvance = true;
+        console.log('[TournamentHUD] Timer expired, triggering level manager');
         
         try {
           await supabase.functions.invoke('tournament-level-manager', {
             body: { tournamentId }
           });
-        } catch {
-          // Level manager invoke failed - silently ignore
+        } catch (err) {
+          console.warn('[TournamentHUD] Level manager invoke failed:', err);
         }
       }
     };

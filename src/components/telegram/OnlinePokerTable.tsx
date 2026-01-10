@@ -56,10 +56,12 @@ export function OnlinePokerTable({
           .single();
         
         if (error) {
+          console.error('[OnlinePokerTable] Error fetching table config:', error);
           return;
         }
         
         if (data) {
+          console.log('[OnlinePokerTable] Table config:', data);
           if (data.max_players) {
             setMaxSeats(data.max_players);
           }

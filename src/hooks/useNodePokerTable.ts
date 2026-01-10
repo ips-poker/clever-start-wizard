@@ -104,8 +104,8 @@ const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
 
-// Debug logging - disabled in production to reduce console noise
-const DEBUG = false;
+// Debug logging
+const DEBUG = true;
 const log = (...args: unknown[]) => DEBUG && console.log('[NodePoker]', ...args);
 
 export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
@@ -459,9 +459,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       const data = JSON.parse(event.data) as Record<string, unknown>;
       log('📥 Recv:', data.type, data);
       
-      // Enhanced logging for debugging showdown - only in DEBUG mode
-      if (DEBUG && (data.type?.toString().includes('hand') || data.type?.toString().includes('showdown') || data.type?.toString().includes('winner'))) {
-        console.log('[SHOWDOWN DEBUG] Event received:', data.type);
+      // Enhanced logging for debugging showdown
+      if (data.type?.toString().includes('hand') || data.type?.toString().includes('showdown') || data.type?.toString().includes('winner')) {
+        console.log('[SHOWDOWN DEBUG] Event received:', data.type, JSON.stringify(data, null, 2));
       }
 
       switch (data.type) {
@@ -2024,7 +2024,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
   const bet = useCallback((amount: number) => {
     if (!tableId || !playerId) return;
-    log('💰 Bet action:', { tableId, playerId, amount });
+    console.log('[NodePoker] 💰 Bet action:', { tableId, playerId, amount });
     sendMessage({
       type: 'action',
       tableId,
@@ -2038,13 +2038,21 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     if (!tableId || !playerId) return;
     
     const currentBetAmount = tableState?.currentBet || 0;
+    const myCurrentBet = tableStateRef.current?.players.find(p => p.playerId === playerId)?.betAmount || 0;
     
     // Engine v3 expects TOTAL raise amount (what we want our total bet to be)
     // If currentBet=0, it's a "bet", otherwise it's a "raise"
     // Engine will auto-convert raise to bet if needed
     const actionType = currentBetAmount === 0 ? 'bet' : 'raise';
     
-    log('💰 Raise/Bet action:', { actionType, totalAmount, currentBet: currentBetAmount });
+    console.log('[NodePoker] 💰 Raise/Bet action (v2):', { 
+      tableId, playerId, 
+      totalAmount,
+      actionType, 
+      currentBet: currentBetAmount,
+      myCurrentBet,
+      sendingAmount: totalAmount
+    });
     
     sendMessage({
       type: 'action',

@@ -208,33 +208,17 @@ export function FullscreenPokerTableWrapper({
     return () => clearInterval(interval);
   }, [tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.timeRemaining]);
 
-  // Auto-connect on mount (also repairs stale DB seat state on reload)
+  // Auto-connect on mount
   useEffect(() => {
-    let cancelled = false;
-
-    const boot = async () => {
-      if (hasConnectedRef.current) return;
+    if (!hasConnectedRef.current) {
       hasConnectedRef.current = true;
-
-      try {
-        // Fix stale "disconnected" status for this player on this table (common after Telegram WebView reload)
-        await supabase.functions.invoke('poker-reconnect-repair', {
-          body: { tableId }
-        });
-      } catch {
-        // ignore
-      }
-
-      if (!cancelled) connect();
+      console.log('[FullscreenPokerTableWrapper] Props - isTournament:', isTournament, 'tournamentId:', tournamentId);
+      connect();
+    }
+    return () => { 
+      // Don't disconnect here - let handleLeave handle it
     };
-
-    boot();
-
-    return () => {
-      cancelled = true;
-      disconnect();
-    };
-  }, [tableId, connect, disconnect]);
+  }, []);
 
   // Auto-join for tournament players - they already have assigned seats
   // Skip for spectators - they just watch
@@ -252,19 +236,23 @@ export function FullscreenPokerTableWrapper({
           p_player_id: playerId
         });
 
-        if (error) return;
+        if (error) {
+          console.error('[Tournament AutoJoin] Error fetching seat:', error);
+          return;
+        }
 
         const assignment = data as any;
         if (assignment?.success && assignment?.table_assigned && assignment?.seat_number !== undefined) {
           hasAutoJoinedRef.current = true;
-
+          console.log('[Tournament AutoJoin] Joining seat', assignment.seat_number, 'with chips', assignment.chips);
+          
           // Join at assigned seat with tournament chips
           setActualBuyIn(assignment.chips || 0);
           joinTable(assignment.seat_number);
           toast.success(`Вы за столом: место ${assignment.seat_number + 1}`);
         }
-      } catch {
-        // ignore
+      } catch (err) {
+        console.error('[Tournament AutoJoin] Failed:', err);
       }
     };
 
@@ -526,6 +514,7 @@ export function FullscreenPokerTableWrapper({
   }, [myPlayer, tableState?.phase]);
 
   const handleSettingsSave = useCallback((settings: any) => {
+    console.log('Saving settings:', settings);
     setShowSettings(false);
   }, []);
   
