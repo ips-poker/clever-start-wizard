@@ -212,7 +212,6 @@ export function FullscreenPokerTableWrapper({
   useEffect(() => {
     if (!hasConnectedRef.current) {
       hasConnectedRef.current = true;
-      console.log('[FullscreenPokerTableWrapper] Props - isTournament:', isTournament, 'tournamentId:', tournamentId);
       connect();
     }
     return () => { 
@@ -244,7 +243,6 @@ export function FullscreenPokerTableWrapper({
         const assignment = data as any;
         if (assignment?.success && assignment?.table_assigned && assignment?.seat_number !== undefined) {
           hasAutoJoinedRef.current = true;
-          console.log('[Tournament AutoJoin] Joining seat', assignment.seat_number, 'with chips', assignment.chips);
           
           // Join at assigned seat with tournament chips
           setActualBuyIn(assignment.chips || 0);
@@ -514,7 +512,6 @@ export function FullscreenPokerTableWrapper({
   }, [myPlayer, tableState?.phase]);
 
   const handleSettingsSave = useCallback((settings: any) => {
-    console.log('Saving settings:', settings);
     setShowSettings(false);
   }, []);
   
