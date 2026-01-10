@@ -155,7 +155,7 @@ export function TelegramMobileTable({
   const [betAmount, setBetAmount] = useState(0);
   
   // Синхронизация калибровки для Telegram
-  useCalibrationSync();
+  const { isLoading: isCalibrationLoading } = useCalibrationSync();
   
   // Реактивно отслеживаем обновления калибровки
   const [calibrationVersion, setCalibrationVersion] = useState(getCalibrationVersion());
@@ -384,10 +384,14 @@ export function TelegramMobileTable({
     );
   };
 
-  if (loading) {
+  // Ожидаем загрузку данных стола и калибровки позиций
+  if (loading || isCalibrationLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-spin h-8 w-8 border-2 border-syndikate-orange border-t-transparent rounded-full" />
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin h-8 w-8 border-2 border-syndikate-orange border-t-transparent rounded-full" />
+          <span className="text-white/60 text-sm">{isCalibrationLoading ? 'Загрузка позиций...' : 'Загрузка стола...'}</span>
+        </div>
       </div>
     );
   }

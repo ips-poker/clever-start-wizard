@@ -87,7 +87,7 @@ export function FullscreenPokerTableWrapper({
   const { preferences, currentTableTheme, updatePreference } = usePokerPreferences();
   
   // Синхронизация калибровки позиций с Supabase (для Telegram mini-app)
-  useCalibrationSync();
+  const { isLoading: isCalibrationLoading } = useCalibrationSync();
   
   const sounds = usePokerSounds();
   const tournamentSounds = useTournamentSounds({ enabled: soundEnabled && isTournament, volume: 0.5 });
@@ -806,32 +806,42 @@ export function FullscreenPokerTableWrapper({
             </div>
           )}
 
-          <FullscreenPokerTable
-            tableState={tableState}
-            players={formattedPlayers}
-            heroSeat={heroSeatForUI}
-            heroCards={myCards}
-            communityCards={displayCommunityCards}
-            pot={potValue}
-            phase={displayPhase}
-            dealerSeat={dealerSeat}
-            smallBlindSeat={smallBlindSeat}
-            bigBlindSeat={bigBlindSeat}
-            currentPlayerSeat={currentPlayerSeat}
-            turnTimeRemaining={turnTimeRemaining || undefined}
-            smallBlind={tableState?.smallBlindAmount || 10}
-            bigBlind={tableState?.bigBlindAmount || 20}
-            canJoinTable={canJoinTable}
-            onSeatClick={handleSeatClick}
-            maxSeats={maxSeats}
-            wideMode={wideMode}
-            showdownPlayers={showdownResult?.showdownPlayers}
-            winners={showdownResult?.winners}
-            betsBeingCollected={betsBeingCollected}
-            phaseTimings={phaseTimings}
-            showdownReveals={showdownReveals}
-            winnerAnnouncement={winnerAnnouncement}
-          />
+          {/* Ожидаем загрузку калибровки позиций перед рендером стола */}
+          {isCalibrationLoading ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-10 h-10 border-4 border-white/20 border-t-amber-400 rounded-full animate-spin" />
+                <span className="text-white/60 text-sm">Загрузка стола...</span>
+              </div>
+            </div>
+          ) : (
+            <FullscreenPokerTable
+              tableState={tableState}
+              players={formattedPlayers}
+              heroSeat={heroSeatForUI}
+              heroCards={myCards}
+              communityCards={displayCommunityCards}
+              pot={potValue}
+              phase={displayPhase}
+              dealerSeat={dealerSeat}
+              smallBlindSeat={smallBlindSeat}
+              bigBlindSeat={bigBlindSeat}
+              currentPlayerSeat={currentPlayerSeat}
+              turnTimeRemaining={turnTimeRemaining || undefined}
+              smallBlind={tableState?.smallBlindAmount || 10}
+              bigBlind={tableState?.bigBlindAmount || 20}
+              canJoinTable={canJoinTable}
+              onSeatClick={handleSeatClick}
+              maxSeats={maxSeats}
+              wideMode={wideMode}
+              showdownPlayers={showdownResult?.showdownPlayers}
+              winners={showdownResult?.winners}
+              betsBeingCollected={betsBeingCollected}
+              phaseTimings={phaseTimings}
+              showdownReveals={showdownReveals}
+              winnerAnnouncement={winnerAnnouncement}
+            />
+          )}
         </div>
 
         {/* Seat rotation control - when not playing */}
