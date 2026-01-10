@@ -1698,20 +1698,42 @@ export function runItTwice(
 // ==========================================
 // TOURNAMENT HELPERS
 // ==========================================
+
+/**
+ * Collect antes from ALL players (including sitting out - PokerStars rules)
+ * PROFESSIONAL: In tournaments, sitting out players still pay antes
+ * This prevents exploiting sit-out to avoid mandatory bets
+ */
 export function collectAntes(
   players: GamePlayer[],
-  anteAmount: number
+  anteAmount: number,
+  isTournament: boolean = true  // Default to tournament behavior
 ): { pot: number; updatedPlayers: GamePlayer[] } {
   let pot = 0;
   const updatedPlayers = players.map(p => {
-    if (p.isSittingOut || p.stack === 0) return p;
+    // Skip players with zero stack (already eliminated)
+    if (p.stack === 0) return p;
+    
+    // POKERSTARS RULE: In tournaments, sitting out players STILL pay antes
+    // In cash games, sitting out players don't pay
+    if (!isTournament && p.isSittingOut) return p;
     
     const ante = Math.min(anteAmount, p.stack);
     pot += ante;
+    
+    console.log('[Engine] Ante collected:', {
+      playerId: p.id.substring(0, 8),
+      ante,
+      isSittingOut: p.isSittingOut,
+      newStack: p.stack - ante
+    });
+    
     return {
       ...p,
       stack: p.stack - ante,
-      betAmount: 0
+      betAmount: 0,
+      // If ante puts player all-in, mark them
+      isAllIn: p.stack - ante === 0
     };
   });
   
@@ -1721,50 +1743,84 @@ export function collectAntes(
 /**
  * Post blinds with professional validation
  * CRITICAL: Handles dead button, short stacks, and all-in blinds correctly
+ * 
+ * POKERSTARS RULES FOR SITTING OUT:
+ * - Sitting out players in BLIND positions STILL post blinds (forced bets)
+ * - Their blinds are "dead" - they auto-fold but still contribute to pot
+ * - This prevents players from sitting out to avoid blind positions
  */
 export function postBlinds(
   players: GamePlayer[],
   sbSeat: number,
   bbSeat: number,
   smallBlind: number,
-  bigBlind: number
-): { pot: number; currentBet: number; updatedPlayers: GamePlayer[] } {
+  bigBlind: number,
+  isTournament: boolean = true  // Default to tournament behavior
+): { pot: number; currentBet: number; updatedPlayers: GamePlayer[]; deadBlinds: string[] } {
   let pot = 0;
   let currentBet = bigBlind;
   let sbPosted = false;
   let bbPosted = false;
+  const deadBlinds: string[] = [];  // Track which blinds are "dead" (sitting out)
   
   const updatedPlayers = players.map(p => {
-    if (p.seatNumber === sbSeat && !p.isFolded && !p.isSittingOut) {
-      const sb = Math.min(smallBlind, p.stack);
-      if (sb > 0) {
+    // Small Blind position
+    if (p.seatNumber === sbSeat && !p.isFolded) {
+      // POKERSTARS: Even sitting out players post blinds in tournaments
+      const mustPostBlind = isTournament || !p.isSittingOut;
+      
+      if (mustPostBlind && p.stack > 0) {
+        const sb = Math.min(smallBlind, p.stack);
         pot += sb;
         sbPosted = true;
         const newStack = p.stack - sb;
+        
+        // If sitting out, mark as dead blind (will auto-fold)
+        if (p.isSittingOut) {
+          deadBlinds.push(p.id);
+          console.log('[Engine] Dead SB posted by sitting out player:', p.id.substring(0, 8));
+        }
+        
         return {
           ...p,
           stack: newStack,
           betAmount: sb,
           totalBetThisHand: sb,
           isAllIn: newStack === 0,
-          hasActedThisRound: false
+          hasActedThisRound: false,
+          // Sitting out players are marked as folded after posting blind
+          isFolded: p.isSittingOut
         };
       }
     }
-    if (p.seatNumber === bbSeat && !p.isFolded && !p.isSittingOut) {
-      const bb = Math.min(bigBlind, p.stack);
-      if (bb > 0) {
+    
+    // Big Blind position
+    if (p.seatNumber === bbSeat && !p.isFolded) {
+      // POKERSTARS: Even sitting out players post blinds in tournaments
+      const mustPostBlind = isTournament || !p.isSittingOut;
+      
+      if (mustPostBlind && p.stack > 0) {
+        const bb = Math.min(bigBlind, p.stack);
         pot += bb;
         bbPosted = true;
         currentBet = Math.max(currentBet, bb);
         const newStack = p.stack - bb;
+        
+        // If sitting out, mark as dead blind (will auto-fold)
+        if (p.isSittingOut) {
+          deadBlinds.push(p.id);
+          console.log('[Engine] Dead BB posted by sitting out player:', p.id.substring(0, 8));
+        }
+        
         return {
           ...p,
           stack: newStack,
           betAmount: bb,
           totalBetThisHand: bb,
           isAllIn: newStack === 0,
-          hasActedThisRound: false
+          hasActedThisRound: false,
+          // Sitting out players are marked as folded after posting blind
+          isFolded: p.isSittingOut
         };
       }
     }
@@ -1777,10 +1833,11 @@ export function postBlinds(
     sbPosted,
     bbPosted,
     sbSeat,
-    bbSeat
+    bbSeat,
+    deadBlinds: deadBlinds.length
   });
   
-  return { pot, currentBet, updatedPlayers };
+  return { pot, currentBet, updatedPlayers, deadBlinds };
 }
 
 // ==========================================
@@ -1902,6 +1959,7 @@ export interface GameConfig {
   runItTwiceEnabled: boolean;
   bombPotEnabled: boolean;
   straddleEnabled: boolean;
+  isTournament?: boolean;  // POKERSTARS: Tournament mode forces sitting out players to pay blinds
 }
 
 // ==========================================
@@ -2029,26 +2087,29 @@ export class PokerEngineV3 {
       firstToAct: positions.firstToActSeat
     });
     
-    // Post blinds
+    // Post blinds - POKERSTARS: sitting out players pay blinds in tournaments
+    const isTournament = this.config.isTournament ?? true; // Default to tournament behavior
     const blindsResult = postBlinds(
       gamePlayers,
       positions.sbSeat,
       positions.bbSeat,
       this.config.smallBlind,
-      this.config.bigBlind
+      this.config.bigBlind,
+      isTournament
     );
     
     console.log('[Engine] Blinds posted:', {
       pot: blindsResult.pot,
-      currentBet: blindsResult.currentBet
+      currentBet: blindsResult.currentBet,
+      deadBlinds: blindsResult.deadBlinds
     });
     
-    // Collect antes if configured
+    // Collect antes if configured - POKERSTARS: sitting out players pay antes in tournaments
     let pot = blindsResult.pot;
     let playersAfterBlinds = blindsResult.updatedPlayers;
     
     if (this.config.ante > 0) {
-      const antesResult = collectAntes(playersAfterBlinds, this.config.ante);
+      const antesResult = collectAntes(playersAfterBlinds, this.config.ante, isTournament);
       pot += antesResult.pot;
       playersAfterBlinds = antesResult.updatedPlayers;
       console.log('[Engine] Antes collected:', antesResult.pot);

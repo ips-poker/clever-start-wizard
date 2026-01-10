@@ -29,6 +29,7 @@ import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
 import { ProTournamentLobby } from './tournament-lobby';
 import { TimeBankIndicator } from './TimeBankIndicator';
 import { TournamentBreakBanner } from './TournamentBreakBanner';
+import { TournamentBreakOverlay } from './TournamentBreakOverlay';
 
 
 // Syndikate branding
@@ -563,11 +564,18 @@ export function FullscreenPokerTableWrapper({
           onReconnectNow={() => connect()}
         />
 
-        {/* Tournament Break Banner */}
-        {isTournament && tournamentBreak && (
+        {/* Tournament Break Banner - floating notification */}
+        {isTournament && tournamentBreak && tournamentBreak.type === 'break_starting' && (
           <TournamentBreakBanner 
             breakInfo={tournamentBreak}
             onDismiss={clearTournamentBreak}
+          />
+        )}
+        
+        {/* Tournament Break Overlay - full table overlay during active break */}
+        {isTournament && tournamentBreak && tournamentBreak.type === 'break_started' && (
+          <TournamentBreakOverlay 
+            breakInfo={tournamentBreak}
           />
         )}
 
