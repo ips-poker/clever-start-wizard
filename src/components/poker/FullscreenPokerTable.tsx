@@ -1637,9 +1637,13 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       {/* Player seats */}
       {positions.map((pos, idx) => {
         const player = positionedPlayers[idx];
-        const actualSeatNumber = heroSeat !== null 
-          ? (idx + heroSeat) % maxPlayers 
-          : idx;
+
+        // IMPORTANT: seatNumber passed to PlayerSeat/empty-seat click MUST map to the real (server) seat number.
+        // When heroSeat is null we still apply preferredSeatRotation for visual layout (see positionedPlayers).
+        // So we need to invert that rotation here, otherwise empty seats will not match calibrated avatar positions.
+        const actualSeatNumber = heroSeat !== null
+          ? (idx + heroSeat) % maxPlayers
+          : (idx - preferences.preferredSeatRotation + maxPlayers) % maxPlayers;
 
         const isHeroSeat = idx === 0 && heroSeat !== null;
 
