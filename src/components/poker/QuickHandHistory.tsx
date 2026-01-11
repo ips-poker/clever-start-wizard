@@ -68,10 +68,13 @@ export function QuickHandHistory({
 
   const lastRequestIdRef = useRef(0);
   const refreshDebounceRef = useRef<number | null>(null);
+  const serverHandHistorySupportedRef = useRef(true);
+  const didReceiveHandsRef = useRef(false);
 
   const selectedHand = useMemo(() => hands[selectedHandIndex], [hands, selectedHandIndex]);
 
   const applyHands = useCallback((incoming: QuickHandEntry[]) => {
+    didReceiveHandsRef.current = true;
     setHands(incoming);
     setSelectedHandIndex(0);
     setErrorText(null);
@@ -80,7 +83,9 @@ export function QuickHandHistory({
   const requestHandsFromServer = useCallback(
     (reason: 'open' | 'manual' | 'hand_completed' = 'manual') => {
       if (!sendMessage || !tableId) return false;
+      if (!serverHandHistorySupportedRef.current) return false;
 
+      didReceiveHandsRef.current = false;
       const ws = wsRef?.current;
       if (!ws || ws.readyState !== WebSocket.OPEN) {
         // If socket is still connecting, try a short retry window.
@@ -127,6 +132,8 @@ export function QuickHandHistory({
 
     setLoading(true);
     setErrorText(null);
+    didReceiveHandsRef.current = false;
+    console.log('[QuickHandHistory] Supabase fetch start', { tableId, playerId });
 
     try {
       const { data: handsData, error } = await supabase
@@ -146,6 +153,8 @@ export function QuickHandHistory({
         .not('completed_at', 'is', null)
         .order('hand_number', { ascending: false })
         .limit(10);
+
+      console.log('[QuickHandHistory] Supabase handsData:', handsData?.length ?? 0);
 
       if (error) throw error;
 
@@ -233,6 +242,8 @@ export function QuickHandHistory({
 
       if (parsed.type === 'hand_history') {
         if (parsed.tableId !== tableId) return;
+        console.log('[QuickHandHistory] WS hand_history received:', parsed.hands?.length ?? 0);
+        didReceiveHandsRef.current = true;
         applyHands(Array.isArray(parsed.hands) ? parsed.hands : []);
         setLoading(false);
         setErrorText(null);
@@ -258,6 +269,8 @@ export function QuickHandHistory({
 
         // Older server builds may not support get_hand_history yet.
         if (msg.includes('Unknown message type') && msg.includes('get_hand_history')) {
+          serverHandHistorySupportedRef.current = false;
+          console.warn('[QuickHandHistory] WS does not support get_hand_history; switching to Supabase-only mode');
           fetchHandsFromSupabase();
           return;
         }
@@ -289,13 +302,14 @@ export function QuickHandHistory({
 
     // If WS doesn't answer quickly, fallback to Supabase (best-effort)
     const timeoutId = window.setTimeout(() => {
-      if (!hands.length) {
+      if (!didReceiveHandsRef.current) {
+        console.warn('[QuickHandHistory] No WS response, falling back to Supabase');
         fetchHandsFromSupabase();
       }
     }, 1500);
 
     return () => window.clearTimeout(timeoutId);
-  }, [fetchHandsFromSupabase, hands.length, isOpen, requestHandsFromServer]);
+  }, [fetchHandsFromSupabase, isOpen, requestHandsFromServer]);
 
   const renderCard = (card: string) => {
     if (!card) return null;
