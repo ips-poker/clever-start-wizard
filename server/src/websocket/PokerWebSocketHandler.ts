@@ -91,43 +91,6 @@ interface DBBlindLevel {
 }
 
 export class PokerWebSocketHandler {
-  private static readonly SERVER_VERSION = '3.3.0';
-  private static readonly SUPPORTED_MESSAGE_TYPES = [
-    'join_table',
-    'action',
-    'leave_table',
-    'sit_out',
-    'sit_in',
-    'subscribe',
-    'get_state',
-    'ping',
-
-    // tournaments
-    'tournament_subscribe',
-    'tournament_start',
-    'tournament_pause',
-    'tournament_resume',
-    'tournament_rebuy',
-    'tournament_addon',
-    'get_tournament_state',
-
-    // hand-for-hand
-    'get_hfh_status',
-
-    // chat
-    'chat',
-
-    // reconnect/session
-    'reconnect_request',
-
-    // hand history
-    'get_hand_history',
-    'get_last_hand',
-
-    // meta
-    'get_server_capabilities'
-  ] as const;
-
   // Use ConnectionPool instead of raw Map
   private connectionPool: ConnectionPool;
   private tablesWithListeners: Set<string> = new Set();
@@ -140,17 +103,6 @@ export class PokerWebSocketHandler {
   private tournamentTimerInterval: NodeJS.Timeout | null = null;
   private metricsInterval: NodeJS.Timeout | null = null;
   private sitOutCheckInterval: NodeJS.Timeout | null = null;
-
-  private getServerCapabilities() {
-    return {
-      handHistory: true,
-      lastHand: true,
-      tournaments: true,
-      handForHand: true,
-      chat: loadManager.isChatEnabled(),
-      loadLevel: loadManager.getLevel(),
-    };
-  }
   
   constructor(
     wss: WebSocketServer, 
@@ -176,7 +128,8 @@ export class PokerWebSocketHandler {
     });
     
     // Initialize Cash Game Sit-Out Manager
-    this.cashGameSitOutManager = new CashGameSitOutManager(supabase);
+    this.cashGameSitOutManager = new CashGameSitOutManager();
+    this.cashGameSitOutManager.setSupabase(supabase);
     
     // Initialize Tournament Elimination Manager
     tournamentEliminationManager.setSupabase(supabase);
@@ -259,11 +212,9 @@ export class PokerWebSocketHandler {
       timestamp: Date.now(),
       tableId,
       playerId,
-      serverVersion: PokerWebSocketHandler.SERVER_VERSION,
-      engine: 'Professional Poker Engine v3.3 (Tournament-Grade)',
-      loadLevel: loadManager.getLevel(),
-      capabilities: this.getServerCapabilities(),
-      supportedMessageTypes: PokerWebSocketHandler.SUPPORTED_MESSAGE_TYPES
+      serverVersion: '3.1.0',
+      engine: 'Professional Poker Engine v3.1 (Tournament-Grade)',
+      loadLevel: loadManager.getLevel()
     });
     
     // Auto-subscribe to table if provided in URL
@@ -429,29 +380,9 @@ export class PokerWebSocketHandler {
           await this.handleReconnectRequest(ws, message);
           break;
         
-        // Hand history request - get recent hands for table/player
-        case 'get_hand_history':
-          await this.handleGetHandHistory(ws, message);
-          break;
-
-        // Get last completed hand - quick access for UI
-        case 'get_last_hand':
-          await this.handleGetLastHand(ws, message);
-          break;
-
-        // Meta: ask server what it supports (helps clients detect old deployments)
-        case 'get_server_capabilities':
-          this.handleGetServerCapabilities(ws);
-          break;
-        
         default:
           logger.warn('Unknown message type', { type: message.type });
-          this.send(ws, {
-            type: 'error',
-            error: `Unknown message type: ${message.type}`,
-            supportedMessageTypes: PokerWebSocketHandler.SUPPORTED_MESSAGE_TYPES,
-            timestamp: Date.now()
-          });
+          this.sendError(ws, `Unknown message type: ${message.type}`);
       }
     } catch (handlerError) {
       logger.error('Handler error - isolated', { 
@@ -584,17 +515,9 @@ export class PokerWebSocketHandler {
       // Check if this is a cash game table - end session
       const tableType = table.getTableType();
       if (tableType === 'cash') {
-        // Best-effort cash-out amount from current player state
-        let cashOutAmount = 0;
-        try {
-          const ps = table.getPlayerState(playerId) as any;
-          cashOutAmount = Math.max(0, Number(ps?.myStack ?? 0) || 0);
-        } catch {
-          cashOutAmount = 0;
-        }
-
-        await this.cashGameSitOutManager.endSession(tableId, playerId, cashOutAmount, 'leave');
+        await this.cashGameSitOutManager.endSession(tableId, playerId, 'voluntary_leave');
       }
+      
       await table.leaveTable(playerId);
     }
     
@@ -1093,25 +1016,12 @@ export class PokerWebSocketHandler {
       metrics.recordMessageSent(str.length);
     }
   }
-
+  
   /**
    * Send error to client
    */
   private sendError(ws: WebSocket, error: string): void {
     this.send(ws, { type: 'error', error, timestamp: Date.now() });
-  }
-
-  /**
-   * Meta endpoint: return server capabilities (for client feature detection)
-   */
-  private handleGetServerCapabilities(ws: WebSocket): void {
-    this.send(ws, {
-      type: 'server_capabilities',
-      serverVersion: PokerWebSocketHandler.SERVER_VERSION,
-      capabilities: this.getServerCapabilities(),
-      supportedMessageTypes: PokerWebSocketHandler.SUPPORTED_MESSAGE_TYPES,
-      timestamp: Date.now()
-    });
   }
   
   /**
@@ -1594,9 +1504,6 @@ export class PokerWebSocketHandler {
         }
       }
       
-      const subscribers = this.connectionPool.getTournamentSubscribers(tournamentId);
-      const tableSubscribers = result.table_id ? this.connectionPool.getTableSubscribers(result.table_id) : new Set<WebSocket>();
-
       // Process PKO bounty if applicable
       if (eliminatedBy) {
         try {
@@ -1609,7 +1516,7 @@ export class PokerWebSocketHandler {
               eliminatedPlayerId: playerId,
               eliminatorPlayerId: eliminatedBy,
               bountyAmount: bountyResult.bountyAmount,
-              collectedAmount: bountyResult.collectedRPS,
+              collectedAmount: bountyResult.collectedAmount,
               timestamp: Date.now()
             };
             messageQueue.enqueueBroadcast(subscribers, bountyMessage, 'high');
@@ -1619,8 +1526,11 @@ export class PokerWebSocketHandler {
           logger.warn('PKO bounty processing failed', { error: String(bountyErr) });
         }
       }
-
+      
       // Broadcast elimination event with full data for frontend animation
+      const subscribers = this.connectionPool.getTournamentSubscribers(tournamentId);
+      const tableSubscribers = result.table_id ? this.connectionPool.getTableSubscribers(result.table_id) : new Set<WebSocket>();
+      
       // Get player name and avatar for animation
       let playerName = 'Player';
       let playerAvatar: string | null = null;
@@ -1835,242 +1745,6 @@ export class PokerWebSocketHandler {
       }),
       timestamp: Date.now()
     });
-  }
-  
-  /**
-   * Handle get hand history request - fetch recent completed hands
-   */
-  private async handleGetHandHistory(ws: WebSocket, message: unknown): Promise<void> {
-    const parsed = z.object({
-      type: z.literal('get_hand_history'),
-      tableId: z.string().uuid(),
-      playerId: z.string().uuid().optional(),
-      limit: z.number().int().min(1).max(50).default(10)
-    }).safeParse(message);
-    
-    if (!parsed.success) {
-      this.sendError(ws, 'Invalid hand history request');
-      return;
-    }
-    
-    const { tableId, playerId, limit } = parsed.data;
-    
-    try {
-      // Fetch completed hands from database
-      const { data: hands, error: handsError } = await this.supabase
-        .from('poker_hands')
-        .select(`
-          id,
-          hand_number,
-          pot,
-          community_cards,
-          phase,
-          winners,
-          completed_at,
-          dealer_seat,
-          small_blind_seat,
-          big_blind_seat
-        `)
-        .eq('table_id', tableId)
-        .not('completed_at', 'is', null)
-        .order('hand_number', { ascending: false })
-        .limit(limit);
-      
-      if (handsError) {
-        logger.error('Error fetching hand history', { error: handsError });
-        this.sendError(ws, 'Failed to fetch hand history');
-        return;
-      }
-      
-      if (!hands || hands.length === 0) {
-        this.send(ws, {
-          type: 'hand_history',
-          tableId,
-          hands: [],
-          timestamp: Date.now()
-        });
-        return;
-      }
-      
-      // If playerId provided, fetch player's cards for each hand
-      let playerHands: Map<string, { holeCards: string[]; isFolded: boolean; wonAmount: number | null }> = new Map();
-      
-      if (playerId) {
-        const handIds = hands.map(h => h.id);
-        const { data: playerData, error: playerError } = await this.supabase
-          .from('poker_hand_players')
-          .select('hand_id, hole_cards, is_folded, won_amount')
-          .eq('player_id', playerId)
-          .in('hand_id', handIds);
-        
-        logger.debug('Fetched player hand data', {
-          playerId: playerId.substring(0, 8),
-          handIds: handIds.length,
-          playerDataCount: playerData?.length || 0,
-          playerError: playerError?.message
-        });
-        
-        if (playerData) {
-          playerData.forEach(p => {
-            playerHands.set(p.hand_id, {
-              holeCards: p.hole_cards || [],
-              isFolded: p.is_folded,
-              wonAmount: p.won_amount
-            });
-          });
-        }
-      }
-      
-      // Format response
-      const formattedHands = hands.map(hand => {
-        const playerHand = playerId ? playerHands.get(hand.id) : undefined;
-        const winners = (hand.winners as any[]) || [];
-        const isWinner = playerId ? winners.some((w: any) => w.playerId === playerId) : false;
-        const myWin = playerId ? winners.find((w: any) => w.playerId === playerId) : undefined;
-        
-        let myResult: 'win' | 'lose' | 'fold' | null = null;
-        if (playerHand) {
-          if (playerHand.isFolded) {
-            myResult = 'fold';
-          } else if (isWinner) {
-            myResult = 'win';
-          } else {
-            myResult = 'lose';
-          }
-        }
-        
-        return {
-          id: hand.id,
-          handNumber: hand.hand_number,
-          pot: hand.pot || 0,
-          communityCards: hand.community_cards || [],
-          myCards: playerHand?.holeCards || [],
-          myResult,
-          winAmount: myWin?.amount,
-          timestamp: hand.completed_at,
-          winnersCount: winners.length,
-          phase: hand.phase
-        };
-      });
-      
-      this.send(ws, {
-        type: 'hand_history',
-        tableId,
-        hands: formattedHands,
-        timestamp: Date.now()
-      });
-      
-    } catch (err) {
-      logger.error('Error in handleGetHandHistory', { error: String(err) });
-      this.sendError(ws, 'Failed to fetch hand history');
-    }
-  }
-  
-  /**
-   * Handle get last hand request - quick access to most recent completed hand
-   */
-  private async handleGetLastHand(ws: WebSocket, message: unknown): Promise<void> {
-    const parsed = z.object({
-      type: z.literal('get_last_hand'),
-      tableId: z.string().uuid(),
-      playerId: z.string().uuid().optional()
-    }).safeParse(message);
-    
-    if (!parsed.success) {
-      this.sendError(ws, 'Invalid last hand request');
-      return;
-    }
-    
-    const { tableId, playerId } = parsed.data;
-    
-    try {
-      // Get most recent completed hand
-      const { data: hand, error } = await this.supabase
-        .from('poker_hands')
-        .select(`
-          id,
-          hand_number,
-          pot,
-          community_cards,
-          phase,
-          winners,
-          completed_at
-        `)
-        .eq('table_id', tableId)
-        .not('completed_at', 'is', null)
-        .order('hand_number', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (error || !hand) {
-        this.send(ws, {
-          type: 'last_hand',
-          tableId,
-          hand: null,
-          timestamp: Date.now()
-        });
-        return;
-      }
-      
-      // Get player's cards if playerId provided
-      let myCards: string[] = [];
-      let myResult: 'win' | 'lose' | 'fold' | null = null;
-      let winAmount: number | undefined;
-      
-      if (playerId) {
-        const { data: playerHand } = await this.supabase
-          .from('poker_hand_players')
-          .select('hole_cards, is_folded, won_amount')
-          .eq('hand_id', hand.id)
-          .eq('player_id', playerId)
-          .single();
-        
-        if (playerHand) {
-          myCards = playerHand.hole_cards || [];
-          const winners = (hand.winners as any[]) || [];
-          const isWinner = winners.some((w: any) => w.playerId === playerId);
-          const myWin = winners.find((w: any) => w.playerId === playerId);
-          
-          if (playerHand.is_folded) {
-            myResult = 'fold';
-          } else if (isWinner) {
-            myResult = 'win';
-            winAmount = myWin?.amount;
-          } else {
-            myResult = 'lose';
-          }
-        }
-      }
-      
-      // Get all player actions for replay
-      const { data: actions } = await this.supabase
-        .from('poker_actions')
-        .select('player_id, action_type, amount, phase, action_order')
-        .eq('hand_id', hand.id)
-        .order('action_order', { ascending: true });
-      
-      this.send(ws, {
-        type: 'last_hand',
-        tableId,
-        hand: {
-          id: hand.id,
-          handNumber: hand.hand_number,
-          pot: hand.pot || 0,
-          communityCards: hand.community_cards || [],
-          myCards,
-          myResult,
-          winAmount,
-          timestamp: hand.completed_at,
-          winners: hand.winners || [],
-          actions: actions || []
-        },
-        timestamp: Date.now()
-      });
-      
-    } catch (err) {
-      logger.error('Error in handleGetLastHand', { error: String(err) });
-      this.sendError(ws, 'Failed to fetch last hand');
-    }
   }
   
   /**

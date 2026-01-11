@@ -105,11 +105,7 @@ export function FullscreenPokerTableWrapper({
     // Professional timing data
     betsBeingCollected, phaseTimings,
     // Professional showdown and winner announcement
-    showdownReveals, winnerAnnouncement, clearWinnerAnnouncement,
-    // WebSocket ref for hand history
-    wsRef,
-    // Send custom message to server
-    sendMessage,
+    showdownReveals, winnerAnnouncement, clearWinnerAnnouncement
   } = pokerTable;
 
   // Check if player can join (not yet seated) - only for cash games
@@ -732,8 +728,6 @@ export function FullscreenPokerTableWrapper({
           playerId={playerId}
           isOpen={showHandHistory}
           onClose={() => setShowHandHistory(false)}
-          wsRef={wsRef}
-          sendMessage={sendMessage}
         />
 
         {/* Tournament HUD - only show for tournament tables */}

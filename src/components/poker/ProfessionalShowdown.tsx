@@ -120,8 +120,7 @@ const ShowdownPlayerRow = memo(function ShowdownPlayerRow({
 
   // Determine which cards are part of winning hand
   const winningHoleCards = useMemo(() => {
-    if (!player.bestCards || !Array.isArray(player.bestCards)) return new Set<string>();
-    if (!player.holeCards || !Array.isArray(player.holeCards)) return new Set<string>();
+    if (!player.bestCards) return new Set<string>();
     return new Set(
       player.bestCards.filter(c => player.holeCards.includes(c))
     );
@@ -172,7 +171,7 @@ const ShowdownPlayerRow = memo(function ShowdownPlayerRow({
 
       {/* Hole cards */}
       <div className="flex gap-1">
-        {(player.holeCards || []).map((card, idx) => (
+        {player.holeCards.map((card, idx) => (
           <FlippingCard
             key={`${player.playerId}-${card}-${idx}`}
             card={card}
@@ -231,7 +230,7 @@ export const ProfessionalShowdown = memo(function ProfessionalShowdown({
     return () => clearTimeout(timer);
   }, [orderedPlayers.length, revealDelay, onComplete]);
 
-  if (!players || players.length === 0) return null;
+  if (players.length === 0) return null;
 
   return (
     <div className={cn(
@@ -254,7 +253,7 @@ export const ProfessionalShowdown = memo(function ProfessionalShowdown({
 
         {/* Community cards reminder */}
         <div className="flex justify-center gap-1 mb-4">
-          {(communityCards || []).map((card, idx) => (
+          {communityCards.map((card, idx) => (
             <MemoizedPokerCard
               key={`community-${card}-${idx}`}
               card={card}

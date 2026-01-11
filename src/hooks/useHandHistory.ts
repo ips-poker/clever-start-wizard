@@ -192,25 +192,18 @@ export function useHandHistory(options: UseHandHistoryOptions = {}) {
             createdAt: a.created_at
           }));
 
-        // Parse winners JSON (DB column is Json/JsonB and may be null/array/object/string)
+        // Parse winners JSON
         let winners: HandHistoryRecord['winners'] = [];
         try {
           if (hand.winners) {
-            const parsed = typeof hand.winners === 'string'
-              ? JSON.parse(hand.winners)
+            const parsed = typeof hand.winners === 'string' 
+              ? JSON.parse(hand.winners) 
               : hand.winners;
-
-            const asArray = Array.isArray(parsed)
-              ? parsed
-              : parsed && typeof parsed === 'object'
-                ? [parsed]
-                : [];
-
-            winners = asArray.map((w: any) => ({
+            winners = parsed.map((w: any) => ({
               playerId: w.playerId,
               playerName: nameMap.get(w.playerId),
               amount: w.amount,
-              handName: w.handName,
+              handName: w.handName
             }));
           }
         } catch (e) {
@@ -236,12 +229,10 @@ export function useHandHistory(options: UseHandHistoryOptions = {}) {
       });
 
       // Filter by playerId if specified
-      // NOTE: If poker_hand_players/actions are missing (e.g. history-saving issue), fall back to winners.
       if (playerId) {
-        const filteredRecords = records.filter(hand =>
+        const filteredRecords = records.filter(hand => 
           hand.players.some(p => p.playerId === playerId) ||
-          hand.actions.some(a => a.playerId === playerId) ||
-          hand.winners.some(w => w.playerId === playerId)
+          hand.actions.some(a => a.playerId === playerId)
         );
         setHands(filteredRecords);
       } else {
@@ -300,26 +291,17 @@ export function useHandHistory(options: UseHandHistoryOptions = {}) {
       let winners: HandHistoryRecord['winners'] = [];
       try {
         if (handData.winners) {
-          const parsed = typeof handData.winners === 'string'
-            ? JSON.parse(handData.winners)
+          const parsed = typeof handData.winners === 'string' 
+            ? JSON.parse(handData.winners) 
             : handData.winners;
-
-          const asArray = Array.isArray(parsed)
-            ? parsed
-            : parsed && typeof parsed === 'object'
-              ? [parsed]
-              : [];
-
-          winners = asArray.map((w: any) => ({
+          winners = parsed.map((w: any) => ({
             playerId: w.playerId,
             playerName: nameMap.get(w.playerId),
             amount: w.amount,
-            handName: w.handName,
+            handName: w.handName
           }));
         }
-      } catch (e) {
-        console.error('Error parsing winners (details):', e);
-      }
+      } catch (e) {}
 
       const record: HandHistoryRecord = {
         id: handData.id,

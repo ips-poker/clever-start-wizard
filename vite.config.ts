@@ -18,10 +18,9 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    // Prevent "Invalid hook call" by ensuring a single React copy in the bundle
-    dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
-    include: ["react", "react-dom"],
+    exclude: ['@radix-ui/react-tooltip'],
+    force: true,
   },
 }));

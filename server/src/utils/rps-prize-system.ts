@@ -369,17 +369,25 @@ class RPSPrizeSystem {
       const success = await this.awardRPS(eliminatorPlayerId, collectedRPS, tournamentId, 'bounty');
       
       if (success) {
-        // Обновляем bounty_collected и knockouts_count в участниках
-        const { data: eliminator, error: eliminatorFetchError } = await this.supabase
+        // Обновляем bounty_collected в участниках
+        await this.supabase
+          .from('online_poker_tournament_participants')
+          .update({
+            bounty_collected: this.supabase.rpc ? undefined : collectedRPS, // Используем raw update
+            knockouts_count: this.supabase.rpc ? undefined : 1
+          })
+          .eq('tournament_id', tournamentId)
+          .eq('player_id', eliminatorPlayerId);
+
+        // Инкрементируем knockouts_count
+        const { data: eliminator } = await this.supabase
           .from('online_poker_tournament_participants')
           .select('knockouts_count, bounty_collected')
           .eq('tournament_id', tournamentId)
           .eq('player_id', eliminatorPlayerId)
-          .maybeSingle();
+          .single();
 
-        if (eliminatorFetchError) {
-          logger.warn('Failed to fetch eliminator participant row', { error: eliminatorFetchError.message });
-        } else if (eliminator) {
+        if (eliminator) {
           await this.supabase
             .from('online_poker_tournament_participants')
             .update({

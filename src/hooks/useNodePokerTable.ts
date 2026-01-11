@@ -104,8 +104,8 @@ const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
 
-// Debug logging - DISABLED for performance
-const DEBUG = false;
+// Debug logging
+const DEBUG = true;
 const log = (...args: unknown[]) => DEBUG && console.log('[NodePoker]', ...args);
 
 export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
@@ -459,10 +459,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       const data = JSON.parse(event.data) as Record<string, unknown>;
       log('📥 Recv:', data.type, data);
       
-      // Enhanced logging disabled for performance
-      // if (data.type?.toString().includes('hand') || data.type?.toString().includes('showdown') || data.type?.toString().includes('winner')) {
-      //   console.log('[SHOWDOWN DEBUG] Event received:', data.type);
-      // }
+      // Enhanced logging for debugging showdown
+      if (data.type?.toString().includes('hand') || data.type?.toString().includes('showdown') || data.type?.toString().includes('winner')) {
+        console.log('[SHOWDOWN DEBUG] Event received:', data.type, JSON.stringify(data, null, 2));
+      }
 
       switch (data.type) {
         case 'connected':
@@ -513,8 +513,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
             // Extract my cards and seat from server state (from getPlayerState)
             const stateData = data.state as Record<string, unknown>;
-            if (Array.isArray((stateData as any).myCards)) {
-              setMyCards((stateData as any).myCards as string[]);
+            if (stateData.myCards) {
+              setMyCards(stateData.myCards as string[]);
             }
             
             // Try to get mySeat from direct field first
@@ -568,9 +568,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             
             setTableState(transformServerState(data.state, tableId));
             
-            if (Array.isArray((stateData as any).myCards)) {
-              setMyCards((stateData as any).myCards as string[]);
-              log('🃏 My cards set:', (stateData as any).myCards);
+            if (stateData.myCards) {
+              setMyCards(stateData.myCards as string[]);
+              log('🃏 My cards set:', stateData.myCards);
             }
             if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
               const seatNum = stateData.mySeat as number;
@@ -649,8 +649,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             log('🎴 Hand started state:', JSON.stringify(stateData).substring(0, 500));
             setTableState(transformServerState(data.state, tableId));
             
-            if (Array.isArray((stateData as any).myCards)) {
-              setMyCards((stateData as any).myCards as string[]);
+            if (stateData.myCards) {
+              setMyCards(stateData.myCards as string[]);
             }
             if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
               setMySeat(stateData.mySeat as number);
@@ -761,8 +761,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             setTableState(transformServerState(data.state, tableId));
             
             // Extract myCards from state - server sends at root level
-            if (Array.isArray((stateData as any).myCards) && (stateData as any).myCards.length > 0) {
-              const cards = (stateData as any).myCards as string[];
+            if (stateData.myCards) {
+              const cards = stateData.myCards as string[];
               log('🃏 Setting my cards from myCards:', cards);
               setMyCards(cards);
             } else {
@@ -813,8 +813,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               const stateData = data.state as Record<string, unknown>;
               setTableState(transformServerState(data.state, tableId));
               
-              if (Array.isArray((stateData as any).myCards)) {
-                setMyCards((stateData as any).myCards as string[]);
+              if (stateData.myCards) {
+                setMyCards(stateData.myCards as string[]);
               }
             }
           }
@@ -908,8 +908,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               });
 
               // Update my cards if present
-              if (Array.isArray((stateData as any).myCards)) {
-                setMyCards((stateData as any).myCards as string[]);
+              if (stateData.myCards) {
+                setMyCards(stateData.myCards as string[]);
               }
             }
           }
@@ -1031,11 +1031,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               (eventData.phase === 'showdown' || statePhase === 'showdown')
           );
 
-           const currentTableState = tableStateRef.current;
-           const currentMyCards = Array.isArray(myCardsRef.current)
-             ? myCardsRef.current.map(normalizeCardString)
-             : [];
-           const currentMySeat = mySeatRef.current;
+          const currentTableState = tableStateRef.current;
+          const currentMyCards = myCardsRef.current.map(normalizeCardString);
+          const currentMySeat = mySeatRef.current;
 
           // Fallback 1: if showdownPlayers is missing but state contains revealed holeCards, build showdownPlayers from it
           if (!showdownPlayers && data.state) {
@@ -1119,8 +1117,15 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               };
             });
             
-            // Debug logging disabled for performance
-            // console.log('🎯 [HAND EVALUATION DEBUG] All players at showdown:', { communityCards, players: evaluatedPlayers?.length });
+            console.log('🎯 [HAND EVALUATION DEBUG] All players at showdown:', {
+              communityCards,
+              players: evaluatedPlayers,
+              serverWinners: winners.map(w => ({
+                playerId: w.playerId?.substring(0, 8),
+                amount: w.amount,
+                serverHandName: w.handName
+              }))
+            });
             
             // Check for potential hand ranking inconsistencies
             if (evaluatedPlayers && evaluatedPlayers.length > 1) {
@@ -1132,9 +1137,57 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 return name;
               };
               
-              // Hand name mismatch logging disabled for performance
+              // CRITICAL: Check if server's hand names match frontend computed hand names
+              for (const ep of evaluatedPlayers) {
+                const serverHand = normalizeHandName(ep.serverHandName);
+                const computedHand = normalizeHandName(ep.computedHandName);
+                if (serverHand && computedHand && serverHand !== computedHand) {
+                  console.error('🚨 [HAND NAME MISMATCH] Server vs Frontend disagreement!', {
+                    player: ep.name,
+                    holeCards: ep.holeCards,
+                    serverHandName: ep.serverHandName,
+                    computedHandName: ep.computedHandName,
+                    communityCards,
+                    isWinner: ep.isWinner
+                  });
+                }
+              }
               
-              // Hand ranking bug detection disabled for performance
+              for (const ep of evaluatedPlayers) {
+                if (ep.isWinner && ep.computedHandName) {
+                  const winnerRank = handRankOrder.indexOf(normalizeHandName(ep.computedHandName));
+                  
+                  for (const other of evaluatedPlayers) {
+                    if (!other.isWinner && other.computedHandName) {
+                      const loserRank = handRankOrder.indexOf(normalizeHandName(other.computedHandName));
+                      
+                      // ALERT if computed loser has stronger hand than computed winner
+                      if (loserRank > winnerRank) {
+                        console.error('🚨 [HAND RANKING BUG DETECTED] Loser has stronger computed hand than winner!', {
+                          timestamp: new Date().toISOString(),
+                          winner: {
+                            name: ep.name,
+                            holeCards: ep.holeCards,
+                            serverHandName: ep.serverHandName,
+                            computedHandName: ep.computedHandName,
+                            rank: winnerRank
+                          },
+                          loser: {
+                            name: other.name,
+                            holeCards: other.holeCards,
+                            serverHandName: other.serverHandName,
+                            computedHandName: other.computedHandName,
+                            rank: loserRank
+                          },
+                          communityCards,
+                          serverWinners: winners,
+                          allPlayers: evaluatedPlayers
+                        });
+                      }
+                    }
+                  }
+                }
+              }
             }
 
             setShowdownResult({
@@ -1206,7 +1259,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             }, displayTime);
           }
 
-          // Update table state with showdown players' cards and winner info (combined single update)
+          if (shouldForceShowdown) {
+            // Ensure the UI enters showdown mode so opponent cards can flip
+            setTableState((prev) => (prev ? { ...prev, phase: 'showdown' } : prev));
+          }
+
+          // Update table state with showdown players' cards and winner info
           if (shouldForceShowdown && tableId) {
             setTableState((prev) => {
               if (!prev) return prev;
@@ -1288,14 +1346,49 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             }, 250);
           }
 
-          // Skip duplicate state update if we already updated in shouldForceShowdown block above
-          // Only apply server state if NOT in showdown mode (to avoid overwriting our showdown data)
-          if (data.state && tableId && !shouldForceShowdown) {
+          // If server also provides a final state snapshot, apply it (but keep showdown phase when relevant)
+          if (data.state && tableId) {
             const transformedState = transformServerState(data.state, tableId);
-            setTableState(transformedState);
+
+            if (shouldForceShowdown) {
+              transformedState.phase = 'showdown';
+              setTableState((prev) => {
+                if (!prev) return transformedState;
+
+                const prevById = new Map(prev.players.map((p) => [p.playerId, p] as const));
+                return {
+                  ...transformedState,
+                  players: transformedState.players.map((p) => {
+                    const old = prevById.get(p.playerId);
+                    if (!old) return p;
+
+                    const oldHasCards = Array.isArray(old.holeCards) && old.holeCards.length >= 2;
+                    const newHasCards = Array.isArray(p.holeCards) && p.holeCards.length >= 2;
+
+                    return {
+                      ...p,
+                      holeCards: !newHasCards && oldHasCards ? old.holeCards : p.holeCards,
+                      handName: p.handName ?? old.handName,
+                      bestCards: (p.bestCards && p.bestCards.length > 0) ? p.bestCards : old.bestCards,
+                      isWinner: (p.isWinner ?? false) || (old.isWinner ?? false),
+                      winningCardIndices:
+                        (p.winningCardIndices && p.winningCardIndices.length > 0)
+                          ? p.winningCardIndices
+                          : old.winningCardIndices,
+                      communityCardIndices:
+                        (p.communityCardIndices && p.communityCardIndices.length > 0)
+                          ? p.communityCardIndices
+                          : old.communityCardIndices,
+                    };
+                  }),
+                };
+              });
+            } else {
+              setTableState(transformedState);
+            }
 
             const stateData = data.state as Record<string, unknown>;
-            if (Array.isArray((stateData as any).myCards)) setMyCards((stateData as any).myCards as string[]);
+            if (stateData.myCards) setMyCards(stateData.myCards as string[]);
           }
 
           break;
@@ -1389,8 +1482,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             
             // Extract my cards from state if present
             const timeoutStateData = data.state as Record<string, unknown>;
-            if (Array.isArray((timeoutStateData as any).myCards)) {
-              setMyCards((timeoutStateData as any).myCards as string[]);
+            if (timeoutStateData.myCards) {
+              setMyCards(timeoutStateData.myCards as string[]);
             }
           }
           break;
@@ -1402,8 +1495,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             setTableState(transformServerState(data.state, tableId));
             
             const stateData = data.state as Record<string, unknown>;
-            if (Array.isArray((stateData as any).myCards)) {
-              setMyCards((stateData as any).myCards as string[]);
+            if (stateData.myCards) {
+              setMyCards(stateData.myCards as string[]);
             }
             if (stateData.mySeat !== undefined) {
               setMySeat(stateData.mySeat as number);
@@ -2142,9 +2235,6 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     isConnecting: connectionStatus === 'connecting',
     connect,
     disconnect,
-    
-    // WebSocket ref for external access (e.g., hand history)
-    wsRef,
 
     // State
     tableState,
@@ -2188,9 +2278,6 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     sitOut,
     sitIn,
     addChips,
-    sendChatMessage,
-    
-    // Send custom message to server
-    sendMessage
+    sendChatMessage
   };
 }

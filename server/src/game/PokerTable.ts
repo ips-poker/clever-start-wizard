@@ -75,7 +75,6 @@ export class PokerTable {
   private handNumber: number = 0;
   private dealerSeat: number = 0;
   private pendingHandStart: boolean = false; // Prevent concurrent checkStartHand calls
-  private lastWinnersData: Array<{ playerId: string; amount: number }> | null = null; // For hand history saving
   
   private actionTimer: NodeJS.Timeout | null = null;
   private eventListeners: Set<TableEventCallback> = new Set();
@@ -179,7 +178,7 @@ export class PokerTable {
         });
       }
 
-      const seatFixPromises: Promise<void>[] = [];
+      const seatFixPromises: PromiseLike<unknown>[] = [];
       
       for (const dbPlayer of dbPlayers) {
         // CRITICAL: Skip players with zero stack - they are eliminated
@@ -190,28 +189,14 @@ export class PokerTable {
             playerId: dbPlayer.player_id.substring(0, 8),
             stack: dbPlayer.stack
           });
-
-          // Clean up this orphaned record (async, non-blocking for init)
-          seatFixPromises.push(
-            (async () => {
-              try {
-                const { error: delError } = await this.supabase
-                  .from('poker_table_players')
-                  .delete()
-                  .eq('table_id', this.id)
-                  .eq('player_id', dbPlayer.player_id);
-
-                if (delError) throw delError;
-
-                logger.info('Cleaned up orphaned zero-stack player', {
-                  playerId: dbPlayer.player_id.substring(0, 8),
-                });
-              } catch (err: unknown) {
-                logger.warn('Failed to clean up orphaned player', { error: String(err) });
-              }
-            })()
-          );
-
+          // Clean up this orphaned record
+          this.supabase
+            .from('poker_table_players')
+            .delete()
+            .eq('table_id', this.id)
+            .eq('player_id', dbPlayer.player_id)
+            .then(() => logger.info('Cleaned up orphaned zero-stack player', { playerId: dbPlayer.player_id.substring(0, 8) }))
+            .catch(err => logger.warn('Failed to clean up orphaned player', { error: String(err) }));
           continue;
         }
         
@@ -787,7 +772,6 @@ export class PokerTable {
     return true;
   }
 
-  /**
    * Sit out - player will auto-fold when it's their turn
    */
   async sitOut(playerId: string): Promise<{ success: boolean; error?: string }> {
@@ -1464,23 +1448,6 @@ export class PokerTable {
       return;
     }
 
-    // If this player cannot act (folded/all-in/sitting out), advance immediately.
-    // This prevents "stuck hands" where currentPlayerSeat points to an ineligible player.
-    if (player.isFolded || player.isAllIn || player.status !== 'active' || player.stack <= 0) {
-      logger.warn('startActionTimer: current player cannot act, advancing', {
-        tableId: this.id,
-        playerId: player.id.substring(0, 8),
-        seat,
-        status: player.status,
-        isFolded: player.isFolded,
-        isAllIn: player.isAllIn,
-        stack: player.stack,
-        phase: this.currentHand?.phase
-      });
-      this.advanceToNextPlayer();
-      return;
-    }
-
     const isBot = this.isBotPlayer(player);
 
     // Calculate bot think time - varies by situation to seem more human
@@ -1576,20 +1543,7 @@ export class PokerTable {
       missedTurns: player.missedTurns
     });
 
-    const autoResult = await this.action(playerId, autoAction);
-
-    // If the action was rejected (e.g. player already folded), we must advance or the hand will freeze.
-    if (!autoResult.success) {
-      logger.warn('Timeout auto-action rejected; advancing to next player', {
-        tableId: this.id,
-        playerId: playerId.substring(0, 8),
-        action: autoAction,
-        error: autoResult.error,
-        seat: player.seatNumber,
-        phase: this.currentHand?.phase
-      });
-      this.advanceToNextPlayer();
-    }
+    await this.action(playerId, autoAction);
 
     // After 2 consecutive missed turns, set player to sitting_out
     if (player.missedTurns >= 2) {
@@ -2064,9 +2018,8 @@ export class PokerTable {
     }
     
     // Get showdown data including all players' cards
-    const firstHandName = (winners[0]?.handName ? winners[0].handName.toLowerCase() : '');
-    const isFoldWin = firstHandName === 'last standing' || firstHandName === 'recovery win';
-    const isShowdown = this.currentHand?.phase === 'showdown' || (winners.length > 0 && !isFoldWin);
+    const isShowdown = this.currentHand?.phase === 'showdown' || 
+                       (winners.length > 0 && winners[0].handName !== 'Last Standing');
     
     // Build showdown players with hole cards revealed
     const showdownPlayers: Array<{
@@ -2253,9 +2206,6 @@ export class PokerTable {
     
     logger.info('=== HAND COMPLETION END ===');
     
-    // Store winners data for hand history saving
-    this.lastWinnersData = winners.map(w => ({ playerId: w.playerId, amount: w.amount }));
-    
     // Save hand history
     await this.saveHandHistory();
     
@@ -2314,98 +2264,33 @@ export class PokerTable {
   
   /**
    * Save hand history to database
-   * Saves both poker_hands and poker_hand_players records for complete history
    */
   private async saveHandHistory(): Promise<void> {
-    if (!this.currentHand) {
-      logger.warn('saveHandHistory called but no currentHand');
-      return;
-    }
+    if (!this.currentHand) return;
     
     try {
+      // Get winners info from engine for saving to DB
       const engineState = this.engine.getState();
-      const allPlayers = Array.from(this.players.values());
+      const winnersForDb = engineState ? 
+        Array.from(this.players.values())
+          .filter(p => !p.isFolded)
+          .map(p => {
+            const handResult = engineState.communityCards && engineState.communityCards.length >= 5 && p.holeCards.length >= 2
+              ? evaluateHand(p.holeCards, engineState.communityCards)
+              : null;
+            return {
+              playerId: p.id,
+              name: p.name,
+              holeCards: p.holeCards,
+              stack: p.stack,
+              handName: handResult?.handName,
+              handRank: handResult?.handRank,
+              bestCards: handResult?.bestCards
+            };
+          })
+        : [];
       
-      logger.info('saveHandHistory starting', {
-        handId: this.currentHand.id.substring(0, 8),
-        handNumber: this.currentHand.handNumber,
-        phase: this.currentHand.phase,
-        playerCount: allPlayers.length,
-        playersWithCards: allPlayers.filter(p => p.holeCards && p.holeCards.length >= 2).length
-      });
-      
-      // Build complete player hand data for poker_hand_players table
-      // CRITICAL: Include ALL players, even sitting out ones who participated in the hand
-      const playerHandsData = allPlayers
-        .filter(p => p.holeCards && p.holeCards.length >= 2) // Only players who got cards
-        .map(p => {
-          const handResult = engineState?.communityCards && engineState.communityCards.length >= 5 && p.holeCards.length >= 2
-            ? evaluateHand(p.holeCards, engineState.communityCards)
-            : null;
-          
-          // Calculate won amount based on pot distribution
-          let wonAmount = 0;
-          if (!p.isFolded && this.lastWinnersData) {
-            const winnerEntry = this.lastWinnersData.find(w => w.playerId === p.id);
-            if (winnerEntry) {
-              wonAmount = winnerEntry.amount || 0;
-            }
-          }
-          
-          logger.debug('Building poker_hand_players entry', {
-            playerId: p.id.substring(0, 8),
-            holeCards: p.holeCards,
-            isFolded: p.isFolded,
-            wonAmount
-          });
-          
-          return {
-            hand_id: this.currentHand!.id,
-            player_id: p.id,
-            seat_number: p.seatNumber,
-            hole_cards: p.holeCards,
-            stack_start: p.stack - wonAmount + p.currentBet, // Approximate start stack
-            stack_end: p.stack,
-            bet_amount: p.currentBet,
-            is_folded: p.isFolded,
-            is_all_in: p.isAllIn,
-            won_amount: wonAmount > 0 ? wonAmount : null,
-            hand_rank: handResult?.handName || null
-          };
-        });
-      
-      logger.info('poker_hand_players data prepared', {
-        handId: this.currentHand.id.substring(0, 8),
-        entriesCount: playerHandsData.length
-      });
-      
-      // Build winners array with proper structure
-      const winnersForDb = allPlayers
-        .filter(p => !p.isFolded)
-        .map(p => {
-          const handResult = engineState?.communityCards && engineState.communityCards.length >= 5 && p.holeCards.length >= 2
-            ? evaluateHand(p.holeCards, engineState.communityCards)
-            : null;
-          
-          let amount = 0;
-          if (this.lastWinnersData) {
-            const winEntry = this.lastWinnersData.find(w => w.playerId === p.id);
-            if (winEntry) amount = winEntry.amount || 0;
-          }
-          
-          return {
-            playerId: p.id,
-            name: p.name,
-            holeCards: p.holeCards,
-            stack: p.stack,
-            amount: amount,
-            handName: handResult?.handName,
-            handRank: handResult?.handRank,
-            bestCards: handResult?.bestCards
-          };
-        });
-      
-      // 1. Save poker_hands with winners
+      // Use upsert since hand was already created at start
       await this.supabase.from('poker_hands').upsert({
         id: this.currentHand.id,
         table_id: this.id,
@@ -2417,53 +2302,13 @@ export class PokerTable {
         pot: this.currentHand.pot,
         phase: this.currentHand.phase,
         current_bet: this.currentHand.currentBet,
-        current_player_seat: null,
+        current_player_seat: null, // Hand is complete
         completed_at: new Date().toISOString(),
-        winners: winnersForDb
+        winners: winnersForDb // Save winners data for debugging
       }, { onConflict: 'id' });
       
-      // 2. Save poker_hand_players for detailed hand history
-      if (playerHandsData.length > 0) {
-        logger.info('Attempting to save poker_hand_players', {
-          handId: this.currentHand.id.substring(0, 8),
-          count: playerHandsData.length,
-          players: playerHandsData.map(p => ({
-            playerId: p.player_id.substring(0, 8),
-            holeCards: p.hole_cards,
-            isFolded: p.is_folded
-          }))
-        });
-        
-        const { data: insertedData, error: playersError } = await this.supabase
-          .from('poker_hand_players')
-          .upsert(playerHandsData, { onConflict: 'hand_id,player_id' })
-          .select('id, hand_id, player_id');
-        
-        if (playersError) {
-          logger.error('Failed to save poker_hand_players', { 
-            error: playersError.message,
-            code: playersError.code,
-            details: playersError.details,
-            hint: playersError.hint
-          });
-        } else {
-          logger.info('Successfully saved poker_hand_players', { 
-            count: playerHandsData.length,
-            insertedCount: insertedData?.length || 0
-          });
-        }
-      } else {
-        logger.warn('No poker_hand_players to save - all players have empty cards', {
-          handId: this.currentHand.id.substring(0, 8),
-          allPlayersCount: Array.from(this.players.values()).length,
-          playersWithCards: Array.from(this.players.values()).map(p => ({
-            id: p.id.substring(0, 8),
-            cardsCount: p.holeCards?.length || 0
-          }))
-        });
-      }
-      
-      // 3. Clear current_hand_id from poker_tables
+      // CRITICAL: Clear current_hand_id from poker_tables to allow consolidation
+      // This was the main bug blocking table balancing during breaks
       await this.supabase
         .from('poker_tables')
         .update({
@@ -2474,31 +2319,17 @@ export class PokerTable {
         })
         .eq('id', this.id);
       
-      logger.info('Hand history saved', {
-        tableId: this.id.substring(0, 8),
-        handId: this.currentHand.id.substring(0, 8),
-        playersCount: playerHandsData.length,
-        winnersCount: winnersForDb.filter(w => w.amount > 0).length
-      });
-      
-      // 4. Emit hand_completed event for real-time UI
-      this.emit('hand_completed', {
+      logger.info('Hand history saved and current_hand_id cleared', {
         tableId: this.id,
-        handId: this.currentHand.id,
-        handNumber: this.currentHand.handNumber,
-        pot: this.currentHand.pot,
-        communityCards: this.currentHand.communityCards,
-        winners: winnersForDb,
-        timestamp: Date.now()
+        handId: this.currentHand.id
       });
       
-      // 5. Sync player stacks to database
+      // CRITICAL: Sync all player stacks to database after each hand
       await this.syncPlayerStacksToDatabase();
     } catch (err) {
       logger.error('Failed to save hand history', { error: String(err) });
     }
   }
-  
   
   /**
    * Sync all player stacks to database after hand completion
@@ -2650,24 +2481,31 @@ export class PokerTable {
    */
   private endHandWithWinner(winnerId?: string): void {
     if (!this.currentHand || !winnerId) return;
-
+    
     const winner = this.players.get(winnerId);
     if (!winner) return;
-
-    // Use the normal completion pipeline so we:
-    // - save poker_hands + poker_hand_players
-    // - emit consistent events
-    // - reset state safely
-    this.clearActionTimer();
-
+    
     const pot = this.currentHand.pot;
-    void this.completeHand([
-      {
+    winner.stack += pot;
+    
+    this.emit('hand_complete', {
+      winners: [{
         playerId: winnerId,
-        amount: pot,
-        handName: 'Last standing'
-      }
-    ]);
+        name: winner.name,
+        seatNumber: winner.seatNumber,
+        amount: pot
+      }],
+      pot,
+      reason: 'all_folded'
+    });
+    
+    // Clear hand state
+    this.currentHand = null;
+    
+    // Check for new hand
+    setTimeout(() => {
+      this.checkStartHand();
+    }, 1000);
   }
   
   /**
@@ -3096,7 +2934,7 @@ export class PokerTable {
         this.completeHand([{
           playerId: winner.id,
           amount: this.currentHand.pot,
-          handName: 'Last standing'
+          handRank: 'Last standing'
         }]);
       } else if (activePlayers.length === 0) {
         // No active players - just reset
@@ -3111,7 +2949,7 @@ export class PokerTable {
         this.completeHand([{
           playerId: activePlayers[0].id,
           amount: this.currentHand.pot,
-          handName: 'Recovery win'
+          handRank: 'Recovery win'
         }]);
       }
     } else {
