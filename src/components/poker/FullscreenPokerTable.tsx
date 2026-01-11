@@ -1728,18 +1728,18 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
             playerId: r.playerId,
             name: r.playerName,
             seatNumber: r.seatNumber,
-            holeCards: r.holeCards,
+            holeCards: Array.isArray(r.holeCards) ? r.holeCards : [],
             handName: r.handName,
             bestCards: r.bestCards,
             isWinner: r.isWinner,
-            wonAmount: winnerAnnouncement?.winners.find(w => w.playerId === r.playerId)?.amount
+            wonAmount: winnerAnnouncement?.winners?.find(w => w.playerId === r.playerId)?.amount
           }))}
           communityCards={communityCards}
           pot={pot}
           revealDelay={500}
         />
       )}
-      
+
       {/* Professional Winner Announcement with pot slide animation */}
       {winnerAnnouncement && phase !== 'showdown' && (
         <WinnerAnnouncement
