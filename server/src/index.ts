@@ -45,6 +45,10 @@ import { satelliteTournamentService } from './utils/satellite-tournament-service
 import { rpsPrizeSystem } from './utils/rps-prize-system.js';
 import { tournamentEliminationManager } from './utils/tournament-elimination.js';
 import { tournamentStateSynchronizer } from './utils/tournament-state-synchronizer.js';
+import { advancedPerformanceMonitor } from './utils/advanced-performance-monitor.js';
+import { actionQueueOptimizer } from './utils/action-queue-optimizer.js';
+import { wsOptimizer } from './utils/websocket-optimizer.js';
+import { antiCollisionManager } from './utils/anti-collision-manager.js';
 
 // Process-level error handlers
 process.on('uncaughtException', (error) => {
@@ -192,6 +196,16 @@ app.get('/api/alerts', (req, res) => {
   res.json({
     active: alertManager.getActiveAlerts(),
     history: alertManager.getAlertHistory(50)
+  });
+});
+
+// Advanced Performance API - PokerStars-level monitoring
+app.get('/api/performance', (req, res) => {
+  res.json({
+    success: true,
+    report: advancedPerformanceMonitor.getFullReport(),
+    actionQueue: actionQueueOptimizer.getStats(),
+    antiCollision: antiCollisionManager.getStats()
   });
 });
 
