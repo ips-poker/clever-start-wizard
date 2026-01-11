@@ -176,8 +176,7 @@ export class PokerWebSocketHandler {
     });
     
     // Initialize Cash Game Sit-Out Manager
-    this.cashGameSitOutManager = new CashGameSitOutManager();
-    this.cashGameSitOutManager.setSupabase(supabase);
+    this.cashGameSitOutManager = new CashGameSitOutManager(supabase);
     
     // Initialize Tournament Elimination Manager
     tournamentEliminationManager.setSupabase(supabase);
@@ -585,9 +584,17 @@ export class PokerWebSocketHandler {
       // Check if this is a cash game table - end session
       const tableType = table.getTableType();
       if (tableType === 'cash') {
-        await this.cashGameSitOutManager.endSession(tableId, playerId, 'voluntary_leave');
+        // Best-effort cash-out amount from current player state
+        let cashOutAmount = 0;
+        try {
+          const ps = table.getPlayerState(playerId) as any;
+          cashOutAmount = Math.max(0, Number(ps?.myStack ?? 0) || 0);
+        } catch {
+          cashOutAmount = 0;
+        }
+
+        await this.cashGameSitOutManager.endSession(tableId, playerId, cashOutAmount, 'voluntary_leave');
       }
-      
       await table.leaveTable(playerId);
     }
     
@@ -1587,6 +1594,9 @@ export class PokerWebSocketHandler {
         }
       }
       
+      const subscribers = this.connectionPool.getTournamentSubscribers(tournamentId);
+      const tableSubscribers = result.table_id ? this.connectionPool.getTableSubscribers(result.table_id) : new Set<WebSocket>();
+
       // Process PKO bounty if applicable
       if (eliminatedBy) {
         try {
@@ -1599,7 +1609,7 @@ export class PokerWebSocketHandler {
               eliminatedPlayerId: playerId,
               eliminatorPlayerId: eliminatedBy,
               bountyAmount: bountyResult.bountyAmount,
-              collectedAmount: bountyResult.collectedAmount,
+              collectedAmount: bountyResult.collectedRPS,
               timestamp: Date.now()
             };
             messageQueue.enqueueBroadcast(subscribers, bountyMessage, 'high');
@@ -1609,11 +1619,8 @@ export class PokerWebSocketHandler {
           logger.warn('PKO bounty processing failed', { error: String(bountyErr) });
         }
       }
-      
+
       // Broadcast elimination event with full data for frontend animation
-      const subscribers = this.connectionPool.getTournamentSubscribers(tournamentId);
-      const tableSubscribers = result.table_id ? this.connectionPool.getTableSubscribers(result.table_id) : new Set<WebSocket>();
-      
       // Get player name and avatar for animation
       let playerName = 'Player';
       let playerAvatar: string | null = null;

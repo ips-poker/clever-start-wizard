@@ -199,7 +199,29 @@ export class StateMachineValidator {
   getHistory(): StateTransition[] {
     return [...this.transitionHistory];
   }
-  
+
+  /**
+   * Get lightweight stats for monitoring (used by /api/performance)
+   */
+  getStats(): {
+    totalTransitions: number;
+    invalidTransitions: number;
+    currentState: TableState;
+    recentTransitions: Array<{ from: TableState; to: TableState; valid: boolean; reason: string }>;
+  } {
+    return {
+      totalTransitions: this.transitionHistory.length,
+      invalidTransitions: 0,
+      currentState: this.currentState,
+      recentTransitions: this.transitionHistory.slice(-20).map(t => ({
+        from: t.from,
+        to: t.to,
+        valid: true,
+        reason: t.trigger,
+      })),
+    };
+  }
+
   /**
    * Check if currently in betting phase
    */

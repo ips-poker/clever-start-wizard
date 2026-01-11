@@ -179,7 +179,7 @@ export class PokerTable {
         });
       }
 
-      const seatFixPromises: PromiseLike<unknown>[] = [];
+      const seatFixPromises: Promise<void>[] = [];
       
       for (const dbPlayer of dbPlayers) {
         // CRITICAL: Skip players with zero stack - they are eliminated
@@ -190,14 +190,28 @@ export class PokerTable {
             playerId: dbPlayer.player_id.substring(0, 8),
             stack: dbPlayer.stack
           });
-          // Clean up this orphaned record
-          this.supabase
-            .from('poker_table_players')
-            .delete()
-            .eq('table_id', this.id)
-            .eq('player_id', dbPlayer.player_id)
-            .then(() => logger.info('Cleaned up orphaned zero-stack player', { playerId: dbPlayer.player_id.substring(0, 8) }))
-            .catch(err => logger.warn('Failed to clean up orphaned player', { error: String(err) }));
+
+          // Clean up this orphaned record (async, non-blocking for init)
+          seatFixPromises.push(
+            (async () => {
+              try {
+                const { error: delError } = await this.supabase
+                  .from('poker_table_players')
+                  .delete()
+                  .eq('table_id', this.id)
+                  .eq('player_id', dbPlayer.player_id);
+
+                if (delError) throw delError;
+
+                logger.info('Cleaned up orphaned zero-stack player', {
+                  playerId: dbPlayer.player_id.substring(0, 8),
+                });
+              } catch (err: unknown) {
+                logger.warn('Failed to clean up orphaned player', { error: String(err) });
+              }
+            })()
+          );
+
           continue;
         }
         
@@ -3004,7 +3018,7 @@ export class PokerTable {
         this.completeHand([{
           playerId: winner.id,
           amount: this.currentHand.pot,
-          handRank: 'Last standing'
+          handName: 'Last standing'
         }]);
       } else if (activePlayers.length === 0) {
         // No active players - just reset
@@ -3019,7 +3033,7 @@ export class PokerTable {
         this.completeHand([{
           playerId: activePlayers[0].id,
           amount: this.currentHand.pot,
-          handRank: 'Recovery win'
+          handName: 'Recovery win'
         }]);
       }
     } else {
