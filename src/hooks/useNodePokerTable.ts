@@ -513,8 +513,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
             // Extract my cards and seat from server state (from getPlayerState)
             const stateData = data.state as Record<string, unknown>;
-            if (stateData.myCards) {
-              setMyCards(stateData.myCards as string[]);
+            if (Array.isArray((stateData as any).myCards)) {
+              setMyCards((stateData as any).myCards as string[]);
             }
             
             // Try to get mySeat from direct field first
@@ -568,9 +568,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             
             setTableState(transformServerState(data.state, tableId));
             
-            if (stateData.myCards) {
-              setMyCards(stateData.myCards as string[]);
-              log('🃏 My cards set:', stateData.myCards);
+            if (Array.isArray((stateData as any).myCards)) {
+              setMyCards((stateData as any).myCards as string[]);
+              log('🃏 My cards set:', (stateData as any).myCards);
             }
             if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
               const seatNum = stateData.mySeat as number;
@@ -649,8 +649,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             log('🎴 Hand started state:', JSON.stringify(stateData).substring(0, 500));
             setTableState(transformServerState(data.state, tableId));
             
-            if (stateData.myCards) {
-              setMyCards(stateData.myCards as string[]);
+            if (Array.isArray((stateData as any).myCards)) {
+              setMyCards((stateData as any).myCards as string[]);
             }
             if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
               setMySeat(stateData.mySeat as number);
@@ -761,8 +761,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             setTableState(transformServerState(data.state, tableId));
             
             // Extract myCards from state - server sends at root level
-            if (stateData.myCards) {
-              const cards = stateData.myCards as string[];
+            if (Array.isArray((stateData as any).myCards) && (stateData as any).myCards.length > 0) {
+              const cards = (stateData as any).myCards as string[];
               log('🃏 Setting my cards from myCards:', cards);
               setMyCards(cards);
             } else {
@@ -813,8 +813,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               const stateData = data.state as Record<string, unknown>;
               setTableState(transformServerState(data.state, tableId));
               
-              if (stateData.myCards) {
-                setMyCards(stateData.myCards as string[]);
+              if (Array.isArray((stateData as any).myCards)) {
+                setMyCards((stateData as any).myCards as string[]);
               }
             }
           }
@@ -908,8 +908,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               });
 
               // Update my cards if present
-              if (stateData.myCards) {
-                setMyCards(stateData.myCards as string[]);
+              if (Array.isArray((stateData as any).myCards)) {
+                setMyCards((stateData as any).myCards as string[]);
               }
             }
           }
@@ -1031,9 +1031,11 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               (eventData.phase === 'showdown' || statePhase === 'showdown')
           );
 
-          const currentTableState = tableStateRef.current;
-          const currentMyCards = myCardsRef.current.map(normalizeCardString);
-          const currentMySeat = mySeatRef.current;
+           const currentTableState = tableStateRef.current;
+           const currentMyCards = Array.isArray(myCardsRef.current)
+             ? myCardsRef.current.map(normalizeCardString)
+             : [];
+           const currentMySeat = mySeatRef.current;
 
           // Fallback 1: if showdownPlayers is missing but state contains revealed holeCards, build showdownPlayers from it
           if (!showdownPlayers && data.state) {
@@ -1388,7 +1390,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             }
 
             const stateData = data.state as Record<string, unknown>;
-            if (stateData.myCards) setMyCards(stateData.myCards as string[]);
+            if (Array.isArray((stateData as any).myCards)) setMyCards((stateData as any).myCards as string[]);
           }
 
           break;
@@ -1482,8 +1484,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             
             // Extract my cards from state if present
             const timeoutStateData = data.state as Record<string, unknown>;
-            if (timeoutStateData.myCards) {
-              setMyCards(timeoutStateData.myCards as string[]);
+            if (Array.isArray((timeoutStateData as any).myCards)) {
+              setMyCards((timeoutStateData as any).myCards as string[]);
             }
           }
           break;
@@ -1495,8 +1497,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             setTableState(transformServerState(data.state, tableId));
             
             const stateData = data.state as Record<string, unknown>;
-            if (stateData.myCards) {
-              setMyCards(stateData.myCards as string[]);
+            if (Array.isArray((stateData as any).myCards)) {
+              setMyCards((stateData as any).myCards as string[]);
             }
             if (stateData.mySeat !== undefined) {
               setMySeat(stateData.mySeat as number);
