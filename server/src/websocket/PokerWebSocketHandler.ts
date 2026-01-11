@@ -91,6 +91,43 @@ interface DBBlindLevel {
 }
 
 export class PokerWebSocketHandler {
+  private static readonly SERVER_VERSION = '3.3.0';
+  private static readonly SUPPORTED_MESSAGE_TYPES = [
+    'join_table',
+    'action',
+    'leave_table',
+    'sit_out',
+    'sit_in',
+    'subscribe',
+    'get_state',
+    'ping',
+
+    // tournaments
+    'tournament_subscribe',
+    'tournament_start',
+    'tournament_pause',
+    'tournament_resume',
+    'tournament_rebuy',
+    'tournament_addon',
+    'get_tournament_state',
+
+    // hand-for-hand
+    'get_hfh_status',
+
+    // chat
+    'chat',
+
+    // reconnect/session
+    'reconnect_request',
+
+    // hand history
+    'get_hand_history',
+    'get_last_hand',
+
+    // meta
+    'get_server_capabilities'
+  ] as const;
+
   // Use ConnectionPool instead of raw Map
   private connectionPool: ConnectionPool;
   private tablesWithListeners: Set<string> = new Set();
@@ -103,6 +140,17 @@ export class PokerWebSocketHandler {
   private tournamentTimerInterval: NodeJS.Timeout | null = null;
   private metricsInterval: NodeJS.Timeout | null = null;
   private sitOutCheckInterval: NodeJS.Timeout | null = null;
+
+  private getServerCapabilities() {
+    return {
+      handHistory: true,
+      lastHand: true,
+      tournaments: true,
+      handForHand: true,
+      chat: loadManager.isChatEnabled(),
+      loadLevel: loadManager.getLevel(),
+    };
+  }
   
   constructor(
     wss: WebSocketServer, 
@@ -212,9 +260,11 @@ export class PokerWebSocketHandler {
       timestamp: Date.now(),
       tableId,
       playerId,
-      serverVersion: '3.1.0',
-      engine: 'Professional Poker Engine v3.1 (Tournament-Grade)',
-      loadLevel: loadManager.getLevel()
+      serverVersion: PokerWebSocketHandler.SERVER_VERSION,
+      engine: 'Professional Poker Engine v3.3 (Tournament-Grade)',
+      loadLevel: loadManager.getLevel(),
+      capabilities: this.getServerCapabilities(),
+      supportedMessageTypes: PokerWebSocketHandler.SUPPORTED_MESSAGE_TYPES
     });
     
     // Auto-subscribe to table if provided in URL
@@ -384,15 +434,25 @@ export class PokerWebSocketHandler {
         case 'get_hand_history':
           await this.handleGetHandHistory(ws, message);
           break;
-        
+
         // Get last completed hand - quick access for UI
         case 'get_last_hand':
           await this.handleGetLastHand(ws, message);
           break;
+
+        // Meta: ask server what it supports (helps clients detect old deployments)
+        case 'get_server_capabilities':
+          this.handleGetServerCapabilities(ws);
+          break;
         
         default:
           logger.warn('Unknown message type', { type: message.type });
-          this.sendError(ws, `Unknown message type: ${message.type}`);
+          this.send(ws, {
+            type: 'error',
+            error: `Unknown message type: ${message.type}`,
+            supportedMessageTypes: PokerWebSocketHandler.SUPPORTED_MESSAGE_TYPES,
+            timestamp: Date.now()
+          });
       }
     } catch (handlerError) {
       logger.error('Handler error - isolated', { 
@@ -1026,12 +1086,25 @@ export class PokerWebSocketHandler {
       metrics.recordMessageSent(str.length);
     }
   }
-  
+
   /**
    * Send error to client
    */
   private sendError(ws: WebSocket, error: string): void {
     this.send(ws, { type: 'error', error, timestamp: Date.now() });
+  }
+
+  /**
+   * Meta endpoint: return server capabilities (for client feature detection)
+   */
+  private handleGetServerCapabilities(ws: WebSocket): void {
+    this.send(ws, {
+      type: 'server_capabilities',
+      serverVersion: PokerWebSocketHandler.SERVER_VERSION,
+      capabilities: this.getServerCapabilities(),
+      supportedMessageTypes: PokerWebSocketHandler.SUPPORTED_MESSAGE_TYPES,
+      timestamp: Date.now()
+    });
   }
   
   /**
