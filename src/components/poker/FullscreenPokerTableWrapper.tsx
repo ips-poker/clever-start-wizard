@@ -3,7 +3,7 @@
 // ============================================
 import React, { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Volume2, VolumeX, Settings2, Menu, X, LogOut, Palette, RotateCcw, RotateCw, Eye, Plus, Diamond } from 'lucide-react';
+import { ArrowLeft, Volume2, VolumeX, Settings2, Menu, X, LogOut, Palette, RotateCcw, RotateCw, Eye, Plus, Diamond, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -33,10 +33,8 @@ import { TournamentBreakBanner } from './TournamentBreakBanner';
 import { TournamentBreakOverlay } from './TournamentBreakOverlay';
 import { EliminationAnimation } from './EliminationAnimation';
 import { ActionTimeIndicator } from './ActionTimeIndicator';
-
-
-// Syndikate branding
-import syndikateLogo from '@/assets/syndikate-logo-main.png';
+import { TableQuickMenu } from './TableQuickMenu';
+import { QuickHandHistory } from './QuickHandHistory';
 
 interface FullscreenPokerTableWrapperProps {
   tableId: string;
@@ -78,6 +76,7 @@ export function FullscreenPokerTableWrapper({
   const [showRebuyDialog, setShowRebuyDialog] = useState(false);
   const [showTournamentLobby, setShowTournamentLobby] = useState(false);
   const [showBountyLeaderboard, setShowBountyLeaderboard] = useState(false);
+  const [showHandHistory, setShowHandHistory] = useState(false);
   const [knockoutEvent, setKnockoutEvent] = useState<KnockoutEvent | null>(null);
   const [selectedSeatForJoin, setSelectedSeatForJoin] = useState<number | null>(null);
   const [isProcessingCashout, setIsProcessingCashout] = useState(false);
@@ -654,30 +653,41 @@ export function FullscreenPokerTableWrapper({
         {/* Action Time Indicator removed - пульсирующее кольцо вокруг аватара в SmoothAvatarTimer */}
 
         {/* Header - with safe area inset for Telegram fullscreen */}
+        {/* Header - Clean PokerStars-style without logo */}
         <div 
-          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 bg-gradient-to-b from-black/60 to-transparent"
+          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 bg-gradient-to-b from-black/70 to-transparent"
           style={{
             paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 12px)'
           }}
         >
-          <div className="flex items-center gap-3">
+          {/* Left side - Menu button */}
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
+              className="h-10 w-10 rounded-full bg-black/50 backdrop-blur-md text-white/90 hover:bg-black/70 border border-white/10"
               onClick={() => setShowMenu(!showMenu)}
             >
               {showMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
             
-            <img src={syndikateLogo} alt="Syndikate" className="h-8 drop-shadow-lg" />
+            {/* Quick Hand History Button - PokerStars style */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full bg-black/50 backdrop-blur-md text-amber-400 hover:bg-black/70 border border-amber-500/20"
+              onClick={() => setShowHandHistory(!showHandHistory)}
+            >
+              <History className="h-5 w-5" />
+            </Button>
           </div>
 
+          {/* Right side - Quick actions */}
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
+              className="h-10 w-10 rounded-full bg-black/50 backdrop-blur-md text-white/80 hover:bg-black/70 border border-white/10"
               onClick={() => setSoundEnabled(!soundEnabled)}
             >
               {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
@@ -686,22 +696,39 @@ export function FullscreenPokerTableWrapper({
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-amber-400 hover:bg-black/60"
-              onClick={() => setShowPersonalSettings(true)}
-            >
-              <Palette className="h-5 w-5" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
+              className="h-10 w-10 rounded-full bg-black/50 backdrop-blur-md text-white/80 hover:bg-black/70 border border-white/10"
               onClick={() => setShowSettings(true)}
             >
               <Settings2 className="h-5 w-5" />
             </Button>
           </div>
         </div>
+        
+        {/* Quick Menu Panel - PokerStars style sidebar */}
+        <TableQuickMenu
+          isOpen={showMenu}
+          onClose={() => setShowMenu(false)}
+          isTournament={isTournament}
+          isSittingOut={!!myPlayer?.isSittingOut}
+          hasPlayer={!!myPlayer}
+          stack={myPlayer?.stack}
+          onLeave={handleLeave}
+          onSitOut={sitOut}
+          onSitIn={sitIn}
+          onShowHandHistory={() => setShowHandHistory(true)}
+          onShowSettings={() => setShowSettings(true)}
+          onShowPersonalSettings={() => setShowPersonalSettings(true)}
+          onShowRebuy={!isTournament ? () => setShowRebuyDialog(true) : undefined}
+          onShowTournamentLobby={isTournament ? () => setShowTournamentLobby(true) : undefined}
+        />
+        
+        {/* Quick Hand History Panel */}
+        <QuickHandHistory
+          tableId={tableId}
+          playerId={playerId}
+          isOpen={showHandHistory}
+          onClose={() => setShowHandHistory(false)}
+        />
 
         {/* Tournament HUD - only show for tournament tables */}
         {isTournament && tournamentId && (
