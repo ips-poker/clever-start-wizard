@@ -772,6 +772,7 @@ export class PokerTable {
     return true;
   }
 
+  /**
    * Sit out - player will auto-fold when it's their turn
    */
   async sitOut(playerId: string): Promise<{ success: boolean; error?: string }> {
