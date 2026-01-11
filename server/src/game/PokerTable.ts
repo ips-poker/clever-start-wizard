@@ -1464,6 +1464,23 @@ export class PokerTable {
       return;
     }
 
+    // If this player cannot act (folded/all-in/sitting out), advance immediately.
+    // This prevents "stuck hands" where currentPlayerSeat points to an ineligible player.
+    if (player.isFolded || player.isAllIn || player.status !== 'active' || player.stack <= 0) {
+      logger.warn('startActionTimer: current player cannot act, advancing', {
+        tableId: this.id,
+        playerId: player.id.substring(0, 8),
+        seat,
+        status: player.status,
+        isFolded: player.isFolded,
+        isAllIn: player.isAllIn,
+        stack: player.stack,
+        phase: this.currentHand?.phase
+      });
+      this.advanceToNextPlayer();
+      return;
+    }
+
     const isBot = this.isBotPlayer(player);
 
     // Calculate bot think time - varies by situation to seem more human
@@ -1559,7 +1576,20 @@ export class PokerTable {
       missedTurns: player.missedTurns
     });
 
-    await this.action(playerId, autoAction);
+    const autoResult = await this.action(playerId, autoAction);
+
+    // If the action was rejected (e.g. player already folded), we must advance or the hand will freeze.
+    if (!autoResult.success) {
+      logger.warn('Timeout auto-action rejected; advancing to next player', {
+        tableId: this.id,
+        playerId: playerId.substring(0, 8),
+        action: autoAction,
+        error: autoResult.error,
+        seat: player.seatNumber,
+        phase: this.currentHand?.phase
+      });
+      this.advanceToNextPlayer();
+    }
 
     // After 2 consecutive missed turns, set player to sitting_out
     if (player.missedTurns >= 2) {
@@ -2034,8 +2064,9 @@ export class PokerTable {
     }
     
     // Get showdown data including all players' cards
-    const isShowdown = this.currentHand?.phase === 'showdown' || 
-                       (winners.length > 0 && winners[0].handName !== 'Last Standing');
+    const firstHandName = (winners[0]?.handName ? winners[0].handName.toLowerCase() : '');
+    const isFoldWin = firstHandName === 'last standing' || firstHandName === 'recovery win';
+    const isShowdown = this.currentHand?.phase === 'showdown' || (winners.length > 0 && !isFoldWin);
     
     // Build showdown players with hole cards revealed
     const showdownPlayers: Array<{
@@ -2619,31 +2650,24 @@ export class PokerTable {
    */
   private endHandWithWinner(winnerId?: string): void {
     if (!this.currentHand || !winnerId) return;
-    
+
     const winner = this.players.get(winnerId);
     if (!winner) return;
-    
+
+    // Use the normal completion pipeline so we:
+    // - save poker_hands + poker_hand_players
+    // - emit consistent events
+    // - reset state safely
+    this.clearActionTimer();
+
     const pot = this.currentHand.pot;
-    winner.stack += pot;
-    
-    this.emit('hand_complete', {
-      winners: [{
+    void this.completeHand([
+      {
         playerId: winnerId,
-        name: winner.name,
-        seatNumber: winner.seatNumber,
-        amount: pot
-      }],
-      pot,
-      reason: 'all_folded'
-    });
-    
-    // Clear hand state
-    this.currentHand = null;
-    
-    // Check for new hand
-    setTimeout(() => {
-      this.checkStartHand();
-    }, 1000);
+        amount: pot,
+        handName: 'Last standing'
+      }
+    ]);
   }
   
   /**
