@@ -443,6 +443,20 @@ export class PokerTable {
   }
 
   /**
+   * Get table type (cash, tournament, sitgo)
+   */
+  public getTableType(): string {
+    return this.config.tableType || 'cash';
+  }
+
+  /**
+   * Get tournament ID if this is a tournament table
+   */
+  public getTournamentId(): string | null {
+    return this.config.tournamentId || null;
+  }
+
+  /**
    * Map config game type to engine GameType
    */
   private mapGameType(configType: string): GameType {

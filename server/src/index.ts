@@ -43,6 +43,8 @@ import { tournamentAutoStartService } from './utils/tournament-auto-start-servic
 import { pkoBountyService } from './utils/pko-bounty-service.js';
 import { satelliteTournamentService } from './utils/satellite-tournament-service.js';
 import { rpsPrizeSystem } from './utils/rps-prize-system.js';
+import { tournamentEliminationManager } from './utils/tournament-elimination.js';
+import { tournamentStateSynchronizer } from './utils/tournament-state-synchronizer.js';
 
 // Process-level error handlers
 process.on('uncaughtException', (error) => {
@@ -213,6 +215,15 @@ const wss = new WebSocketServer({
 // Initialize WebSocket handler with tournament manager
 const wsHandler = new PokerWebSocketHandler(wss, gameManager, supabase, tournamentManager);
 
+// Initialize tournament elimination manager with Supabase
+tournamentEliminationManager.setSupabase(supabase);
+
+// Initialize and start tournament state synchronizer
+tournamentStateSynchronizer.setSupabase(supabase);
+tournamentStateSynchronizer.start().catch(err => {
+  logger.error('Failed to start tournament state synchronizer', { error: String(err) });
+});
+
 // Connect tournament level service to broadcast break events via WebSocket
 tournamentLevelService.setBreakEventCallback((tournamentId, event) => {
   wsHandler.broadcastBreakEvent(tournamentId, event);
@@ -323,6 +334,12 @@ const gracefulShutdown = async () => {
   
   // Shutdown tournament state cache
   tournamentStateCache.shutdown();
+  
+  // Shutdown tournament elimination manager
+  tournamentEliminationManager.cleanup();
+  
+  // Stop tournament state synchronizer
+  tournamentStateSynchronizer.stop();
   
   // Shutdown redis manager
   redisManager.shutdown();
