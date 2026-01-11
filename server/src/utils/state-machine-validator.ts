@@ -407,3 +407,36 @@ export function getOrCreateValidator(tableId: string): StateMachineValidator {
 export function removeValidator(tableId: string): void {
   stateMachineValidators.delete(tableId);
 }
+
+// ==========================================
+// GLOBAL STATS SINGLETON
+// ==========================================
+
+class StateMachineValidatorManager {
+  getStats() {
+    let totalTransitions = 0;
+    let invalidAttempts = 0;
+    const currentStates: Record<string, string> = {};
+    const recentErrors: string[] = [];
+    
+    for (const [tableId, validator] of stateMachineValidators) {
+      const stats = validator.getStats();
+      totalTransitions += stats.totalTransitions;
+      invalidAttempts += stats.invalidTransitions;
+      currentStates[tableId] = stats.currentState;
+      recentErrors.push(...stats.recentTransitions
+        .filter(t => !t.valid)
+        .map(t => `${tableId}: ${t.from} -> ${t.to} (${t.reason})`));
+    }
+    
+    return {
+      totalTransitions,
+      invalidAttempts,
+      currentStates,
+      recentErrors: recentErrors.slice(-10),
+      activeValidators: stateMachineValidators.size
+    };
+  }
+}
+
+export const stateMachineValidator = new StateMachineValidatorManager();

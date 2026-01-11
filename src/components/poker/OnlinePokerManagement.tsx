@@ -73,6 +73,7 @@ import { StatsExport } from './admin/StatsExport';
 import { DiamondManagement } from './admin/DiamondManagement';
 import { OnlineTournamentManager } from './admin/OnlineTournamentManager';
 import { ServerMonitoringPanel } from './admin/ServerMonitoringPanel';
+import { AdvancedServerMonitoring } from './admin/AdvancedServerMonitoring';
 import { TournamentAdvancedTools } from './admin/TournamentAdvancedTools';
 import { PlayerAnalyticsPanel } from './admin/PlayerAnalyticsPanel';
 import { EnhancedPlayerAnalytics, TournamentAnalytics, PlayerComparison } from './analytics';
@@ -792,7 +793,18 @@ export function OnlinePokerManagement() {
 
         {/* Server Monitoring Tab */}
         <TabsContent value="server">
-          <ServerMonitoringPanel />
+          <Tabs defaultValue="basic">
+            <TabsList className="mb-4">
+              <TabsTrigger value="basic">Basic</TabsTrigger>
+              <TabsTrigger value="advanced">PokerStars Pro</TabsTrigger>
+            </TabsList>
+            <TabsContent value="basic">
+              <ServerMonitoringPanel />
+            </TabsContent>
+            <TabsContent value="advanced">
+              <AdvancedServerMonitoring />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         {/* Tournaments Tab */}
