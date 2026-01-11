@@ -1754,9 +1754,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               winners,
               pot: winnerData.pot as number || 0,
               isSplitPot: winnerData.isSplitPot as boolean || winners.length > 1,
-              potSlideDelay: winnerData.potSlideDelay as number || 600,
-              highlightDuration: winnerData.highlightDuration as number || 2500,
-              celebrationDuration: winnerData.celebrationDuration as number || 2000,
+              potSlideDelay: winnerData.potSlideDelay as number || 300,
+              highlightDuration: winnerData.highlightDuration as number || 1000,
+              celebrationDuration: winnerData.celebrationDuration as number || 800,
               timestamp: Date.now()
             });
             
@@ -1777,9 +1777,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             
             // Auto-clear winner announcement after celebration
             const totalDuration = 
-              (winnerData.potSlideDelay as number || 600) +
-              (winnerData.highlightDuration as number || 2500) +
-              (winnerData.celebrationDuration as number || 2000);
+              (winnerData.potSlideDelay as number || 300) +
+              (winnerData.highlightDuration as number || 1000) +
+              (winnerData.celebrationDuration as number || 800);
             
             setTimeout(() => {
               setWinnerAnnouncement(null);

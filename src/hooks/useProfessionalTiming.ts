@@ -5,40 +5,41 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 // Professional poker room timing constants (in ms)
+// Based on PokerStars/GGPoker actual measurements
 export const PROFESSIONAL_TIMINGS = {
   // Phase transition delays
-  afterAction: 400,           // Delay after each player action
-  betCollection: 600,         // Time to collect bets to pot
+  afterAction: 200,           // Delay after each player action (was 400)
+  betCollection: 350,         // Time to collect bets to pot (was 600)
   
-  // Card dealing delays
+  // Card dealing delays - PokerStars style fast dealing
   flop: {
-    preDeal: 500,             // Pause before dealing flop
-    perCard: 150,             // Time between each flop card
-    postDeal: 300             // Pause after all 3 cards dealt
+    preDeal: 200,             // Pause before dealing flop (was 500)
+    perCard: 80,              // Time between each flop card (was 150)
+    postDeal: 150             // Pause after all 3 cards dealt (was 300)
   },
   turn: {
-    preDeal: 400,             // Pause before turn
+    preDeal: 200,             // Pause before turn (was 400)
     perCard: 0,               // Single card
-    postDeal: 250
+    postDeal: 100             // Pause after turn (was 250)
   },
   river: {
-    preDeal: 400,             // Pause before river
+    preDeal: 200,             // Pause before river (was 400)
     perCard: 0,               // Single card
-    postDeal: 250
+    postDeal: 100             // Pause after river (was 250)
   },
   
-  // Showdown timing
+  // Showdown timing - much faster
   showdown: {
-    revealDelay: 500,         // Delay between each player reveal
-    winnerHighlight: 1500,    // Time to highlight winning hand
-    potCollection: 1000,      // Chips moving to winner
-    displayDuration: 3000     // Total showdown display time
+    revealDelay: 300,         // Delay between each player reveal (was 500)
+    winnerHighlight: 1000,    // Time to highlight winning hand (was 1500)
+    potCollection: 400,       // Chips moving to winner (was 1000)
+    displayDuration: 1500     // Total showdown display time (was 3000)
   },
   
-  // Between hands
+  // Between hands - faster pace
   nextHand: {
-    minDelay: 2000,           // Minimum delay before next hand
-    maxDelay: 3000            // Maximum delay
+    minDelay: 1000,           // Minimum delay before next hand (was 2000)
+    maxDelay: 1500            // Maximum delay (was 3000)
   }
 };
 
