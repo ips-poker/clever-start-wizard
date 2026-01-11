@@ -227,8 +227,8 @@ export function QuickHandHistory({
   useEffect(() => {
     if (!isOpen) return;
 
-    const ws = wsRef?.current;
-    if (!ws) return;
+    let attachedWs: WebSocket | null = null;
+    let attachInterval: number | null = null;
 
     const onWsMessage = (event: MessageEvent) => {
       let parsed: HandHistoryServerMessage | null = null;
@@ -279,12 +279,41 @@ export function QuickHandHistory({
       }
     };
 
-    ws.addEventListener('message', onWsMessage);
-    return () => {
-      if (refreshDebounceRef.current) window.clearTimeout(refreshDebounceRef.current);
-      ws.removeEventListener('message', onWsMessage);
+    const tryAttach = () => {
+      const ws = wsRef?.current;
+      if (!ws) return false;
+      if (ws === attachedWs) return true;
+
+      // Detach from previous
+      if (attachedWs) {
+        attachedWs.removeEventListener('message', onWsMessage);
+      }
+
+      attachedWs = ws;
+      ws.addEventListener('message', onWsMessage);
+      console.log('[QuickHandHistory] WS listener attached');
+      return true;
     };
-  }, [applyHands, fetchHandsFromSupabase, isOpen, loading, requestHandsFromServer, tableId, wsRef]);
+
+    // Attach immediately if possible, otherwise wait until wsRef.current appears
+    if (!tryAttach()) {
+      let attempts = 0;
+      attachInterval = window.setInterval(() => {
+        attempts += 1;
+        if (tryAttach() || attempts >= 20) {
+          if (attachInterval) window.clearInterval(attachInterval);
+          attachInterval = null;
+        }
+      }, 200);
+    }
+
+    return () => {
+      if (attachInterval) window.clearInterval(attachInterval);
+      if (refreshDebounceRef.current) window.clearTimeout(refreshDebounceRef.current);
+      if (attachedWs) attachedWs.removeEventListener('message', onWsMessage);
+      attachedWs = null;
+    };
+  }, [applyHands, fetchHandsFromSupabase, isOpen, requestHandsFromServer, tableId, wsRef]);
 
   // Fetch when opened (prefer server)
   useEffect(() => {
