@@ -55,9 +55,11 @@ export function QuickHandHistory({
   
   // Fetch hands from Supabase
   const fetchHands = useCallback(async () => {
-    if (!tableId || !playerId) return;
+    if (!tableId) return;
     
     setLoading(true);
+    console.log('[QuickHandHistory] Fetching hands for table:', tableId, 'player:', playerId);
+    
     try {
       // Fetch last 10 completed hands for this table
       const { data: handsData, error } = await supabase
@@ -76,39 +78,66 @@ export function QuickHandHistory({
         .order('hand_number', { ascending: false })
         .limit(10);
       
-      if (error) throw error;
+      if (error) {
+        console.error('[QuickHandHistory] Query error:', error);
+        throw error;
+      }
+      
+      console.log('[QuickHandHistory] Found hands:', handsData?.length || 0);
       
       if (!handsData || handsData.length === 0) {
         setHands([]);
         return;
       }
       
-      // Fetch player's cards for each hand
+      // Try to fetch player's cards from poker_hand_players
       const handIds = handsData.map(h => h.id);
-      const { data: playerHands } = await supabase
-        .from('poker_hand_players')
-        .select('hand_id, hole_cards, won_amount, is_folded')
-        .eq('player_id', playerId)
-        .in('hand_id', handIds);
+      let playerHandsMap = new Map<string, any>();
       
-      const playerHandsMap = new Map(
-        playerHands?.map(ph => [ph.hand_id, ph]) || []
-      );
+      if (playerId) {
+        const { data: playerHands, error: playerError } = await supabase
+          .from('poker_hand_players')
+          .select('hand_id, hole_cards, won_amount, is_folded')
+          .eq('player_id', playerId)
+          .in('hand_id', handIds);
+        
+        if (!playerError && playerHands) {
+          playerHandsMap = new Map(playerHands.map(ph => [ph.hand_id, ph]));
+        }
+        console.log('[QuickHandHistory] Player hands found:', playerHandsMap.size);
+      }
       
       const formattedHands: QuickHandEntry[] = handsData.map(hand => {
-        const playerHand = playerHandsMap.get(hand.id);
         const winners = (hand.winners as any[]) || [];
-        const isWinner = winners.some((w: any) => w.playerId === playerId);
-        const myWin = winners.find((w: any) => w.playerId === playerId);
+        const playerHand = playerHandsMap.get(hand.id);
         
+        // Try to get player data from winners array if not in poker_hand_players
+        let myCards: string[] = [];
         let myResult: 'win' | 'lose' | 'fold' | null = null;
+        let winAmount: number | undefined;
+        
         if (playerHand) {
+          // We have detailed player data
+          myCards = (playerHand.hole_cards as string[]) || [];
           if (playerHand.is_folded) {
             myResult = 'fold';
-          } else if (isWinner) {
+          } else if (playerHand.won_amount && playerHand.won_amount > 0) {
             myResult = 'win';
+            winAmount = playerHand.won_amount;
           } else {
             myResult = 'lose';
+          }
+        } else if (playerId && winners.length > 0) {
+          // Fallback: check winners array for player info
+          const myWinnerEntry = winners.find((w: any) => w.playerId === playerId);
+          if (myWinnerEntry) {
+            myCards = myWinnerEntry.holeCards || [];
+            if (myWinnerEntry.amount && myWinnerEntry.amount > 0) {
+              myResult = 'win';
+              winAmount = myWinnerEntry.amount;
+            } else {
+              myResult = 'lose';
+            }
           }
         }
         
@@ -117,15 +146,16 @@ export function QuickHandHistory({
           handNumber: hand.hand_number,
           pot: hand.pot || 0,
           communityCards: (hand.community_cards as string[]) || [],
-          myCards: (playerHand?.hole_cards as string[]) || [],
+          myCards,
           myResult,
-          winAmount: myWin?.amount,
+          winAmount,
           timestamp: hand.completed_at || '',
-          winnersCount: winners.length,
+          winnersCount: winners.filter((w: any) => w.amount && w.amount > 0).length,
           phase: hand.phase
         };
       });
       
+      console.log('[QuickHandHistory] Formatted hands:', formattedHands);
       setHands(formattedHands);
       setSelectedHandIndex(0);
     } catch (err) {
