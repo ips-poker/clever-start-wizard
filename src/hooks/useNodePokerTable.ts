@@ -1673,62 +1673,6 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }
           break;
 
-        // PROFESSIONAL TIMING: Enhanced bet collection with positions
-        case 'bets_collected':
-          {
-            const betsData = data as Record<string, unknown>;
-            const betPositions = betsData.betPositions as Array<{ seatNumber: number; amount: number }> | undefined;
-            
-            log('💰 Bets collected:', betsData);
-            
-            if (betPositions && betPositions.length > 0) {
-              setBetsBeingCollected({
-                bets: betPositions.map(bp => ({
-                  playerId: '',  // Not needed, we use seatNumber
-                  seatNumber: bp.seatNumber,
-                  amount: bp.amount
-                })),
-                timestamp: Date.now()
-              });
-              
-              // Auto-clear after collection animation
-              const collectionDelay = (betsData.collectionDelay as number || 500) + 
-                (betPositions.length * ((betsData.staggerDelay as number) || 80));
-              setTimeout(() => {
-                setBetsBeingCollected(null);
-              }, collectionDelay + 200);
-            }
-          }
-          break;
-
-        // PROFESSIONAL TIMING: Phase change with card dealing delays
-        case 'phase_change':
-          {
-            const phaseData = data as Record<string, unknown>;
-            log('🎴 Phase change:', phaseData);
-            
-            setPhaseTimings({
-              dealDelay: phaseData.dealDelay as number | undefined,
-              preDealDelay: phaseData.preDealDelay as number | undefined,
-              postDealDelay: phaseData.postDealDelay as number | undefined,
-              phase: phaseData.phase as string | undefined
-            });
-            
-            // Update community cards
-            if (phaseData.communityCards && tableId) {
-              setTableState(prev => {
-                if (!prev) return prev;
-                return {
-                  ...prev,
-                  phase: phaseData.phase as TableState['phase'] || prev.phase,
-                  communityCards: phaseData.communityCards as string[],
-                  pot: (phaseData.pot as number) ?? prev.pot
-                };
-              });
-            }
-          }
-          break;
-
         // PROFESSIONAL: Showdown start event
         case 'showdown_start':
           {
