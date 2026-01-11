@@ -29,6 +29,7 @@ export interface KnockoutEvent {
   eliminatedByPlayerId: string;
   bountyAmount: number; // In RPS points
   collectedRPS: number; // 50% of bounty awarded immediately
+  collectedAmount: number; // Alias for collectedRPS
   addedToBountyRPS: number; // 50% added to winner's bounty
   timestamp: Date;
 }

@@ -201,6 +201,24 @@ export class StateMachineValidator {
   }
   
   /**
+   * Get statistics for monitoring
+   */
+  getStats(): { totalTransitions: number; invalidTransitions: number; currentState: string; recentTransitions: Array<{ from: string; to: string; valid: boolean; reason?: string }> } {
+    const invalid = this.transitionHistory.filter((t: StateTransition) => !VALID_TRANSITIONS[t.from]?.includes(t.to as TableState)).length;
+    return {
+      totalTransitions: this.transitionHistory.length,
+      invalidTransitions: invalid,
+      currentState: this.currentState,
+      recentTransitions: this.transitionHistory.slice(-10).map((t: StateTransition) => ({
+        from: t.from,
+        to: t.to,
+        valid: !!VALID_TRANSITIONS[t.from]?.includes(t.to as TableState),
+        reason: t.trigger
+      }))
+    };
+  }
+  
+  /**
    * Check if currently in betting phase
    */
   isInBettingPhase(): boolean {

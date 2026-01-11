@@ -457,7 +457,7 @@ export function calculateTableBalancing(
     sourceTable.playerCount--;
     sourceTable.players = sourceTable.players.filter(p => p.playerId !== player.playerId);
     targetTable.playerCount++;
-    targetTable.players.push({ ...player, seatNumber: toSeat });
+    targetTable.players.push({ playerId: player.playerId, chips: player.chips, seatNumber: toSeat, isInHand: player.isInHand });
   }
   
   return moves;

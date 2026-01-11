@@ -257,13 +257,13 @@ app.get('/api/history/hand/:handId', async (req, res) => {
   const { handId } = req.params;
   const format = (req.query.format as string) || 'json';
   try {
-    const history = await professionalHandHistory.getHandHistory(handId);
+    const history = professionalHandHistory.getHistory(handId);
     if (!history) {
       return res.status(404).json({ success: false, error: 'Hand not found' });
     }
     if (format === 'text') {
       res.set('Content-Type', 'text/plain');
-      res.send(professionalHandHistory.formatAsText(history));
+      res.send(professionalHandHistory.getFormattedHistory(handId, 'pokerstars') || '');
     } else {
       res.json({ success: true, history });
     }

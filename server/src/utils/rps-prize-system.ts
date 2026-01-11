@@ -373,8 +373,8 @@ class RPSPrizeSystem {
         await this.supabase
           .from('online_poker_tournament_participants')
           .update({
-            bounty_collected: this.supabase.rpc ? undefined : collectedRPS, // Используем raw update
-            knockouts_count: this.supabase.rpc ? undefined : 1
+            bounty_collected: collectedRPS,
+            knockouts_count: 1
           })
           .eq('tournament_id', tournamentId)
           .eq('player_id', eliminatorPlayerId);
