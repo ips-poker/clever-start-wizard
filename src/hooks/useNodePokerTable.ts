@@ -2235,6 +2235,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     isConnecting: connectionStatus === 'connecting',
     connect,
     disconnect,
+    
+    // WebSocket ref for external access (e.g., hand history)
+    wsRef,
 
     // State
     tableState,
@@ -2278,6 +2281,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     sitOut,
     sitIn,
     addChips,
-    sendChatMessage
+    sendChatMessage,
+    
+    // Send custom message to server
+    sendMessage
   };
 }

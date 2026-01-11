@@ -105,7 +105,9 @@ export function FullscreenPokerTableWrapper({
     // Professional timing data
     betsBeingCollected, phaseTimings,
     // Professional showdown and winner announcement
-    showdownReveals, winnerAnnouncement, clearWinnerAnnouncement
+    showdownReveals, winnerAnnouncement, clearWinnerAnnouncement,
+    // WebSocket ref for hand history
+    wsRef
   } = pokerTable;
 
   // Check if player can join (not yet seated) - only for cash games

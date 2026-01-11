@@ -2,24 +2,22 @@
 // QUICK HAND HISTORY - PokerStars-style instant replay panel
 // ============================================
 // Shows last N hands with one-click replay - accessible from table menu
+// Uses WebSocket for real-time updates when new hands complete
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   History, 
-  Play, 
-  Trophy, 
   X, 
   ChevronLeft, 
   ChevronRight,
-  Eye,
   Coins,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -49,97 +47,124 @@ export function QuickHandHistory({
   playerId, 
   isOpen, 
   onClose,
-  onOpenFullHistory 
+  onOpenFullHistory
 }: QuickHandHistoryProps) {
   const [hands, setHands] = useState<QuickHandEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedHandIndex, setSelectedHandIndex] = useState(0);
   
-  // Fetch recent hands
-  useEffect(() => {
-    if (!isOpen || !tableId || !playerId) return;
+  // Fetch hands from Supabase
+  const fetchHands = useCallback(async () => {
+    if (!tableId || !playerId) return;
     
-    const fetchHands = async () => {
-      setLoading(true);
-      try {
-        // Fetch last 10 completed hands for this table
-        const { data: handsData, error } = await supabase
-          .from('poker_hands')
-          .select(`
-            id,
-            hand_number,
-            pot,
-            community_cards,
-            phase,
-            completed_at,
-            winners
-          `)
-          .eq('table_id', tableId)
-          .not('completed_at', 'is', null)
-          .order('hand_number', { ascending: false })
-          .limit(10);
+    setLoading(true);
+    try {
+      // Fetch last 10 completed hands for this table
+      const { data: handsData, error } = await supabase
+        .from('poker_hands')
+        .select(`
+          id,
+          hand_number,
+          pot,
+          community_cards,
+          phase,
+          completed_at,
+          winners
+        `)
+        .eq('table_id', tableId)
+        .not('completed_at', 'is', null)
+        .order('hand_number', { ascending: false })
+        .limit(10);
+      
+      if (error) throw error;
+      
+      if (!handsData || handsData.length === 0) {
+        setHands([]);
+        return;
+      }
+      
+      // Fetch player's cards for each hand
+      const handIds = handsData.map(h => h.id);
+      const { data: playerHands } = await supabase
+        .from('poker_hand_players')
+        .select('hand_id, hole_cards, won_amount, is_folded')
+        .eq('player_id', playerId)
+        .in('hand_id', handIds);
+      
+      const playerHandsMap = new Map(
+        playerHands?.map(ph => [ph.hand_id, ph]) || []
+      );
+      
+      const formattedHands: QuickHandEntry[] = handsData.map(hand => {
+        const playerHand = playerHandsMap.get(hand.id);
+        const winners = (hand.winners as any[]) || [];
+        const isWinner = winners.some((w: any) => w.playerId === playerId);
+        const myWin = winners.find((w: any) => w.playerId === playerId);
         
-        if (error) throw error;
-        
-        if (!handsData || handsData.length === 0) {
-          setHands([]);
-          return;
+        let myResult: 'win' | 'lose' | 'fold' | null = null;
+        if (playerHand) {
+          if (playerHand.is_folded) {
+            myResult = 'fold';
+          } else if (isWinner) {
+            myResult = 'win';
+          } else {
+            myResult = 'lose';
+          }
         }
         
-        // Fetch player's cards for each hand
-        const handIds = handsData.map(h => h.id);
-        const { data: playerHands } = await supabase
-          .from('poker_hand_players')
-          .select('hand_id, hole_cards, won_amount, is_folded')
-          .eq('player_id', playerId)
-          .in('hand_id', handIds);
-        
-        const playerHandsMap = new Map(
-          playerHands?.map(ph => [ph.hand_id, ph]) || []
-        );
-        
-        const formattedHands: QuickHandEntry[] = handsData.map(hand => {
-          const playerHand = playerHandsMap.get(hand.id);
-          const winners = (hand.winners as any[]) || [];
-          const isWinner = winners.some((w: any) => w.playerId === playerId);
-          const myWin = winners.find((w: any) => w.playerId === playerId);
-          
-          let myResult: 'win' | 'lose' | 'fold' | null = null;
-          if (playerHand) {
-            if (playerHand.is_folded) {
-              myResult = 'fold';
-            } else if (isWinner) {
-              myResult = 'win';
-            } else {
-              myResult = 'lose';
-            }
-          }
-          
-          return {
-            id: hand.id,
-            handNumber: hand.hand_number,
-            pot: hand.pot || 0,
-            communityCards: (hand.community_cards as string[]) || [],
-            myCards: (playerHand?.hole_cards as string[]) || [],
-            myResult,
-            winAmount: myWin?.amount,
-            timestamp: hand.completed_at || '',
-            winnersCount: winners.length,
-            phase: hand.phase
-          };
-        });
-        
-        setHands(formattedHands);
-        setSelectedHandIndex(0);
-      } catch (err) {
-        console.error('[QuickHandHistory] Error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+        return {
+          id: hand.id,
+          handNumber: hand.hand_number,
+          pot: hand.pot || 0,
+          communityCards: (hand.community_cards as string[]) || [],
+          myCards: (playerHand?.hole_cards as string[]) || [],
+          myResult,
+          winAmount: myWin?.amount,
+          timestamp: hand.completed_at || '',
+          winnersCount: winners.length,
+          phase: hand.phase
+        };
+      });
+      
+      setHands(formattedHands);
+      setSelectedHandIndex(0);
+    } catch (err) {
+      console.error('[QuickHandHistory] Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [tableId, playerId]);
+  
+  // Fetch on open
+  useEffect(() => {
+    if (isOpen) {
+      fetchHands();
+    }
+  }, [isOpen, fetchHands]);
+  
+  // Subscribe to real-time hand completions
+  useEffect(() => {
+    if (!isOpen || !tableId) return;
     
-    fetchHands();
-  }, [isOpen, tableId, playerId]);
+    const channel = supabase
+      .channel(`quick-history-${tableId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'poker_hands',
+        filter: `table_id=eq.${tableId}`
+      }, (payload) => {
+        // Refresh when a hand is completed
+        if (payload.new && (payload.new as any).completed_at) {
+          fetchHands();
+        }
+      })
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isOpen, tableId, fetchHands]);
   
   const selectedHand = useMemo(() => hands[selectedHandIndex], [hands, selectedHandIndex]);
   
@@ -226,6 +251,15 @@ export function QuickHandHistory({
                 <span className="font-medium text-sm">Последняя раздача</span>
               </div>
               <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-white/60 hover:text-white"
+                  onClick={fetchHands}
+                  disabled={loading}
+                >
+                  <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                </Button>
                 {onOpenFullHistory && (
                   <Button
                     variant="ghost"
