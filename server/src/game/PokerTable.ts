@@ -2286,40 +2286,66 @@ export class PokerTable {
    * Saves both poker_hands and poker_hand_players records for complete history
    */
   private async saveHandHistory(): Promise<void> {
-    if (!this.currentHand) return;
+    if (!this.currentHand) {
+      logger.warn('saveHandHistory called but no currentHand');
+      return;
+    }
     
     try {
       const engineState = this.engine.getState();
       const allPlayers = Array.from(this.players.values());
       
+      logger.info('saveHandHistory starting', {
+        handId: this.currentHand.id.substring(0, 8),
+        handNumber: this.currentHand.handNumber,
+        phase: this.currentHand.phase,
+        playerCount: allPlayers.length,
+        playersWithCards: allPlayers.filter(p => p.holeCards && p.holeCards.length >= 2).length
+      });
+      
       // Build complete player hand data for poker_hand_players table
-      const playerHandsData = allPlayers.map(p => {
-        const handResult = engineState?.communityCards && engineState.communityCards.length >= 5 && p.holeCards.length >= 2
-          ? evaluateHand(p.holeCards, engineState.communityCards)
-          : null;
-        
-        // Calculate won amount based on pot distribution
-        let wonAmount = 0;
-        if (!p.isFolded && this.lastWinnersData) {
-          const winnerEntry = this.lastWinnersData.find(w => w.playerId === p.id);
-          if (winnerEntry) {
-            wonAmount = winnerEntry.amount || 0;
+      // CRITICAL: Include ALL players, even sitting out ones who participated in the hand
+      const playerHandsData = allPlayers
+        .filter(p => p.holeCards && p.holeCards.length >= 2) // Only players who got cards
+        .map(p => {
+          const handResult = engineState?.communityCards && engineState.communityCards.length >= 5 && p.holeCards.length >= 2
+            ? evaluateHand(p.holeCards, engineState.communityCards)
+            : null;
+          
+          // Calculate won amount based on pot distribution
+          let wonAmount = 0;
+          if (!p.isFolded && this.lastWinnersData) {
+            const winnerEntry = this.lastWinnersData.find(w => w.playerId === p.id);
+            if (winnerEntry) {
+              wonAmount = winnerEntry.amount || 0;
+            }
           }
-        }
-        
-        return {
-          hand_id: this.currentHand!.id,
-          player_id: p.id,
-          seat_number: p.seatNumber,
-          hole_cards: p.holeCards,
-          stack_start: p.stack - wonAmount + p.currentBet, // Approximate start stack
-          stack_end: p.stack,
-          bet_amount: p.currentBet,
-          is_folded: p.isFolded,
-          is_all_in: p.isAllIn,
-          won_amount: wonAmount > 0 ? wonAmount : null,
-          hand_rank: handResult?.handName || null
-        };
+          
+          logger.debug('Building poker_hand_players entry', {
+            playerId: p.id.substring(0, 8),
+            holeCards: p.holeCards,
+            isFolded: p.isFolded,
+            wonAmount
+          });
+          
+          return {
+            hand_id: this.currentHand!.id,
+            player_id: p.id,
+            seat_number: p.seatNumber,
+            hole_cards: p.holeCards,
+            stack_start: p.stack - wonAmount + p.currentBet, // Approximate start stack
+            stack_end: p.stack,
+            bet_amount: p.currentBet,
+            is_folded: p.isFolded,
+            is_all_in: p.isAllIn,
+            won_amount: wonAmount > 0 ? wonAmount : null,
+            hand_rank: handResult?.handName || null
+          };
+        });
+      
+      logger.info('poker_hand_players data prepared', {
+        handId: this.currentHand.id.substring(0, 8),
+        entriesCount: playerHandsData.length
       });
       
       // Build winners array with proper structure
@@ -2367,15 +2393,43 @@ export class PokerTable {
       
       // 2. Save poker_hand_players for detailed hand history
       if (playerHandsData.length > 0) {
-        const { error: playersError } = await this.supabase
+        logger.info('Attempting to save poker_hand_players', {
+          handId: this.currentHand.id.substring(0, 8),
+          count: playerHandsData.length,
+          players: playerHandsData.map(p => ({
+            playerId: p.player_id.substring(0, 8),
+            holeCards: p.hole_cards,
+            isFolded: p.is_folded
+          }))
+        });
+        
+        const { data: insertedData, error: playersError } = await this.supabase
           .from('poker_hand_players')
-          .upsert(playerHandsData, { onConflict: 'hand_id,player_id' });
+          .upsert(playerHandsData, { onConflict: 'hand_id,player_id' })
+          .select('id, hand_id, player_id');
         
         if (playersError) {
-          logger.warn('Failed to save poker_hand_players', { error: playersError.message });
+          logger.error('Failed to save poker_hand_players', { 
+            error: playersError.message,
+            code: playersError.code,
+            details: playersError.details,
+            hint: playersError.hint
+          });
         } else {
-          logger.debug('Saved poker_hand_players', { count: playerHandsData.length });
+          logger.info('Successfully saved poker_hand_players', { 
+            count: playerHandsData.length,
+            insertedCount: insertedData?.length || 0
+          });
         }
+      } else {
+        logger.warn('No poker_hand_players to save - all players have empty cards', {
+          handId: this.currentHand.id.substring(0, 8),
+          allPlayersCount: Array.from(this.players.values()).length,
+          playersWithCards: Array.from(this.players.values()).map(p => ({
+            id: p.id.substring(0, 8),
+            cardsCount: p.holeCards?.length || 0
+          }))
+        });
       }
       
       // 3. Clear current_hand_id from poker_tables
