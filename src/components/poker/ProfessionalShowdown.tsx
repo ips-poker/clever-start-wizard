@@ -122,7 +122,7 @@ const ShowdownPlayerRow = memo(function ShowdownPlayerRow({
   const winningHoleCards = useMemo(() => {
     if (!player.bestCards) return new Set<string>();
     return new Set(
-      player.bestCards.filter(c => player.holeCards.includes(c))
+      player.bestCards.filter(c => (player.holeCards ?? []).includes(c))
     );
   }, [player.bestCards, player.holeCards]);
 
@@ -171,7 +171,7 @@ const ShowdownPlayerRow = memo(function ShowdownPlayerRow({
 
       {/* Hole cards */}
       <div className="flex gap-1">
-        {player.holeCards.map((card, idx) => (
+        {(player.holeCards ?? []).map((card, idx) => (
           <FlippingCard
             key={`${player.playerId}-${card}-${idx}`}
             card={card}
@@ -180,6 +180,7 @@ const ShowdownPlayerRow = memo(function ShowdownPlayerRow({
           />
         ))}
       </div>
+
 
       {/* Won amount */}
       {player.isWinner && player.wonAmount && showWinner && (
@@ -198,8 +199,8 @@ const ShowdownPlayerRow = memo(function ShowdownPlayerRow({
 });
 
 export const ProfessionalShowdown = memo(function ProfessionalShowdown({
-  players,
-  communityCards,
+  players = [],
+  communityCards = [],
   pot,
   revealDelay = TIMINGS.playerRevealDelay,
   showdownOrder,
