@@ -195,8 +195,8 @@ export class PokerTable {
             .delete()
             .eq('table_id', this.id)
             .eq('player_id', dbPlayer.player_id)
-            .then(() => logger.info('Cleaned up orphaned zero-stack player', { playerId: dbPlayer.player_id.substring(0, 8) }))
-            .catch((err: unknown) => logger.warn('Failed to clean up orphaned player', { error: String(err) }));
+            .then(() => { logger.info('Cleaned up orphaned zero-stack player', { playerId: dbPlayer.player_id.substring(0, 8) }); })
+            .then(undefined, (err: unknown) => { logger.warn('Failed to clean up orphaned player', { error: String(err) }); });
           continue;
         }
         

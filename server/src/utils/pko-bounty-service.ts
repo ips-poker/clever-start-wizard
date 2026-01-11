@@ -196,6 +196,7 @@ class PKOBountyService {
       eliminatedByPlayerId: eliminatorPlayerId,
       bountyAmount: totalBountyRPS,
       collectedRPS,
+      collectedAmount: collectedRPS,
       addedToBountyRPS,
       timestamp: new Date()
     };
