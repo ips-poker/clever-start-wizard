@@ -515,7 +515,7 @@ export class PokerWebSocketHandler {
       // Check if this is a cash game table - end session
       const tableType = table.getTableType();
       if (tableType === 'cash') {
-        await this.cashGameSitOutManager.endSession(tableId, playerId, 0, 'voluntary_leave');
+        await this.cashGameSitOutManager.endSession(tableId, playerId, 0, 'leave');
       }
       
       await table.leaveTable(playerId);

@@ -116,6 +116,17 @@ export class CashGameSitOutManager {
   }
   
   /**
+   * Get supabase client, throws if not set
+   */
+  private getSupabase(): SupabaseClient {
+    if (!this.supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+    return this.supabase;
+  }
+  }
+  
+  /**
    * Set supabase client (for lazy initialization)
    */
   setSupabase(client: SupabaseClient): void {
@@ -171,7 +182,7 @@ export class CashGameSitOutManager {
     this.sitOutPlayers.set(key, state);
     
     // Update database
-    const { error } = await this.supabase
+    const { error } = await this.getSupabase()
       .from('poker_table_players')
       .update({
         status: 'sitting_out',
@@ -204,7 +215,7 @@ export class CashGameSitOutManager {
     this.sitOutPlayers.delete(key);
     
     // Update database
-    const { error } = await this.supabase
+    const { error } = await this.getSupabase()
       .from('poker_table_players')
       .update({
         status: 'active',
@@ -239,7 +250,7 @@ export class CashGameSitOutManager {
       state.leaveNextBB = leave;
     }
     
-    await this.supabase
+    await this.getSupabase()
       .from('poker_table_players')
       .update({ leave_next_bb: leave })
       .eq('table_id', tableId)
@@ -265,7 +276,7 @@ export class CashGameSitOutManager {
       state.missedBlinds++;
     }
     
-    const { data } = await this.supabase
+    const { data } = await this.getSupabase()
       .from('poker_table_players')
       .select('missed_blinds')
       .eq('table_id', tableId)
@@ -274,7 +285,7 @@ export class CashGameSitOutManager {
     
     const newCount = (data?.missed_blinds || 0) + 1;
     
-    await this.supabase
+    await this.getSupabase()
       .from('poker_table_players')
       .update({ missed_blinds: newCount })
       .eq('table_id', tableId)
@@ -310,7 +321,7 @@ export class CashGameSitOutManager {
     requestedSeat?: number
   ): Promise<{ success: boolean; position?: number; error?: string }> {
     // Check if already in queue
-    const { data: existing } = await this.supabase
+    const { data: existing } = await this.getSupabase()
       .from('poker_waiting_list')
       .select('id')
       .eq('table_id', tableId)
@@ -323,7 +334,7 @@ export class CashGameSitOutManager {
     }
     
     // Check if already at table
-    const { data: atTable } = await this.supabase
+    const { data: atTable } = await this.getSupabase()
       .from('poker_table_players')
       .select('id')
       .eq('table_id', tableId)
@@ -335,7 +346,7 @@ export class CashGameSitOutManager {
     }
     
     // Add to waiting list
-    const { error } = await this.supabase
+    const { error } = await this.getSupabase()
       .from('poker_waiting_list')
       .insert({
         table_id: tableId,
@@ -351,7 +362,7 @@ export class CashGameSitOutManager {
     }
     
     // Get position
-    const { data: position } = await this.supabase
+    const { data: position } = await this.getSupabase()
       .rpc('get_waiting_list_position', {
         p_table_id: tableId,
         p_player_id: playerId,
@@ -370,7 +381,7 @@ export class CashGameSitOutManager {
    * Leave waiting list
    */
   async leaveWaitingList(tableId: string, playerId: string): Promise<{ success: boolean }> {
-    await this.supabase
+    await this.getSupabase()
       .from('poker_waiting_list')
       .update({ status: 'cancelled' })
       .eq('table_id', tableId)
@@ -389,7 +400,7 @@ export class CashGameSitOutManager {
    * Get waiting list for a table
    */
   async getWaitingList(tableId: string): Promise<WaitingListEntry[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await this.getSupabase()
       .from('poker_waiting_list')
       .select(`
         id,
@@ -427,7 +438,7 @@ export class CashGameSitOutManager {
    * Check if there's a waiting list for a table
    */
   async hasWaitingList(tableId: string): Promise<boolean> {
-    const { count } = await this.supabase
+    const { count } = await this.getSupabase()
       .from('poker_waiting_list')
       .select('id', { count: 'exact', head: true })
       .eq('table_id', tableId)
@@ -440,7 +451,7 @@ export class CashGameSitOutManager {
    * Notify next player in queue that seat is available
    */
   async notifyNextInQueue(tableId: string, seatNumber: number): Promise<string | null> {
-    const { data } = await this.supabase.rpc('seat_from_waiting_list', {
+    const { data } = await this.getSupabase().rpc('seat_from_waiting_list', {
       p_table_id: tableId,
       p_seat_number: seatNumber,
     });
@@ -471,7 +482,7 @@ export class CashGameSitOutManager {
     seatNumber: number,
     buyInAmount: number
   ): Promise<string | null> {
-    const { data, error } = await this.supabase
+    const { data, error } = await this.getSupabase()
       .from('poker_player_sessions')
       .insert({
         table_id: tableId,
@@ -509,7 +520,7 @@ export class CashGameSitOutManager {
   ): Promise<void> {
     const now = new Date().toISOString();
     
-    await this.supabase
+    await this.getSupabase()
       .from('poker_player_sessions')
       .update({
         cash_out_amount: cashOutAmount,
@@ -537,7 +548,7 @@ export class CashGameSitOutManager {
     currentStack: number
   ): Promise<void> {
     // Get current session
-    const { data: session } = await this.supabase
+    const { data: session } = await this.getSupabase()
       .from('poker_player_sessions')
       .select('id, peak_stack, lowest_stack, hands_played')
       .eq('table_id', tableId)
@@ -559,7 +570,7 @@ export class CashGameSitOutManager {
       updates.lowest_stack = currentStack;
     }
     
-    await this.supabase
+    await this.getSupabase()
       .from('poker_player_sessions')
       .update(updates)
       .eq('id', session.id);
@@ -604,7 +615,7 @@ export class CashGameSitOutManager {
       if (duration >= warningThreshold && state.warningsSent === 0) {
         state.warningsSent = 1;
         
-        await this.supabase
+        await this.getSupabase()
           .from('poker_table_players')
           .update({ return_warning_sent_at: new Date().toISOString() })
           .eq('table_id', state.tableId)
@@ -627,7 +638,7 @@ export class CashGameSitOutManager {
         });
         
         // Get current stack before removal
-        const { data: playerData } = await this.supabase
+        const { data: playerData } = await this.getSupabase()
           .from('poker_table_players')
           .select('stack, seat_number')
           .eq('table_id', state.tableId)
@@ -641,7 +652,7 @@ export class CashGameSitOutManager {
         await this.endSession(state.tableId, state.playerId, stack, 'sit_out_timeout');
         
         // Remove from table
-        await this.supabase
+        await this.getSupabase()
           .from('poker_table_players')
           .delete()
           .eq('table_id', state.tableId)
@@ -666,7 +677,7 @@ export class CashGameSitOutManager {
    * Load sit-out players from database on startup
    */
   async loadFromDatabase(): Promise<void> {
-    const { data: sittingOut } = await this.supabase
+    const { data: sittingOut } = await this.getSupabase()
       .from('poker_table_players')
       .select('table_id, player_id, sit_out_at, sit_out_reason, missed_blinds, leave_next_bb, auto_post_blinds')
       .eq('status', 'sitting_out')
