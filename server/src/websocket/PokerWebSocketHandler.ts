@@ -1897,11 +1897,18 @@ export class PokerWebSocketHandler {
       
       if (playerId) {
         const handIds = hands.map(h => h.id);
-        const { data: playerData } = await this.supabase
+        const { data: playerData, error: playerError } = await this.supabase
           .from('poker_hand_players')
           .select('hand_id, hole_cards, is_folded, won_amount')
           .eq('player_id', playerId)
           .in('hand_id', handIds);
+        
+        logger.debug('Fetched player hand data', {
+          playerId: playerId.substring(0, 8),
+          handIds: handIds.length,
+          playerDataCount: playerData?.length || 0,
+          playerError: playerError?.message
+        });
         
         if (playerData) {
           playerData.forEach(p => {
