@@ -1946,6 +1946,9 @@ export class PokerTable {
    * CRITICAL: Ensures stacks never go negative and properly awards pot
    */
   private async completeHand(winners: { playerId: string; amount: number; handName: string }[]): Promise<void> {
+    // POKERSTARS FIX: Store actual winners for saveHandHistory
+    this.setLastHandWinners(winners);
+    
     logger.info('=== HAND COMPLETION START ===', {
       tableId: this.id,
       handNumber: this.handNumber,
@@ -2265,31 +2268,47 @@ export class PokerTable {
   
   /**
    * Save hand history to database
+   * FIXED: Now stores actual winners (with amount > 0) instead of all non-folded players
    */
+  private lastHandWinners: { playerId: string; amount: number; handName: string }[] = [];
+  
+  setLastHandWinners(winners: { playerId: string; amount: number; handName: string }[]): void {
+    this.lastHandWinners = winners;
+  }
+  
   private async saveHandHistory(): Promise<void> {
     if (!this.currentHand) return;
     
     try {
-      // Get winners info from engine for saving to DB
       const engineState = this.engine.getState();
-      const winnersForDb = engineState ? 
-        Array.from(this.players.values())
-          .filter(p => !p.isFolded)
-          .map(p => {
-            const handResult = engineState.communityCards && engineState.communityCards.length >= 5 && p.holeCards.length >= 2
-              ? evaluateHand(p.holeCards, engineState.communityCards)
-              : null;
-            return {
-              playerId: p.id,
-              name: p.name,
-              holeCards: p.holeCards,
-              stack: p.stack,
-              handName: handResult?.handName,
-              handRank: handResult?.handRank,
-              bestCards: handResult?.bestCards
-            };
-          })
-        : [];
+      
+      // POKERSTARS FIX: Only include ACTUAL winners (those who won chips)
+      // Not all non-folded players
+      const actualWinners = this.lastHandWinners || [];
+      
+      // Build winners data with hand evaluations
+      const winnersForDb = actualWinners.map(w => {
+        const player = this.players.get(w.playerId);
+        const holeCards = player?.holeCards || [];
+        
+        // Evaluate hand for display
+        const handResult = engineState?.communityCards && 
+          engineState.communityCards.length >= 3 && 
+          holeCards.length >= 2
+          ? evaluateHand(holeCards, engineState.communityCards)
+          : null;
+        
+        return {
+          playerId: w.playerId,
+          name: player?.name || 'Unknown',
+          holeCards: holeCards,
+          stack: player?.stack || 0,
+          amount: w.amount,
+          handName: w.handName || handResult?.handName,
+          handRank: handResult?.handRank,
+          bestCards: handResult?.bestCards
+        };
+      });
       
       // Use upsert since hand was already created at start
       await this.supabase.from('poker_hands').upsert({
@@ -2305,11 +2324,10 @@ export class PokerTable {
         current_bet: this.currentHand.currentBet,
         current_player_seat: null, // Hand is complete
         completed_at: new Date().toISOString(),
-        winners: winnersForDb // Save winners data for debugging
+        winners: winnersForDb
       }, { onConflict: 'id' });
       
-      // CRITICAL: Clear current_hand_id from poker_tables to allow consolidation
-      // This was the main bug blocking table balancing during breaks
+      // Clear current_hand_id from poker_tables
       await this.supabase
         .from('poker_tables')
         .update({
@@ -2320,12 +2338,17 @@ export class PokerTable {
         })
         .eq('id', this.id);
       
-      logger.info('Hand history saved and current_hand_id cleared', {
+      logger.info('Hand history saved with actual winners', {
         tableId: this.id,
-        handId: this.currentHand.id
+        handId: this.currentHand.id,
+        winnersCount: winnersForDb.length,
+        winners: winnersForDb.map(w => ({ id: w.playerId.substring(0, 8), amount: w.amount, hand: w.handName }))
       });
       
-      // CRITICAL: Sync all player stacks to database after each hand
+      // Clear lastHandWinners for next hand
+      this.lastHandWinners = [];
+      
+      // Sync all player stacks to database after each hand
       await this.syncPlayerStacksToDatabase();
     } catch (err) {
       logger.error('Failed to save hand history', { error: String(err) });
