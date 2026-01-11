@@ -593,7 +593,7 @@ export class PokerWebSocketHandler {
           cashOutAmount = 0;
         }
 
-        await this.cashGameSitOutManager.endSession(tableId, playerId, cashOutAmount, 'voluntary_leave');
+        await this.cashGameSitOutManager.endSession(tableId, playerId, cashOutAmount, 'leave');
       }
       await table.leaveTable(playerId);
     }
