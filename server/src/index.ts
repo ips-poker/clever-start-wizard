@@ -233,8 +233,8 @@ app.get('/api/rng/audit', (req, res) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 100, 1000);
   res.json({
     success: true,
-    entries: rngVerificationService.getAuditLog(limit),
-    testResults: rngVerificationService.getTestResults()
+    entries: rngVerificationService.getRecentAuditLog(limit),
+    testResults: rngVerificationService.getTestResultsSummary()
   });
 });
 
@@ -253,22 +253,25 @@ app.post('/api/equity/calculate', async (req, res) => {
 });
 
 // Hand History API - Professional format
-app.get('/api/history/hand/:handId', async (req, res) => {
+app.get('/api/history/hand/:handId', (req, res) => {
   const { handId } = req.params;
   const format = (req.query.format as string) || 'json';
+
   try {
-    const history = await professionalHandHistory.getHandHistory(handId);
+    const history = professionalHandHistory.getHistory(handId);
     if (!history) {
       return res.status(404).json({ success: false, error: 'Hand not found' });
     }
+
     if (format === 'text') {
+      const text = professionalHandHistory.getFormattedHistory(handId, 'pokerstars') ?? '';
       res.set('Content-Type', 'text/plain');
-      res.send(professionalHandHistory.formatAsText(history));
-    } else {
-      res.json({ success: true, history });
+      return res.send(text);
     }
+
+    return res.json({ success: true, history });
   } catch (err) {
-    res.status(500).json({ success: false, error: String(err) });
+    return res.status(500).json({ success: false, error: String(err) });
   }
 });
 

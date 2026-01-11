@@ -432,32 +432,33 @@ export function calculateTableBalancing(
     const targetTable = tableStates[tableStates.length - 1];
     
     // Select player to move using professional rules
-    const playerToMove = selectPlayerToMove(sourceTable, true);
+    let playerToMove = selectPlayerToMove(sourceTable, true);
     if (!playerToMove) {
       // All players in hand, try without exclusion
-      const forcedMove = selectPlayerToMove(sourceTable, false);
-      if (!forcedMove) break;
+      playerToMove = selectPlayerToMove(sourceTable, false);
     }
-    
-    const player = playerToMove!;
+    if (!playerToMove) break;
+
+    const fullPlayer = sourceTable.players.find(p => p.playerId === playerToMove.playerId);
+    if (!fullPlayer) break;
+
     const toSeat = findBestSeat(targetTable);
-    
     if (toSeat === null) break; // No available seats
-    
+
     moves.push({
       fromTable: sourceTable.tableId,
       toTable: targetTable.tableId,
-      playerId: player.playerId,
-      fromSeat: player.seatNumber,
+      playerId: fullPlayer.playerId,
+      fromSeat: fullPlayer.seatNumber,
       toSeat,
       reason: 'balance'
     });
-    
+
     // Update state
     sourceTable.playerCount--;
-    sourceTable.players = sourceTable.players.filter(p => p.playerId !== player.playerId);
+    sourceTable.players = sourceTable.players.filter(p => p.playerId !== fullPlayer.playerId);
     targetTable.playerCount++;
-    targetTable.players.push({ ...player, seatNumber: toSeat });
+    targetTable.players.push({ ...fullPlayer, seatNumber: toSeat });
   }
   
   return moves;
