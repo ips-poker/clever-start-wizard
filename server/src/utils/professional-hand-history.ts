@@ -509,4 +509,6 @@ export class HandHistoryService {
 // SINGLETON
 // ==========================================
 
-export const handHistoryService = new HandHistoryService();
+export const professionalHandHistory = new HandHistoryService();
+// Alias for backward compatibility
+export const handHistoryService = professionalHandHistory;
