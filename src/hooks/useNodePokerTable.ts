@@ -1702,9 +1702,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 playerId: revealData.playerId as string,
                 playerName: revealData.playerName as string || 'Unknown',
                 seatNumber: revealData.seatNumber as number,
-                holeCards: revealData.holeCards as string[],
+                holeCards: Array.isArray(revealData.holeCards) ? (revealData.holeCards as string[]) : [],
                 handName: revealData.handName as string | undefined,
-                bestCards: revealData.bestCards as string[] | undefined,
+                bestCards: Array.isArray(revealData.bestCards) ? (revealData.bestCards as string[]) : undefined,
                 revealIndex: revealData.revealIndex as number || prev.length,
                 revealDelay: revealData.revealDelay as number || 0,
                 isWinner: revealData.isWinner as boolean || false
@@ -1740,14 +1740,15 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             const winnerData = data as Record<string, unknown>;
             log('🏆 Winner announcement:', winnerData);
             
-            const winners = winnerData.winners as Array<{
+            const winnersRaw = winnerData.winners;
+            const winners = Array.isArray(winnersRaw) ? winnersRaw as Array<{
               playerId: string;
               playerName: string;
               seatNumber: number;
               amount: number;
               handName?: string;
               newStack: number;
-            }> || [];
+            }> : [];
             
             setWinnerAnnouncement({
               winners,
