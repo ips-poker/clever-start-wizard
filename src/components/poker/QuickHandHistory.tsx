@@ -2,26 +2,27 @@
 // QUICK HAND HISTORY - PokerStars-style instant replay panel
 // ============================================
 // Shows last N hands with one-click replay - accessible from table menu
-// Uses WebSocket for real-time updates when new hands complete
+// Primary source: Node WebSocket server (authoritative)
+// Fallback: Supabase direct query (useful for admin/debug environments)
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  History, 
-  X, 
-  ChevronLeft, 
+import {
+  History,
+  X,
+  ChevronLeft,
   ChevronRight,
   Coins,
   ArrowUp,
   ArrowDown,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
-interface QuickHandEntry {
+export interface QuickHandEntry {
   id: string;
   handNumber: number;
   pot: number;
@@ -40,107 +41,155 @@ interface QuickHandHistoryProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenFullHistory?: () => void;
+
+  // Poker engine integration
+  wsRef?: React.MutableRefObject<WebSocket | null>;
+  sendMessage?: (message: object) => boolean;
 }
 
-export function QuickHandHistory({ 
-  tableId, 
-  playerId, 
-  isOpen, 
+type HandHistoryServerMessage =
+  | { type: 'hand_history'; tableId: string; hands: QuickHandEntry[]; timestamp?: number }
+  | { type: 'hand_completed'; tableId: string; handId?: string; handNumber?: number; timestamp?: number }
+  | { type: 'error'; tableId?: string; error?: string; message?: string };
+
+export function QuickHandHistory({
+  tableId,
+  playerId,
+  isOpen,
   onClose,
-  onOpenFullHistory
+  onOpenFullHistory,
+  wsRef,
+  sendMessage,
 }: QuickHandHistoryProps) {
   const [hands, setHands] = useState<QuickHandEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedHandIndex, setSelectedHandIndex] = useState(0);
-  
-  // Fetch hands from Supabase
-  const fetchHands = useCallback(async () => {
+  const [errorText, setErrorText] = useState<string | null>(null);
+
+  const lastRequestIdRef = useRef(0);
+  const refreshDebounceRef = useRef<number | null>(null);
+
+  const selectedHand = useMemo(() => hands[selectedHandIndex], [hands, selectedHandIndex]);
+
+  const applyHands = useCallback((incoming: QuickHandEntry[]) => {
+    setHands(incoming);
+    setSelectedHandIndex(0);
+  }, []);
+
+  const requestHandsFromServer = useCallback(
+    (reason: 'open' | 'manual' | 'hand_completed' = 'manual') => {
+      if (!sendMessage || !tableId) return false;
+
+      const ws = wsRef?.current;
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        // If socket is still connecting, try a short retry window.
+        if (reason === 'open') {
+          const startId = ++lastRequestIdRef.current;
+          setLoading(true);
+          setErrorText(null);
+
+          let attempts = 0;
+          const tick = () => {
+            if (!isOpen) return;
+            if (startId !== lastRequestIdRef.current) return;
+
+            const w = wsRef?.current;
+            if (w?.readyState === WebSocket.OPEN) {
+              sendMessage({ type: 'get_hand_history', tableId, playerId, limit: 10 });
+              return;
+            }
+
+            attempts += 1;
+            if (attempts >= 6) {
+              setLoading(false);
+              return;
+            }
+            window.setTimeout(tick, 250);
+          };
+
+          window.setTimeout(tick, 50);
+          return true;
+        }
+
+        return false;
+      }
+
+      setLoading(true);
+      setErrorText(null);
+      return sendMessage({ type: 'get_hand_history', tableId, playerId, limit: 10 });
+    },
+    [sendMessage, tableId, playerId, wsRef, isOpen]
+  );
+
+  const fetchHandsFromSupabase = useCallback(async () => {
     if (!tableId) return;
-    
+
     setLoading(true);
-    console.log('[QuickHandHistory] Fetching hands for table:', tableId, 'player:', playerId);
-    
+    setErrorText(null);
+
     try {
-      // Fetch last 10 completed hands for this table
       const { data: handsData, error } = await supabase
         .from('poker_hands')
-        .select(`
-          id,
-          hand_number,
-          pot,
-          community_cards,
-          phase,
-          completed_at,
-          winners
-        `)
+        .select(
+          `
+            id,
+            hand_number,
+            pot,
+            community_cards,
+            phase,
+            completed_at,
+            winners
+          `
+        )
         .eq('table_id', tableId)
         .not('completed_at', 'is', null)
         .order('hand_number', { ascending: false })
         .limit(10);
-      
-      if (error) {
-        console.error('[QuickHandHistory] Query error:', error);
-        throw error;
-      }
-      
-      console.log('[QuickHandHistory] Found hands:', handsData?.length || 0);
-      
+
+      if (error) throw error;
+
       if (!handsData || handsData.length === 0) {
-        setHands([]);
+        applyHands([]);
         return;
       }
-      
-      // Try to fetch player's cards from poker_hand_players
-      const handIds = handsData.map(h => h.id);
-      let playerHandsMap = new Map<string, any>();
-      
-      if (playerId) {
-        const { data: playerHands, error: playerError } = await supabase
-          .from('poker_hand_players')
-          .select('hand_id, hole_cards, won_amount, is_folded')
-          .eq('player_id', playerId)
-          .in('hand_id', handIds);
-        
-        if (!playerError && playerHands) {
-          playerHandsMap = new Map(playerHands.map(ph => [ph.hand_id, ph]));
+
+      // Fetch hero cards for each hand
+      const handIds = handsData.map((h) => h.id);
+      const playerHandsMap = new Map<string, { hole_cards: string[] | null; won_amount: number | null; is_folded: boolean }>();
+
+      const { data: playerHands } = await supabase
+        .from('poker_hand_players')
+        .select('hand_id, hole_cards, won_amount, is_folded')
+        .eq('player_id', playerId)
+        .in('hand_id', handIds);
+
+      if (playerHands) {
+        for (const ph of playerHands) {
+          playerHandsMap.set(ph.hand_id, {
+            hole_cards: (ph.hole_cards as any) || [],
+            won_amount: ph.won_amount,
+            is_folded: !!ph.is_folded,
+          });
         }
-        console.log('[QuickHandHistory] Player hands found:', playerHandsMap.size);
       }
-      
-      const formattedHands: QuickHandEntry[] = handsData.map(hand => {
+
+      const formatted: QuickHandEntry[] = handsData.map((hand) => {
         const winners = (hand.winners as any[]) || [];
         const playerHand = playerHandsMap.get(hand.id);
-        
-        // Try to get player data from winners array if not in poker_hand_players
+
         let myCards: string[] = [];
         let myResult: 'win' | 'lose' | 'fold' | null = null;
         let winAmount: number | undefined;
-        
+
         if (playerHand) {
-          // We have detailed player data
-          myCards = (playerHand.hole_cards as string[]) || [];
-          if (playerHand.is_folded) {
-            myResult = 'fold';
-          } else if (playerHand.won_amount && playerHand.won_amount > 0) {
+          myCards = (playerHand.hole_cards as any) || [];
+          if (playerHand.is_folded) myResult = 'fold';
+          else if ((playerHand.won_amount ?? 0) > 0) {
             myResult = 'win';
-            winAmount = playerHand.won_amount;
-          } else {
-            myResult = 'lose';
-          }
-        } else if (playerId && winners.length > 0) {
-          // Fallback: check winners array for player info
-          const myWinnerEntry = winners.find((w: any) => w.playerId === playerId);
-          if (myWinnerEntry) {
-            myCards = myWinnerEntry.holeCards || [];
-            if (myWinnerEntry.amount && myWinnerEntry.amount > 0) {
-              myResult = 'win';
-              winAmount = myWinnerEntry.amount;
-            } else {
-              myResult = 'lose';
-            }
-          }
+            winAmount = playerHand.won_amount ?? undefined;
+          } else myResult = 'lose';
         }
-        
+
         return {
           id: hand.id,
           handNumber: hand.hand_number,
@@ -150,68 +199,109 @@ export function QuickHandHistory({
           myResult,
           winAmount,
           timestamp: hand.completed_at || '',
-          winnersCount: winners.filter((w: any) => w.amount && w.amount > 0).length,
-          phase: hand.phase
+          winnersCount: winners.length,
+          phase: hand.phase,
         };
       });
-      
-      console.log('[QuickHandHistory] Formatted hands:', formattedHands);
-      setHands(formattedHands);
-      setSelectedHandIndex(0);
-    } catch (err) {
-      console.error('[QuickHandHistory] Error:', err);
+
+      applyHands(formatted);
+    } catch (e: any) {
+      console.error('[QuickHandHistory] Supabase fetch failed:', e);
+      setErrorText(e?.message || 'Не удалось загрузить историю');
     } finally {
       setLoading(false);
     }
-  }, [tableId, playerId]);
-  
-  // Fetch on open
+  }, [applyHands, playerId, tableId]);
+
+  // Attach WS listeners (non-invasive: does not override hook's onmessage)
   useEffect(() => {
-    if (isOpen) {
-      fetchHands();
-    }
-  }, [isOpen, fetchHands]);
-  
-  // Subscribe to real-time hand completions
-  useEffect(() => {
-    if (!isOpen || !tableId) return;
-    
-    const channel = supabase
-      .channel(`quick-history-${tableId}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'poker_hands',
-        filter: `table_id=eq.${tableId}`
-      }, (payload) => {
-        // Refresh when a hand is completed
-        if (payload.new && (payload.new as any).completed_at) {
-          fetchHands();
+    if (!isOpen) return;
+
+    const ws = wsRef?.current;
+    if (!ws) return;
+
+    const onWsMessage = (event: MessageEvent) => {
+      let parsed: HandHistoryServerMessage | null = null;
+      try {
+        parsed = JSON.parse(event.data) as HandHistoryServerMessage;
+      } catch {
+        return;
+      }
+
+      if (!parsed || typeof parsed !== 'object') return;
+
+      if (parsed.type === 'hand_history') {
+        if (parsed.tableId !== tableId) return;
+        applyHands(Array.isArray(parsed.hands) ? parsed.hands : []);
+        setLoading(false);
+        setErrorText(null);
+        return;
+      }
+
+      // When a hand completes, refresh the list (debounced)
+      if (parsed.type === 'hand_completed' && parsed.tableId === tableId) {
+        if (refreshDebounceRef.current) window.clearTimeout(refreshDebounceRef.current);
+        refreshDebounceRef.current = window.setTimeout(() => {
+          requestHandsFromServer('hand_completed');
+        }, 250);
+        return;
+      }
+
+      if (parsed.type === 'error') {
+        // Only show error if it is clearly about this table and panel is open
+        if (parsed.tableId && parsed.tableId !== tableId) return;
+        if (loading) {
+          setLoading(false);
+          setErrorText(parsed.error || parsed.message || 'Ошибка сервера');
         }
-      })
-      .subscribe();
-    
-    return () => {
-      supabase.removeChannel(channel);
+      }
     };
-  }, [isOpen, tableId, fetchHands]);
-  
-  const selectedHand = useMemo(() => hands[selectedHandIndex], [hands, selectedHandIndex]);
-  
+
+    ws.addEventListener('message', onWsMessage);
+    return () => {
+      if (refreshDebounceRef.current) window.clearTimeout(refreshDebounceRef.current);
+      ws.removeEventListener('message', onWsMessage);
+    };
+  }, [applyHands, isOpen, loading, requestHandsFromServer, tableId, wsRef]);
+
+  // Fetch when opened (prefer server)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    lastRequestIdRef.current += 1;
+
+    const startedViaWs = requestHandsFromServer('open');
+
+    // Fallback to Supabase if WS path isn't available / not connected
+    if (!startedViaWs) {
+      fetchHandsFromSupabase();
+      return;
+    }
+
+    // If WS doesn't answer quickly, fallback to Supabase (best-effort)
+    const timeoutId = window.setTimeout(() => {
+      if (!hands.length) {
+        fetchHandsFromSupabase();
+      }
+    }, 1500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchHandsFromSupabase, hands.length, isOpen, requestHandsFromServer]);
+
   const renderCard = (card: string) => {
     if (!card) return null;
     const rank = card[0];
     const suit = card[1];
     const suitSymbols: Record<string, string> = { h: '♥', d: '♦', c: '♣', s: '♠' };
-    const suitColors: Record<string, string> = { 
-      h: 'text-red-500', 
-      d: 'text-blue-500', 
-      c: 'text-green-500', 
-      s: 'text-foreground' 
+    const suitColors: Record<string, string> = {
+      h: 'text-red-500',
+      d: 'text-blue-500',
+      c: 'text-green-500',
+      s: 'text-foreground',
     };
-    
+
     return (
-      <span 
+      <span
         className={cn(
           'inline-flex items-center justify-center w-8 h-11 rounded bg-white shadow-md font-bold text-sm',
           suitColors[suit] || 'text-foreground'
@@ -224,23 +314,21 @@ export function QuickHandHistory({
       </span>
     );
   };
-  
+
   const getResultBadge = (result: 'win' | 'lose' | 'fold' | null, amount?: number) => {
     if (!result) return null;
-    
+
     switch (result) {
       case 'win':
         return (
           <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-            <ArrowUp className="h-3 w-3 mr-1" />
-            +{amount?.toLocaleString() || 0}
+            <ArrowUp className="h-3 w-3 mr-1" />+{amount?.toLocaleString() || 0}
           </Badge>
         );
       case 'lose':
         return (
           <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
-            <ArrowDown className="h-3 w-3 mr-1" />
-            Проигрыш
+            <ArrowDown className="h-3 w-3 mr-1" />Проигрыш
           </Badge>
         );
       case 'fold':
@@ -251,14 +339,14 @@ export function QuickHandHistory({
         );
     }
   };
-  
+
   const formatTime = (timestamp: string) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    
+
     if (diffMins < 1) return 'Только что';
     if (diffMins < 60) return `${diffMins} мин назад`;
     return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
@@ -285,10 +373,13 @@ export function QuickHandHistory({
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 text-white/60 hover:text-white"
-                  onClick={fetchHands}
+                  onClick={() => {
+                    const ok = requestHandsFromServer('manual');
+                    if (!ok) fetchHandsFromSupabase();
+                  }}
                   disabled={loading}
                 >
-                  <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                  <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
                 </Button>
                 {onOpenFullHistory && (
                   <Button
@@ -310,15 +401,29 @@ export function QuickHandHistory({
                 </Button>
               </div>
             </div>
-            
+
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
               </div>
-            ) : hands.length === 0 ? (
-              <div className="py-8 text-center text-white/50 text-sm">
-                Нет завершённых раздач
+            ) : errorText ? (
+              <div className="py-6 px-4 text-center">
+                <div className="text-white/70 text-sm">{errorText}</div>
+                <div className="mt-3">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      const ok = requestHandsFromServer('manual');
+                      if (!ok) fetchHandsFromSupabase();
+                    }}
+                  >
+                    Повторить
+                  </Button>
+                </div>
               </div>
+            ) : hands.length === 0 ? (
+              <div className="py-8 text-center text-white/50 text-sm">Нет завершённых раздач</div>
             ) : (
               <>
                 {/* Hand Navigation */}
@@ -329,7 +434,7 @@ export function QuickHandHistory({
                       size="icon"
                       className="h-6 w-6"
                       disabled={selectedHandIndex >= hands.length - 1}
-                      onClick={() => setSelectedHandIndex(i => Math.min(i + 1, hands.length - 1))}
+                      onClick={() => setSelectedHandIndex((i) => Math.min(i + 1, hands.length - 1))}
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
@@ -341,13 +446,13 @@ export function QuickHandHistory({
                       size="icon"
                       className="h-6 w-6"
                       disabled={selectedHandIndex <= 0}
-                      onClick={() => setSelectedHandIndex(i => Math.max(i - 1, 0))}
+                      onClick={() => setSelectedHandIndex((i) => Math.max(i - 1, 0))}
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
                 )}
-                
+
                 {/* Selected Hand Details */}
                 {selectedHand && (
                   <div className="p-4 space-y-4">
@@ -359,7 +464,7 @@ export function QuickHandHistory({
                       </div>
                       {getResultBadge(selectedHand.myResult, selectedHand.winAmount)}
                     </div>
-                    
+
                     {/* My Cards */}
                     {selectedHand.myCards.length > 0 && (
                       <div className="space-y-2">
@@ -378,7 +483,7 @@ export function QuickHandHistory({
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Community Cards */}
                     <div className="space-y-2">
                       <div className="text-xs text-white/50 uppercase tracking-wide">Борд</div>
@@ -399,13 +504,11 @@ export function QuickHandHistory({
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Pot */}
                     <div className="flex items-center gap-2 pt-2 border-t border-white/10">
                       <Coins className="h-4 w-4 text-amber-400" />
-                      <span className="text-white font-medium">
-                        {selectedHand.pot.toLocaleString()}
-                      </span>
+                      <span className="text-white font-medium">{selectedHand.pot.toLocaleString()}</span>
                     </div>
                   </div>
                 )}
