@@ -349,6 +349,20 @@ export class RNGVerificationService {
   }
   
   /**
+   * Get audit log entries
+   */
+  getAuditLog(limit: number = 100): RNGAuditEntry[] {
+    return this.auditLog.slice(-limit);
+  }
+  
+  /**
+   * Get test results
+   */
+  getTestResults(): StatisticalTestResult[] {
+    return [...this.testResults];
+  }
+  
+  /**
    * Clear old data
    */
   cleanup(): void {

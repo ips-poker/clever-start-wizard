@@ -101,16 +101,25 @@ export interface PlayerSession {
 // CASH GAME SIT-OUT MANAGER
 // ==========================================
 export class CashGameSitOutManager {
-  private supabase: SupabaseClient;
+  private supabase: SupabaseClient | null = null;
   private sitOutPlayers: Map<string, SitOutState> = new Map(); // key: tableId:playerId
   private checkInterval: NodeJS.Timeout | null = null;
   private onPlayerRemoved: ((tableId: string, playerId: string, reason: PlayerRemovalReason, stack: number) => void) | null = null;
   private onSeatAvailable: ((tableId: string, seatNumber: number) => void) | null = null;
   
-  constructor(supabase: SupabaseClient) {
-    this.supabase = supabase;
+  constructor(supabase?: SupabaseClient) {
+    if (supabase) {
+      this.supabase = supabase;
+    }
     this.startPeriodicCheck();
     logger.info('CashGameSitOutManager initialized');
+  }
+  
+  /**
+   * Set supabase client (for lazy initialization)
+   */
+  setSupabase(client: SupabaseClient): void {
+    this.supabase = client;
   }
   
   /**
