@@ -124,7 +124,7 @@ export class CashGameSitOutManager {
     }
     return this.supabase;
   }
-  }
+  
   
   /**
    * Set supabase client (for lazy initialization)
