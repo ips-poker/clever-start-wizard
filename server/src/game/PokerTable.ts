@@ -2324,6 +2324,17 @@ export class PokerTable {
         handId: this.currentHand.id
       });
       
+      // Emit hand_completed event for real-time UI updates (hand history panel)
+      this.emit('hand_completed', {
+        tableId: this.id,
+        handId: this.currentHand.id,
+        handNumber: this.currentHand.handNumber,
+        pot: this.currentHand.pot,
+        communityCards: this.currentHand.communityCards,
+        winners: winnersForDb,
+        timestamp: Date.now()
+      });
+      
       // CRITICAL: Sync all player stacks to database after each hand
       await this.syncPlayerStacksToDatabase();
     } catch (err) {

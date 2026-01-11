@@ -380,6 +380,16 @@ export class PokerWebSocketHandler {
           await this.handleReconnectRequest(ws, message);
           break;
         
+        // Hand history request - get recent hands for table/player
+        case 'get_hand_history':
+          await this.handleGetHandHistory(ws, message);
+          break;
+        
+        // Get last completed hand - quick access for UI
+        case 'get_last_hand':
+          await this.handleGetLastHand(ws, message);
+          break;
+        
         default:
           logger.warn('Unknown message type', { type: message.type });
           this.sendError(ws, `Unknown message type: ${message.type}`);
@@ -1745,6 +1755,235 @@ export class PokerWebSocketHandler {
       }),
       timestamp: Date.now()
     });
+  }
+  
+  /**
+   * Handle get hand history request - fetch recent completed hands
+   */
+  private async handleGetHandHistory(ws: WebSocket, message: unknown): Promise<void> {
+    const parsed = z.object({
+      type: z.literal('get_hand_history'),
+      tableId: z.string().uuid(),
+      playerId: z.string().uuid().optional(),
+      limit: z.number().int().min(1).max(50).default(10)
+    }).safeParse(message);
+    
+    if (!parsed.success) {
+      this.sendError(ws, 'Invalid hand history request');
+      return;
+    }
+    
+    const { tableId, playerId, limit } = parsed.data;
+    
+    try {
+      // Fetch completed hands from database
+      const { data: hands, error: handsError } = await this.supabase
+        .from('poker_hands')
+        .select(`
+          id,
+          hand_number,
+          pot,
+          community_cards,
+          phase,
+          winners,
+          completed_at,
+          dealer_seat,
+          small_blind_seat,
+          big_blind_seat
+        `)
+        .eq('table_id', tableId)
+        .not('completed_at', 'is', null)
+        .order('hand_number', { ascending: false })
+        .limit(limit);
+      
+      if (handsError) {
+        logger.error('Error fetching hand history', { error: handsError });
+        this.sendError(ws, 'Failed to fetch hand history');
+        return;
+      }
+      
+      if (!hands || hands.length === 0) {
+        this.send(ws, {
+          type: 'hand_history',
+          tableId,
+          hands: [],
+          timestamp: Date.now()
+        });
+        return;
+      }
+      
+      // If playerId provided, fetch player's cards for each hand
+      let playerHands: Map<string, { holeCards: string[]; isFolded: boolean; wonAmount: number | null }> = new Map();
+      
+      if (playerId) {
+        const handIds = hands.map(h => h.id);
+        const { data: playerData } = await this.supabase
+          .from('poker_hand_players')
+          .select('hand_id, hole_cards, is_folded, won_amount')
+          .eq('player_id', playerId)
+          .in('hand_id', handIds);
+        
+        if (playerData) {
+          playerData.forEach(p => {
+            playerHands.set(p.hand_id, {
+              holeCards: p.hole_cards || [],
+              isFolded: p.is_folded,
+              wonAmount: p.won_amount
+            });
+          });
+        }
+      }
+      
+      // Format response
+      const formattedHands = hands.map(hand => {
+        const playerHand = playerId ? playerHands.get(hand.id) : undefined;
+        const winners = (hand.winners as any[]) || [];
+        const isWinner = playerId ? winners.some((w: any) => w.playerId === playerId) : false;
+        const myWin = playerId ? winners.find((w: any) => w.playerId === playerId) : undefined;
+        
+        let myResult: 'win' | 'lose' | 'fold' | null = null;
+        if (playerHand) {
+          if (playerHand.isFolded) {
+            myResult = 'fold';
+          } else if (isWinner) {
+            myResult = 'win';
+          } else {
+            myResult = 'lose';
+          }
+        }
+        
+        return {
+          id: hand.id,
+          handNumber: hand.hand_number,
+          pot: hand.pot || 0,
+          communityCards: hand.community_cards || [],
+          myCards: playerHand?.holeCards || [],
+          myResult,
+          winAmount: myWin?.amount,
+          timestamp: hand.completed_at,
+          winnersCount: winners.length,
+          phase: hand.phase
+        };
+      });
+      
+      this.send(ws, {
+        type: 'hand_history',
+        tableId,
+        hands: formattedHands,
+        timestamp: Date.now()
+      });
+      
+    } catch (err) {
+      logger.error('Error in handleGetHandHistory', { error: String(err) });
+      this.sendError(ws, 'Failed to fetch hand history');
+    }
+  }
+  
+  /**
+   * Handle get last hand request - quick access to most recent completed hand
+   */
+  private async handleGetLastHand(ws: WebSocket, message: unknown): Promise<void> {
+    const parsed = z.object({
+      type: z.literal('get_last_hand'),
+      tableId: z.string().uuid(),
+      playerId: z.string().uuid().optional()
+    }).safeParse(message);
+    
+    if (!parsed.success) {
+      this.sendError(ws, 'Invalid last hand request');
+      return;
+    }
+    
+    const { tableId, playerId } = parsed.data;
+    
+    try {
+      // Get most recent completed hand
+      const { data: hand, error } = await this.supabase
+        .from('poker_hands')
+        .select(`
+          id,
+          hand_number,
+          pot,
+          community_cards,
+          phase,
+          winners,
+          completed_at
+        `)
+        .eq('table_id', tableId)
+        .not('completed_at', 'is', null)
+        .order('hand_number', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error || !hand) {
+        this.send(ws, {
+          type: 'last_hand',
+          tableId,
+          hand: null,
+          timestamp: Date.now()
+        });
+        return;
+      }
+      
+      // Get player's cards if playerId provided
+      let myCards: string[] = [];
+      let myResult: 'win' | 'lose' | 'fold' | null = null;
+      let winAmount: number | undefined;
+      
+      if (playerId) {
+        const { data: playerHand } = await this.supabase
+          .from('poker_hand_players')
+          .select('hole_cards, is_folded, won_amount')
+          .eq('hand_id', hand.id)
+          .eq('player_id', playerId)
+          .single();
+        
+        if (playerHand) {
+          myCards = playerHand.hole_cards || [];
+          const winners = (hand.winners as any[]) || [];
+          const isWinner = winners.some((w: any) => w.playerId === playerId);
+          const myWin = winners.find((w: any) => w.playerId === playerId);
+          
+          if (playerHand.is_folded) {
+            myResult = 'fold';
+          } else if (isWinner) {
+            myResult = 'win';
+            winAmount = myWin?.amount;
+          } else {
+            myResult = 'lose';
+          }
+        }
+      }
+      
+      // Get all player actions for replay
+      const { data: actions } = await this.supabase
+        .from('poker_actions')
+        .select('player_id, action_type, amount, phase, action_order')
+        .eq('hand_id', hand.id)
+        .order('action_order', { ascending: true });
+      
+      this.send(ws, {
+        type: 'last_hand',
+        tableId,
+        hand: {
+          id: hand.id,
+          handNumber: hand.hand_number,
+          pot: hand.pot || 0,
+          communityCards: hand.community_cards || [],
+          myCards,
+          myResult,
+          winAmount,
+          timestamp: hand.completed_at,
+          winners: hand.winners || [],
+          actions: actions || []
+        },
+        timestamp: Date.now()
+      });
+      
+    } catch (err) {
+      logger.error('Error in handleGetLastHand', { error: String(err) });
+      this.sendError(ws, 'Failed to fetch last hand');
+    }
   }
   
   /**
