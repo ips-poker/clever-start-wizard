@@ -104,8 +104,8 @@ const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
 
-// Debug logging
-const DEBUG = true;
+// Debug logging - DISABLED for performance
+const DEBUG = false;
 const log = (...args: unknown[]) => DEBUG && console.log('[NodePoker]', ...args);
 
 export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
@@ -459,10 +459,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       const data = JSON.parse(event.data) as Record<string, unknown>;
       log('📥 Recv:', data.type, data);
       
-      // Enhanced logging for debugging showdown
-      if (data.type?.toString().includes('hand') || data.type?.toString().includes('showdown') || data.type?.toString().includes('winner')) {
-        console.log('[SHOWDOWN DEBUG] Event received:', data.type, JSON.stringify(data, null, 2));
-      }
+      // Enhanced logging disabled for performance
+      // if (data.type?.toString().includes('hand') || data.type?.toString().includes('showdown') || data.type?.toString().includes('winner')) {
+      //   console.log('[SHOWDOWN DEBUG] Event received:', data.type);
+      // }
 
       switch (data.type) {
         case 'connected':
@@ -1119,15 +1119,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               };
             });
             
-            console.log('🎯 [HAND EVALUATION DEBUG] All players at showdown:', {
-              communityCards,
-              players: evaluatedPlayers,
-              serverWinners: winners.map(w => ({
-                playerId: w.playerId?.substring(0, 8),
-                amount: w.amount,
-                serverHandName: w.handName
-              }))
-            });
+            // Debug logging disabled for performance
+            // console.log('🎯 [HAND EVALUATION DEBUG] All players at showdown:', { communityCards, players: evaluatedPlayers?.length });
             
             // Check for potential hand ranking inconsistencies
             if (evaluatedPlayers && evaluatedPlayers.length > 1) {
@@ -1139,57 +1132,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 return name;
               };
               
-              // CRITICAL: Check if server's hand names match frontend computed hand names
-              for (const ep of evaluatedPlayers) {
-                const serverHand = normalizeHandName(ep.serverHandName);
-                const computedHand = normalizeHandName(ep.computedHandName);
-                if (serverHand && computedHand && serverHand !== computedHand) {
-                  console.error('🚨 [HAND NAME MISMATCH] Server vs Frontend disagreement!', {
-                    player: ep.name,
-                    holeCards: ep.holeCards,
-                    serverHandName: ep.serverHandName,
-                    computedHandName: ep.computedHandName,
-                    communityCards,
-                    isWinner: ep.isWinner
-                  });
-                }
-              }
+              // Hand name mismatch logging disabled for performance
               
-              for (const ep of evaluatedPlayers) {
-                if (ep.isWinner && ep.computedHandName) {
-                  const winnerRank = handRankOrder.indexOf(normalizeHandName(ep.computedHandName));
-                  
-                  for (const other of evaluatedPlayers) {
-                    if (!other.isWinner && other.computedHandName) {
-                      const loserRank = handRankOrder.indexOf(normalizeHandName(other.computedHandName));
-                      
-                      // ALERT if computed loser has stronger hand than computed winner
-                      if (loserRank > winnerRank) {
-                        console.error('🚨 [HAND RANKING BUG DETECTED] Loser has stronger computed hand than winner!', {
-                          timestamp: new Date().toISOString(),
-                          winner: {
-                            name: ep.name,
-                            holeCards: ep.holeCards,
-                            serverHandName: ep.serverHandName,
-                            computedHandName: ep.computedHandName,
-                            rank: winnerRank
-                          },
-                          loser: {
-                            name: other.name,
-                            holeCards: other.holeCards,
-                            serverHandName: other.serverHandName,
-                            computedHandName: other.computedHandName,
-                            rank: loserRank
-                          },
-                          communityCards,
-                          serverWinners: winners,
-                          allPlayers: evaluatedPlayers
-                        });
-                      }
-                    }
-                  }
-                }
-              }
+              // Hand ranking bug detection disabled for performance
             }
 
             setShowdownResult({
@@ -1261,12 +1206,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             }, displayTime);
           }
 
-          if (shouldForceShowdown) {
-            // Ensure the UI enters showdown mode so opponent cards can flip
-            setTableState((prev) => (prev ? { ...prev, phase: 'showdown' } : prev));
-          }
-
-          // Update table state with showdown players' cards and winner info
+          // Update table state with showdown players' cards and winner info (combined single update)
           if (shouldForceShowdown && tableId) {
             setTableState((prev) => {
               if (!prev) return prev;
@@ -1348,46 +1288,11 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             }, 250);
           }
 
-          // If server also provides a final state snapshot, apply it (but keep showdown phase when relevant)
-          if (data.state && tableId) {
+          // Skip duplicate state update if we already updated in shouldForceShowdown block above
+          // Only apply server state if NOT in showdown mode (to avoid overwriting our showdown data)
+          if (data.state && tableId && !shouldForceShowdown) {
             const transformedState = transformServerState(data.state, tableId);
-
-            if (shouldForceShowdown) {
-              transformedState.phase = 'showdown';
-              setTableState((prev) => {
-                if (!prev) return transformedState;
-
-                const prevById = new Map(prev.players.map((p) => [p.playerId, p] as const));
-                return {
-                  ...transformedState,
-                  players: transformedState.players.map((p) => {
-                    const old = prevById.get(p.playerId);
-                    if (!old) return p;
-
-                    const oldHasCards = Array.isArray(old.holeCards) && old.holeCards.length >= 2;
-                    const newHasCards = Array.isArray(p.holeCards) && p.holeCards.length >= 2;
-
-                    return {
-                      ...p,
-                      holeCards: !newHasCards && oldHasCards ? old.holeCards : p.holeCards,
-                      handName: p.handName ?? old.handName,
-                      bestCards: (p.bestCards && p.bestCards.length > 0) ? p.bestCards : old.bestCards,
-                      isWinner: (p.isWinner ?? false) || (old.isWinner ?? false),
-                      winningCardIndices:
-                        (p.winningCardIndices && p.winningCardIndices.length > 0)
-                          ? p.winningCardIndices
-                          : old.winningCardIndices,
-                      communityCardIndices:
-                        (p.communityCardIndices && p.communityCardIndices.length > 0)
-                          ? p.communityCardIndices
-                          : old.communityCardIndices,
-                    };
-                  }),
-                };
-              });
-            } else {
-              setTableState(transformedState);
-            }
+            setTableState(transformedState);
 
             const stateData = data.state as Record<string, unknown>;
             if (Array.isArray((stateData as any).myCards)) setMyCards((stateData as any).myCards as string[]);
