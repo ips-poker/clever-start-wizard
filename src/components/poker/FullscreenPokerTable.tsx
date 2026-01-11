@@ -1464,7 +1464,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
 
   // Convert server betsBeingCollected to visual positions for animation
   const betCollectionData = useMemo(() => {
-    if (!betsBeingCollected || betsBeingCollected.bets.length === 0) {
+    if (!betsBeingCollected || !Array.isArray(betsBeingCollected.bets) || betsBeingCollected.bets.length === 0) {
       return null;
     }
 
@@ -1489,7 +1489,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
 
   // Trigger win distribution animation when winners change
   useEffect(() => {
-    if (winners && winners.length > 0 && phase === 'showdown') {
+    if (winners && Array.isArray(winners) && winners.length > 0 && phase === 'showdown') {
       const winner = winners[0];
       // Find winner's seat
       const winnerPlayer = players.find((p) => p.playerId === winner.playerId);
@@ -1598,7 +1598,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       )}
       
       {/* Winner announcement - compact in-table display */}
-      {phase === 'showdown' && winners && winners.length > 0 && (
+      {phase === 'showdown' && winners && Array.isArray(winners) && winners.length > 0 && (
         <WinnerAnnouncement
           winners={winners.map(w => {
             const player = players.find(p => p.playerId === w.playerId);
