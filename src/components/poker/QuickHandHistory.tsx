@@ -74,6 +74,7 @@ export function QuickHandHistory({
   const applyHands = useCallback((incoming: QuickHandEntry[]) => {
     setHands(incoming);
     setSelectedHandIndex(0);
+    setErrorText(null);
   }, []);
 
   const requestHandsFromServer = useCallback(
@@ -250,10 +251,18 @@ export function QuickHandHistory({
       if (parsed.type === 'error') {
         // Only show error if it is clearly about this table and panel is open
         if (parsed.tableId && parsed.tableId !== tableId) return;
-        if (loading) {
-          setLoading(false);
-          setErrorText(parsed.error || parsed.message || 'Ошибка сервера');
+
+        const msg = parsed.error || parsed.message || 'Ошибка сервера';
+        console.warn('[QuickHandHistory] WS error:', msg);
+        setLoading(false);
+
+        // Older server builds may not support get_hand_history yet.
+        if (msg.includes('Unknown message type') && msg.includes('get_hand_history')) {
+          fetchHandsFromSupabase();
+          return;
         }
+
+        setErrorText(msg);
       }
     };
 
@@ -262,7 +271,7 @@ export function QuickHandHistory({
       if (refreshDebounceRef.current) window.clearTimeout(refreshDebounceRef.current);
       ws.removeEventListener('message', onWsMessage);
     };
-  }, [applyHands, isOpen, loading, requestHandsFromServer, tableId, wsRef]);
+  }, [applyHands, fetchHandsFromSupabase, isOpen, loading, requestHandsFromServer, tableId, wsRef]);
 
   // Fetch when opened (prefer server)
   useEffect(() => {
