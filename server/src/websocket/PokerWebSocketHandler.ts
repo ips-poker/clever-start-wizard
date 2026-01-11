@@ -22,6 +22,8 @@ import { supabaseCircuitBreaker } from '../utils/circuit-breaker.js';
 import { loadManager, LoadLevel } from '../utils/load-manager.js';
 import { createHandForHandIntegration, HandForHandIntegration } from '../utils/hand-for-hand-integration.js';
 import { pkoBountyService } from '../utils/pko-bounty-service.js';
+import { tournamentEliminationManager, TournamentEliminationConfig, EliminationInfo, TOURNAMENT_ELIMINATION_TIMINGS } from '../utils/tournament-elimination.js';
+import { CashGameSitOutManager } from '../utils/cash-game-sit-out.js';
 import { z } from 'zod';
 
 // Message schemas
@@ -95,10 +97,12 @@ export class PokerWebSocketHandler {
   private gameManager: PokerGameManager;
   private tournamentManager: TournamentManager;
   private handForHandIntegration: HandForHandIntegration;
+  private cashGameSitOutManager: CashGameSitOutManager;
   private supabase: SupabaseClient;
   private pingInterval: NodeJS.Timeout;
   private tournamentTimerInterval: NodeJS.Timeout | null = null;
   private metricsInterval: NodeJS.Timeout | null = null;
+  private sitOutCheckInterval: NodeJS.Timeout | null = null;
   
   constructor(
     wss: WebSocketServer, 
@@ -121,6 +125,19 @@ export class PokerWebSocketHandler {
     this.handForHandIntegration = createHandForHandIntegration(supabase);
     this.handForHandIntegration.setBroadcastCallback((tournamentId, message) => {
       this.broadcastToTournament(tournamentId, message);
+    });
+    
+    // Initialize Cash Game Sit-Out Manager
+    this.cashGameSitOutManager = new CashGameSitOutManager();
+    this.cashGameSitOutManager.setSupabase(supabase);
+    
+    // Initialize Tournament Elimination Manager
+    tournamentEliminationManager.setSupabase(supabase);
+    tournamentEliminationManager.onElimination((info) => {
+      this.broadcastEliminationEvent(info);
+    });
+    tournamentEliminationManager.onGraceExpired((playerId, tournamentId) => {
+      this.handleTournamentElimination(tournamentId, playerId);
     });
     
     // Initialize ConnectionPool
@@ -495,8 +512,13 @@ export class PokerWebSocketHandler {
     
     const table = await this.gameManager.loadTableIfNeeded(tableId);
     if (table) {
+      // Check if this is a cash game table - end session
+      const tableType = table.getTableType();
+      if (tableType === 'cash') {
+        await this.cashGameSitOutManager.endSession(tableId, playerId, 'voluntary_leave');
+      }
+      
       await table.leaveTable(playerId);
-    }
     }
     
     // Remove from subscribers
@@ -506,7 +528,7 @@ export class PokerWebSocketHandler {
   }
   
   /**
-   * Handle sit out request
+   * Handle sit out request (Cash Game specific with tracking)
    */
   private async handleSitOut(ws: WebSocket, message: unknown): Promise<void> {
     const result = SitOutSchema.safeParse(message);
@@ -523,10 +545,23 @@ export class PokerWebSocketHandler {
       return;
     }
     
-    const sitOutResult = await table.sitOut(playerId);
+    // Check table type for proper handling
+    const tableType = table.getTableType();
     
-    if (!sitOutResult.success) {
-      this.sendError(ws, sitOutResult.error || 'Failed to sit out');
+    if (tableType === 'cash') {
+      // Use CashGameSitOutManager for cash games
+      const sitOutResult = await this.cashGameSitOutManager.sitOut(tableId, playerId, 'manual');
+      if (!sitOutResult.success) {
+        this.sendError(ws, sitOutResult.error || 'Failed to sit out');
+        return;
+      }
+    }
+    
+    // Always update the table state
+    const tableSitOutResult = await table.sitOut(playerId);
+    
+    if (!tableSitOutResult.success) {
+      this.sendError(ws, tableSitOutResult.error || 'Failed to sit out');
       return;
     }
     
@@ -1585,6 +1620,44 @@ export class PokerWebSocketHandler {
     } catch (err) {
       logger.error('Tournament elimination exception', { error: String(err) });
     }
+  }
+  
+  /**
+   * Broadcast elimination event from TournamentEliminationManager
+   */
+  private broadcastEliminationEvent(info: EliminationInfo): void {
+    const subscribers = this.connectionPool.getTournamentSubscribers(info.tournamentId);
+    const tableSubscribers = this.connectionPool.getTableSubscribers(info.tableId);
+    const allSubscribers = new Set([...subscribers, ...tableSubscribers]);
+    
+    if (allSubscribers.size === 0) return;
+    
+    const message = {
+      type: 'tournament_elimination_update',
+      playerId: info.playerId,
+      playerName: info.playerName,
+      avatarUrl: info.avatarUrl,
+      tournamentId: info.tournamentId,
+      tableId: info.tableId,
+      state: info.state,
+      position: info.position,
+      prizeAmount: info.prizeAmount,
+      isInTheMoney: info.isInTheMoney,
+      eliminatorName: info.eliminatorName,
+      graceDeadline: info.graceDeadline,
+      rebuyAvailable: info.rebuyAvailable,
+      reentryAvailable: info.reentryAvailable,
+      animationTiming: tournamentEliminationManager.getAnimationTiming(info, false),
+      timestamp: Date.now()
+    };
+    
+    messageQueue.enqueueBroadcast(allSubscribers, message, 'high');
+    
+    logger.info('Broadcast elimination event', {
+      playerId: info.playerId.substring(0, 8),
+      state: info.state,
+      position: info.position
+    });
   }
   
   /**
