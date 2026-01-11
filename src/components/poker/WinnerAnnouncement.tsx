@@ -40,7 +40,7 @@ export const WinnerAnnouncement = memo(function WinnerAnnouncement({
   isSplitPot = false,
   onComplete,
   className,
-  duration = 2000,
+  duration = 1200,
   highlightDuration,
   celebrationDuration
 }: WinnerAnnouncementProps) {
