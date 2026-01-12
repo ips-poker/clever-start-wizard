@@ -1273,28 +1273,9 @@ export class PokerTable {
     return { success: true, nextState: this.getPublicState() };
   }
   
-  /**
-   * Update player after action - DEPRECATED
-   * Engine state is now authoritative - do not use this method
-   * Left for reference only
-   */
-  private updatePlayerFromAction(player: Player, result: ActionResult): void {
-    // REMOVED: Double subtraction bug - engine already updates player stack
-    // The engine is now the source of truth for all player state
-    // We sync from engine state instead of manually updating here
-    
-    // Only update timestamp
-    player.lastActionTime = Date.now();
-    
-    // Log for debugging - don't modify values
-    logger.info('updatePlayerFromAction called (deprecated)', {
-      playerId: player.id,
-      actionAmount: result.amount,
-      engineStack: player.stack, // Already synced from engine
-      isAllIn: result.isAllIn,
-      isFolded: result.isFolded
-    });
-  }
+  // REMOVED: updatePlayerFromAction was deprecated and caused double subtraction bugs
+  // Engine state is now authoritative - we sync from engine.getState() directly
+  // See action() method for the correct approach
   
   /**
    * Bot detection: keep it consistent across the table code.

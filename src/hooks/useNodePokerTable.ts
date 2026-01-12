@@ -1174,17 +1174,29 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
           const potAmount = Number(eventData.pot ?? (data as any).pot ?? 0);
 
+          // OPTIMIZATION: Cache evaluateShowdown results to avoid repeated expensive calls
+          // Moved outside if-blocks so it can be reused in multiple places
+          const evaluationCache = new Map<string, ReturnType<typeof evaluateShowdown>>();
+          
+          const getEvaluation = (playerId: string, holeCards: string[], isOmaha: boolean = false) => {
+            const cacheKey = `${playerId}_${isOmaha}`;
+            if (evaluationCache.has(cacheKey)) {
+              return evaluationCache.get(cacheKey)!;
+            }
+            const result = communityCards ? evaluateShowdown(holeCards, communityCards, isOmaha) : null;
+            evaluationCache.set(cacheKey, result);
+            return result;
+          };
+
           if (shouldForceShowdown || winners.length > 0) {
             // Start / refresh showdown token and timestamp
             showdownTokenRef.current += 1;
             showdownStartTimeRef.current = Date.now();
             const thisShowdownToken = showdownTokenRef.current;
 
-            // CRITICAL DEBUG: Log all hand evaluations for debugging hand ranking issues
+            // Build evaluated players with cached results (single evaluation per player)
             const evaluatedPlayers = showdownPlayers?.map((sp) => {
-              const computed = communityCards
-                ? evaluateShowdown(sp.holeCards, communityCards, false)
-                : null;
+              const computed = getEvaluation(sp.playerId, sp.holeCards, false);
               return {
                 playerId: sp.playerId,
                 name: sp.name,
@@ -1195,90 +1207,29 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 isWinner: winners.some(w => w.playerId === sp.playerId)
               };
             });
-            
-            console.log('🎯 [HAND EVALUATION DEBUG] All players at showdown:', {
-              communityCards,
-              players: evaluatedPlayers,
-              serverWinners: winners.map(w => ({
-                playerId: w.playerId?.substring(0, 8),
-                amount: w.amount,
-                serverHandName: w.handName
-              }))
-            });
-            
-            // Check for potential hand ranking inconsistencies
-            if (evaluatedPlayers && evaluatedPlayers.length > 1) {
-              const handRankOrder = ['High Card', 'Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House', 'Four of a Kind', 'Straight Flush', 'Royal Flush'];
-              // Also check One Pair vs Pair naming
-              const normalizeHandName = (name: string | undefined) => {
-                if (!name) return '';
-                if (name === 'One Pair') return 'Pair';
-                return name;
-              };
-              
-              // CRITICAL: Check if server's hand names match frontend computed hand names
-              for (const ep of evaluatedPlayers) {
-                const serverHand = normalizeHandName(ep.serverHandName);
-                const computedHand = normalizeHandName(ep.computedHandName);
-                if (serverHand && computedHand && serverHand !== computedHand) {
-                  console.error('🚨 [HAND NAME MISMATCH] Server vs Frontend disagreement!', {
-                    player: ep.name,
-                    holeCards: ep.holeCards,
-                    serverHandName: ep.serverHandName,
-                    computedHandName: ep.computedHandName,
-                    communityCards,
-                    isWinner: ep.isWinner
-                  });
-                }
-              }
-              
-              for (const ep of evaluatedPlayers) {
-                if (ep.isWinner && ep.computedHandName) {
-                  const winnerRank = handRankOrder.indexOf(normalizeHandName(ep.computedHandName));
-                  
-                  for (const other of evaluatedPlayers) {
-                    if (!other.isWinner && other.computedHandName) {
-                      const loserRank = handRankOrder.indexOf(normalizeHandName(other.computedHandName));
-                      
-                      // ALERT if computed loser has stronger hand than computed winner
-                      if (loserRank > winnerRank) {
-                        console.error('🚨 [HAND RANKING BUG DETECTED] Loser has stronger computed hand than winner!', {
-                          timestamp: new Date().toISOString(),
-                          winner: {
-                            name: ep.name,
-                            holeCards: ep.holeCards,
-                            serverHandName: ep.serverHandName,
-                            computedHandName: ep.computedHandName,
-                            rank: winnerRank
-                          },
-                          loser: {
-                            name: other.name,
-                            holeCards: other.holeCards,
-                            serverHandName: other.serverHandName,
-                            computedHandName: other.computedHandName,
-                            rank: loserRank
-                          },
-                          communityCards,
-                          serverWinners: winners,
-                          allPlayers: evaluatedPlayers
-                        });
-                      }
-                    }
-                  }
-                }
-              }
+
+            // DEBUG: Only log in development
+            if (DEBUG) {
+              log('🎯 Showdown evaluation:', {
+                communityCards,
+                players: evaluatedPlayers?.map(ep => ({
+                  name: ep.name,
+                  serverHand: ep.serverHandName,
+                  computedHand: ep.computedHandName,
+                  isWinner: ep.isWinner
+                }))
+              });
             }
 
             setShowdownResult({
               winners: winners.map((w) => {
+                // Use cached evaluation instead of calling evaluateShowdown again
                 const winnerPlayer = showdownPlayers?.find((sp) => sp.playerId === w.playerId);
-                const computed = winnerPlayer && communityCards
-                  ? evaluateShowdown(winnerPlayer.holeCards, communityCards, false)
-                  : null;
+                const cached = winnerPlayer ? getEvaluation(winnerPlayer.playerId, winnerPlayer.holeCards, false) : null;
 
                 return {
                   ...w,
-                  handName: w.handName || (w as any).handRank || computed?.handName,
+                  handName: w.handName || (w as any).handRank || cached?.handName,
                 };
               }),
               pot: potAmount,
@@ -1350,7 +1301,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               if (!prev) return prev;
 
               const winnerIds = new Set(winners.map((w) => w.playerId));
-              const commCards = (communityCards || prev.communityCards || []).map(normalizeCardString);
+              // communityCards already normalized via normalizeCardStrings earlier
+              const commCards = communityCards || prev.communityCards || [];
               const isOmaha = Boolean(showdownPlayers?.some((sp) => sp.holeCards?.length === 4));
 
               return {
@@ -1368,14 +1320,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
                     if (showdownPlayer.holeCards && commCards.length >= 3) {
                       try {
-                        const showdownEval = evaluateShowdown(showdownPlayer.holeCards, commCards, isOmaha);
-                        log('🧮 evaluateShowdown inputs:', {
-                          playerId: showdownPlayer.playerId,
-                          holeCards: showdownPlayer.holeCards,
-                          communityCards: commCards,
-                          isOmaha,
-                        });
-                        log('🧮 evaluateShowdown result:', showdownEval);
+                        // Use cached evaluation instead of calling evaluateShowdown directly
+                        const showdownEval = getEvaluation(showdownPlayer.playerId, showdownPlayer.holeCards, isOmaha);
 
                         if (showdownEval) {
                           winningCardIndices = showdownEval.winningCardIndices;
@@ -1779,33 +1725,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }
           break;
 
-        // PROFESSIONAL TIMING: Phase change with card dealing delays
-        case 'phase_change':
-          {
-            const phaseData = data as Record<string, unknown>;
-            log('🎴 Phase change:', phaseData);
-            
-            setPhaseTimings({
-              dealDelay: phaseData.dealDelay as number | undefined,
-              preDealDelay: phaseData.preDealDelay as number | undefined,
-              postDealDelay: phaseData.postDealDelay as number | undefined,
-              phase: phaseData.phase as string | undefined
-            });
-            
-            // Update community cards
-            if (phaseData.communityCards && tableId) {
-              setTableState(prev => {
-                if (!prev) return prev;
-                return {
-                  ...prev,
-                  phase: phaseData.phase as TableState['phase'] || prev.phase,
-                  communityCards: phaseData.communityCards as string[],
-                  pot: (phaseData.pot as number) ?? prev.pot
-                };
-              });
-            }
-          }
-          break;
+        // NOTE: phase_change case already handled above in lines 712-832
+        // REMOVED DUPLICATE case 'phase_change' - it caused repeated state updates and animations!
 
         // PROFESSIONAL: Showdown start event
         case 'showdown_start':
