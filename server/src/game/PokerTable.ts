@@ -1098,6 +1098,9 @@ export class PokerTable {
     // Reset missed turns counter on successful action (player is active)
     player.missedTurns = 0;
     
+    // POKERSTARS: Record action in poker_actions table for hand history
+    this.recordAction(playerId, player.seatNumber, actionType, result.amount || 0, player.holeCards);
+    
     // CRITICAL: Sync ALL player state from engine (engine is source of truth)
     // Do NOT call updatePlayerFromAction - it causes double subtraction!
     const engineState = this.engine.getState();
@@ -2036,6 +2039,10 @@ export class PokerTable {
         logger.warn('Failed to save hand at start (continuing anyway)', { error: String(dbErr) });
       }
       
+      // POKERSTARS: Reset action counter and save hand players
+      this.actionOrderCounter = 0;
+      await this.saveHandPlayers();
+      
       // Start action timer
       this.startActionTimer();
       
@@ -2261,10 +2268,36 @@ export class PokerTable {
       }
     }
     
+    // POKERSTARS TDA: Sort showdown players - last aggressor reveals first
+    // If no aggressor, start from SB position clockwise
+    if (showdownPlayers.length > 1) {
+      const lastAggressorSeat = this.currentHand?.lastAggressor 
+        ? this.players.get(this.currentHand.lastAggressor)?.seatNumber 
+        : null;
+      
+      if (lastAggressorSeat !== null && lastAggressorSeat !== undefined) {
+        // Find last aggressor and move to front
+        const aggressorIndex = showdownPlayers.findIndex(sp => sp.seatNumber === lastAggressorSeat);
+        if (aggressorIndex > 0) {
+          const aggressor = showdownPlayers.splice(aggressorIndex, 1)[0];
+          showdownPlayers.unshift(aggressor);
+        }
+      } else {
+        // Sort by seat number starting from SB (closest to dealer)
+        const dealerSeat = this.currentHand?.dealerSeat ?? 0;
+        showdownPlayers.sort((a, b) => {
+          const aDist = (a.seatNumber - dealerSeat + 9) % 9;
+          const bDist = (b.seatNumber - dealerSeat + 9) % 9;
+          return aDist - bDist;
+        });
+      }
+    }
+    
     // PROFESSIONAL: Sequential showdown reveal with timing
     if (isShowdown && showdownPlayers.length > 0) {
-      // Emit showdown_reveal for each player sequentially with delay info
+      // Emit showdown_start for each player sequentially with delay info
       this.emit('showdown_start', {
+        handId: this.currentHand?.id,
         handNumber: this.handNumber,
         playerCount: showdownPlayers.length,
         totalRevealTime: showdownPlayers.length * this.timings.showdown.perPlayerReveal,
@@ -2274,16 +2307,30 @@ export class PokerTable {
       // Emit each player reveal with staggered timing
       for (let i = 0; i < showdownPlayers.length; i++) {
         const sp = showdownPlayers[i];
+        
+        // POKERSTARS: Sort bestCards by rank (highest first) for display
+        const sortedBestCards = (sp.bestCards || []).slice().sort((a, b) => {
+          const rankOrder: Record<string, number> = {
+            'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
+            '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2
+          };
+          return (rankOrder[b[0]] || 0) - (rankOrder[a[0]] || 0);
+        });
+        
         this.emit('showdown_reveal', {
+          handId: this.currentHand?.id,
           playerId: sp.playerId,
           playerName: sp.name,
           seatNumber: sp.seatNumber,
           holeCards: sp.holeCards,
           handName: sp.handName,
-          bestCards: sp.bestCards,
+          bestCards: sortedBestCards,
           revealIndex: i,
           revealDelay: i * this.timings.showdown.perPlayerReveal,
-          isWinner: winners.some(w => w.playerId === sp.playerId)
+          isWinner: winners.some(w => w.playerId === sp.playerId),
+          // POKERSTARS: Include timing info for client animations
+          cardFlipDelay: 150, // ms between cards flipping
+          handNameDelay: 300  // ms after cards flip to show hand name
         });
       }
       
@@ -2322,6 +2369,7 @@ export class PokerTable {
     });
     
     this.emit('winner_announcement', {
+      handId: this.currentHand?.id,
       handNumber: this.handNumber,
       winners: winnerAnnouncements,
       pot: this.currentHand?.pot,
@@ -2335,6 +2383,7 @@ export class PokerTable {
     await this.delay(this.timings.showdown.winnerHighlight);
     
     this.emit('hand_complete', {
+      handId: this.currentHand?.id,
       handNumber: this.handNumber,
       winners,
       showdown: isShowdown,
@@ -2413,6 +2462,133 @@ export class PokerTable {
     this.lastHandWinners = winners;
   }
   
+  // POKERSTARS: Track action order for poker_actions table
+  private actionOrderCounter: number = 0;
+  
+  /**
+   * POKERSTARS: Record player action to poker_actions table
+   * Called after every successful action for complete hand history
+   */
+  private recordAction(
+    playerId: string, 
+    seatNumber: number, 
+    actionType: string, 
+    amount: number,
+    holeCards?: string[]
+  ): void {
+    if (!this.currentHand) return;
+    
+    this.actionOrderCounter++;
+    
+    // Fire and forget - don't block game flow
+    this.supabase
+      .from('poker_actions')
+      .insert({
+        hand_id: this.currentHand.id,
+        player_id: playerId,
+        seat_number: seatNumber,
+        phase: this.currentHand.phase,
+        action_type: actionType.toLowerCase(),
+        amount: amount > 0 ? amount : null,
+        action_order: this.actionOrderCounter,
+        hole_cards: holeCards && holeCards.length > 0 ? holeCards : null
+      })
+      .then(({ error }) => {
+        if (error) {
+          logger.warn('Failed to record action', { 
+            handId: this.currentHand?.id, 
+            playerId: playerId.substring(0, 8),
+            error: error.message 
+          });
+        }
+      });
+  }
+  
+  /**
+   * POKERSTARS: Save poker_hand_players at hand start
+   * Records each player's starting state for the hand
+   */
+  private async saveHandPlayers(): Promise<void> {
+    if (!this.currentHand) return;
+    
+    const handPlayers = Array.from(this.players.values())
+      .filter(p => p.status === 'active' && p.holeCards.length > 0)
+      .map(p => ({
+        hand_id: this.currentHand!.id,
+        player_id: p.id,
+        seat_number: p.seatNumber,
+        stack_start: p.stack + p.currentBet, // Stack before blinds
+        hole_cards: p.holeCards,
+        bet_amount: p.currentBet,
+        is_folded: false,
+        is_all_in: p.isAllIn
+      }));
+    
+    if (handPlayers.length === 0) return;
+    
+    const { error } = await this.supabase
+      .from('poker_hand_players')
+      .insert(handPlayers);
+    
+    if (error) {
+      logger.warn('Failed to save hand players', { 
+        handId: this.currentHand.id, 
+        error: error.message 
+      });
+    } else {
+      logger.info('Hand players saved', {
+        handId: this.currentHand.id,
+        playerCount: handPlayers.length
+      });
+    }
+  }
+  
+  /**
+   * POKERSTARS: Update poker_hand_players with final hand results
+   * Called at hand completion to record final state
+   */
+  private async updateHandPlayersResults(winners: Array<{ playerId: string; amount: number; handName?: string; handRank?: number; bestCards?: string[] }>): Promise<void> {
+    if (!this.currentHand) return;
+    
+    const updates: Promise<any>[] = [];
+    const winnerMap = new Map(winners.map(w => [w.playerId, w]));
+    
+    for (const player of this.players.values()) {
+      const winnerInfo = winnerMap.get(player.id);
+      const engineState = this.engine.getState();
+      const enginePlayer = engineState?.players.find(ep => ep.id === player.id);
+      
+      updates.push(
+        this.supabase
+          .from('poker_hand_players')
+          .update({
+            stack_end: player.stack,
+            bet_amount: enginePlayer?.totalBetThisHand || 0,
+            is_folded: player.isFolded,
+            is_all_in: player.isAllIn,
+            won_amount: winnerInfo?.amount || null,
+            hand_rank: winnerInfo?.handName || null
+          })
+          .eq('hand_id', this.currentHand!.id)
+          .eq('player_id', player.id)
+          .then(({ error }) => {
+            if (error) {
+              logger.warn('Failed to update hand player result', {
+                handId: this.currentHand?.id,
+                playerId: player.id.substring(0, 8),
+                error: error.message
+              });
+            }
+          })
+      );
+    }
+    
+    await Promise.all(updates);
+    logger.info('Hand player results updated', {
+      handId: this.currentHand.id,
+      updatedCount: updates.length
+    });
+  }
   private async saveHandHistory(): Promise<void> {
     if (!this.currentHand) return;
     
@@ -2484,6 +2660,9 @@ export class PokerTable {
       
       // Clear lastHandWinners for next hand
       this.lastHandWinners = [];
+      
+      // POKERSTARS: Update poker_hand_players with final results
+      await this.updateHandPlayersResults(winnersForDb);
       
       // Sync all player stacks to database after each hand
       await this.syncPlayerStacksToDatabase();
