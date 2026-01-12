@@ -981,7 +981,43 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             const stateData = (data.state || data.data || data) as Record<string, unknown>;
             if (tableId && (stateData.players || stateData.phase)) {
               const incomingState = transformServerState(stateData, tableId);
-              const keepShowdown = tableStateRef.current?.phase === 'showdown';
+              const currentState = tableStateRef.current;
+              const keepShowdown = currentState?.phase === 'showdown';
+
+              // POKERSTARS FIX: If a phase_change is buffered (pendingPhaseApply), 
+              // ignore state_update events that would skip ahead or reveal cards prematurely.
+              // This prevents "instant flop/turn" visual bugs.
+              const pending = pendingPhaseApplyRef.current;
+              const phaseOrder = ['preflop', 'flop', 'turn', 'river', 'showdown'];
+              const currentPhaseIdx = phaseOrder.indexOf(currentState?.phase || 'waiting');
+              const incomingPhaseIdx = phaseOrder.indexOf(incomingState.phase || 'waiting');
+              
+              if (pending && pending.applyAt > Date.now()) {
+                // We have a buffered phase_change pending
+                // Check if state_update is trying to advance phase prematurely
+                if (incomingPhaseIdx > currentPhaseIdx) {
+                  log('⏭️ Ignoring state_update that would skip ahead of buffered phase_change', {
+                    currentPhase: currentState?.phase,
+                    incomingPhase: incomingState.phase,
+                    pendingPhase: pending.phase,
+                    pendingApplyAt: pending.applyAt,
+                    now: Date.now()
+                  });
+                  break; // Skip this state_update entirely
+                }
+                
+                // Also skip if state_update has more community cards than current
+                // (would reveal cards before animation)
+                const currentCards = currentState?.communityCards?.length || 0;
+                const incomingCards = incomingState.communityCards?.length || 0;
+                if (incomingCards > currentCards) {
+                  log('⏭️ Ignoring state_update that reveals community cards before phase_change animation', {
+                    currentCards,
+                    incomingCards
+                  });
+                  break;
+                }
+              }
 
               setTableState((prev) => {
                 if (!prev) return keepShowdown ? { ...incomingState, phase: 'showdown' } : incomingState;
