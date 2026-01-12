@@ -2539,27 +2539,70 @@ export class PokerEngineV3 {
       const activePlayers = this.state.players.filter(p => !p.isFolded);
       const playersWhoCanAct = activePlayers.filter(p => !p.isAllIn && p.stack > 0);
       
-      // CRITICAL FIX: Only run to showdown if NO ONE can act (all are all-in)
-      // Previously was <= 1 which incorrectly skipped betting when one player could still act
-      if (playersWhoCanAct.length === 0 && activePlayers.length > 1) {
+      console.log('[Engine] advancePhase analysis:', {
+        nextPhase,
+        activeCount: activePlayers.length,
+        canActCount: playersWhoCanAct.length,
+        allInCount: activePlayers.filter(p => p.isAllIn).length,
+        players: this.state.players.map(p => ({
+          id: p.id.substring(0, 8),
+          seat: p.seatNumber,
+          folded: p.isFolded,
+          allIn: p.isAllIn,
+          stack: p.stack,
+          hasActed: p.hasActedThisRound,
+          bet: p.betAmount
+        }))
+      });
+      
+      // CRITICAL FIX: Handle showdown phase separately - no betting needed
+      if (nextPhase === 'showdown') {
+        console.log('[Engine] Reached showdown phase - no more betting');
+        this.state.currentPlayerSeat = null;
+        return; // Don't recurse, showdown reached
+      }
+      
+      // CRITICAL: Only auto-run to showdown if ALL remaining players are truly all-in
+      // A player with isAllIn=false and stack>0 MUST be allowed to act
+      const trueAllInRunout = playersWhoCanAct.length === 0 && activePlayers.length > 1;
+      
+      if (trueAllInRunout) {
         // All-in runout scenario - deal remaining cards automatically
-        console.log('[Engine] All-in detected (all players all-in), running to showdown');
-        if (nextPhase !== 'showdown') {
-          // Continue to next phase automatically
-          this.advancePhase();
-          return;
-        }
+        console.log('[Engine] TRUE ALL-IN RUNOUT: All active players are all-in, dealing next street');
+        console.log('[Engine] Active players status:', activePlayers.map(p => ({
+          id: p.id.substring(0, 8),
+          isAllIn: p.isAllIn,
+          stack: p.stack
+        })));
+        this.advancePhase();
+        return;
       }
       
       // Find first to act post-flop (first active player after dealer clockwise)
-      if (nextPhase !== 'showdown') {
-        this.state.currentPlayerSeat = this.findFirstPostFlopActor();
-        
-        // If no one can act (everyone all-in), advance to showdown
-        if (this.state.currentPlayerSeat === null) {
-          console.log('[Engine] No players can act, advancing to showdown');
-          this.advancePhase();
-        }
+      this.state.currentPlayerSeat = this.findFirstPostFlopActor();
+      
+      console.log('[Engine] First post-flop actor:', this.state.currentPlayerSeat);
+      
+      // SAFETY: If no actor found but players can act, this is a bug - use fallback
+      if (this.state.currentPlayerSeat === null && playersWhoCanAct.length > 0) {
+        console.error('[Engine] BUG: playersWhoCanAct > 0 but no first actor found! Using fallback.');
+        console.error('[Engine] playersWhoCanAct:', playersWhoCanAct.map(p => ({ 
+          id: p.id.substring(0, 8), 
+          seat: p.seatNumber,
+          stack: p.stack,
+          isAllIn: p.isAllIn 
+        })));
+        // Set to first available player as fallback
+        this.state.currentPlayerSeat = playersWhoCanAct[0].seatNumber;
+      }
+      
+      // CRITICAL SAFETY CHECK: If we found an actor, we should NOT auto-advance
+      // Log warning if we somehow got here with no actor and should have had one
+      if (this.state.currentPlayerSeat === null && playersWhoCanAct.length === 0) {
+        console.log('[Engine] No players can act - this should have been caught by trueAllInRunout check');
+        // This can happen if all remaining players have stack=0 but aren't marked all-in
+        // Force advance to next phase
+        this.advancePhase();
       }
     }
   }
@@ -2607,26 +2650,40 @@ export class PokerEngineV3 {
   /**
    * Find first to act post-flop - first active player clockwise from dealer
    * PROFESSIONAL TDA: First active seat left of dealer button
+   * CRITICAL: Must correctly handle edge cases where dealer/SB/BB positions overlap
    */
   private findFirstPostFlopActor(): number | null {
     if (!this.state) return null;
     
+    // Get players who can still act (not folded, not all-in, have chips)
     const activePlayers = this.state.players
-      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0)
-      .sort((a, b) => a.seatNumber - b.seatNumber);
+      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0);
     
-    if (activePlayers.length === 0) return null;
+    if (activePlayers.length === 0) {
+      console.log('[Engine] findFirstPostFlopActor: no active players can act');
+      return null;
+    }
     
+    // Sort by seat number
+    const sortedPlayers = [...activePlayers].sort((a, b) => a.seatNumber - b.seatNumber);
     const dealerSeat = this.state.dealerSeat;
     
-    // Find first active player clockwise from dealer
-    const afterDealer = activePlayers.find(p => p.seatNumber > dealerSeat);
+    console.log('[Engine] findFirstPostFlopActor:', {
+      dealerSeat,
+      activePlayers: sortedPlayers.map(p => ({ id: p.id.substring(0, 8), seat: p.seatNumber }))
+    });
+    
+    // Find first active player clockwise from dealer (seat > dealerSeat)
+    const afterDealer = sortedPlayers.find(p => p.seatNumber > dealerSeat);
     if (afterDealer) {
+      console.log('[Engine] First actor after dealer:', afterDealer.seatNumber);
       return afterDealer.seatNumber;
     }
     
     // Wrap around - first player in sorted order
-    return activePlayers[0]?.seatNumber ?? null;
+    const firstPlayer = sortedPlayers[0];
+    console.log('[Engine] First actor (wrap around):', firstPlayer?.seatNumber);
+    return firstPlayer?.seatNumber ?? null;
   }
   
   /**
