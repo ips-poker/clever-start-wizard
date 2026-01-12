@@ -1340,7 +1340,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
           if (shouldForceShowdown) {
             // Ensure the UI enters showdown mode so opponent cards can flip
-            setTableState((prev) => (prev ? { ...prev, phase: 'showdown' } : prev));
+            // CRITICAL FIX: Also clear currentPlayerSeat to stop timer animations
+            setTableState((prev) => (prev ? { ...prev, phase: 'showdown', currentPlayerSeat: null } : prev));
           }
 
           // Update table state with showdown players' cards and winner info
@@ -1355,6 +1356,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               return {
                 ...prev,
                 phase: 'showdown',
+                currentPlayerSeat: null, // CRITICAL FIX: No active player during showdown
+                currentBet: 0, // Reset bets during showdown
                 players: prev.players.map((p) => {
                   const winner = winners.find((w) => w.playerId === p.playerId);
                   const showdownPlayer = showdownPlayers?.find((sp) => sp.playerId === p.playerId);
@@ -2312,6 +2315,73 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       mountedRef.current = false;
     };
   }, [tableId, playerId]);
+
+  // CRITICAL FIX: Handle visibility/focus changes for popup windows
+  // Popup windows should NOT trigger sitout when losing focus (user switching tabs/windows)
+  // Only actual disconnect (WebSocket close) should trigger sitout on server side
+  useEffect(() => {
+    if (!tableId || !playerId) return;
+    
+    // Detect if we're in a popup window
+    const isPopupWindow = window.opener !== null;
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        log('👁️ Window visible again, ensuring active status');
+        
+        // If WebSocket is still connected, send a heartbeat to confirm we're active
+        // This prevents false sitout if user just switched between windows
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          sendMessage({ 
+            type: 'activity_ping', 
+            tableId, 
+            playerId,
+            isPopup: isPopupWindow 
+          });
+        } else {
+          // WebSocket was closed - attempt reconnect
+          log('🔄 WebSocket closed during visibility hide, reconnecting...');
+          connect();
+        }
+      } else {
+        // Tab/window became hidden - DO NOT send sitout!
+        // This is just a visibility change, not a disconnect
+        log('👁️ Window hidden (popup:', isPopupWindow, ') - NOT sending sitout');
+      }
+    };
+    
+    const handleWindowFocus = () => {
+      // Window regained focus - ensure we're still active
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        log('👁️ Window focus regained, sending activity ping');
+        sendMessage({ 
+          type: 'activity_ping', 
+          tableId, 
+          playerId,
+          isPopup: isPopupWindow 
+        });
+      }
+    };
+    
+    const handleWindowBlur = () => {
+      // Window lost focus - DO NOT mark as sitout for popup windows
+      // This happens when user clicks on parent window or another app
+      if (isPopupWindow) {
+        log('👁️ Popup window blur - ignoring (not sitout)');
+        // Don't do anything - this is expected behavior for popup
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleWindowFocus);
+    window.addEventListener('blur', handleWindowBlur);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWindowFocus);
+      window.removeEventListener('blur', handleWindowBlur);
+    };
+  }, [tableId, playerId, sendMessage, connect]);
 
   return {
     // Connection

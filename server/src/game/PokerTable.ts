@@ -31,7 +31,10 @@ export interface Player {
   isAllIn: boolean;
   timeBank: number;
   lastActionTime: number | null;
+  lastActivityTime: number | null; // CRITICAL: Track last activity for popup window handling
   missedTurns: number; // Count of consecutive missed turns (timeouts)
+  sitOutReason?: 'manual' | 'disconnect' | 'timeout'; // Track why player is sitting out
+  isDisconnected?: boolean; // Track if player is disconnected
 }
 
 export interface HandState {
@@ -236,7 +239,10 @@ export class PokerTable {
           isAllIn: false,
           timeBank: isBot ? 0 : this.config.timeBankSeconds,
           lastActionTime: null,
-          missedTurns: 0
+          lastActivityTime: Date.now(),
+          missedTurns: 0,
+          sitOutReason: undefined,
+          isDisconnected: false
         };
         
         this.players.set(dbPlayer.player_id, player);
@@ -403,7 +409,10 @@ export class PokerTable {
         isAllIn: false,
         timeBank: isBot ? 0 : this.config.timeBankSeconds,
         lastActionTime: null,
-        missedTurns: 0
+        lastActivityTime: Date.now(),
+        missedTurns: 0,
+        sitOutReason: undefined,
+        isDisconnected: false
       };
 
       this.players.set(playerId, player);
@@ -627,7 +636,10 @@ export class PokerTable {
       isAllIn: false,
       timeBank: isBot ? 0 : this.config.timeBankSeconds,
       lastActionTime: null,
-      missedTurns: 0
+      lastActivityTime: Date.now(),
+      missedTurns: 0,
+      sitOutReason: undefined,
+      isDisconnected: false
     };
     
     this.players.set(playerId, player);
@@ -777,12 +789,13 @@ export class PokerTable {
     }
     
     player.status = 'sitting_out';
-    logger.info('Player sitting out', { playerId: playerId.substring(0, 8) });
+    player.sitOutReason = 'manual'; // Track that this was manual sitout
+    logger.info('Player sitting out', { playerId: playerId.substring(0, 8), reason: 'manual' });
     
     // Update database
     await this.supabase
       .from('poker_table_players')
-      .update({ status: 'sitting_out' })
+      .update({ status: 'sitting_out', sit_out_reason: 'manual' })
       .eq('table_id', this.id)
       .eq('player_id', playerId);
     
@@ -810,12 +823,15 @@ export class PokerTable {
     
     player.status = 'active';
     player.missedTurns = 0; // Reset missed turns counter
+    player.sitOutReason = undefined; // Clear sitout reason
+    player.isDisconnected = false; // Mark as connected
+    player.lastActivityTime = Date.now(); // Update activity time
     logger.info('Player sitting in', { playerId: playerId.substring(0, 8) });
     
     // Update database
     await this.supabase
       .from('poker_table_players')
-      .update({ status: 'active' })
+      .update({ status: 'active', sit_out_reason: null })
       .eq('table_id', this.id)
       .eq('player_id', playerId);
     
@@ -827,6 +843,13 @@ export class PokerTable {
     }
     
     return { success: true };
+  }
+  
+  /**
+   * Get player by ID (for external access)
+   */
+  getPlayer(playerId: string): Player | undefined {
+    return this.players.get(playerId);
   }
   
   // ==========================================
@@ -2823,7 +2846,10 @@ export class PokerTable {
       isAllIn: false,
       timeBank: isBot ? 0 : this.config.timeBankSeconds,
       lastActionTime: null,
-      missedTurns: 0
+      lastActivityTime: Date.now(),
+      missedTurns: 0,
+      sitOutReason: undefined,
+      isDisconnected: false
     };
     
     this.players.set(playerId, player);

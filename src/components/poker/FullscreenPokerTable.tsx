@@ -656,7 +656,8 @@ const PlayerSeat = memo(function PlayerSeat({
       {/* Avatar with status border and opponent cards */}
       <div className="relative">
         {/* Timer ring - UNDER cards and game elements, around avatar */}
-        {isCurrentTurn && turnTimeRemaining !== undefined && !player.isFolded && (
+        {/* CRITICAL FIX: Never show timer during showdown phase - all actions complete */}
+        {isCurrentTurn && turnTimeRemaining !== undefined && !player.isFolded && gamePhase !== 'showdown' && (
           <div 
             className="absolute z-0 pointer-events-none"
             style={{
