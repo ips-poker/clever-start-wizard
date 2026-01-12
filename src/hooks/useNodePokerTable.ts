@@ -104,8 +104,8 @@ const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
 
-// Debug logging
-const DEBUG = true;
+// Debug logging - set to false in production
+const DEBUG = import.meta.env.DEV;
 const log = (...args: unknown[]) => DEBUG && console.log('[NodePoker]', ...args);
 
 export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
@@ -711,79 +711,91 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
         case 'phase_change':
         case 'phaseChange':
-          // PROFESSIONAL TIMING: These events now include dealDelay and preDealDelay from server
+          // POKERSTARS TIMING: Buffer phase_change and apply after preDealDelay
+          // This ensures bets_collected animation completes before cards appear
           log(`📡 ${data.type} event received:`, {
             hasState: !!data.state,
             stateKeys: data.state ? Object.keys(data.state as object) : [],
             dealDelay: (data as any).dealDelay,
             preDealDelay: (data as any).preDealDelay,
-            phase: (data as any).phase
+            phase: (data as any).phase,
+            handId: (data as any).handId,
+            isAllInRunout: (data as any).isAllInRunout
           });
           
           // Extract professional timings from server
           {
             const dealDelay = (data as any).dealDelay as number | undefined;
             const preDealDelay = (data as any).preDealDelay as number | undefined;
+            const postDealDelay = (data as any).postDealDelay as number | undefined;
             const eventPhase = ((data as any).phase || (data.state as any)?.phase) as string | undefined;
+            const isAllInRunout = (data as any).isAllInRunout as boolean | undefined;
             
+            // POKERSTARS: Set timings FIRST, then apply state after buffer
             if (dealDelay !== undefined || preDealDelay !== undefined) {
               setPhaseTimings({
                 dealDelay,
                 preDealDelay,
+                postDealDelay,
                 phase: eventPhase
               });
               
-              // Clear timings after use
-              const totalDelay = (preDealDelay || 0) + (dealDelay || 0) + 500;
+              // Clear timings after animation completes
+              const totalDelay = (preDealDelay || 0) + (dealDelay || 0) * (eventPhase === 'flop' ? 3 : 1) + (postDealDelay || 0) + 300;
               setTimeout(() => {
                 setPhaseTimings(null);
               }, totalDelay);
             }
-          }
-          
-          if (data.state && tableId) {
-            const stateData = data.state as Record<string, unknown>;
             
-            // Log all state keys and values for debugging
-            log(`📊 Full state dump:`, JSON.stringify(stateData).substring(0, 800));
+            // POKERSTARS BUFFERING: Apply state after a small delay to let bets_collected animation finish
+            // For all-in runout, apply immediately since server already waited
+            const bufferDelay = isAllInRunout ? 0 : Math.min(preDealDelay || 0, 200);
             
-            // Log specific fields
-            log(`📊 State fields:`, {
-              phase: stateData.phase,
-              currentPlayerSeat: stateData.currentPlayerSeat,
-              myCards: stateData.myCards,
-              mySeat: stateData.mySeat,
-              isMyTurn: stateData.isMyTurn,
-              pot: stateData.pot,
-              hasConfig: !!stateData.config
-            });
-            
-            setTableState(transformServerState(data.state, tableId));
-            
-            // Extract myCards from state - server sends at root level
-            if (stateData.myCards) {
-              const cards = stateData.myCards as string[];
-              log('🃏 Setting my cards from myCards:', cards);
-              setMyCards(cards);
-            } else {
-              // Fallback: try to find my cards in players array
-              const playersData = stateData.players as Array<Record<string, unknown>> | undefined;
-              if (playersData && playerId) {
-                const myPlayer = playersData.find(p => 
-                  (p.playerId === playerId || p.id === playerId) && 
-                  Array.isArray(p.holeCards) && 
-                  (p.holeCards as string[]).length > 0
-                );
-                if (myPlayer) {
-                  const cards = myPlayer.holeCards as string[];
-                  log('🃏 Setting my cards from player holeCards:', cards);
+            if (data.state && tableId) {
+              const applyPhaseState = () => {
+                const stateData = data.state as Record<string, unknown>;
+                
+                log(`📊 Applying phase state after ${bufferDelay}ms buffer:`, {
+                  phase: stateData.phase,
+                  currentPlayerSeat: stateData.currentPlayerSeat,
+                  pot: stateData.pot
+                });
+                
+                setTableState(transformServerState(data.state, tableId!));
+                
+                // Extract myCards from state - server sends at root level
+                if (stateData.myCards) {
+                  const cards = stateData.myCards as string[];
+                  log('🃏 Setting my cards from myCards:', cards);
                   setMyCards(cards);
+                } else {
+                  // Fallback: try to find my cards in players array
+                  const playersData = stateData.players as Array<Record<string, unknown>> | undefined;
+                  if (playersData && playerId) {
+                    const myPlayer = playersData.find(p => 
+                      (p.playerId === playerId || p.id === playerId) && 
+                      Array.isArray(p.holeCards) && 
+                      (p.holeCards as string[]).length > 0
+                    );
+                    if (myPlayer) {
+                      const cards = myPlayer.holeCards as string[];
+                      log('🃏 Setting my cards from player holeCards:', cards);
+                      setMyCards(cards);
+                    }
+                  }
                 }
+                
+                if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
+                  setMySeat(stateData.mySeat as number);
+                }
+              };
+              
+              // Apply with buffer delay for smooth animation
+              if (bufferDelay > 0) {
+                setTimeout(applyPhaseState, bufferDelay);
+              } else {
+                applyPhaseState();
               }
-            }
-            
-            if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
-              setMySeat(stateData.mySeat as number);
             }
           }
           break;
