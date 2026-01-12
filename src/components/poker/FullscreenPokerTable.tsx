@@ -1598,8 +1598,10 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         />
       )}
       
-      {/* Winner announcement - compact in-table display */}
-      {phase === 'showdown' && winners && winners.length > 0 && (
+      {/* Winner announcement - compact in-table display 
+          CRITICAL: Only show when NOT using professional showdownReveals 
+          This prevents duplicate animations */}
+      {phase === 'showdown' && winners && winners.length > 0 && !showdownReveals?.length && (
         <WinnerAnnouncement
           winners={winners.map(w => {
             const player = players.find(p => p.playerId === w.playerId);
