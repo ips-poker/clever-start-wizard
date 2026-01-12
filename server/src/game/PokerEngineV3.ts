@@ -175,8 +175,6 @@ export interface GameState {
   lastRaiseAmount: number;           // Size of the last raise increment
   actionCount: number;
   gameType: PokerGameType;
-  /** True when all remaining players are all-in and runout is needed */
-  isAllInRunout?: boolean;
 }
 
 export interface ActionResult {
@@ -199,10 +197,6 @@ export interface ActionResult {
   isAllIn?: boolean;
   isFolded?: boolean;
   newHandState?: object;
-  /** True when all players are all-in and remaining cards need to be dealt with delays */
-  isAllInRunout?: boolean;
-  /** Phases that need to be dealt during all-in runout (e.g., ['turn', 'river', 'showdown']) */
-  pendingPhases?: GamePhase[];
 }
 
 // ==========================================
@@ -2376,9 +2370,6 @@ export class PokerEngineV3 {
       this.state.currentPlayerSeat = this.findNextPlayer();
     }
     
-    // Check if this is an all-in runout situation
-    const isAllInRunout = this.state.isAllInRunout === true;
-    
     return {
       success: true,
       action: mappedAction,
@@ -2392,8 +2383,7 @@ export class PokerEngineV3 {
       winners,
       sidePots: this.state.sidePots,
       minRaise: this.state.minRaise,
-      phaseAdvanced,
-      isAllInRunout
+      phaseAdvanced
     };
   }
   
@@ -2402,46 +2392,6 @@ export class PokerEngineV3 {
    */
   getState(): GameState | null {
     return this.state;
-  }
-  
-  /**
-   * PUBLIC: Advance to next phase (for all-in runout handling by PokerTable)
-   * This allows PokerTable to add delays between phases
-   * Returns the result including whether we reached showdown
-   */
-  public advanceToNextPhase(): { 
-    phase: GamePhase; 
-    communityCards: string[]; 
-    isComplete: boolean;
-    winners?: { playerId: string; amount: number; handName: string }[];
-  } {
-    if (!this.state) {
-      return { phase: 'preflop', communityCards: [], isComplete: false };
-    }
-    
-    // Clear the runout flag before advancing
-    this.state.isAllInRunout = false;
-    
-    // Advance phase
-    this.advancePhase();
-    
-    // Check if we reached showdown
-    if (this.state.phase === 'showdown') {
-      const winners = this.determineWinners();
-      this.state.isComplete = true;
-      return {
-        phase: this.state.phase,
-        communityCards: this.state.communityCards,
-        isComplete: true,
-        winners
-      };
-    }
-    
-    return {
-      phase: this.state.phase,
-      communityCards: this.state.communityCards,
-      isComplete: false
-    };
   }
   
   /**
@@ -2590,27 +2540,23 @@ export class PokerEngineV3 {
       const playersWhoCanAct = activePlayers.filter(p => !p.isAllIn && p.stack > 0);
       
       if (playersWhoCanAct.length <= 1 && activePlayers.length > 1) {
-        // All-in runout scenario - mark for delayed dealing by PokerTable
-        // IMPORTANT: Do NOT recursively call advancePhase() here!
-        // PokerTable will handle the delays between phases
-        console.log('[Engine] All-in detected, marking for runout (no recursive advance)');
-        this.state.isAllInRunout = true;
-        // Set currentPlayerSeat to null to signal no one can act
-        this.state.currentPlayerSeat = null;
-        // Do NOT continue to next phase automatically - let PokerTable handle with delays
-        return;
+        // All-in runout scenario - deal remaining cards automatically
+        console.log('[Engine] All-in detected, running to showdown');
+        if (nextPhase !== 'showdown') {
+          // Continue to next phase automatically
+          this.advancePhase();
+          return;
+        }
       }
       
       // Find first to act post-flop (first active player after dealer clockwise)
       if (nextPhase !== 'showdown') {
         this.state.currentPlayerSeat = this.findFirstPostFlopActor();
         
-        // CRITICAL FIX: If no one can act (everyone all-in), mark as runout
-        // Do NOT recursively call advancePhase() - let PokerTable handle with delays!
+        // If no one can act (everyone all-in), advance to showdown
         if (this.state.currentPlayerSeat === null) {
-          console.log('[Engine] No players can act after phase change - marking for runout');
-          this.state.isAllInRunout = true;
-          // Do NOT call advancePhase() here - causes instant card dealing without delays!
+          console.log('[Engine] No players can act, advancing to showdown');
+          this.advancePhase();
         }
       }
     }

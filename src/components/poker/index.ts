@@ -14,7 +14,7 @@ export { OnlinePokerManagement } from './OnlinePokerManagement';
 
 // Professional timing components
 export { BetCollectionAnimation } from './BetCollectionAnimation';
-// ProfessionalShowdown removed
+export { ProfessionalShowdown } from './ProfessionalShowdown';
 export { TournamentBreakBanner } from './TournamentBreakBanner';
 export { TournamentBreakOverlay } from './TournamentBreakOverlay';
 

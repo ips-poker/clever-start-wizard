@@ -43,19 +43,6 @@ import { tournamentAutoStartService } from './utils/tournament-auto-start-servic
 import { pkoBountyService } from './utils/pko-bounty-service.js';
 import { satelliteTournamentService } from './utils/satellite-tournament-service.js';
 import { rpsPrizeSystem } from './utils/rps-prize-system.js';
-import { tournamentEliminationManager } from './utils/tournament-elimination.js';
-import { tournamentStateSynchronizer } from './utils/tournament-state-synchronizer.js';
-import { advancedPerformanceMonitor } from './utils/advanced-performance-monitor.js';
-import { actionQueueOptimizer } from './utils/action-queue-optimizer.js';
-import { wsOptimizer } from './utils/websocket-optimizer.js';
-import { antiCollisionManager } from './utils/anti-collision-manager.js';
-// PokerStars-level professional modules
-import { stateMachineValidator } from './utils/state-machine-validator.js';
-import { atomicActionProcessor } from './utils/atomic-action-processor.js';
-import { allInEquityCalculator } from './utils/all-in-equity-calculator.js';
-import { realTimeSyncOptimizer } from './utils/real-time-sync-optimizer.js';
-import { rngVerificationService } from './utils/rng-verification-service.js';
-import { professionalHandHistory } from './utils/professional-hand-history.js';
 
 // Process-level error handlers
 process.on('uncaughtException', (error) => {
@@ -206,72 +193,6 @@ app.get('/api/alerts', (req, res) => {
   });
 });
 
-// Advanced Performance API - PokerStars-level monitoring
-app.get('/api/performance', (req, res) => {
-  res.json({
-    success: true,
-    report: advancedPerformanceMonitor.getFullReport(),
-    actionQueue: actionQueueOptimizer.getStats(),
-    antiCollision: antiCollisionManager.getStats(),
-    stateMachine: stateMachineValidator.getStats(),
-    atomicProcessor: atomicActionProcessor.getStats(),
-    syncOptimizer: realTimeSyncOptimizer.getStats()
-  });
-});
-
-// RNG Verification & Compliance API - Audit-grade
-app.get('/api/rng/compliance', (req, res) => {
-  const periodHours = parseInt(req.query.period as string) || 24;
-  const report = rngVerificationService.generateComplianceReport(periodHours);
-  res.json({
-    success: true,
-    report
-  });
-});
-
-app.get('/api/rng/audit', (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit as string) || 100, 1000);
-  res.json({
-    success: true,
-    entries: rngVerificationService.getAuditLog(limit),
-    testResults: rngVerificationService.getTestResults()
-  });
-});
-
-// All-in Equity Calculator API
-app.post('/api/equity/calculate', async (req, res) => {
-  try {
-    const { players, communityCards } = req.body;
-    if (!players || !Array.isArray(players)) {
-      return res.status(400).json({ success: false, error: 'Invalid players array' });
-    }
-    const equity = await allInEquityCalculator.calculateEquity(players, communityCards || []);
-    res.json({ success: true, equity });
-  } catch (err) {
-    res.status(500).json({ success: false, error: String(err) });
-  }
-});
-
-// Hand History API - Professional format
-app.get('/api/history/hand/:handId', async (req, res) => {
-  const { handId } = req.params;
-  const format = (req.query.format as string) || 'json';
-  try {
-    const history = professionalHandHistory.getHistory(handId);
-    if (!history) {
-      return res.status(404).json({ success: false, error: 'Hand not found' });
-    }
-    if (format === 'text') {
-      res.set('Content-Type', 'text/plain');
-      res.send(professionalHandHistory.getFormattedHistory(handId, 'pokerstars') || '');
-    } else {
-      res.json({ success: true, history });
-    }
-  } catch (err) {
-    res.status(500).json({ success: false, error: String(err) });
-  }
-});
-
 // Realtime events API
 app.get('/api/events', (req, res) => {
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
@@ -291,15 +212,6 @@ const wss = new WebSocketServer({
 
 // Initialize WebSocket handler with tournament manager
 const wsHandler = new PokerWebSocketHandler(wss, gameManager, supabase, tournamentManager);
-
-// Initialize tournament elimination manager with Supabase
-tournamentEliminationManager.setSupabase(supabase);
-
-// Initialize and start tournament state synchronizer
-tournamentStateSynchronizer.setSupabase(supabase);
-tournamentStateSynchronizer.start().catch(err => {
-  logger.error('Failed to start tournament state synchronizer', { error: String(err) });
-});
 
 // Connect tournament level service to broadcast break events via WebSocket
 tournamentLevelService.setBreakEventCallback((tournamentId, event) => {
@@ -412,12 +324,6 @@ const gracefulShutdown = async () => {
   // Shutdown tournament state cache
   tournamentStateCache.shutdown();
   
-  // Shutdown tournament elimination manager
-  tournamentEliminationManager.cleanup();
-  
-  // Stop tournament state synchronizer
-  tournamentStateSynchronizer.stop();
-  
   // Shutdown redis manager
   redisManager.shutdown();
   
@@ -488,12 +394,6 @@ server.listen(config.port, () => {
   logger.info(`💰 PKO Bounty service ready`);
   logger.info(`🎫 Satellite tournament service ready`);
   logger.info(`🏆 RPS Prize system ready (auto RPS payouts)`);
-  logger.info(`🔐 State Machine Validator active`);
-  logger.info(`⚡ Atomic Action Processor ready`);
-  logger.info(`📊 RNG Verification Service running`);
-  logger.info(`🎲 All-in Equity Calculator ready`);
-  logger.info(`🔄 Real-time Sync Optimizer active`);
-  logger.info(`📝 Professional Hand History enabled`);
   logger.info(`✅ Server ready for 300+ tables, 2700+ players, 5000+ spectators`);
   
   // Send PM2 ready signal
@@ -502,11 +402,4 @@ server.listen(config.port, () => {
   }
 });
 
-export { 
-  app, server, wss, tournamentManager, prizePayoutSystem, handForHandManager, 
-  spectatorManager, actionTimeoutGuard, handHistoryService, tournamentLevelService, 
-  tournamentAutoStartService, pkoBountyService, satelliteTournamentService, rpsPrizeSystem,
-  // PokerStars-level modules
-  stateMachineValidator, atomicActionProcessor, allInEquityCalculator, 
-  realTimeSyncOptimizer, rngVerificationService, professionalHandHistory
-};
+export { app, server, wss, tournamentManager, prizePayoutSystem, handForHandManager, spectatorManager, actionTimeoutGuard, handHistoryService, tournamentLevelService, tournamentAutoStartService, pkoBountyService, satelliteTournamentService, rpsPrizeSystem };

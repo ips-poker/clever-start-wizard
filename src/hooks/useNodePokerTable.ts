@@ -104,24 +104,8 @@ const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
 
-// PokerStars-like default timings (used when server doesn't send delays)
-const DEFAULT_PRE_DEAL_DELAYS_MS: Record<string, number> = {
-  flop: 450,
-  turn: 350,
-  river: 350,
-  showdown: 250,
-};
-
-const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-
-const resolvePreDealDelayMs = (phase: unknown, provided?: number) => {
-  if (typeof provided === 'number' && Number.isFinite(provided)) return provided;
-  const key = String(phase ?? '').toLowerCase();
-  return DEFAULT_PRE_DEAL_DELAYS_MS[key] ?? 250;
-};
-
-// Debug logging - set to false in production
-const DEBUG = import.meta.env.DEV;
+// Debug logging
+const DEBUG = true;
 const log = (...args: unknown[]) => DEBUG && console.log('[NodePoker]', ...args);
 
 export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
@@ -235,13 +219,6 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const tableStateRef = useRef<TableState | null>(null);
   const myCardsRef = useRef<string[]>([]);
   const mySeatRef = useRef<number | null>(null);
-
-  // Prevent double-applying the same phase transition (some servers embed next phase state in 'action' events)
-  const pendingPhaseApplyRef = useRef<{
-    handId?: string;
-    phase: TableState['phase'];
-    applyAt: number;
-  } | null>(null);
 
   useEffect(() => {
     tableStateRef.current = tableState;
@@ -734,115 +711,79 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
         case 'phase_change':
         case 'phaseChange':
-          // POKERSTARS TIMING: Buffer phase_change and apply after preDealDelay
-          // This ensures bets_collected animation completes before cards appear
+          // PROFESSIONAL TIMING: These events now include dealDelay and preDealDelay from server
+          log(`📡 ${data.type} event received:`, {
+            hasState: !!data.state,
+            stateKeys: data.state ? Object.keys(data.state as object) : [],
+            dealDelay: (data as any).dealDelay,
+            preDealDelay: (data as any).preDealDelay,
+            phase: (data as any).phase
+          });
+          
+          // Extract professional timings from server
           {
-            const meta = ((data as any).data ?? data) as Record<string, unknown>;
-
-            log(`📡 ${data.type} event received:`, {
-              hasState: !!data.state,
-              stateKeys: data.state ? Object.keys(data.state as object) : [],
-              dealDelay: (meta as any).dealDelay,
-              preDealDelay: (meta as any).preDealDelay,
-              phase: (meta as any).phase,
-              handId: (meta as any).handId,
-              isAllInRunout: (meta as any).isAllInRunout,
-            });
-
-            const dealDelay = (meta as any).dealDelay as number | undefined;
-            const preDealDelayProvided = (meta as any).preDealDelay as number | undefined;
-            const postDealDelay = (meta as any).postDealDelay as number | undefined;
-            const isAllInRunout = (meta as any).isAllInRunout as boolean | undefined;
-
-            if (data.state && tableId) {
-              const stateData = data.state as Record<string, unknown>;
-              const eventPhase = ((meta as any).phase || (stateData as any).phase) as unknown;
-              const eventHandId = ((meta as any).handId || (stateData as any).handId || (stateData as any).hand_id) as
-                | string
-                | undefined;
-
-              const effectivePreDealDelay = resolvePreDealDelayMs(eventPhase, preDealDelayProvided);
-              const bufferDelay = isAllInRunout ? 0 : clamp(effectivePreDealDelay, 150, 900);
-
-              // Provide timings to UI even if server didn't send them (so animations stay consistent)
+            const dealDelay = (data as any).dealDelay as number | undefined;
+            const preDealDelay = (data as any).preDealDelay as number | undefined;
+            const eventPhase = ((data as any).phase || (data.state as any)?.phase) as string | undefined;
+            
+            if (dealDelay !== undefined || preDealDelay !== undefined) {
               setPhaseTimings({
                 dealDelay,
-                preDealDelay: effectivePreDealDelay,
-                postDealDelay,
-                phase: String(eventPhase ?? ''),
+                preDealDelay,
+                phase: eventPhase
               });
-
-              // Clear timings after animation completes
-              const totalDelay =
-                effectivePreDealDelay +
-                (dealDelay || 0) * (String(eventPhase).toLowerCase() === 'flop' ? 3 : 1) +
-                (postDealDelay || 0) +
-                300;
-              setTimeout(() => setPhaseTimings(null), totalDelay);
-
-              // Deduplicate if we already scheduled the same phase apply from an 'action' event
-              const pending = pendingPhaseApplyRef.current;
-              if (
-                pending &&
-                pending.phase === transformServerState(stateData, tableId!).phase &&
-                (!pending.handId || !eventHandId || pending.handId === eventHandId) &&
-                pending.applyAt > Date.now()
-              ) {
-                log('⏭️ Skipping duplicate phase_change (already pending from action event)', {
-                  pending,
-                  eventHandId,
-                  eventPhase,
-                });
-                break;
-              }
-
-              const applyPhaseState = () => {
-                log(`📊 Applying phase state after ${bufferDelay}ms buffer:`, {
-                  phase: (stateData as any).phase,
-                  currentPlayerSeat: (stateData as any).currentPlayerSeat,
-                  pot: (stateData as any).pot,
-                });
-
-                setTableState(transformServerState(stateData, tableId!));
-
-                // Extract myCards from state - server sends at root level
-                if (stateData.myCards) {
-                  const cards = stateData.myCards as string[];
-                  log('🃏 Setting my cards from myCards:', cards);
+              
+              // Clear timings after use
+              const totalDelay = (preDealDelay || 0) + (dealDelay || 0) + 500;
+              setTimeout(() => {
+                setPhaseTimings(null);
+              }, totalDelay);
+            }
+          }
+          
+          if (data.state && tableId) {
+            const stateData = data.state as Record<string, unknown>;
+            
+            // Log all state keys and values for debugging
+            log(`📊 Full state dump:`, JSON.stringify(stateData).substring(0, 800));
+            
+            // Log specific fields
+            log(`📊 State fields:`, {
+              phase: stateData.phase,
+              currentPlayerSeat: stateData.currentPlayerSeat,
+              myCards: stateData.myCards,
+              mySeat: stateData.mySeat,
+              isMyTurn: stateData.isMyTurn,
+              pot: stateData.pot,
+              hasConfig: !!stateData.config
+            });
+            
+            setTableState(transformServerState(data.state, tableId));
+            
+            // Extract myCards from state - server sends at root level
+            if (stateData.myCards) {
+              const cards = stateData.myCards as string[];
+              log('🃏 Setting my cards from myCards:', cards);
+              setMyCards(cards);
+            } else {
+              // Fallback: try to find my cards in players array
+              const playersData = stateData.players as Array<Record<string, unknown>> | undefined;
+              if (playersData && playerId) {
+                const myPlayer = playersData.find(p => 
+                  (p.playerId === playerId || p.id === playerId) && 
+                  Array.isArray(p.holeCards) && 
+                  (p.holeCards as string[]).length > 0
+                );
+                if (myPlayer) {
+                  const cards = myPlayer.holeCards as string[];
+                  log('🃏 Setting my cards from player holeCards:', cards);
                   setMyCards(cards);
-                } else {
-                  // Fallback: try to find my cards in players array
-                  const playersData = stateData.players as Array<Record<string, unknown>> | undefined;
-                  if (playersData && playerId) {
-                    const myPlayer = playersData.find(
-                      (p) =>
-                        (p.playerId === playerId || p.id === playerId) &&
-                        Array.isArray(p.holeCards) &&
-                        (p.holeCards as string[]).length > 0
-                    );
-                    if (myPlayer) {
-                      const cards = myPlayer.holeCards as string[];
-                      log('🃏 Setting my cards from player holeCards:', cards);
-                      setMyCards(cards);
-                    }
-                  }
                 }
-
-                if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
-                  setMySeat(stateData.mySeat as number);
-                }
-              };
-
-              if (bufferDelay > 0) {
-                pendingPhaseApplyRef.current = {
-                  handId: eventHandId,
-                  phase: transformServerState(stateData, tableId!).phase,
-                  applyAt: Date.now() + bufferDelay,
-                };
-                setTimeout(applyPhaseState, bufferDelay);
-              } else {
-                applyPhaseState();
               }
+            }
+            
+            if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
+              setMySeat(stateData.mySeat as number);
             }
           }
           break;
@@ -907,71 +848,19 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           break;
 
         case 'action':
-        case 'player_action': {
-          const payload = ((data as any).data ?? data) as Record<string, unknown>;
-
-          const actionPlayerId = (payload.playerId || (payload as any).player_id || (data as any).playerId) as
-            | string
-            | undefined;
-          const actionType = (payload.actionType || (payload as any).action_type || payload.action || (data as any).actionType) as
-            | string
-            | undefined;
-          const actionAmount = (payload.amount || (payload as any).betAmount || (payload as any).bet_amount) as number | undefined;
-
-          if (actionPlayerId && actionType) {
-            setLastAction({ playerId: actionPlayerId, action: actionType, amount: actionAmount });
-            setTimeout(() => setLastAction(null), 2000);
-          }
-
-          // Some server versions embed the NEXT street state in the same action event.
-          // If we apply immediately, it looks like "skipping" the other player.
+        case 'player_action':
+          setLastAction({
+            playerId: data.playerId as string,
+            action: (data.actionType || data.action) as string,
+            amount: data.amount as number | undefined
+          });
+          setTimeout(() => setLastAction(null), 2000);
+          
+          // Update state if included
           if (data.state && tableId) {
-            const stateData = data.state as Record<string, unknown>;
-            const incomingState = transformServerState(stateData, tableId);
-            const prevState = tableStateRef.current;
-
-            const prevPhase = prevState?.phase;
-            const nextPhase = incomingState.phase;
-
-            if (prevPhase && nextPhase !== prevPhase) {
-              const delay = clamp(resolvePreDealDelayMs(nextPhase), 150, 900);
-
-              log('⏳ Buffering action-driven phase jump:', {
-                prevPhase,
-                nextPhase,
-                delay,
-                handId: incomingState.handId,
-                actionType,
-                actionPlayerId,
-              });
-
-              pendingPhaseApplyRef.current = {
-                handId: incomingState.handId,
-                phase: nextPhase,
-                applyAt: Date.now() + delay,
-              };
-
-              setTimeout(() => {
-                if (!mountedRef.current) return;
-
-                // Don’t apply if we already moved on (e.g., got a newer state_update)
-                const current = tableStateRef.current;
-                if (current?.handId && incomingState.handId && current.handId !== incomingState.handId) return;
-                if (current?.phase === nextPhase) return;
-
-                setTableState(incomingState);
-
-                if (stateData.myCards) setMyCards(stateData.myCards as string[]);
-                if (stateData.mySeat !== undefined && stateData.mySeat !== null) setMySeat(stateData.mySeat as number);
-              }, delay);
-            } else {
-              setTableState(incomingState);
-              if (stateData.myCards) setMyCards(stateData.myCards as string[]);
-              if (stateData.mySeat !== undefined && stateData.mySeat !== null) setMySeat(stateData.mySeat as number);
-            }
+            setTableState(transformServerState(data.state, tableId));
           }
           break;
-        }
 
         case 'state_update':
           // State update after action - contains latest bets and player states
@@ -981,43 +870,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             const stateData = (data.state || data.data || data) as Record<string, unknown>;
             if (tableId && (stateData.players || stateData.phase)) {
               const incomingState = transformServerState(stateData, tableId);
-              const currentState = tableStateRef.current;
-              const keepShowdown = currentState?.phase === 'showdown';
-
-              // POKERSTARS FIX: If a phase_change is buffered (pendingPhaseApply), 
-              // ignore state_update events that would skip ahead or reveal cards prematurely.
-              // This prevents "instant flop/turn" visual bugs.
-              const pending = pendingPhaseApplyRef.current;
-              const phaseOrder = ['preflop', 'flop', 'turn', 'river', 'showdown'];
-              const currentPhaseIdx = phaseOrder.indexOf(currentState?.phase || 'waiting');
-              const incomingPhaseIdx = phaseOrder.indexOf(incomingState.phase || 'waiting');
-              
-              if (pending && pending.applyAt > Date.now()) {
-                // We have a buffered phase_change pending
-                // Check if state_update is trying to advance phase prematurely
-                if (incomingPhaseIdx > currentPhaseIdx) {
-                  log('⏭️ Ignoring state_update that would skip ahead of buffered phase_change', {
-                    currentPhase: currentState?.phase,
-                    incomingPhase: incomingState.phase,
-                    pendingPhase: pending.phase,
-                    pendingApplyAt: pending.applyAt,
-                    now: Date.now()
-                  });
-                  break; // Skip this state_update entirely
-                }
-                
-                // Also skip if state_update has more community cards than current
-                // (would reveal cards before animation)
-                const currentCards = currentState?.communityCards?.length || 0;
-                const incomingCards = incomingState.communityCards?.length || 0;
-                if (incomingCards > currentCards) {
-                  log('⏭️ Ignoring state_update that reveals community cards before phase_change animation', {
-                    currentCards,
-                    incomingCards
-                  });
-                  break;
-                }
-              }
+              const keepShowdown = tableStateRef.current?.phase === 'showdown';
 
               setTableState((prev) => {
                 if (!prev) return keepShowdown ? { ...incomingState, phase: 'showdown' } : incomingState;
@@ -1820,6 +1673,62 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }
           break;
 
+        // PROFESSIONAL TIMING: Enhanced bet collection with positions
+        case 'bets_collected':
+          {
+            const betsData = data as Record<string, unknown>;
+            const betPositions = betsData.betPositions as Array<{ seatNumber: number; amount: number }> | undefined;
+            
+            log('💰 Bets collected:', betsData);
+            
+            if (betPositions && betPositions.length > 0) {
+              setBetsBeingCollected({
+                bets: betPositions.map(bp => ({
+                  playerId: '',  // Not needed, we use seatNumber
+                  seatNumber: bp.seatNumber,
+                  amount: bp.amount
+                })),
+                timestamp: Date.now()
+              });
+              
+              // Auto-clear after collection animation
+              const collectionDelay = (betsData.collectionDelay as number || 500) + 
+                (betPositions.length * ((betsData.staggerDelay as number) || 80));
+              setTimeout(() => {
+                setBetsBeingCollected(null);
+              }, collectionDelay + 200);
+            }
+          }
+          break;
+
+        // PROFESSIONAL TIMING: Phase change with card dealing delays
+        case 'phase_change':
+          {
+            const phaseData = data as Record<string, unknown>;
+            log('🎴 Phase change:', phaseData);
+            
+            setPhaseTimings({
+              dealDelay: phaseData.dealDelay as number | undefined,
+              preDealDelay: phaseData.preDealDelay as number | undefined,
+              postDealDelay: phaseData.postDealDelay as number | undefined,
+              phase: phaseData.phase as string | undefined
+            });
+            
+            // Update community cards
+            if (phaseData.communityCards && tableId) {
+              setTableState(prev => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  phase: phaseData.phase as TableState['phase'] || prev.phase,
+                  communityCards: phaseData.communityCards as string[],
+                  pot: (phaseData.pot as number) ?? prev.pot
+                };
+              });
+            }
+          }
+          break;
+
         // PROFESSIONAL: Showdown start event
         case 'showdown_start':
           {
@@ -1849,9 +1758,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 playerId: revealData.playerId as string,
                 playerName: revealData.playerName as string || 'Unknown',
                 seatNumber: revealData.seatNumber as number,
-                holeCards: Array.isArray(revealData.holeCards) ? (revealData.holeCards as string[]) : [],
+                holeCards: revealData.holeCards as string[],
                 handName: revealData.handName as string | undefined,
-                bestCards: Array.isArray(revealData.bestCards) ? (revealData.bestCards as string[]) : undefined,
+                bestCards: revealData.bestCards as string[] | undefined,
                 revealIndex: revealData.revealIndex as number || prev.length,
                 revealDelay: revealData.revealDelay as number || 0,
                 isWinner: revealData.isWinner as boolean || false
@@ -1887,23 +1796,22 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             const winnerData = data as Record<string, unknown>;
             log('🏆 Winner announcement:', winnerData);
             
-            const winnersRaw = winnerData.winners;
-            const winners = Array.isArray(winnersRaw) ? winnersRaw as Array<{
+            const winners = winnerData.winners as Array<{
               playerId: string;
               playerName: string;
               seatNumber: number;
               amount: number;
               handName?: string;
               newStack: number;
-            }> : [];
+            }> || [];
             
             setWinnerAnnouncement({
               winners,
               pot: winnerData.pot as number || 0,
               isSplitPot: winnerData.isSplitPot as boolean || winners.length > 1,
-              potSlideDelay: winnerData.potSlideDelay as number || 300,
-              highlightDuration: winnerData.highlightDuration as number || 1000,
-              celebrationDuration: winnerData.celebrationDuration as number || 800,
+              potSlideDelay: winnerData.potSlideDelay as number || 600,
+              highlightDuration: winnerData.highlightDuration as number || 2500,
+              celebrationDuration: winnerData.celebrationDuration as number || 2000,
               timestamp: Date.now()
             });
             
@@ -1924,9 +1832,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             
             // Auto-clear winner announcement after celebration
             const totalDuration = 
-              (winnerData.potSlideDelay as number || 300) +
-              (winnerData.highlightDuration as number || 1000) +
-              (winnerData.celebrationDuration as number || 800);
+              (winnerData.potSlideDelay as number || 600) +
+              (winnerData.highlightDuration as number || 2500) +
+              (winnerData.celebrationDuration as number || 2000);
             
             setTimeout(() => {
               setWinnerAnnouncement(null);
@@ -2263,45 +2171,23 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   }, [tableState, playerId]);
 
   // Calculate call amount - how much more we need to put in to match current bet
-  // POKERSTARS: Throttle logging to avoid console spam
-  const lastCallAmountLogRef = useRef<{ currentBet: number; myBetAmount: number; timestamp: number } | null>(null);
-  
   const callAmount = useMemo(() => {
     if (!tableState || !myPlayer) return 0;
     const amountToCall = tableState.currentBet - myPlayer.betAmount;
-    const result = Math.max(0, amountToCall);
-    
-    // Only log if values changed or more than 2 seconds passed
-    const now = Date.now();
-    const lastLog = lastCallAmountLogRef.current;
-    if (!lastLog || 
-        lastLog.currentBet !== tableState.currentBet || 
-        lastLog.myBetAmount !== myPlayer.betAmount ||
-        now - lastLog.timestamp > 2000) {
-      log('callAmount calculation:', {
-        currentBet: tableState.currentBet,
-        myBetAmount: myPlayer.betAmount,
-        callAmount: result
-      });
-      lastCallAmountLogRef.current = { 
-        currentBet: tableState.currentBet, 
-        myBetAmount: myPlayer.betAmount, 
-        timestamp: now 
-      };
-    }
-    
-    return result;
+    console.log('[NodePoker] callAmount calculation:', {
+      currentBet: tableState.currentBet,
+      myBetAmount: myPlayer.betAmount,
+      callAmount: Math.max(0, amountToCall)
+    });
+    return Math.max(0, amountToCall);
   }, [tableState, myPlayer]);
 
   // Can check? Only if we've already matched the current bet
   const canCheck = useMemo(() => {
     const result = callAmount === 0;
-    // Only log when value is meaningful (avoid spam)
-    if (DEBUG && tableState?.phase && tableState.phase !== 'waiting') {
-      log('canCheck:', result, 'callAmount:', callAmount);
-    }
+    console.log('[NodePoker] canCheck:', result, 'callAmount:', callAmount);
     return result;
-  }, [callAmount, tableState?.phase]);
+  }, [callAmount]);
 
   // Effect: Connect on mount
   useEffect(() => {

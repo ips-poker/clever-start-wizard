@@ -34,7 +34,7 @@ import { PPPokerLevelBadge } from './PPPokerLevelBadge';
 // PotCollectionAnimation removed - using BetCollectionAnimation only for performance
 import { WinnerChipCascade } from './WinnerChipCascade';
 import { BetCollectionAnimation } from './EnhancedBetCollectionAnimation';
-// ProfessionalShowdown removed - using built-in winner highlighting
+import { ProfessionalShowdown } from './ProfessionalShowdown';
 import { WinnerAnnouncement } from './WinnerAnnouncement';
 import { usePhaseAnimation } from '@/hooks/usePhaseAnimation';
 import { getHandStrengthName } from '@/utils/handEvaluator';
@@ -1464,7 +1464,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
 
   // Convert server betsBeingCollected to visual positions for animation
   const betCollectionData = useMemo(() => {
-    if (!betsBeingCollected || !Array.isArray(betsBeingCollected.bets) || betsBeingCollected.bets.length === 0) {
+    if (!betsBeingCollected || betsBeingCollected.bets.length === 0) {
       return null;
     }
 
@@ -1489,7 +1489,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
 
   // Trigger win distribution animation when winners change
   useEffect(() => {
-    if (winners && Array.isArray(winners) && winners.length > 0 && phase === 'showdown') {
+    if (winners && winners.length > 0 && phase === 'showdown') {
       const winner = winners[0];
       // Find winner's seat
       const winnerPlayer = players.find((p) => p.playerId === winner.playerId);
@@ -1598,7 +1598,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       )}
       
       {/* Winner announcement - compact in-table display */}
-      {phase === 'showdown' && winners && Array.isArray(winners) && winners.length > 0 && (
+      {phase === 'showdown' && winners && winners.length > 0 && (
         <WinnerAnnouncement
           winners={winners.map(w => {
             const player = players.find(p => p.playerId === w.playerId);
@@ -1721,8 +1721,25 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         );
       })}
       
-      {/* ProfessionalShowdown removed - using built-in winner highlighting */}
-
+      {/* Professional Showdown with combinations display */}
+      {showdownReveals && showdownReveals.length > 0 && phase === 'showdown' && (
+        <ProfessionalShowdown
+          players={showdownReveals.map(r => ({
+            playerId: r.playerId,
+            name: r.playerName,
+            seatNumber: r.seatNumber,
+            holeCards: r.holeCards,
+            handName: r.handName,
+            bestCards: r.bestCards,
+            isWinner: r.isWinner,
+            wonAmount: winnerAnnouncement?.winners.find(w => w.playerId === r.playerId)?.amount
+          }))}
+          communityCards={communityCards}
+          pot={pot}
+          revealDelay={500}
+        />
+      )}
+      
       {/* Professional Winner Announcement with pot slide animation */}
       {winnerAnnouncement && phase !== 'showdown' && (
         <WinnerAnnouncement

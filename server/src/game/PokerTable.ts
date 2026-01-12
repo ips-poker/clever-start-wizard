@@ -195,8 +195,8 @@ export class PokerTable {
             .delete()
             .eq('table_id', this.id)
             .eq('player_id', dbPlayer.player_id)
-            .then(() => { logger.info('Cleaned up orphaned zero-stack player', { playerId: dbPlayer.player_id.substring(0, 8) }); })
-            .then(undefined, (err: unknown) => { logger.warn('Failed to clean up orphaned player', { error: String(err) }); });
+            .then(() => logger.info('Cleaned up orphaned zero-stack player', { playerId: dbPlayer.player_id.substring(0, 8) }))
+            .catch(err => logger.warn('Failed to clean up orphaned player', { error: String(err) }));
           continue;
         }
         
@@ -440,20 +440,6 @@ export class PokerTable {
    */
   public hasPlayer(playerId: string): boolean {
     return this.players.has(playerId);
-  }
-
-  /**
-   * Get table type (cash, tournament, sitgo)
-   */
-  public getTableType(): string {
-    return this.config.tableType || 'cash';
-  }
-
-  /**
-   * Get tournament ID if this is a tournament table
-   */
-  public getTournamentId(): string | null {
-    return this.config.tournamentId || null;
   }
 
   /**
@@ -772,7 +758,6 @@ export class PokerTable {
     return true;
   }
 
-  /**
    * Sit out - player will auto-fold when it's their turn
    */
   async sitOut(playerId: string): Promise<{ success: boolean; error?: string }> {
@@ -1098,9 +1083,6 @@ export class PokerTable {
     // Reset missed turns counter on successful action (player is active)
     player.missedTurns = 0;
     
-    // POKERSTARS: Record action in poker_actions table for hand history
-    this.recordAction(playerId, player.seatNumber, actionType, result.amount || 0, player.holeCards);
-    
     // CRITICAL: Sync ALL player state from engine (engine is source of truth)
     // Do NOT call updatePlayerFromAction - it causes double subtraction!
     const engineState = this.engine.getState();
@@ -1183,8 +1165,7 @@ export class PokerTable {
       logger.info('Phase advancing with professional delay', {
         newPhase,
         delayMs: afterActionDelay + phaseDelay,
-        communityCardsCount: this.currentHand.communityCards.length,
-        isAllInRunout: result.isAllInRunout
+        communityCardsCount: this.currentHand.communityCards.length
       });
       
       // PROFESSIONAL: Collect bets with positions for animation
@@ -1207,70 +1188,41 @@ export class PokerTable {
         staggerDelay: this.timings.betCollection.staggerPerPlayer
       });
       
-      // POKERSTARS TIMING: Wait for chip collection animation to COMPLETE on client
+      // Delay for chip collection animation
       const collectionTime = calculateBetCollectionDelay(betPositions.length, this.timings);
       await this.delay(collectionTime);
       
-      // POKERSTARS TIMING: Additional pause AFTER bets collected, BEFORE dealing cards
-      // This creates the natural "settle" moment players expect
-      const postCollectPause = 400; // 400ms pause for bets to visually settle in pot
-      await this.delay(postCollectPause);
-      
       // Emit phase change with dealing delay for client animation
-      // IMPORTANT: Include handId for animation uniqueness
       this.emit('phase_change', {
-        handId: this.currentHand.id, // Unique hand identifier
         phase: newPhase,
         communityCards: this.currentHand.communityCards,
         pot: this.currentHand.pot,
-        dealDelay: this.timings.phases[newPhase]?.perCardDelay || 120,
-        preDealDelay: this.timings.phases[newPhase]?.preDealDelay || 300,
-        postDealDelay: this.timings.phases[newPhase]?.postDealDelay || 200,
-        isAllInRunout: result.isAllInRunout || false
+        dealDelay: this.timings.phases[newPhase]?.perCardDelay || 0,
+        preDealDelay: this.timings.phases[newPhase]?.preDealDelay || 0,
+        postDealDelay: this.timings.phases[newPhase]?.postDealDelay || 0
       });
       
-      // POKERSTARS TIMING: Wait for cards to be dealt visually before starting next action timer
+      // Wait for cards to be dealt visually before starting next action timer
       await this.delay(phaseDelay);
       
       // Now emit state update after cards are visually dealt
-      // POKERSTARS: Include handId for animation uniqueness
       this.emit('state_update', {
-        handId: this.currentHand.id,
         pot: this.currentHand.pot,
         currentBet: 0, // Bets reset after phase
         currentPlayerSeat: this.currentHand.currentPlayerSeat,
         phase: newPhase
       });
       
-      // PROFESSIONAL ALL-IN RUNOUT: Handle remaining phases with delays
-      if (result.isAllInRunout && this.currentHand) {
-        logger.info('=== ALL-IN RUNOUT: Dealing remaining cards with delays ===', {
-          currentPhase: newPhase
-        });
-        
-        await this.handleAllInRunout();
-        return { success: true, nextState: this.getPublicState() };
-      }
-      
+    } else {
       // Normal state update without phase change - minimal delay
       await this.delay(Math.min(afterActionDelay, 200));
       
-      // POKERSTARS: Include handId for animation uniqueness
       this.emit('state_update', {
-        handId: this.currentHand?.id,
         pot: this.currentHand?.pot || 0,
         currentBet: this.currentHand?.currentBet || 0,
         currentPlayerSeat: this.currentHand?.currentPlayerSeat,
         phase: this.currentHand?.phase || 'preflop'
       });
-      
-      // Check if engine has marked all-in runout (can happen when no one could act this round)
-      const engineState = this.engine.getState();
-      if (engineState?.isAllInRunout && this.currentHand) {
-        logger.info('=== ALL-IN RUNOUT detected (no phase advance): Dealing remaining cards ===');
-        await this.handleAllInRunout();
-        return { success: true, nextState: this.getPublicState() };
-      }
     }
     
     // Start timer for next player
@@ -1281,111 +1233,6 @@ export class PokerTable {
     return { success: true, nextState: this.getPublicState() };
   }
   
-  /**
-   * PROFESSIONAL: Handle all-in runout with delays between phases
-   * Deals remaining community cards one phase at a time with proper animations
-   */
-  private async handleAllInRunout(): Promise<void> {
-    if (!this.currentHand) return;
-    
-    const phaseOrder = ['preflop', 'flop', 'turn', 'river', 'showdown'] as const;
-    let currentPhaseIndex = phaseOrder.indexOf(this.currentHand.phase as typeof phaseOrder[number]);
-    
-    logger.info('All-in runout starting', {
-      currentPhase: this.currentHand.phase,
-      currentPhaseIndex,
-      communityCards: this.currentHand.communityCards.length
-    });
-    
-    // CRITICAL: Safety check - if already at showdown or invalid phase, just complete
-    if (currentPhaseIndex < 0 || currentPhaseIndex >= phaseOrder.length - 1) {
-      logger.info('All-in runout: already at or past showdown, completing hand');
-      const engineState = this.engine.getState();
-      if (engineState?.winners && engineState.winners.length > 0) {
-        await this.completeHand(engineState.winners);
-      } else {
-        // Force determine winners if not already done
-        const winners = (this.engine as any).determineWinners?.() || [];
-        if (winners.length > 0) {
-          await this.completeHand(winners);
-        }
-      }
-      return;
-    }
-    
-    // CRITICAL: Track iterations to prevent infinite loops
-    let iterations = 0;
-    const maxIterations = 5; // preflop -> flop -> turn -> river -> showdown = max 4 transitions
-    
-    // Deal remaining phases with delays
-    while (currentPhaseIndex < phaseOrder.length - 1 && iterations < maxIterations) {
-      iterations++;
-      
-      // Add delay between phases (like PokerStars all-in runout)
-      await this.delay(800); // 800ms pause between cards
-      
-      // Advance to next phase via engine
-      const advanceResult = this.engine.advanceToNextPhase();
-      
-      // CRITICAL: Safety check - ensure we actually advanced
-      const newPhase = advanceResult.phase as typeof phaseOrder[number];
-      const newPhaseIndex = phaseOrder.indexOf(newPhase);
-      
-      if (newPhaseIndex <= currentPhaseIndex && !advanceResult.isComplete) {
-        logger.error('All-in runout: phase did not advance! Breaking to prevent infinite loop', {
-          expectedNextPhase: phaseOrder[currentPhaseIndex + 1],
-          actualPhase: newPhase,
-          iteration: iterations
-        });
-        break;
-      }
-      
-      // Sync state from engine
-      this.currentHand.phase = this.mapPhase(advanceResult.phase);
-      this.currentHand.communityCards = advanceResult.communityCards;
-      currentPhaseIndex = newPhaseIndex;
-      
-      logger.info('All-in runout: dealt phase', {
-        phase: newPhase,
-        communityCards: advanceResult.communityCards.length,
-        iteration: iterations
-      });
-      
-      // Emit phase change for animation with handId for uniqueness
-      this.emit('phase_change', {
-        handId: this.currentHand.id, // Unique hand identifier
-        phase: newPhase,
-        communityCards: this.currentHand.communityCards,
-        pot: this.currentHand.pot,
-        isAllInRunout: true,
-        dealDelay: this.timings.phases[newPhase as 'flop' | 'turn' | 'river' | 'showdown']?.perCardDelay || 120,
-        preDealDelay: 200, // Shorter pre-delay for runout
-        postDealDelay: 100
-      });
-      
-      // POKERSTARS TIMING: Wait for card animation in all-in runout
-      await this.delay(calculatePhaseDelay(newPhase as 'flop' | 'turn' | 'river' | 'showdown', this.timings));
-      
-      // Check if we reached showdown
-      if (advanceResult.isComplete && advanceResult.winners) {
-        logger.info('All-in runout complete - showdown', {
-          winnersCount: advanceResult.winners.length
-        });
-        await this.completeHand(advanceResult.winners);
-        return;
-      }
-    }
-    
-    // Fallback: if loop exited without completing, force completion
-    if (this.currentHand) {
-      logger.warn('All-in runout ended without completion - forcing hand complete');
-      const engineState = this.engine.getState();
-      if (engineState?.winners && engineState.winners.length > 0) {
-        await this.completeHand(engineState.winners);
-      }
-    }
-  }
-
   /**
    * Update player after action - DEPRECATED
    * Engine state is now authoritative - do not use this method
@@ -1558,7 +1405,6 @@ export class PokerTable {
 
   /**
    * Start action timer
-   * POKERSTARS FIX: Update action_started_at in DB to prevent stuck table detection
    */
   private startActionTimer(): void {
     if (this.currentHand) {
@@ -1586,26 +1432,6 @@ export class PokerTable {
 
       this.actionTimer = setTimeout(() => this.startActionTimer(), 500);
       return;
-    }
-
-    // POKERSTARS FIX: Update DB action_started_at on EVERY turn change
-    // This prevents checkStuckTables() from incorrectly flagging active games
-    if (this.currentHand?.id) {
-      this.supabase
-        .from('poker_hands')
-        .update({
-          action_started_at: new Date().toISOString(),
-          current_player_seat: seat
-        })
-        .eq('id', this.currentHand.id)
-        .then(({ error }) => {
-          if (error) {
-            logger.warn('Failed to update action_started_at', { 
-              handId: this.currentHand?.id, 
-              error: error.message 
-            });
-          }
-        });
     }
 
     const isBot = this.isBotPlayer(player);
@@ -2060,10 +1886,6 @@ export class PokerTable {
         logger.warn('Failed to save hand at start (continuing anyway)', { error: String(dbErr) });
       }
       
-      // POKERSTARS: Reset action counter and save hand players
-      this.actionOrderCounter = 0;
-      await this.saveHandPlayers();
-      
       // Start action timer
       this.startActionTimer();
       
@@ -2109,17 +1931,6 @@ export class PokerTable {
    * CRITICAL: Ensures stacks never go negative and properly awards pot
    */
   private async completeHand(winners: { playerId: string; amount: number; handName: string }[]): Promise<void> {
-    // POKERSTARS FIX: Store actual winners for saveHandHistory
-    this.setLastHandWinners(winners);
-    
-    // POKERSTARS FIX: On showdown, NO player should have a turn - clear action state
-    // This prevents isMyTurn = true during showdown and stops stuck table detection
-    this.clearActionTimer();
-    if (this.currentHand) {
-      this.currentHand.currentPlayerSeat = null;
-      this.currentHand.phase = 'showdown';
-    }
-    
     logger.info('=== HAND COMPLETION START ===', {
       tableId: this.id,
       handNumber: this.handNumber,
@@ -2297,74 +2108,29 @@ export class PokerTable {
       }
     }
     
-    // POKERSTARS TDA: Sort showdown players - last aggressor reveals first
-    // If no aggressor, start from SB position clockwise
-    if (showdownPlayers.length > 1) {
-      const lastAggressorSeat = this.currentHand?.lastAggressor 
-        ? this.players.get(this.currentHand.lastAggressor)?.seatNumber 
-        : null;
-      
-      if (lastAggressorSeat !== null && lastAggressorSeat !== undefined) {
-        // Find last aggressor and move to front
-        const aggressorIndex = showdownPlayers.findIndex(sp => sp.seatNumber === lastAggressorSeat);
-        if (aggressorIndex > 0) {
-          const aggressor = showdownPlayers.splice(aggressorIndex, 1)[0];
-          showdownPlayers.unshift(aggressor);
-        }
-      } else {
-        // Sort by seat number starting from SB (closest to dealer)
-        const dealerSeat = this.currentHand?.dealerSeat ?? 0;
-        showdownPlayers.sort((a, b) => {
-          const aDist = (a.seatNumber - dealerSeat + 9) % 9;
-          const bDist = (b.seatNumber - dealerSeat + 9) % 9;
-          return aDist - bDist;
-        });
-      }
-    }
-    
     // PROFESSIONAL: Sequential showdown reveal with timing
     if (isShowdown && showdownPlayers.length > 0) {
-      // POKERSTARS: Include preDealDelay for client animation sync
-      const preDealDelay = 300; // ms pause before first card flip
-      const totalRevealTime = preDealDelay + showdownPlayers.length * this.timings.showdown.perPlayerReveal;
-      
-      // Emit showdown_start for each player sequentially with delay info
+      // Emit showdown_reveal for each player sequentially with delay info
       this.emit('showdown_start', {
-        handId: this.currentHand?.id,
         handNumber: this.handNumber,
         playerCount: showdownPlayers.length,
-        totalRevealTime,
-        preDealDelay, // POKERSTARS: Added for client animation
+        totalRevealTime: showdownPlayers.length * this.timings.showdown.perPlayerReveal,
         communityCards: this.currentHand?.communityCards
       });
-
+      
       // Emit each player reveal with staggered timing
       for (let i = 0; i < showdownPlayers.length; i++) {
         const sp = showdownPlayers[i];
-        
-        // POKERSTARS: Sort bestCards by rank (highest first) for display
-        const sortedBestCards = (sp.bestCards || []).slice().sort((a, b) => {
-          const rankOrder: Record<string, number> = {
-            'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
-            '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2
-          };
-          return (rankOrder[b[0]] || 0) - (rankOrder[a[0]] || 0);
-        });
-        
         this.emit('showdown_reveal', {
-          handId: this.currentHand?.id,
           playerId: sp.playerId,
           playerName: sp.name,
           seatNumber: sp.seatNumber,
           holeCards: sp.holeCards,
           handName: sp.handName,
-          bestCards: sortedBestCards,
+          bestCards: sp.bestCards,
           revealIndex: i,
           revealDelay: i * this.timings.showdown.perPlayerReveal,
-          isWinner: winners.some(w => w.playerId === sp.playerId),
-          // POKERSTARS: Include timing info for client animations
-          cardFlipDelay: 150, // ms between cards flipping
-          handNameDelay: 300  // ms after cards flip to show hand name
+          isWinner: winners.some(w => w.playerId === sp.playerId)
         });
       }
       
@@ -2390,23 +2156,19 @@ export class PokerTable {
     });
     
     // PROFESSIONAL: Winner announcement with pot slide animation
-    // POKERSTARS FIX: Use updated stack (after winner.amount was added in completeHand)
     const winnerAnnouncements = winners.map(w => {
       const player = this.players.get(w.playerId);
-      // Stack already includes the winnings (added at line ~2127)
-      const currentStack = player?.stack || 0;
       return {
         playerId: w.playerId,
         playerName: player?.name || 'Unknown',
         seatNumber: player?.seatNumber ?? 0,
         amount: w.amount,
         handName: w.handName,
-        newStack: currentStack // Already includes winnings
+        newStack: player?.stack || 0
       };
     });
     
     this.emit('winner_announcement', {
-      handId: this.currentHand?.id,
       handNumber: this.handNumber,
       winners: winnerAnnouncements,
       pot: this.currentHand?.pot,
@@ -2420,7 +2182,6 @@ export class PokerTable {
     await this.delay(this.timings.showdown.winnerHighlight);
     
     this.emit('hand_complete', {
-      handId: this.currentHand?.id,
       handNumber: this.handNumber,
       winners,
       showdown: isShowdown,
@@ -2475,9 +2236,7 @@ export class PokerTable {
     this.currentHand = null;
     
     // Emit state update to clear client displays
-    // POKERSTARS: handId is null when hand ends
     this.emit('state_update', {
-      handId: null,
       pot: 0,
       currentBet: 0,
       currentPlayerSeat: null,
@@ -2491,177 +2250,31 @@ export class PokerTable {
   
   /**
    * Save hand history to database
-   * FIXED: Now stores actual winners (with amount > 0) instead of all non-folded players
    */
-  private lastHandWinners: { playerId: string; amount: number; handName: string }[] = [];
-  
-  setLastHandWinners(winners: { playerId: string; amount: number; handName: string }[]): void {
-    this.lastHandWinners = winners;
-  }
-  
-  // POKERSTARS: Track action order for poker_actions table
-  private actionOrderCounter: number = 0;
-  
-  /**
-   * POKERSTARS: Record player action to poker_actions table
-   * Called after every successful action for complete hand history
-   */
-  private recordAction(
-    playerId: string, 
-    seatNumber: number, 
-    actionType: string, 
-    amount: number,
-    holeCards?: string[]
-  ): void {
-    if (!this.currentHand) return;
-    
-    this.actionOrderCounter++;
-    
-    // Fire and forget - don't block game flow
-    this.supabase
-      .from('poker_actions')
-      .insert({
-        hand_id: this.currentHand.id,
-        player_id: playerId,
-        seat_number: seatNumber,
-        phase: this.currentHand.phase,
-        action_type: actionType.toLowerCase(),
-        amount: amount > 0 ? amount : null,
-        action_order: this.actionOrderCounter,
-        hole_cards: holeCards && holeCards.length > 0 ? holeCards : null
-      })
-      .then(({ error }) => {
-        if (error) {
-          logger.warn('Failed to record action', { 
-            handId: this.currentHand?.id, 
-            playerId: playerId.substring(0, 8),
-            error: error.message 
-          });
-        }
-      });
-  }
-  
-  /**
-   * POKERSTARS: Save poker_hand_players at hand start
-   * Records each player's starting state for the hand
-   */
-  private async saveHandPlayers(): Promise<void> {
-    if (!this.currentHand) return;
-    
-    const handPlayers = Array.from(this.players.values())
-      .filter(p => p.status === 'active' && p.holeCards.length > 0)
-      .map(p => ({
-        hand_id: this.currentHand!.id,
-        player_id: p.id,
-        seat_number: p.seatNumber,
-        stack_start: p.stack + p.currentBet, // Stack before blinds
-        hole_cards: p.holeCards,
-        bet_amount: p.currentBet,
-        is_folded: false,
-        is_all_in: p.isAllIn
-      }));
-    
-    if (handPlayers.length === 0) return;
-    
-    const { error } = await this.supabase
-      .from('poker_hand_players')
-      .insert(handPlayers);
-    
-    if (error) {
-      logger.warn('Failed to save hand players', { 
-        handId: this.currentHand.id, 
-        error: error.message 
-      });
-    } else {
-      logger.info('Hand players saved', {
-        handId: this.currentHand.id,
-        playerCount: handPlayers.length
-      });
-    }
-  }
-  
-  /**
-   * POKERSTARS: Update poker_hand_players with final hand results
-   * Called at hand completion to record final state
-   */
-  private async updateHandPlayersResults(winners: Array<{ playerId: string; amount: number; handName?: string; handRank?: number; bestCards?: string[] }>): Promise<void> {
-    if (!this.currentHand) return;
-    
-    const updates: Promise<void>[] = [];
-    const winnerMap = new Map(winners.map(w => [w.playerId, w]));
-    const handId = this.currentHand.id;
-    
-    for (const player of this.players.values()) {
-      const winnerInfo = winnerMap.get(player.id);
-      const engineState = this.engine.getState();
-      const enginePlayer = engineState?.players.find(ep => ep.id === player.id);
-      
-      // Wrap PromiseLike in Promise.resolve to satisfy TypeScript
-      const updatePromise = (async () => {
-        const { error } = await this.supabase
-          .from('poker_hand_players')
-          .update({
-            stack_end: player.stack,
-            bet_amount: enginePlayer?.totalBetThisHand || 0,
-            is_folded: player.isFolded,
-            is_all_in: player.isAllIn,
-            won_amount: winnerInfo?.amount || null,
-            hand_rank: winnerInfo?.handName || null
-          })
-          .eq('hand_id', handId)
-          .eq('player_id', player.id);
-          
-        if (error) {
-          logger.warn('Failed to update hand player result', {
-            handId,
-            playerId: player.id.substring(0, 8),
-            error: error.message
-          });
-        }
-      })();
-      
-      updates.push(updatePromise);
-    }
-    
-    await Promise.all(updates);
-    logger.info('Hand player results updated', {
-      handId,
-      updatedCount: updates.length
-    });
-  }
   private async saveHandHistory(): Promise<void> {
     if (!this.currentHand) return;
     
     try {
+      // Get winners info from engine for saving to DB
       const engineState = this.engine.getState();
-      
-      // POKERSTARS FIX: Only include ACTUAL winners (those who won chips)
-      // Not all non-folded players
-      const actualWinners = this.lastHandWinners || [];
-      
-      // Build winners data with hand evaluations
-      const winnersForDb = actualWinners.map(w => {
-        const player = this.players.get(w.playerId);
-        const holeCards = player?.holeCards || [];
-        
-        // Evaluate hand for display
-        const handResult = engineState?.communityCards && 
-          engineState.communityCards.length >= 3 && 
-          holeCards.length >= 2
-          ? evaluateHand(holeCards, engineState.communityCards)
-          : null;
-        
-        return {
-          playerId: w.playerId,
-          name: player?.name || 'Unknown',
-          holeCards: holeCards,
-          stack: player?.stack || 0,
-          amount: w.amount,
-          handName: w.handName || handResult?.handName,
-          handRank: handResult?.handRank,
-          bestCards: handResult?.bestCards
-        };
-      });
+      const winnersForDb = engineState ? 
+        Array.from(this.players.values())
+          .filter(p => !p.isFolded)
+          .map(p => {
+            const handResult = engineState.communityCards && engineState.communityCards.length >= 5 && p.holeCards.length >= 2
+              ? evaluateHand(p.holeCards, engineState.communityCards)
+              : null;
+            return {
+              playerId: p.id,
+              name: p.name,
+              holeCards: p.holeCards,
+              stack: p.stack,
+              handName: handResult?.handName,
+              handRank: handResult?.handRank,
+              bestCards: handResult?.bestCards
+            };
+          })
+        : [];
       
       // Use upsert since hand was already created at start
       await this.supabase.from('poker_hands').upsert({
@@ -2677,10 +2290,11 @@ export class PokerTable {
         current_bet: this.currentHand.currentBet,
         current_player_seat: null, // Hand is complete
         completed_at: new Date().toISOString(),
-        winners: winnersForDb
+        winners: winnersForDb // Save winners data for debugging
       }, { onConflict: 'id' });
       
-      // Clear current_hand_id from poker_tables
+      // CRITICAL: Clear current_hand_id from poker_tables to allow consolidation
+      // This was the main bug blocking table balancing during breaks
       await this.supabase
         .from('poker_tables')
         .update({
@@ -2691,20 +2305,12 @@ export class PokerTable {
         })
         .eq('id', this.id);
       
-      logger.info('Hand history saved with actual winners', {
+      logger.info('Hand history saved and current_hand_id cleared', {
         tableId: this.id,
-        handId: this.currentHand.id,
-        winnersCount: winnersForDb.length,
-        winners: winnersForDb.map(w => ({ id: w.playerId.substring(0, 8), amount: w.amount, hand: w.handName }))
+        handId: this.currentHand.id
       });
       
-      // Clear lastHandWinners for next hand
-      this.lastHandWinners = [];
-      
-      // POKERSTARS: Update poker_hand_players with final results
-      await this.updateHandPlayersResults(winnersForDb);
-      
-      // Sync all player stacks to database after each hand
+      // CRITICAL: Sync all player stacks to database after each hand
       await this.syncPlayerStacksToDatabase();
     } catch (err) {
       logger.error('Failed to save hand history', { error: String(err) });
@@ -2916,18 +2522,15 @@ export class PokerTable {
         stack: p.stack,
         status: p.status,
         betAmount: p.currentBet,
-        // POKERSTARS: Remove duplicate currentBet field
+        currentBet: p.currentBet,
         isFolded: p.isFolded,
         isAllIn: p.isAllIn,
         isActive: p.status === 'active',
         isSittingOut: p.status === 'sitting_out',
         missedTurns: p.missedTurns || 0,
-        // POKERSTARS: Ensure timeBank is never negative
-        timeBankRemaining: Math.max(0, p.timeBank || 0),
         // CRITICAL: hasCards should ONLY be true when in active hand
         hasCards: isInActiveHand && !p.isFolded,
-        // POKERSTARS SECURITY: holeCards NEVER sent in public state
-        holeCards: []
+        holeCards: [] // Hidden for public state
       };
     });
 
@@ -3031,19 +2634,14 @@ export class PokerTable {
       return p;
     });
     
-    // POKERSTARS FIX: isMyTurn should be FALSE during showdown (no actions possible)
-    const isShowdownPhase = this.currentHand?.phase === 'showdown';
-    const isMyTurn = !isShowdownPhase && this.currentHand?.currentPlayerSeat === player.seatNumber;
-    
     return {
       ...publicState,
       players,
       myCards: player.holeCards,
       mySeat: player.seatNumber,
       myStack: player.stack,
-      // POKERSTARS FIX: Ensure timeBank is never negative
-      myTimeBank: Math.max(0, player.timeBank || 0),
-      isMyTurn
+      myTimeBank: player.timeBank,
+      isMyTurn: this.currentHand?.currentPlayerSeat === player.seatNumber
     };
   }
   
@@ -3322,7 +2920,7 @@ export class PokerTable {
         this.completeHand([{
           playerId: winner.id,
           amount: this.currentHand.pot,
-          handName: 'Last standing'
+          handRank: 'Last standing'
         }]);
       } else if (activePlayers.length === 0) {
         // No active players - just reset
@@ -3337,7 +2935,7 @@ export class PokerTable {
         this.completeHand([{
           playerId: activePlayers[0].id,
           amount: this.currentHand.pot,
-          handName: 'Recovery win'
+          handRank: 'Recovery win'
         }]);
       }
     } else {

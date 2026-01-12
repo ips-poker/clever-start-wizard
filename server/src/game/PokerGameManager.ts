@@ -20,7 +20,6 @@ export interface TableConfig {
   maxBuyIn: number;
   actionTimeSeconds: number;
   timeBankSeconds: number;
-  tournamentId?: string; // For tournament/sitgo tables
 }
 
 export class PokerGameManager {
