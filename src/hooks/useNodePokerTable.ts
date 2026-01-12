@@ -1752,20 +1752,26 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             const revealData = data as Record<string, unknown>;
             log('🃏 Showdown reveal:', revealData);
             
-            setShowdownReveals(prev => [
-              ...prev,
-              {
-                playerId: revealData.playerId as string,
-                playerName: revealData.playerName as string || 'Unknown',
-                seatNumber: revealData.seatNumber as number,
-                holeCards: revealData.holeCards as string[],
-                handName: revealData.handName as string | undefined,
-                bestCards: revealData.bestCards as string[] | undefined,
-                revealIndex: revealData.revealIndex as number || prev.length,
-                revealDelay: revealData.revealDelay as number || 0,
-                isWinner: revealData.isWinner as boolean || false
-              }
-            ]);
+            // Only add if holeCards are present
+            const holeCards = revealData.holeCards as string[] | undefined;
+            if (holeCards && holeCards.length > 0) {
+              setShowdownReveals(prev => [
+                ...prev,
+                {
+                  playerId: revealData.playerId as string,
+                  playerName: revealData.playerName as string || 'Unknown',
+                  seatNumber: revealData.seatNumber as number,
+                  holeCards: holeCards,
+                  handName: revealData.handName as string | undefined,
+                  bestCards: revealData.bestCards as string[] | undefined,
+                  revealIndex: revealData.revealIndex as number || prev.length,
+                  revealDelay: revealData.revealDelay as number || 0,
+                  isWinner: revealData.isWinner as boolean || false
+                }
+              ]);
+            } else {
+              log('⚠️ Showdown reveal missing holeCards, skipping:', revealData.playerId);
+            }
             
             // Update player's hole cards in table state
             setTableState(prev => {

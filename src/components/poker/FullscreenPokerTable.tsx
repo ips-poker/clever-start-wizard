@@ -1724,17 +1724,19 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       {/* Professional Showdown with combinations display */}
       {showdownReveals && showdownReveals.length > 0 && phase === 'showdown' && (
         <ProfessionalShowdown
-          players={showdownReveals.map(r => ({
-            playerId: r.playerId,
-            name: r.playerName,
-            seatNumber: r.seatNumber,
-            holeCards: r.holeCards,
-            handName: r.handName,
-            bestCards: r.bestCards,
-            isWinner: r.isWinner,
-            wonAmount: winnerAnnouncement?.winners.find(w => w.playerId === r.playerId)?.amount
-          }))}
-          communityCards={communityCards}
+          players={showdownReveals
+            .filter(r => r.holeCards && r.holeCards.length > 0)
+            .map(r => ({
+              playerId: r.playerId,
+              name: r.playerName,
+              seatNumber: r.seatNumber,
+              holeCards: r.holeCards || [],
+              handName: r.handName,
+              bestCards: r.bestCards,
+              isWinner: r.isWinner,
+              wonAmount: winnerAnnouncement?.winners.find(w => w.playerId === r.playerId)?.amount
+            }))}
+          communityCards={communityCards || []}
           pot={pot}
           revealDelay={500}
         />
