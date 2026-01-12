@@ -741,8 +741,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             }
           }
           
-          if (data.state && tableId) {
-            const stateData = data.state as Record<string, unknown>;
+          // CRITICAL FIX: Handle phase_change with or without full player data
+          {
+            const stateData = (data.state || data) as Record<string, unknown>;
+            const hasPlayers = Array.isArray(stateData.players) && stateData.players.length > 0;
             
             // Log all state keys and values for debugging
             log(`📊 Full state dump:`, JSON.stringify(stateData).substring(0, 800));
@@ -755,10 +757,51 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               mySeat: stateData.mySeat,
               isMyTurn: stateData.isMyTurn,
               pot: stateData.pot,
-              hasConfig: !!stateData.config
+              hasConfig: !!stateData.config,
+              hasPlayers
             });
             
-            setTableState(transformServerState(data.state, tableId));
+            if (tableId) {
+              setTableState((prev) => {
+                // If no previous state, we need full players data
+                if (!prev) {
+                  if (!hasPlayers) return prev;
+                  return transformServerState(stateData, tableId);
+                }
+                
+                // CRITICAL: If phase_change doesn't include players, merge with existing
+                if (!hasPlayers) {
+                  const partialUpdate: Partial<TableState> = {};
+                  
+                  if (stateData.pot !== undefined) partialUpdate.pot = Number(stateData.pot);
+                  if (stateData.currentBet !== undefined) partialUpdate.currentBet = Number(stateData.currentBet);
+                  if (stateData.currentPlayerSeat !== undefined) {
+                    partialUpdate.currentPlayerSeat = stateData.currentPlayerSeat as number | null;
+                  }
+                  if (stateData.phase) {
+                    const rawPhase = String(stateData.phase).toLowerCase().trim().replace(/[\s-]+/g, '_');
+                    if (['waiting', 'preflop', 'flop', 'turn', 'river', 'showdown'].includes(rawPhase)) {
+                      partialUpdate.phase = rawPhase as TableState['phase'];
+                    }
+                  }
+                  if (stateData.communityCards && Array.isArray(stateData.communityCards)) {
+                    partialUpdate.communityCards = stateData.communityCards as string[];
+                  }
+                  
+                  // Reset player bets on phase change (bets collected to pot)
+                  const updatedPlayers = prev.players.map(p => ({
+                    ...p,
+                    betAmount: 0 // Bets reset after phase change
+                  }));
+                  
+                  log('📡 Merging partial phase_change:', partialUpdate);
+                  return { ...prev, ...partialUpdate, players: updatedPlayers };
+                }
+                
+                // Full state update with players
+                return transformServerState(stateData, tableId);
+              });
+            }
             
             // Extract myCards from state - server sends at root level
             if (stateData.myCards) {
@@ -863,19 +906,55 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           break;
 
         case 'state_update':
-          // State update after action - contains latest bets and player states
+          // State update after action - contains partial or full state
+          // CRITICAL: Must merge with existing state, not replace (server may send partial updates)
           log('📊 State update received:', data);
           {
-            // The server broadcasts with full state attached
             const stateData = (data.state || data.data || data) as Record<string, unknown>;
-            if (tableId && (stateData.players || stateData.phase)) {
-              const incomingState = transformServerState(stateData, tableId);
-              const keepShowdown = tableStateRef.current?.phase === 'showdown';
-
+            const hasPlayers = Array.isArray(stateData.players) && stateData.players.length > 0;
+            const hasPhase = typeof stateData.phase === 'string';
+            
+            if (tableId && (hasPlayers || hasPhase)) {
               setTableState((prev) => {
-                if (!prev) return keepShowdown ? { ...incomingState, phase: 'showdown' } : incomingState;
+                if (!prev) {
+                  // No previous state - need full state, skip partial updates
+                  if (!hasPlayers) return prev;
+                  return transformServerState(stateData, tableId);
+                }
+                
+                const keepShowdown = prev.phase === 'showdown';
+                
+                // CRITICAL FIX: If no players in update, preserve existing players
+                // Server sends partial updates with just pot/currentBet/currentPlayerSeat/phase
+                if (!hasPlayers) {
+                  // Merge partial update with existing state
+                  const partialUpdate: Partial<TableState> = {};
+                  
+                  if (stateData.pot !== undefined) partialUpdate.pot = Number(stateData.pot);
+                  if (stateData.currentBet !== undefined) partialUpdate.currentBet = Number(stateData.currentBet);
+                  if (stateData.currentPlayerSeat !== undefined) {
+                    partialUpdate.currentPlayerSeat = stateData.currentPlayerSeat as number | null;
+                  }
+                  if (hasPhase && !keepShowdown) {
+                    const rawPhase = String(stateData.phase).toLowerCase().trim().replace(/[\s-]+/g, '_');
+                    if (['waiting', 'preflop', 'flop', 'turn', 'river', 'showdown'].includes(rawPhase)) {
+                      partialUpdate.phase = rawPhase as TableState['phase'];
+                    }
+                  }
+                  if (stateData.communityCards && Array.isArray(stateData.communityCards)) {
+                    partialUpdate.communityCards = stateData.communityCards as string[];
+                  }
+                  
+                  log('📊 Merging partial state_update:', partialUpdate);
+                  return { ...prev, ...partialUpdate };
+                }
+                
+                // Full state update with players
+                const incomingState = transformServerState(stateData, tableId);
+                
                 if (!keepShowdown) return incomingState;
 
+                // During showdown, preserve card data
                 const prevById = new Map(prev.players.map((p) => [p.playerId, p] as const));
 
                 return {
