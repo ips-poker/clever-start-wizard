@@ -2605,10 +2605,12 @@ export class PokerEngineV3 {
       if (nextPhase !== 'showdown') {
         this.state.currentPlayerSeat = this.findFirstPostFlopActor();
         
-        // If no one can act (everyone all-in), advance to showdown
+        // CRITICAL FIX: If no one can act (everyone all-in), mark as runout
+        // Do NOT recursively call advancePhase() - let PokerTable handle with delays!
         if (this.state.currentPlayerSeat === null) {
-          console.log('[Engine] No players can act, advancing to showdown');
-          this.advancePhase();
+          console.log('[Engine] No players can act after phase change - marking for runout');
+          this.state.isAllInRunout = true;
+          // Do NOT call advancePhase() here - causes instant card dealing without delays!
         }
       }
     }
