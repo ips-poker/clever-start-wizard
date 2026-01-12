@@ -2550,16 +2550,18 @@ export class PokerTable {
   private async updateHandPlayersResults(winners: Array<{ playerId: string; amount: number; handName?: string; handRank?: number; bestCards?: string[] }>): Promise<void> {
     if (!this.currentHand) return;
     
-    const updates: Promise<any>[] = [];
+    const updates: Promise<void>[] = [];
     const winnerMap = new Map(winners.map(w => [w.playerId, w]));
+    const handId = this.currentHand.id;
     
     for (const player of this.players.values()) {
       const winnerInfo = winnerMap.get(player.id);
       const engineState = this.engine.getState();
       const enginePlayer = engineState?.players.find(ep => ep.id === player.id);
       
-      updates.push(
-        this.supabase
+      // Wrap PromiseLike in Promise.resolve to satisfy TypeScript
+      const updatePromise = (async () => {
+        const { error } = await this.supabase
           .from('poker_hand_players')
           .update({
             stack_end: player.stack,
@@ -2569,23 +2571,24 @@ export class PokerTable {
             won_amount: winnerInfo?.amount || null,
             hand_rank: winnerInfo?.handName || null
           })
-          .eq('hand_id', this.currentHand!.id)
-          .eq('player_id', player.id)
-          .then(({ error }) => {
-            if (error) {
-              logger.warn('Failed to update hand player result', {
-                handId: this.currentHand?.id,
-                playerId: player.id.substring(0, 8),
-                error: error.message
-              });
-            }
-          })
-      );
+          .eq('hand_id', handId)
+          .eq('player_id', player.id);
+          
+        if (error) {
+          logger.warn('Failed to update hand player result', {
+            handId,
+            playerId: player.id.substring(0, 8),
+            error: error.message
+          });
+        }
+      })();
+      
+      updates.push(updatePromise);
     }
     
     await Promise.all(updates);
     logger.info('Hand player results updated', {
-      handId: this.currentHand.id,
+      handId,
       updatedCount: updates.length
     });
   }
