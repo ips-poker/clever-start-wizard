@@ -2923,10 +2923,11 @@ export class PokerTable {
       if (activePlayers.length === 1) {
         // Award pot to last remaining player
         const winner = activePlayers[0];
-        this.completeHand([{
+        // CRITICAL FIX: Use handName instead of handRank
+        void this.completeHand([{
           playerId: winner.id,
           amount: this.currentHand.pot,
-          handRank: 'Last standing'
+          handName: 'Last Standing'
         }]);
       } else if (activePlayers.length === 0) {
         // No active players - just reset
@@ -2938,10 +2939,11 @@ export class PokerTable {
         for (let i = 1; i < activePlayers.length; i++) {
           activePlayers[i].isFolded = true;
         }
-        this.completeHand([{
+        // CRITICAL FIX: Use handName instead of handRank
+        void this.completeHand([{
           playerId: activePlayers[0].id,
           amount: this.currentHand.pot,
-          handRank: 'Recovery win'
+          handName: 'Recovery Win'
         }]);
       }
     } else {

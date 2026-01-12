@@ -756,6 +756,19 @@ export function makeBotDecision(
   botName: string = 'Bot',
   bigBlindSeat: number = -1 // Actual BB seat from hand
 ): BotDecision {
+  // CRITICAL: Validate hole cards exist
+  if (!holeCards || holeCards.length < 2) {
+    logger.warn('Bot decision called with invalid hole cards - defaulting to check/fold', {
+      botName,
+      holeCardsLength: holeCards?.length || 0
+    });
+    // If we can check, check. Otherwise fold.
+    const callAmount = Math.max(0, currentBet - myBet);
+    return callAmount === 0 
+      ? { action: 'check', reasoning: 'No cards - safe check', confidence: 100 }
+      : { action: 'fold', reasoning: 'No cards - must fold', confidence: 100 };
+  }
+  
   const callAmount = Math.max(0, currentBet - myBet);
   const canCheck = callAmount === 0;
   const potOdds = calculatePotOdds(callAmount, pot);
