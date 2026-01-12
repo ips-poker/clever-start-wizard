@@ -1558,6 +1558,7 @@ export class PokerTable {
 
   /**
    * Start action timer
+   * POKERSTARS FIX: Update action_started_at in DB to prevent stuck table detection
    */
   private startActionTimer(): void {
     if (this.currentHand) {
@@ -1585,6 +1586,26 @@ export class PokerTable {
 
       this.actionTimer = setTimeout(() => this.startActionTimer(), 500);
       return;
+    }
+
+    // POKERSTARS FIX: Update DB action_started_at on EVERY turn change
+    // This prevents checkStuckTables() from incorrectly flagging active games
+    if (this.currentHand?.id) {
+      this.supabase
+        .from('poker_hands')
+        .update({
+          action_started_at: new Date().toISOString(),
+          current_player_seat: seat
+        })
+        .eq('id', this.currentHand.id)
+        .then(({ error }) => {
+          if (error) {
+            logger.warn('Failed to update action_started_at', { 
+              handId: this.currentHand?.id, 
+              error: error.message 
+            });
+          }
+        });
     }
 
     const isBot = this.isBotPlayer(player);
@@ -2090,6 +2111,14 @@ export class PokerTable {
   private async completeHand(winners: { playerId: string; amount: number; handName: string }[]): Promise<void> {
     // POKERSTARS FIX: Store actual winners for saveHandHistory
     this.setLastHandWinners(winners);
+    
+    // POKERSTARS FIX: On showdown, NO player should have a turn - clear action state
+    // This prevents isMyTurn = true during showdown and stops stuck table detection
+    this.clearActionTimer();
+    if (this.currentHand) {
+      this.currentHand.currentPlayerSeat = null;
+      this.currentHand.phase = 'showdown';
+    }
     
     logger.info('=== HAND COMPLETION START ===', {
       tableId: this.id,
