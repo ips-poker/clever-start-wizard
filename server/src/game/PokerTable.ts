@@ -1199,10 +1199,15 @@ export class PokerTable {
       await this.delay(collectionTime);
       
       // Emit phase change with dealing delay for client animation
+      // CRITICAL FIX: Include full state with players to prevent client state loss
+      const phaseChangeState = this.getPublicState() as Record<string, unknown>;
       this.emit('phase_change', {
+        ...phaseChangeState,
         phase: newPhase,
         communityCards: this.currentHand.communityCards,
         pot: this.currentHand.pot,
+        currentBet: 0, // Bets reset after phase
+        currentPlayerSeat: this.currentHand.currentPlayerSeat,
         dealDelay: this.timings.phases[newPhase]?.perCardDelay || 0,
         preDealDelay: this.timings.phases[newPhase]?.preDealDelay || 0,
         postDealDelay: this.timings.phases[newPhase]?.postDealDelay || 0
@@ -1212,7 +1217,10 @@ export class PokerTable {
       await this.delay(phaseDelay);
       
       // Now emit state update after cards are visually dealt
+      // CRITICAL FIX: Include full state with players
+      const stateUpdateData = this.getPublicState() as Record<string, unknown>;
       this.emit('state_update', {
+        ...stateUpdateData,
         pot: this.currentHand.pot,
         currentBet: 0, // Bets reset after phase
         currentPlayerSeat: this.currentHand.currentPlayerSeat,
@@ -1223,7 +1231,10 @@ export class PokerTable {
       // Normal state update without phase change - minimal delay
       await this.delay(Math.min(afterActionDelay, 200));
       
+      // CRITICAL FIX: Include full state with players
+      const stateUpdateData = this.getPublicState() as Record<string, unknown>;
       this.emit('state_update', {
+        ...stateUpdateData,
         pot: this.currentHand?.pot || 0,
         currentBet: this.currentHand?.currentBet || 0,
         currentPlayerSeat: this.currentHand?.currentPlayerSeat,
@@ -2242,7 +2253,10 @@ export class PokerTable {
     this.currentHand = null;
     
     // Emit state update to clear client displays
+    // CRITICAL FIX: Include full state with players
+    const clearStateData = this.getPublicState() as Record<string, unknown>;
     this.emit('state_update', {
+      ...clearStateData,
       pot: 0,
       currentBet: 0,
       currentPlayerSeat: null,
