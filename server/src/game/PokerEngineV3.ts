@@ -2535,13 +2535,15 @@ export class PokerEngineV3 {
         p.hasActedThisRound = false;
       }
       
-      // Check if we need to run to showdown (all but one all-in)
+      // Check if we need to run to showdown (everyone is all-in)
       const activePlayers = this.state.players.filter(p => !p.isFolded);
       const playersWhoCanAct = activePlayers.filter(p => !p.isAllIn && p.stack > 0);
       
-      if (playersWhoCanAct.length <= 1 && activePlayers.length > 1) {
+      // CRITICAL FIX: Only run to showdown if NO ONE can act (all are all-in)
+      // Previously was <= 1 which incorrectly skipped betting when one player could still act
+      if (playersWhoCanAct.length === 0 && activePlayers.length > 1) {
         // All-in runout scenario - deal remaining cards automatically
-        console.log('[Engine] All-in detected, running to showdown');
+        console.log('[Engine] All-in detected (all players all-in), running to showdown');
         if (nextPhase !== 'showdown') {
           // Continue to next phase automatically
           this.advancePhase();
