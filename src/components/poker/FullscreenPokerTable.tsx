@@ -1457,6 +1457,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   
   // Win distribution animation state
   const [winDistribution, setWinDistribution] = useState<{ winnerSeat: number; amount: number } | null>(null);
+  const lastWinAnimationKeyRef = useRef<string | null>(null);
   
   // Когда heroSeat ещё неизвестен (зритель/до посадки), мы НЕ применяем preferredSeatRotation.
   // Калибровка в админке задаёт «реальные» координаты мест (seatNumber -> (x,y)).
@@ -1489,24 +1490,35 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   }, [betsBeingCollected, heroSeat, maxPlayers, positions]);
 
   // Trigger win distribution animation when winners change
+  // IMPORTANT: guard against repeated triggers during showdown caused by frequent players/stack updates.
   useEffect(() => {
-    if (winners && winners.length > 0 && phase === 'showdown') {
-      const winner = winners[0];
-      // Find winner's seat
-      const winnerPlayer = players.find((p) => p.playerId === winner.playerId);
-      if (winnerPlayer) {
-        // Calculate visual position
-        let visualPos = 0;
-        if (heroSeat !== null) {
-          visualPos = (winnerPlayer.seatNumber - heroSeat + maxPlayers) % maxPlayers;
-        } else {
-          visualPos = (winnerPlayer.seatNumber + spectatorRotationOffset) % maxPlayers;
-        }
-        setWinDistribution({ winnerSeat: visualPos, amount: winner.amount });
-      }
-    } else {
+    if (!(winners && winners.length > 0 && phase === 'showdown')) {
+      lastWinAnimationKeyRef.current = null;
       setWinDistribution(null);
+      return;
     }
+
+    // Multi-winner safe key (split pots)
+    const winKey = winners.map(w => `${w.playerId}:${w.amount}`).join('|');
+
+    // Find winner's seat (based on the first winner for positioning)
+    const winner = winners[0];
+    const winnerPlayer = players.find((p) => p.playerId === winner.playerId);
+    if (!winnerPlayer) return;
+
+    // Only trigger once per unique winners payload in a showdown phase
+    if (lastWinAnimationKeyRef.current === winKey) return;
+
+    // Calculate visual position
+    let visualPos = 0;
+    if (heroSeat !== null) {
+      visualPos = (winnerPlayer.seatNumber - heroSeat + maxPlayers) % maxPlayers;
+    } else {
+      visualPos = (winnerPlayer.seatNumber + spectatorRotationOffset) % maxPlayers;
+    }
+
+    lastWinAnimationKeyRef.current = winKey;
+    setWinDistribution({ winnerSeat: visualPos, amount: winner.amount });
   }, [winners, phase, players, heroSeat, maxPlayers]);
 
   // Detect phase change and trigger collection animation
@@ -1741,7 +1753,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
             }))}
           communityCards={communityCards || []}
           pot={pot}
-          revealDelay={500}
+          revealDelay={300}
         />
       )}
       
