@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Trophy, Crown } from 'lucide-react';
 import { MemoizedPokerCard } from './MemoizedPokerCard';
+import { translateHandRank } from '@/utils/handRankTranslations';
 
 interface ShowdownPlayer {
   playerId: string;
@@ -164,7 +165,7 @@ const ShowdownPlayerRow = memo(function ShowdownPlayerRow({
             animate={{ opacity: 1 }}
             className="text-xs text-gray-400 mt-0.5"
           >
-            {player.handName}
+            {translateHandRank(player.handName)}
           </motion.p>
         )}
       </div>

@@ -1421,12 +1421,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             });
           }
 
-          // Try to re-request state after showdown so server can send revealed holeCards (some servers only reveal after explicit state fetch)
-          if (isShowdown && tableId && playerId) {
-            setTimeout(() => {
-              sendMessage({ type: 'get_state', tableId, playerId });
-            }, 250);
-          }
+          // NOTE: Removed get_state re-request after showdown - it caused duplicate state updates
+          // and repeated animations. Cards should already be revealed in hand_complete event.
 
           // If server also provides a final state snapshot, apply it (but keep showdown phase when relevant)
           if (data.state && tableId) {

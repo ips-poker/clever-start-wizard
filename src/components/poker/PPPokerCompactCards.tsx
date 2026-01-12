@@ -5,6 +5,7 @@ import React, { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
+import { translateHandRank } from '@/utils/handRankTranslations';
 
 interface PPPokerCompactCardsProps {
   cards?: string[];
@@ -525,7 +526,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
           })}
         </div>
         
-        {/* Hand name badge at showdown */}
+        {/* Hand name badge at showdown - ALWAYS in Russian */}
         {isShowdown && handName && (
           <div
             className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap z-30"
@@ -537,7 +538,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                 textShadow: '0 1px 4px rgba(0,0,0,0.8)'
               }}
             >
-              {handName}
+              {translateHandRank(handName)}
             </span>
           </div>
         )}

@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useHandHistory, HandHistoryRecord, HandActionRecord } from '@/hooks/useHandHistory';
 import { HandReplayer, HandReplay, ReplayAction, ReplayPlayer } from './HandReplayer';
+import { translateHandRank } from '@/utils/handRankTranslations';
 
 interface FullHandHistoryProps {
   tableId?: string;
@@ -378,7 +379,7 @@ export function FullHandHistory({ tableId, playerId, className, onReplayHand }: 
                               {winner.playerName || 'Игрок'}
                             </span>
                             {winner.handName && (
-                              <Badge variant="secondary">{winner.handName}</Badge>
+                              <Badge variant="secondary">{translateHandRank(winner.handName)}</Badge>
                             )}
                           </div>
                           <span className="text-green-500 font-bold">+{winner.amount}</span>
@@ -480,7 +481,7 @@ export function FullHandHistory({ tableId, playerId, className, onReplayHand }: 
                                 </div>
                                 {player.handRank && (
                                   <Badge variant="secondary" className="ml-1 text-xs">
-                                    {player.handRank}
+                                    {translateHandRank(player.handRank)}
                                   </Badge>
                                 )}
                               </div>
