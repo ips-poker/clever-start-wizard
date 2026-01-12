@@ -1204,25 +1204,35 @@ export class PokerTable {
         staggerDelay: this.timings.betCollection.staggerPerPlayer
       });
       
-      // Delay for chip collection animation
+      // POKERSTARS TIMING: Wait for chip collection animation to COMPLETE on client
       const collectionTime = calculateBetCollectionDelay(betPositions.length, this.timings);
       await this.delay(collectionTime);
       
+      // POKERSTARS TIMING: Additional pause AFTER bets collected, BEFORE dealing cards
+      // This creates the natural "settle" moment players expect
+      const postCollectPause = 400; // 400ms pause for bets to visually settle in pot
+      await this.delay(postCollectPause);
+      
       // Emit phase change with dealing delay for client animation
+      // IMPORTANT: Include handId for animation uniqueness
       this.emit('phase_change', {
+        handId: this.currentHand.id, // Unique hand identifier
         phase: newPhase,
         communityCards: this.currentHand.communityCards,
         pot: this.currentHand.pot,
-        dealDelay: this.timings.phases[newPhase]?.perCardDelay || 0,
-        preDealDelay: this.timings.phases[newPhase]?.preDealDelay || 0,
-        postDealDelay: this.timings.phases[newPhase]?.postDealDelay || 0
+        dealDelay: this.timings.phases[newPhase]?.perCardDelay || 120,
+        preDealDelay: this.timings.phases[newPhase]?.preDealDelay || 300,
+        postDealDelay: this.timings.phases[newPhase]?.postDealDelay || 200,
+        isAllInRunout: result.isAllInRunout || false
       });
       
-      // Wait for cards to be dealt visually before starting next action timer
+      // POKERSTARS TIMING: Wait for cards to be dealt visually before starting next action timer
       await this.delay(phaseDelay);
       
       // Now emit state update after cards are visually dealt
+      // POKERSTARS: Include handId for animation uniqueness
       this.emit('state_update', {
+        handId: this.currentHand.id,
         pot: this.currentHand.pot,
         currentBet: 0, // Bets reset after phase
         currentPlayerSeat: this.currentHand.currentPlayerSeat,
@@ -1239,11 +1249,12 @@ export class PokerTable {
         return { success: true, nextState: this.getPublicState() };
       }
       
-    } else {
       // Normal state update without phase change - minimal delay
       await this.delay(Math.min(afterActionDelay, 200));
       
+      // POKERSTARS: Include handId for animation uniqueness
       this.emit('state_update', {
+        handId: this.currentHand?.id,
         pot: this.currentHand?.pot || 0,
         currentBet: this.currentHand?.currentBet || 0,
         currentPlayerSeat: this.currentHand?.currentPlayerSeat,
@@ -1337,18 +1348,19 @@ export class PokerTable {
         iteration: iterations
       });
       
-      // Emit phase change for animation
+      // Emit phase change for animation with handId for uniqueness
       this.emit('phase_change', {
+        handId: this.currentHand.id, // Unique hand identifier
         phase: newPhase,
         communityCards: this.currentHand.communityCards,
         pot: this.currentHand.pot,
         isAllInRunout: true,
-        dealDelay: this.timings.phases[newPhase as 'flop' | 'turn' | 'river' | 'showdown']?.perCardDelay || 80,
-        preDealDelay: 100,
+        dealDelay: this.timings.phases[newPhase as 'flop' | 'turn' | 'river' | 'showdown']?.perCardDelay || 120,
+        preDealDelay: 200, // Shorter pre-delay for runout
         postDealDelay: 100
       });
       
-      // Wait for card animation
+      // POKERSTARS TIMING: Wait for card animation in all-in runout
       await this.delay(calculatePhaseDelay(newPhase as 'flop' | 'turn' | 'river' | 'showdown', this.timings));
       
       // Check if we reached showdown
@@ -2377,7 +2389,9 @@ export class PokerTable {
     this.currentHand = null;
     
     // Emit state update to clear client displays
+    // POKERSTARS: handId is null when hand ends
     this.emit('state_update', {
+      handId: null,
       pot: 0,
       currentBet: 0,
       currentPlayerSeat: null,
@@ -2683,15 +2697,18 @@ export class PokerTable {
         stack: p.stack,
         status: p.status,
         betAmount: p.currentBet,
-        currentBet: p.currentBet,
+        // POKERSTARS: Remove duplicate currentBet field
         isFolded: p.isFolded,
         isAllIn: p.isAllIn,
         isActive: p.status === 'active',
         isSittingOut: p.status === 'sitting_out',
         missedTurns: p.missedTurns || 0,
+        // POKERSTARS: Ensure timeBank is never negative
+        timeBankRemaining: Math.max(0, p.timeBank || 0),
         // CRITICAL: hasCards should ONLY be true when in active hand
         hasCards: isInActiveHand && !p.isFolded,
-        holeCards: [] // Hidden for public state
+        // POKERSTARS SECURITY: holeCards NEVER sent in public state
+        holeCards: []
       };
     });
 
@@ -2801,7 +2818,8 @@ export class PokerTable {
       myCards: player.holeCards,
       mySeat: player.seatNumber,
       myStack: player.stack,
-      myTimeBank: player.timeBank,
+      // POKERSTARS FIX: Ensure timeBank is never negative
+      myTimeBank: Math.max(0, player.timeBank || 0),
       isMyTurn: this.currentHand?.currentPlayerSeat === player.seatNumber
     };
   }
