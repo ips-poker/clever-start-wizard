@@ -1180,7 +1180,8 @@ export class PokerTable {
       logger.info('Phase advancing with professional delay', {
         newPhase,
         delayMs: afterActionDelay + phaseDelay,
-        communityCardsCount: this.currentHand.communityCards.length
+        communityCardsCount: this.currentHand.communityCards.length,
+        isAllInRunout: result.isAllInRunout
       });
       
       // PROFESSIONAL: Collect bets with positions for animation
@@ -1228,6 +1229,16 @@ export class PokerTable {
         phase: newPhase
       });
       
+      // PROFESSIONAL ALL-IN RUNOUT: Handle remaining phases with delays
+      if (result.isAllInRunout && this.currentHand) {
+        logger.info('=== ALL-IN RUNOUT: Dealing remaining cards with delays ===', {
+          currentPhase: newPhase
+        });
+        
+        await this.handleAllInRunout();
+        return { success: true, nextState: this.getPublicState() };
+      }
+      
     } else {
       // Normal state update without phase change - minimal delay
       await this.delay(Math.min(afterActionDelay, 200));
@@ -1238,6 +1249,14 @@ export class PokerTable {
         currentPlayerSeat: this.currentHand?.currentPlayerSeat,
         phase: this.currentHand?.phase || 'preflop'
       });
+      
+      // Check if engine has marked all-in runout (can happen when no one could act this round)
+      const engineState = this.engine.getState();
+      if (engineState?.isAllInRunout && this.currentHand) {
+        logger.info('=== ALL-IN RUNOUT detected (no phase advance): Dealing remaining cards ===');
+        await this.handleAllInRunout();
+        return { success: true, nextState: this.getPublicState() };
+      }
     }
     
     // Start timer for next player
@@ -1248,6 +1267,66 @@ export class PokerTable {
     return { success: true, nextState: this.getPublicState() };
   }
   
+  /**
+   * PROFESSIONAL: Handle all-in runout with delays between phases
+   * Deals remaining community cards one phase at a time with proper animations
+   */
+  private async handleAllInRunout(): Promise<void> {
+    if (!this.currentHand) return;
+    
+    const phaseOrder = ['flop', 'turn', 'river', 'showdown'] as const;
+    let currentPhaseIndex = phaseOrder.indexOf(this.currentHand.phase as typeof phaseOrder[number]);
+    
+    logger.info('All-in runout starting', {
+      currentPhase: this.currentHand.phase,
+      currentPhaseIndex
+    });
+    
+    // Deal remaining phases with delays
+    while (currentPhaseIndex < phaseOrder.length - 1) { // -1 because showdown is handled separately
+      // Add delay between phases (like PokerStars all-in runout)
+      await this.delay(800); // 800ms pause between cards
+      
+      // Advance to next phase via engine
+      const advanceResult = this.engine.advanceToNextPhase();
+      
+      // Sync state from engine
+      this.currentHand.phase = this.mapPhase(advanceResult.phase);
+      this.currentHand.communityCards = advanceResult.communityCards;
+      
+      const newPhase = advanceResult.phase as 'flop' | 'turn' | 'river' | 'showdown';
+      currentPhaseIndex = phaseOrder.indexOf(newPhase);
+      
+      logger.info('All-in runout: dealt phase', {
+        phase: newPhase,
+        communityCards: advanceResult.communityCards.length
+      });
+      
+      // Emit phase change for animation
+      this.emit('phase_change', {
+        phase: newPhase,
+        communityCards: this.currentHand.communityCards,
+        pot: this.currentHand.pot,
+        isAllInRunout: true,
+        dealDelay: this.timings.phases[newPhase]?.perCardDelay || 80,
+        preDealDelay: 100,
+        postDealDelay: 100
+      });
+      
+      // Wait for card animation
+      await this.delay(calculatePhaseDelay(newPhase, this.timings));
+      
+      // Check if we reached showdown
+      if (advanceResult.isComplete && advanceResult.winners) {
+        logger.info('All-in runout complete - showdown', {
+          winnersCount: advanceResult.winners.length
+        });
+        await this.completeHand(advanceResult.winners);
+        return;
+      }
+    }
+  }
+
   /**
    * Update player after action - DEPRECATED
    * Engine state is now authoritative - do not use this method
