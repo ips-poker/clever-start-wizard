@@ -1274,32 +1274,67 @@ export class PokerTable {
   private async handleAllInRunout(): Promise<void> {
     if (!this.currentHand) return;
     
-    const phaseOrder = ['flop', 'turn', 'river', 'showdown'] as const;
+    const phaseOrder = ['preflop', 'flop', 'turn', 'river', 'showdown'] as const;
     let currentPhaseIndex = phaseOrder.indexOf(this.currentHand.phase as typeof phaseOrder[number]);
     
     logger.info('All-in runout starting', {
       currentPhase: this.currentHand.phase,
-      currentPhaseIndex
+      currentPhaseIndex,
+      communityCards: this.currentHand.communityCards.length
     });
     
+    // CRITICAL: Safety check - if already at showdown or invalid phase, just complete
+    if (currentPhaseIndex < 0 || currentPhaseIndex >= phaseOrder.length - 1) {
+      logger.info('All-in runout: already at or past showdown, completing hand');
+      const engineState = this.engine.getState();
+      if (engineState?.winners && engineState.winners.length > 0) {
+        await this.completeHand(engineState.winners);
+      } else {
+        // Force determine winners if not already done
+        const winners = (this.engine as any).determineWinners?.() || [];
+        if (winners.length > 0) {
+          await this.completeHand(winners);
+        }
+      }
+      return;
+    }
+    
+    // CRITICAL: Track iterations to prevent infinite loops
+    let iterations = 0;
+    const maxIterations = 5; // preflop -> flop -> turn -> river -> showdown = max 4 transitions
+    
     // Deal remaining phases with delays
-    while (currentPhaseIndex < phaseOrder.length - 1) { // -1 because showdown is handled separately
+    while (currentPhaseIndex < phaseOrder.length - 1 && iterations < maxIterations) {
+      iterations++;
+      
       // Add delay between phases (like PokerStars all-in runout)
       await this.delay(800); // 800ms pause between cards
       
       // Advance to next phase via engine
       const advanceResult = this.engine.advanceToNextPhase();
       
+      // CRITICAL: Safety check - ensure we actually advanced
+      const newPhase = advanceResult.phase as typeof phaseOrder[number];
+      const newPhaseIndex = phaseOrder.indexOf(newPhase);
+      
+      if (newPhaseIndex <= currentPhaseIndex && !advanceResult.isComplete) {
+        logger.error('All-in runout: phase did not advance! Breaking to prevent infinite loop', {
+          expectedNextPhase: phaseOrder[currentPhaseIndex + 1],
+          actualPhase: newPhase,
+          iteration: iterations
+        });
+        break;
+      }
+      
       // Sync state from engine
       this.currentHand.phase = this.mapPhase(advanceResult.phase);
       this.currentHand.communityCards = advanceResult.communityCards;
-      
-      const newPhase = advanceResult.phase as 'flop' | 'turn' | 'river' | 'showdown';
-      currentPhaseIndex = phaseOrder.indexOf(newPhase);
+      currentPhaseIndex = newPhaseIndex;
       
       logger.info('All-in runout: dealt phase', {
         phase: newPhase,
-        communityCards: advanceResult.communityCards.length
+        communityCards: advanceResult.communityCards.length,
+        iteration: iterations
       });
       
       // Emit phase change for animation
@@ -1308,13 +1343,13 @@ export class PokerTable {
         communityCards: this.currentHand.communityCards,
         pot: this.currentHand.pot,
         isAllInRunout: true,
-        dealDelay: this.timings.phases[newPhase]?.perCardDelay || 80,
+        dealDelay: this.timings.phases[newPhase as 'flop' | 'turn' | 'river' | 'showdown']?.perCardDelay || 80,
         preDealDelay: 100,
         postDealDelay: 100
       });
       
       // Wait for card animation
-      await this.delay(calculatePhaseDelay(newPhase, this.timings));
+      await this.delay(calculatePhaseDelay(newPhase as 'flop' | 'turn' | 'river' | 'showdown', this.timings));
       
       // Check if we reached showdown
       if (advanceResult.isComplete && advanceResult.winners) {
@@ -1323,6 +1358,15 @@ export class PokerTable {
         });
         await this.completeHand(advanceResult.winners);
         return;
+      }
+    }
+    
+    // Fallback: if loop exited without completing, force completion
+    if (this.currentHand) {
+      logger.warn('All-in runout ended without completion - forcing hand complete');
+      const engineState = this.engine.getState();
+      if (engineState?.winners && engineState.winners.length > 0) {
+        await this.completeHand(engineState.winners);
       }
     }
   }
