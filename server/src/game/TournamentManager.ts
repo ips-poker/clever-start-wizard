@@ -439,7 +439,11 @@ export function calculateTableBalancing(
       if (!forcedMove) break;
     }
     
-    const player = playerToMove!;
+    const playerInfo = playerToMove!;
+    // Find full player data from source table to get chips
+    const fullPlayer = sourceTable.players.find(p => p.playerId === playerInfo.playerId);
+    if (!fullPlayer) break; // Should not happen
+    
     const toSeat = findBestSeat(targetTable);
     
     if (toSeat === null) break; // No available seats
@@ -447,17 +451,17 @@ export function calculateTableBalancing(
     moves.push({
       fromTable: sourceTable.tableId,
       toTable: targetTable.tableId,
-      playerId: player.playerId,
-      fromSeat: player.seatNumber,
+      playerId: playerInfo.playerId,
+      fromSeat: playerInfo.seatNumber,
       toSeat,
       reason: 'balance'
     });
     
     // Update state
     sourceTable.playerCount--;
-    sourceTable.players = sourceTable.players.filter(p => p.playerId !== player.playerId);
+    sourceTable.players = sourceTable.players.filter(p => p.playerId !== playerInfo.playerId);
     targetTable.playerCount++;
-    targetTable.players.push({ ...player, seatNumber: toSeat });
+    targetTable.players.push({ ...fullPlayer, seatNumber: toSeat });
   }
   
   return moves;
