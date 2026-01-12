@@ -2295,15 +2295,20 @@ export class PokerTable {
     
     // PROFESSIONAL: Sequential showdown reveal with timing
     if (isShowdown && showdownPlayers.length > 0) {
+      // POKERSTARS: Include preDealDelay for client animation sync
+      const preDealDelay = 300; // ms pause before first card flip
+      const totalRevealTime = preDealDelay + showdownPlayers.length * this.timings.showdown.perPlayerReveal;
+      
       // Emit showdown_start for each player sequentially with delay info
       this.emit('showdown_start', {
         handId: this.currentHand?.id,
         handNumber: this.handNumber,
         playerCount: showdownPlayers.length,
-        totalRevealTime: showdownPlayers.length * this.timings.showdown.perPlayerReveal,
+        totalRevealTime,
+        preDealDelay, // POKERSTARS: Added for client animation
         communityCards: this.currentHand?.communityCards
       });
-      
+
       // Emit each player reveal with staggered timing
       for (let i = 0; i < showdownPlayers.length; i++) {
         const sp = showdownPlayers[i];
@@ -2356,15 +2361,18 @@ export class PokerTable {
     });
     
     // PROFESSIONAL: Winner announcement with pot slide animation
+    // POKERSTARS FIX: Use updated stack (after winner.amount was added in completeHand)
     const winnerAnnouncements = winners.map(w => {
       const player = this.players.get(w.playerId);
+      // Stack already includes the winnings (added at line ~2127)
+      const currentStack = player?.stack || 0;
       return {
         playerId: w.playerId,
         playerName: player?.name || 'Unknown',
         seatNumber: player?.seatNumber ?? 0,
         amount: w.amount,
         handName: w.handName,
-        newStack: player?.stack || 0
+        newStack: currentStack // Already includes winnings
       };
     });
     
@@ -2994,6 +3002,10 @@ export class PokerTable {
       return p;
     });
     
+    // POKERSTARS FIX: isMyTurn should be FALSE during showdown (no actions possible)
+    const isShowdownPhase = this.currentHand?.phase === 'showdown';
+    const isMyTurn = !isShowdownPhase && this.currentHand?.currentPlayerSeat === player.seatNumber;
+    
     return {
       ...publicState,
       players,
@@ -3002,7 +3014,7 @@ export class PokerTable {
       myStack: player.stack,
       // POKERSTARS FIX: Ensure timeBank is never negative
       myTimeBank: Math.max(0, player.timeBank || 0),
-      isMyTurn: this.currentHand?.currentPlayerSeat === player.seatNumber
+      isMyTurn
     };
   }
   

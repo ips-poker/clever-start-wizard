@@ -2227,23 +2227,45 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   }, [tableState, playerId]);
 
   // Calculate call amount - how much more we need to put in to match current bet
+  // POKERSTARS: Throttle logging to avoid console spam
+  const lastCallAmountLogRef = useRef<{ currentBet: number; myBetAmount: number; timestamp: number } | null>(null);
+  
   const callAmount = useMemo(() => {
     if (!tableState || !myPlayer) return 0;
     const amountToCall = tableState.currentBet - myPlayer.betAmount;
-    console.log('[NodePoker] callAmount calculation:', {
-      currentBet: tableState.currentBet,
-      myBetAmount: myPlayer.betAmount,
-      callAmount: Math.max(0, amountToCall)
-    });
-    return Math.max(0, amountToCall);
+    const result = Math.max(0, amountToCall);
+    
+    // Only log if values changed or more than 2 seconds passed
+    const now = Date.now();
+    const lastLog = lastCallAmountLogRef.current;
+    if (!lastLog || 
+        lastLog.currentBet !== tableState.currentBet || 
+        lastLog.myBetAmount !== myPlayer.betAmount ||
+        now - lastLog.timestamp > 2000) {
+      log('callAmount calculation:', {
+        currentBet: tableState.currentBet,
+        myBetAmount: myPlayer.betAmount,
+        callAmount: result
+      });
+      lastCallAmountLogRef.current = { 
+        currentBet: tableState.currentBet, 
+        myBetAmount: myPlayer.betAmount, 
+        timestamp: now 
+      };
+    }
+    
+    return result;
   }, [tableState, myPlayer]);
 
   // Can check? Only if we've already matched the current bet
   const canCheck = useMemo(() => {
     const result = callAmount === 0;
-    console.log('[NodePoker] canCheck:', result, 'callAmount:', callAmount);
+    // Only log when value is meaningful (avoid spam)
+    if (DEBUG && tableState?.phase && tableState.phase !== 'waiting') {
+      log('canCheck:', result, 'callAmount:', callAmount);
+    }
     return result;
-  }, [callAmount]);
+  }, [callAmount, tableState?.phase]);
 
   // Effect: Connect on mount
   useEffect(() => {
