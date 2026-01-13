@@ -365,8 +365,9 @@ export class PokerGameManager {
    */
   private async checkStuckTables(): Promise<void> {
     try {
-      // POKERSTARS: 3 minutes threshold (action_time + time_bank + buffer)
-      const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
+      // POKERSTARS V2: INCREASED to 5 minutes (action_time + time_bank + reconnect_window + buffer)
+      // This prevents false positives during legitimate long thinks + time bank usage
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const now = Date.now();
 
       // 1) Get currently active tables with their current_hand_id
@@ -397,7 +398,7 @@ export class PokerGameManager {
         .from('poker_hands')
         .select('id, table_id, action_started_at, phase')
         .in('id', currentHandIds)
-        .lt('action_started_at', threeMinutesAgo)
+        .lt('action_started_at', fiveMinutesAgo)
         .is('completed_at', null)
         .neq('phase', 'showdown'); // CRITICAL: Don't touch showdown hands
 
