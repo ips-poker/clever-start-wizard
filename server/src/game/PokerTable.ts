@@ -1036,6 +1036,18 @@ export class PokerTable {
       return { success: false, error: 'No active hand' };
     }
 
+    // POKERSTARS-STYLE: Triple validation - isComplete, showdown phase, and null currentPlayerSeat
+    // This prevents ANY actions during hand completion sequence
+    if (this.currentHand.isComplete) {
+      logger.warn('Action rejected - hand is already complete', {
+        tableId: this.id,
+        playerId: playerId.substring(0, 8),
+        actionType,
+        phase: this.currentHand.phase
+      });
+      return { success: false, error: 'Hand is complete' };
+    }
+
     // CRITICAL: Do not accept any actions during showdown.
     // Prevents duplicate/late actions when the client is behind or when recovery triggers.
     if (this.currentHand.phase === 'showdown') {
@@ -1045,6 +1057,17 @@ export class PokerTable {
         actionType
       });
       return { success: false, error: 'Hand is complete' };
+    }
+    
+    // POKERSTARS: If no current player seat, betting round is transitioning
+    if (this.currentHand.currentPlayerSeat === null) {
+      logger.warn('Action rejected - no current player (phase transition)', {
+        tableId: this.id,
+        playerId: playerId.substring(0, 8),
+        actionType,
+        phase: this.currentHand.phase
+      });
+      return { success: false, error: 'Please wait for your turn' };
     }
 
     // Validation 2: Check player exists
