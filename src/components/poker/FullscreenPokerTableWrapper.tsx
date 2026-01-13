@@ -861,7 +861,7 @@ export function FullscreenPokerTableWrapper({
         )}
 
         {/* Action buttons - Professional Panel (hidden for spectators) */}
-        {myPlayer && !isSpectator && (
+        {myPlayer && !isSpectator && tableState?.currentPlayerSeat !== null && !(showdownResult && showdownResult.winners.length > 0) && (
           <ProActionPanel
             isMyTurn={isMyTurn}
             canCheck={canCheck}
