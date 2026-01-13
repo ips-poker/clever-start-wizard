@@ -2401,6 +2401,86 @@ export class PokerEngineV3 {
   }
   
   /**
+   * POKERSTARS-STYLE: Run out the board when all remaining players are all-in
+   * Deals remaining community cards and determines winners
+   * Returns ActionResult with winners if successful
+   */
+  runOutBoard(): ActionResult {
+    if (!this.state) {
+      return { success: false, error: 'No active game' };
+    }
+    
+    if (this.state.isComplete) {
+      return { success: false, error: 'Hand already complete' };
+    }
+    
+    const remainingPlayers = this.state.players.filter(p => !p.isFolded);
+    
+    // If only one player remains, they win
+    if (remainingPlayers.length === 1) {
+      const winner = remainingPlayers[0];
+      const winAmount = this.state.pot;
+      winner.stack += winAmount;
+      
+      this.state.isComplete = true;
+      this.state.phase = 'showdown';
+      
+      return {
+        success: true,
+        handComplete: true,
+        winners: [{
+          playerId: winner.id,
+          amount: winAmount,
+          handName: 'Last Standing'
+        }]
+      };
+    }
+    
+    // Deal remaining community cards
+    while (this.state.communityCards.length < 5 && this.deck) {
+      const card = this.deck.deal(1)[0];
+      if (card) {
+        this.state.communityCards.push(card.id);
+      }
+    }
+    
+    // Move to showdown
+    this.state.phase = 'showdown';
+    this.state.currentPlayerSeat = null;
+    
+    // Collect any remaining bets
+    for (const p of this.state.players) {
+      if (p.betAmount > 0) {
+        // Already tracked in totalBetThisHand
+        p.betAmount = 0;
+      }
+    }
+    this.state.currentBet = 0;
+    
+    // Calculate side pots and winners
+    const winners = this.calculateShowdown();
+    
+    // Award pots to winners
+    for (const winner of winners) {
+      const player = this.state.players.find(p => p.id === winner.playerId);
+      if (player) {
+        player.stack += winner.amount;
+      }
+    }
+    
+    this.state.isComplete = true;
+    
+    return {
+      success: true,
+      handComplete: true,
+      winners,
+      phase: 'showdown',
+      communityCards: this.state.communityCards,
+      pot: 0 // Pot distributed
+    };
+  }
+  
+  /**
    * PROFESSIONAL: Validate game state integrity
    * Returns list of issues found (empty = valid)
    */

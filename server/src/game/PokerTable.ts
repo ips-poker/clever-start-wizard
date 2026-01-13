@@ -3101,14 +3101,39 @@ export class PokerTable {
    * Force recovery for stuck table
    * Called by PokerGameManager when table is detected as stuck
    * 
-   * CRITICAL: Do NOT trigger recovery during showdown phase - hand is completing
+   * POKERSTARS-STYLE PROFESSIONAL RECOVERY:
+   * 1. Skip recovery during showdown/complete hands
+   * 2. Validate action_started_at is truly stale (not just slow time bank usage)
+   * 3. Verify current player actually exists and should act
+   * 4. Idempotency: track last recovery action to prevent duplicates
+   * 5. Never force-fold multiple players - that destroys game integrity
    */
+  private lastRecoveryHandId: string | null = null;
+  private lastRecoveryTimestamp: number = 0;
+  private readonly RECOVERY_DEBOUNCE_MS = 5000; // 5 second debounce
+  
   forceRecovery(): void {
+    const now = Date.now();
+    
+    // IDEMPOTENCY: Prevent duplicate recovery within 5 seconds for same hand
+    if (
+      this.currentHand?.id === this.lastRecoveryHandId &&
+      now - this.lastRecoveryTimestamp < this.RECOVERY_DEBOUNCE_MS
+    ) {
+      logger.info('Skipping recovery - debounce active for this hand', {
+        tableId: this.id,
+        handId: this.currentHand?.id,
+        msSinceLastRecovery: now - this.lastRecoveryTimestamp
+      });
+      return;
+    }
+    
     logger.warn('Force recovery initiated for stuck table', {
       tableId: this.id,
       hasCurrentHand: !!this.currentHand,
       currentPlayerSeat: this.currentHand?.currentPlayerSeat,
-      phase: this.currentHand?.phase
+      phase: this.currentHand?.phase,
+      isComplete: this.currentHand?.isComplete
     });
     
     // CRITICAL: Skip recovery if hand is in showdown phase - it's completing naturally
@@ -3120,50 +3145,250 @@ export class PokerTable {
       return;
     }
     
-    // Clear any existing timer
-    this.clearActionTimer();
-    
-    if (this.currentHand && this.currentHand.currentPlayerSeat !== null) {
-      // Force timeout for current player
-      this.handleTimeout();
-    } else if (this.currentHand) {
-      // Hand exists but no current player - complete the hand
-      logger.warn('Force completing stuck hand (no current player)', { 
-        tableId: this.id, 
+    // CRITICAL: Skip if hand is already marked complete
+    if (this.currentHand?.isComplete) {
+      logger.info('Skipping force recovery - hand is already complete', { 
+        tableId: this.id,
         handId: this.currentHand.id 
       });
+      return;
+    }
+    
+    // VALIDATION: Check if action_started_at is truly stale
+    // If player is using time bank, action might legitimately take longer
+    if (this.currentHand?.actionStartTime) {
+      const actionAgeMs = now - this.currentHand.actionStartTime;
+      const maxAllowedMs = (this.config.actionTimeSeconds + this.config.timeBankSeconds + 30) * 1000;
       
-      // Find any remaining active players
+      if (actionAgeMs < maxAllowedMs) {
+        logger.info('Skipping recovery - action time within allowed range (including time bank)', {
+          tableId: this.id,
+          actionAgeMs,
+          maxAllowedMs,
+          actionTimeSeconds: this.config.actionTimeSeconds,
+          timeBankSeconds: this.config.timeBankSeconds
+        });
+        return;
+      }
+    }
+    
+    // Track this recovery attempt
+    this.lastRecoveryHandId = this.currentHand?.id || null;
+    this.lastRecoveryTimestamp = now;
+    
+    // Clear any existing timers
+    this.clearActionTimer();
+    this.clearTimeBankTimer();
+    this.isTimeBankPhase = false;
+    
+    if (this.currentHand && this.currentHand.currentPlayerSeat !== null) {
+      // VALIDATION: Verify current player exists and can act
+      const currentPlayerId = this.seats[this.currentHand.currentPlayerSeat];
+      const currentPlayer = currentPlayerId ? this.players.get(currentPlayerId) : null;
+      
+      if (!currentPlayer) {
+        logger.warn('Recovery: current player not found - finding next valid player', {
+          tableId: this.id,
+          seat: this.currentHand.currentPlayerSeat
+        });
+        
+        // Try to find next valid player instead of forcing timeout on ghost
+        const nextSeat = this.findNextActivePlayer(this.currentHand.currentPlayerSeat);
+        if (nextSeat !== null && nextSeat !== this.currentHand.currentPlayerSeat) {
+          this.currentHand.currentPlayerSeat = nextSeat;
+          this.startActionTimer();
+          return;
+        }
+      }
+      
+      if (currentPlayer?.isFolded || currentPlayer?.isAllIn) {
+        logger.warn('Recovery: current player already folded/all-in - advancing', {
+          tableId: this.id,
+          playerId: currentPlayerId?.substring(0, 8),
+          isFolded: currentPlayer?.isFolded,
+          isAllIn: currentPlayer?.isAllIn
+        });
+        
+        // Find next player
+        const nextSeat = this.findNextActivePlayer(this.currentHand.currentPlayerSeat);
+        if (nextSeat !== null) {
+          this.currentHand.currentPlayerSeat = nextSeat;
+          this.startActionTimer();
+        } else {
+          // No more players to act - check if betting round is complete
+          this.checkBettingRoundComplete();
+        }
+        return;
+      }
+      
+      // Force timeout for current player - this is legitimate stuck situation
+      logger.warn('Recovery: forcing timeout for stuck player', {
+        tableId: this.id,
+        playerId: currentPlayerId?.substring(0, 8),
+        seat: this.currentHand.currentPlayerSeat
+      });
+      this.handleTimeout();
+      
+    } else if (this.currentHand) {
+      // Hand exists but no current player - determine correct action
+      logger.warn('Recovery: hand exists but no current player', { 
+        tableId: this.id, 
+        handId: this.currentHand.id,
+        phase: this.currentHand.phase
+      });
+      
+      // Check if all players are all-in or folded
       const activePlayers = Array.from(this.players.values())
-        .filter(p => !p.isFolded && p.stack > 0);
+        .filter(p => !p.isFolded && p.stack > 0 && !p.isAllIn);
       
-      if (activePlayers.length === 1) {
-        // Award pot to last remaining player
-        const winner = activePlayers[0];
+      const allInPlayers = Array.from(this.players.values())
+        .filter(p => !p.isFolded && p.isAllIn);
+      
+      const remainingPlayers = Array.from(this.players.values())
+        .filter(p => !p.isFolded);
+      
+      if (remainingPlayers.length === 1) {
+        // Only one player remains - award pot
+        const winner = remainingPlayers[0];
+        logger.info('Recovery: awarding pot to last remaining player', {
+          tableId: this.id,
+          winnerId: winner.id.substring(0, 8)
+        });
         void this.completeHand([{
           playerId: winner.id,
           amount: this.currentHand.pot,
           handName: 'Last Standing'
         }]);
-      } else if (activePlayers.length === 0) {
-        // No active players - just reset
-        this.currentHand = null;
-        this.checkStartHand();
+        
+      } else if (activePlayers.length === 0 && allInPlayers.length >= 1) {
+        // All remaining players are all-in - run out the board
+        logger.info('Recovery: all players all-in, running out board', {
+          tableId: this.id,
+          allInCount: allInPlayers.length
+        });
+        this.runOutBoard();
+        
+      } else if (activePlayers.length > 0) {
+        // Find next active player and continue
+        const firstActive = activePlayers[0];
+        const seat = firstActive.seatNumber;
+        logger.info('Recovery: resuming with first active player', {
+          tableId: this.id,
+          playerId: firstActive.id.substring(0, 8),
+          seat
+        });
+        this.currentHand.currentPlayerSeat = seat;
+        this.startActionTimer();
+        
       } else {
-        // Multiple players but stuck - force fold everyone except first
-        logger.warn('Force folding to recover stuck hand', { tableId: this.id });
-        for (let i = 1; i < activePlayers.length; i++) {
-          activePlayers[i].isFolded = true;
-        }
-        void this.completeHand([{
-          playerId: activePlayers[0].id,
-          amount: this.currentHand.pot,
-          handName: 'Recovery Win'
-        }]);
+        // Edge case: no active players, no all-in - abort hand
+        logger.error('Recovery: no valid players found - aborting hand', {
+          tableId: this.id,
+          handId: this.currentHand.id
+        });
+        this.abortHand('no_valid_players');
       }
+      
     } else {
       // No current hand - try to start one
+      logger.info('Recovery: no current hand - checking if new hand can start', {
+        tableId: this.id
+      });
       this.checkStartHand();
     }
+  }
+  
+  /**
+   * Find next active player who can act
+   */
+  private findNextActivePlayer(fromSeat: number): number | null {
+    const maxPlayers = this.config.maxPlayers;
+    
+    for (let i = 1; i <= maxPlayers; i++) {
+      const nextSeat = (fromSeat + i) % maxPlayers;
+      const playerId = this.seats[nextSeat];
+      if (!playerId) continue;
+      
+      const player = this.players.get(playerId);
+      if (player && !player.isFolded && !player.isAllIn && player.stack > 0) {
+        return nextSeat;
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Check if betting round is complete and advance phase
+   */
+  private checkBettingRoundComplete(): void {
+    if (!this.currentHand) return;
+    
+    const activePlayers = Array.from(this.players.values())
+      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0);
+    
+    // If no active players can act, phase should advance
+    if (activePlayers.length === 0) {
+      logger.info('Betting round complete - all players all-in or folded', {
+        tableId: this.id
+      });
+      this.runOutBoard();
+    }
+  }
+  
+  /**
+   * Run out the board when all players are all-in
+   */
+  private runOutBoard(): void {
+    if (!this.currentHand) return;
+    
+    // Let the engine handle the runout
+    const result = this.engine.runOutBoard();
+    if (result.success && result.winners) {
+      void this.completeHand(result.winners);
+    }
+  }
+  
+  /**
+   * Abort hand due to unrecoverable error
+   */
+  private async abortHand(reason: string): Promise<void> {
+    if (!this.currentHand) return;
+    
+    const handId = this.currentHand.id;
+    logger.error('Aborting hand', { tableId: this.id, handId, reason });
+    
+    // Return bets to players
+    for (const player of this.players.values()) {
+      if (player.currentBet > 0) {
+        player.stack += player.currentBet;
+        player.currentBet = 0;
+      }
+    }
+    
+    // Mark hand as aborted in database
+    await this.supabase
+      .from('poker_hands')
+      .update({
+        completed_at: new Date().toISOString(),
+        phase: 'aborted',
+        winners: [{ reason }]
+      })
+      .eq('id', handId);
+    
+    // Clear table state
+    await this.supabase
+      .from('poker_tables')
+      .update({
+        current_hand_id: null,
+        status: 'waiting'
+      })
+      .eq('id', this.id);
+    
+    this.currentHand = null;
+    this.emit('hand_aborted', { handId, reason });
+    
+    // Try to start new hand
+    setTimeout(() => this.checkStartHand(), 2000);
   }
 }
