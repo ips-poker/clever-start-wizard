@@ -89,8 +89,8 @@ export class PokerGameManager {
           ante: tableData.ante || 0,
           minBuyIn: tableData.min_buy_in,
           maxBuyIn: tableData.max_buy_in,
-          actionTimeSeconds: tableData.action_time_seconds || 30,
-          timeBankSeconds: tableData.time_bank_seconds || 60
+          actionTimeSeconds: tableData.action_time_seconds || 15,
+          timeBankSeconds: tableData.time_bank_seconds || 15
         };
         
         const table = new PokerTable(config, this.supabase);
@@ -277,8 +277,8 @@ export class PokerGameManager {
         ante: tableData.ante || 0,
         minBuyIn: tableData.min_buy_in,
         maxBuyIn: tableData.max_buy_in,
-        actionTimeSeconds: tableData.action_time_seconds || 30,
-        timeBankSeconds: tableData.time_bank_seconds || 60
+        actionTimeSeconds: tableData.action_time_seconds || 15,
+        timeBankSeconds: tableData.time_bank_seconds || 15
       };
       
       const table = new PokerTable(config, this.supabase);

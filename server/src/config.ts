@@ -20,9 +20,10 @@ export const config = {
     .split(',')
     .map(origin => origin.trim()),
   
-  // Game settings
-  defaultActionTimeSeconds: parseInt(process.env.ACTION_TIME_SECONDS || '30', 10),
-  defaultTimeBankSeconds: parseInt(process.env.TIME_BANK_SECONDS || '60', 10),
+  // Game settings - PokerStars standard timings
+  // Main action timer: 15 seconds, Time bank: 15 seconds
+  defaultActionTimeSeconds: parseInt(process.env.ACTION_TIME_SECONDS || '15', 10),
+  defaultTimeBankSeconds: parseInt(process.env.TIME_BANK_SECONDS || '15', 10),
   maxPlayersPerTable: parseInt(process.env.MAX_PLAYERS_PER_TABLE || '9', 10),
   
   // Security
