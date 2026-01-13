@@ -478,6 +478,7 @@ export function calculateSidePots(contributions: PlayerContribution[]): PotResul
   const activeBettors = contributions.filter(c => c.totalBet > 0);
   if (activeBettors.length === 0) return empty;
 
+  // POKERSTARS-STYLE: Collect all unique bet levels (all-in amounts)
   const allInLevels = new Set<number>();
   for (const c of activeBettors) {
     if (c.isAllIn && c.totalBet > 0) allInLevels.add(c.totalBet);
@@ -498,6 +499,8 @@ export function calculateSidePots(contributions: PlayerContribution[]): PotResul
     for (const c of activeBettors) {
       if (c.totalBet > previousLevel) {
         potAmount += Math.min(c.totalBet - previousLevel, increment);
+        // POKERSTARS FIX: Player is eligible if they contributed AT LEAST up to this level
+        // AND they haven't folded. Don't require exact match.
         if (!c.isFolded && c.totalBet >= level && !eligiblePlayers.includes(c.playerId)) {
           eligiblePlayers.push(c.playerId);
         }
@@ -508,6 +511,18 @@ export function calculateSidePots(contributions: PlayerContribution[]): PotResul
       pots.push({ amount: potAmount, eligiblePlayers, cappedAt: level });
     }
     previousLevel = level;
+  }
+
+  // POKERSTARS FIX: Ensure at least one pot exists with eligible players
+  // If all players folded except one, that player wins
+  if (pots.length === 0 && activeBettors.length > 0) {
+    const totalPot = activeBettors.reduce((sum, c) => sum + c.totalBet, 0);
+    const nonFolded = activeBettors.filter(c => !c.isFolded);
+    return {
+      mainPot: { amount: totalPot, eligiblePlayers: nonFolded.map(c => c.playerId), cappedAt: totalPot },
+      sidePots: [],
+      totalPot
+    };
   }
 
   const [mainPot, ...sidePots] = pots;
@@ -2762,25 +2777,38 @@ export class PokerEngineV3 {
         this.state.currentPlayerSeat = playersWhoCanAct[0].seatNumber;
       }
       
-      // CRITICAL FIX: Remove dangerous recursive call!
-      // If no players can act AND trueAllInRunout didn't trigger, 
-      // this means we have an edge case - log it but do NOT recurse
+      // CRITICAL FIX: If no players can act AND trueAllInRunout didn't trigger,
+      // this is an edge case where all remaining players have stack=0 but not marked all-in.
+      // Mark them and recurse ONCE to complete the hand.
       if (this.state.currentPlayerSeat === null && playersWhoCanAct.length === 0 && !trueAllInRunout) {
-        console.error('[Engine] EDGE CASE: No actors but not true all-in runout!', {
+        console.warn('[Engine] EDGE CASE: No actors but not true all-in runout - fixing state', {
           activePlayers: activePlayers.map(p => ({
             id: p.id.substring(0, 8),
             isAllIn: p.isAllIn,
             stack: p.stack
           }))
         });
-        // Mark remaining players as all-in and THEN advance (safe single recursion)
+        
+        // Mark remaining players as all-in
+        let anyFixed = false;
         for (const p of activePlayers) {
-          if (!p.isAllIn) {
+          if (!p.isAllIn && p.stack === 0) {
             p.isAllIn = true;
+            anyFixed = true;
           }
         }
-        // Only recurse once after fixing state
-        this.advancePhase();
+        
+        // Only recurse if we actually fixed something (prevents infinite loop)
+        if (anyFixed) {
+          this.advancePhase();
+        } else {
+          // Nothing to fix, just go to showdown to avoid stuck state
+          console.warn('[Engine] Cannot fix state - forcing showdown');
+          this.state.phase = 'showdown';
+          this.state.currentPlayerSeat = null;
+          this.advancePhaseDepth = 0;
+        }
+        return;
       }
       
       // Reset recursion counter on successful phase advance with actor found
