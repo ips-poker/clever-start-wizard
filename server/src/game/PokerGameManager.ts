@@ -230,11 +230,18 @@ export class PokerGameManager {
       throw new Error(`Failed to create table: ${error.message}`);
     }
     
-    const table = new PokerTable(config, this.supabase);
-    this.tables.set(config.id, table);
-    
-    logger.info(`Created new table: ${config.name}`, { tableId: config.id });
-    return table;
+      const table = new PokerTable(config, this.supabase);
+      this.tables.set(config.id, table);
+      
+      // CRITICAL FIX: Wait for players to load before returning
+      // Prevents race conditions where hand starts before players are loaded
+      await table.loadPlayersFromDatabase();
+      
+      // Notify listeners about newly created table
+      this.notifyTableLoaded(table);
+      
+      logger.info(`Created new table: ${config.name}`, { tableId: config.id, players: table.getPlayerCount() });
+      return table;
   }
   
   /**
