@@ -2195,10 +2195,22 @@ export class PokerEngineV3 {
       return { success: false, error: 'No active hand' };
     }
 
+    // POKERSTARS-STYLE: Comprehensive validation before ANY action processing
     // Hard stop: no actions allowed after the hand is effectively over.
-    // Prevents "checks" on showdown and avoids accidental phase advancement loops.
-    if (this.state.isComplete || this.state.phase === 'showdown') {
+    if (this.state.isComplete) {
+      console.log('[Engine] Action rejected - hand marked complete');
       return { success: false, error: 'Hand is complete' };
+    }
+    
+    if (this.state.phase === 'showdown') {
+      console.log('[Engine] Action rejected - showdown phase');
+      return { success: false, error: 'Hand is complete' };
+    }
+    
+    // CRITICAL: If currentPlayerSeat is null, betting round is in transition (cards being dealt)
+    if (this.state.currentPlayerSeat === null) {
+      console.log('[Engine] Action rejected - no current player (phase transition)');
+      return { success: false, error: 'Please wait for your turn' };
     }
 
     const player = this.state.players.find(p => p.id === playerId);
@@ -2208,6 +2220,15 @@ export class PokerEngineV3 {
     
     if (player.seatNumber !== this.state.currentPlayerSeat) {
       return { success: false, error: 'Not your turn' };
+    }
+    
+    // POKERSTARS: Additional validation - player must be able to act
+    if (player.isFolded) {
+      return { success: false, error: 'You have already folded' };
+    }
+    
+    if (player.isAllIn) {
+      return { success: false, error: 'You are already all-in' };
     }
     
     // Map action type
@@ -2563,9 +2584,20 @@ export class PokerEngineV3 {
   /**
    * Advance to next phase
    * Professional implementation: handles all-in runouts and proper pot tracking
+   * 
+   * POKERSTARS RULE: Phase ONLY advances when:
+   * 1. Betting round is complete (all players acted and matched)
+   * 2. All but one player folded
+   * 3. All remaining players are all-in
    */
   private advancePhase(): void {
     if (!this.state) return;
+    
+    // CRITICAL SAFETY: Never advance from showdown or complete hand
+    if (this.state.phase === 'showdown' || this.state.isComplete) {
+      console.log('[Engine] advancePhase blocked - already at showdown or complete');
+      return;
+    }
     
     const phaseOrder: GamePhase[] = ['preflop', 'flop', 'turn', 'river', 'showdown'];
     const currentIndex = phaseOrder.indexOf(this.state.phase);
