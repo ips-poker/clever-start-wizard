@@ -1647,6 +1647,11 @@ export class PokerTable {
     });
 
     // ===== POKERSTARS PHASE 2: TIME BANK =====
+    // CRITICAL FIX: Ensure timeBank is never negative before checking
+    if (player.timeBank < 0) {
+      player.timeBank = 0;
+    }
+    
     // If player has time bank remaining, switch to time bank phase
     if (player.timeBank > 0 && !this.isTimeBankPhase) {
       logger.info('Starting time bank phase', {
@@ -1672,6 +1677,9 @@ export class PokerTable {
     // Increment missed turns counter
     player.missedTurns++;
     this.isTimeBankPhase = false;
+    
+    // CRITICAL FIX: Ensure timeBank is 0 (not negative) when exhausted
+    player.timeBank = Math.max(0, player.timeBank);
 
     // Auto fold/check - PROFESSIONAL: prefer check when possible
     const canCheck = player.currentBet >= this.currentHand.currentBet;
@@ -2079,8 +2087,9 @@ export class PokerTable {
       
       // CRITICAL: Save hand to database at START (not just at completion)
       // This ensures current_hand_id always points to existing record
+      // IMPORTANT: Use await and verify success - stale current_hand_id causes false stuck detection
       try {
-        await this.supabase.from('poker_hands').insert({
+        const { error: insertError } = await this.supabase.from('poker_hands').insert({
           id: this.currentHand.id,
           table_id: this.id,
           hand_number: this.currentHand.handNumber,
@@ -2096,8 +2105,16 @@ export class PokerTable {
           // completed_at is NULL - hand is in progress
         });
         
-        // Also update poker_tables.current_hand_id
-        await this.supabase
+        if (insertError) {
+          logger.warn('Failed to insert poker_hands record', { 
+            error: insertError.message,
+            handId: this.currentHand.id 
+          });
+        }
+        
+        // CRITICAL: Update poker_tables.current_hand_id and verify it succeeded
+        // This is crucial - if this fails, checkStuckTables will find old hands and cause false recoveries
+        const { error: updateError } = await this.supabase
           .from('poker_tables')
           .update({
             current_hand_id: this.currentHand.id,
@@ -2105,6 +2122,30 @@ export class PokerTable {
             updated_at: new Date().toISOString()
           })
           .eq('id', this.id);
+        
+        if (updateError) {
+          logger.error('CRITICAL: Failed to update current_hand_id - may cause false stuck detection!', {
+            tableId: this.id,
+            handId: this.currentHand.id,
+            error: updateError.message
+          });
+          
+          // RETRY once
+          const { error: retryError } = await this.supabase
+            .from('poker_tables')
+            .update({
+              current_hand_id: this.currentHand.id,
+              status: 'playing',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', this.id);
+          
+          if (retryError) {
+            logger.error('CRITICAL: Retry also failed for current_hand_id update', { error: retryError.message });
+          } else {
+            logger.info('current_hand_id update succeeded on retry', { handId: this.currentHand.id });
+          }
+        }
           
         logger.info('Hand saved to database at start', {
           tableId: this.id,
@@ -3138,23 +3179,46 @@ export class PokerTable {
   forceRecovery(expectedHandId?: string): void {
     const now = Date.now();
 
-    // SAFETY: If manager provided an expected hand id, never recover a different hand
-    if (expectedHandId && this.currentHand?.id && this.currentHand.id !== expectedHandId) {
-      logger.warn('Skipping recovery - expected hand mismatch', {
-        tableId: this.id,
-        expectedHandId,
-        currentHandId: this.currentHand.id,
-        phase: this.currentHand.phase
-      });
-      return;
-    }
-
-    if (expectedHandId && !this.currentHand) {
-      logger.warn('Skipping recovery - expected hand provided but no current hand in memory', {
-        tableId: this.id,
-        expectedHandId
-      });
-      return;
+    // CRITICAL FIX: If manager provided an expected hand id, verify it matches CURRENT hand
+    // This prevents recovering a stale hand when DB is out of sync with memory
+    if (expectedHandId) {
+      if (!this.currentHand) {
+        logger.warn('Skipping recovery - expected hand provided but no current hand in memory', {
+          tableId: this.id,
+          expectedHandId
+        });
+        return;
+      }
+      
+      if (this.currentHand.id !== expectedHandId) {
+        logger.warn('Skipping recovery - expected hand mismatch (stale DB reference)', {
+          tableId: this.id,
+          expectedHandId,
+          currentHandId: this.currentHand.id,
+          currentPhase: this.currentHand.phase
+        });
+        
+        // CRITICAL: Update DB to point to correct current hand to prevent future stale recoveries
+        this.supabase
+          .from('poker_tables')
+          .update({
+            current_hand_id: this.currentHand.id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', this.id)
+          .then(({ error }) => {
+            if (error) {
+              logger.warn('Failed to fix stale current_hand_id in DB', { error: error.message });
+            } else {
+              logger.info('Fixed stale current_hand_id in DB', { 
+                tableId: this.id, 
+                newHandId: this.currentHand?.id 
+              });
+            }
+          });
+        
+        return;
+      }
     }
     
     // IDEMPOTENCY: Prevent duplicate recovery within 5 seconds for same hand
