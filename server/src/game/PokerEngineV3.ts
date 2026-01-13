@@ -1972,6 +1972,8 @@ export class PokerEngineV3 {
   private config: GameConfig;
   private state: GameState | null = null;
   private actions: { playerId: string; type: string; phase: string; amount: number }[] = [];
+  private advancePhaseDepth: number = 0; // Recursion guard for advancePhase
+  private static readonly MAX_ADVANCE_DEPTH = 4; // max: preflop->flop->turn->river->showdown
   
   constructor(gameType: GameType, config: GameConfig) {
     this.gameType = gameType;
@@ -2594,14 +2596,28 @@ export class PokerEngineV3 {
   private advancePhase(): void {
     if (!this.state) return;
     
+    // CRITICAL SAFETY: Prevent infinite recursion
+    this.advancePhaseDepth++;
+    if (this.advancePhaseDepth > PokerEngineV3.MAX_ADVANCE_DEPTH) {
+      console.error('[Engine] CRITICAL: advancePhase recursion limit reached! Breaking loop.');
+      this.advancePhaseDepth = 0;
+      return;
+    }
+    
     // CRITICAL SAFETY: Never advance from showdown or complete hand
     if (this.state.phase === 'showdown' || this.state.isComplete) {
       console.log('[Engine] advancePhase blocked - already at showdown or complete');
+      this.advancePhaseDepth = 0;
       return;
     }
     
     const phaseOrder: GamePhase[] = ['preflop', 'flop', 'turn', 'river', 'showdown'];
     const currentIndex = phaseOrder.indexOf(this.state.phase);
+    
+    console.log('[Engine] advancePhase called:', {
+      fromPhase: this.state.phase,
+      recursionDepth: this.advancePhaseDepth
+    });
     
     if (currentIndex < phaseOrder.length - 1) {
       // NOTE: totalBetThisHand is now updated in processAction, not here
@@ -2678,12 +2694,16 @@ export class PokerEngineV3 {
       if (nextPhase === 'showdown') {
         console.log('[Engine] Reached showdown phase - no more betting');
         this.state.currentPlayerSeat = null;
+        this.advancePhaseDepth = 0; // Reset recursion counter
         return; // Don't recurse, showdown reached
       }
       
       // CRITICAL: Only auto-run to showdown if ALL remaining players are truly all-in
       // A player with isAllIn=false and stack>0 MUST be allowed to act
-      const trueAllInRunout = playersWhoCanAct.length === 0 && activePlayers.length > 1;
+      // CRITICAL FIX: TRUE all-in runout ONLY when ALL remaining players are ACTUALLY all-in
+      // A player with stack=0 but isAllIn=false should NOT trigger runout - they need to be properly marked
+      const allPlayersAllIn = activePlayers.every(p => p.isAllIn || p.stack === 0);
+      const trueAllInRunout = allPlayersAllIn && activePlayers.length > 1;
       
       if (trueAllInRunout) {
         // All-in runout scenario - deal remaining cards automatically
@@ -2693,6 +2713,15 @@ export class PokerEngineV3 {
           isAllIn: p.isAllIn,
           stack: p.stack
         })));
+        
+        // POKERSTARS: Mark any player with stack=0 as all-in to prevent future issues
+        for (const p of activePlayers) {
+          if (p.stack === 0 && !p.isAllIn) {
+            console.log('[Engine] Marking stack=0 player as all-in:', p.id.substring(0, 8));
+            p.isAllIn = true;
+          }
+        }
+        
         this.advancePhase();
         return;
       }
@@ -2715,13 +2744,30 @@ export class PokerEngineV3 {
         this.state.currentPlayerSeat = playersWhoCanAct[0].seatNumber;
       }
       
-      // CRITICAL SAFETY CHECK: If we found an actor, we should NOT auto-advance
-      // Log warning if we somehow got here with no actor and should have had one
-      if (this.state.currentPlayerSeat === null && playersWhoCanAct.length === 0) {
-        console.log('[Engine] No players can act - this should have been caught by trueAllInRunout check');
-        // This can happen if all remaining players have stack=0 but aren't marked all-in
-        // Force advance to next phase
+      // CRITICAL FIX: Remove dangerous recursive call!
+      // If no players can act AND trueAllInRunout didn't trigger, 
+      // this means we have an edge case - log it but do NOT recurse
+      if (this.state.currentPlayerSeat === null && playersWhoCanAct.length === 0 && !trueAllInRunout) {
+        console.error('[Engine] EDGE CASE: No actors but not true all-in runout!', {
+          activePlayers: activePlayers.map(p => ({
+            id: p.id.substring(0, 8),
+            isAllIn: p.isAllIn,
+            stack: p.stack
+          }))
+        });
+        // Mark remaining players as all-in and THEN advance (safe single recursion)
+        for (const p of activePlayers) {
+          if (!p.isAllIn) {
+            p.isAllIn = true;
+          }
+        }
+        // Only recurse once after fixing state
         this.advancePhase();
+      }
+      
+      // Reset recursion counter on successful phase advance with actor found
+      if (this.state.currentPlayerSeat !== null) {
+        this.advancePhaseDepth = 0;
       }
     }
   }
