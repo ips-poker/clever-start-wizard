@@ -894,28 +894,14 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
   const raise = useCallback((amount: number) => executeAction('raise', amount), [executeAction]);
   const allIn = useCallback(() => executeAction('all_in'), [executeAction]);
   
-  // Check if opponent has timed out - any client can call this
+  // POKERSTARS STANDARD: Server handles ALL player timeouts
+  // Client should NEVER call check_timeout for other players
+  // This prevents race conditions, duplicate actions, and false sit-outs
+  // The server-side PokerTable.handleTimeout() is authoritative
+  // Keeping this as a no-op for backwards compatibility
   const checkTimeout = useCallback(async () => {
-    if (!tableId || !playerId) return;
-    
-    console.log('⏰ Checking timeout for current player...');
-    try {
-      const { data, error } = await supabase.functions.invoke('poker-game-engine', {
-        body: {
-          action: 'check_timeout',
-          tableId,
-          playerId
-        }
-      });
-      console.log('📨 Timeout check result:', { data, error });
-      if (data?.success) {
-        console.log('✅ Timeout fold executed, reloading...');
-        loadPlayersFromDBRef.current?.();
-      }
-    } catch (err) {
-      console.error('❌ Timeout check error:', err);
-    }
-  }, [tableId, playerId]);
+    console.log('⚠️ checkTimeout called but disabled - server handles all timeouts');
+  }, []);
   
   const startHand = useCallback(async () => {
     console.log('🚀 Starting hand via engine...');
