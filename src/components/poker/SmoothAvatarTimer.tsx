@@ -1,11 +1,11 @@
 // Smooth 60fps Timer Ring Around Avatar with Time Bank Pulsing Effect
-// Main timer (green) → Time bank (red pulsing)
+// Main timer (30 sec, GREEN) → Time bank (15 sec, RED pulsing)
 import React, { memo, useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 interface SmoothAvatarTimerProps {
-  remaining: number;        // Total remaining (main + timebank)
-  total: number;            // Total time (main + timebank)
+  remaining: number;        // Remaining seconds from server
+  total: number;            // Total time allocated (main + timebank = 45 sec)
   mainTimerDuration?: number; // Main timer duration (default 30 sec)
   timeBankDuration?: number;  // Time bank duration (default 15 sec)
   size: number;
@@ -29,15 +29,24 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const startTimeRef = useRef<number>(Date.now());
   const startRemainingRef = useRef<number>(remaining);
 
-  // Determine if we're in time bank phase (remaining <= timeBankDuration)
+  // CORRECT LOGIC:
+  // If remaining > timeBankDuration (15 sec), we're still in MAIN timer phase (GREEN)
+  // If remaining <= timeBankDuration (15 sec), we're in TIME BANK phase (RED pulsing)
+  // Example: remaining=25 -> main timer (25 > 15) -> GREEN
+  // Example: remaining=10 -> time bank (10 <= 15) -> RED pulsing
   const isInTimeBank = currentRemaining <= timeBankDuration;
   
   // Calculate progress for display
-  // During main timer: show progress of main timer (green)
-  // During time bank: show progress of time bank (red pulsing)
-  const progress = isInTimeBank 
-    ? currentRemaining / timeBankDuration  // Time bank progress (0-1)
-    : (currentRemaining - timeBankDuration) / mainTimerDuration; // Main timer progress (0-1)
+  // During main timer: show how much of main timer is left
+  // During time bank: show how much of time bank is left
+  let progress: number;
+  if (isInTimeBank) {
+    // Time bank phase: remaining / timeBankDuration
+    progress = Math.max(0, currentRemaining / timeBankDuration);
+  } else {
+    // Main timer phase: (remaining - timeBankDuration) / mainTimerDuration
+    progress = Math.max(0, (currentRemaining - timeBankDuration) / mainTimerDuration);
+  }
 
   useEffect(() => {
     // Reset animation when remaining time changes significantly
@@ -93,7 +102,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - Math.max(0, Math.min(1, progress)));
 
-  // Color based on phase: green for main timer, red for time bank
+  // Color based on phase: GREEN for main timer, RED for time bank
   const strokeColor = isInTimeBank ? '#ef4444' : '#22c55e';
 
   // Dynamic glow intensity based on pulse phase when in time bank
