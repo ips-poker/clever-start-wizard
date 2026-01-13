@@ -1496,9 +1496,19 @@ export class PokerTable {
   /**
    * Handle player timeout
    * After 2 consecutive timeouts, player is set to sitting_out
+   * 
+   * CRITICAL: Do NOT process timeouts during showdown phase
    */
   private async handleTimeout(): Promise<void> {
     if (!this.currentHand || this.currentHand.currentPlayerSeat === null) return;
+    
+    // CRITICAL: Skip timeout during showdown - hand is completing naturally
+    if (this.currentHand.phase === 'showdown') {
+      logger.info('Skipping handleTimeout - hand is in showdown phase', { 
+        tableId: this.id 
+      });
+      return;
+    }
 
     const seat = this.currentHand.currentPlayerSeat;
     const playerId = this.seats[seat];
@@ -2916,13 +2926,25 @@ export class PokerTable {
   /**
    * Force recovery for stuck table
    * Called by PokerGameManager when table is detected as stuck
+   * 
+   * CRITICAL: Do NOT trigger recovery during showdown phase - hand is completing
    */
   forceRecovery(): void {
     logger.warn('Force recovery initiated for stuck table', {
       tableId: this.id,
       hasCurrentHand: !!this.currentHand,
-      currentPlayerSeat: this.currentHand?.currentPlayerSeat
+      currentPlayerSeat: this.currentHand?.currentPlayerSeat,
+      phase: this.currentHand?.phase
     });
+    
+    // CRITICAL: Skip recovery if hand is in showdown phase - it's completing naturally
+    if (this.currentHand?.phase === 'showdown') {
+      logger.info('Skipping force recovery - hand is in showdown phase', { 
+        tableId: this.id,
+        handId: this.currentHand.id 
+      });
+      return;
+    }
     
     // Clear any existing timer
     this.clearActionTimer();
@@ -2944,7 +2966,6 @@ export class PokerTable {
       if (activePlayers.length === 1) {
         // Award pot to last remaining player
         const winner = activePlayers[0];
-        // CRITICAL FIX: Use handName instead of handRank
         void this.completeHand([{
           playerId: winner.id,
           amount: this.currentHand.pot,
@@ -2960,7 +2981,6 @@ export class PokerTable {
         for (let i = 1; i < activePlayers.length; i++) {
           activePlayers[i].isFolded = true;
         }
-        // CRITICAL FIX: Use handName instead of handRank
         void this.completeHand([{
           playerId: activePlayers[0].id,
           amount: this.currentHand.pot,
