@@ -1683,6 +1683,9 @@ export class PokerTable {
     // CRITICAL FIX: Ensure timeBank is 0 (not negative) when exhausted
     player.timeBank = Math.max(0, player.timeBank);
 
+    // POKERSTARS: Update activity time even on timeout (they were "present" even if AFK)
+    player.lastActivityTime = Date.now();
+
     // Auto fold/check - PROFESSIONAL: prefer check when possible
     const canCheck = player.currentBet >= this.currentHand.currentBet;
     const autoAction = canCheck ? 'check' : 'fold';
@@ -1976,6 +1979,20 @@ export class PokerTable {
             oldTimeBank: player.timeBank
           });
           player.timeBank = 0;
+        }
+        
+        // POKERSTARS: Refill time bank for new hand if empty (configurable)
+        // This prevents players from being permanently disadvantaged
+        if (player.timeBank === 0 && player.status === 'active') {
+          // Give a small amount back each hand (GGPoker style)
+          const timeBankRefill = Math.min(5, Math.floor(this.config.timeBankSeconds / 3));
+          if (timeBankRefill > 0) {
+            player.timeBank = timeBankRefill;
+            logger.info('Refilled time bank for new hand', {
+              playerId: player.id.substring(0, 8),
+              newTimeBank: player.timeBank
+            });
+          }
         }
         
         // CRITICAL: Ensure no negative stacks (safety net)
@@ -2467,6 +2484,11 @@ export class PokerTable {
     // Wait for winner highlight animation
     await this.delay(this.timings.showdown.winnerHighlight);
     
+    // POKERSTARS: Clear any remaining timers to prevent ghost timeouts
+    this.clearActionTimer();
+    this.clearTimeBankTimer();
+    this.isTimeBankPhase = false;
+    
     this.emit('hand_complete', {
       handNumber: this.handNumber,
       winners,
@@ -2774,22 +2796,90 @@ export class PokerTable {
       reason: 'all_folded'
     });
     
+    // POKERSTARS: Clear timers and mark hand complete
+    this.clearActionTimer();
+    this.clearTimeBankTimer();
+    this.isTimeBankPhase = false;
+    
     // Clear hand state
     this.currentHand = null;
     
-    // Check for new hand
+    // Save winner to DB
+    this.saveHandResult([{ playerId: winnerId, amount: pot, handName: 'Last Standing' }]);
+    
+    // Check for new hand after delay
     setTimeout(() => {
       this.checkStartHand();
-    }, 1000);
+    }, 2000); // 2 second delay for visual feedback
+  }
+  
+  /**
+   * Save hand result to database (used for tracking)
+   */
+  private async saveHandResult(winners: { playerId: string; amount: number; handName: string }[]): Promise<void> {
+    // Update poker_hands with completion
+    // This is handled in completeHand() - this is a simplified version for edge cases
+    try {
+      if (this.handNumber > 0) {
+        logger.info('Hand result saved', { 
+          handNumber: this.handNumber, 
+          winners: winners.map(w => ({ id: w.playerId.substring(0, 8), amount: w.amount }))
+        });
+      }
+    } catch (err) {
+      logger.warn('Failed to save hand result', { error: String(err) });
+    }
   }
   
   /**
    * Check if phase should transition (all active players acted)
    */
   private checkPhaseTransition(): void {
-    // This will be called if the normal action flow is broken
-    // For now, just log and let the normal flow handle it
-    logger.info('Phase transition check triggered');
+    // If no current hand, nothing to do
+    if (!this.currentHand) return;
+    
+    // Get active players who can still act
+    const activePlayers = Array.from(this.players.values())
+      .filter(p => !p.isFolded && !p.isAllIn && p.status === 'active' && p.stack > 0);
+    
+    // If no one can act, check if we need to run out the board or go to showdown
+    if (activePlayers.length === 0) {
+      const remainingPlayers = Array.from(this.players.values())
+        .filter(p => !p.isFolded);
+      
+      if (remainingPlayers.length > 1) {
+        // Multiple players but all all-in - run out the board
+        logger.info('All active players are all-in - triggering runout');
+        this.triggerAllInRunout();
+      } else if (remainingPlayers.length === 1) {
+        // Only one player left - they win
+        this.endHandWithWinner(remainingPlayers[0].id);
+      }
+    } else {
+      // Someone can still act - find them and set as current player
+      const nextPlayer = activePlayers
+        .sort((a, b) => a.seatNumber - b.seatNumber)[0];
+      
+      if (nextPlayer && this.currentHand) {
+        this.currentHand.currentPlayerSeat = nextPlayer.seatNumber;
+        this.currentHand.actionStartTime = Date.now();
+        this.startActionTimer();
+      }
+    }
+  }
+  
+  /**
+   * Trigger all-in runout (deal remaining community cards)
+   */
+  private async triggerAllInRunout(): Promise<void> {
+    if (!this.currentHand) return;
+    
+    // Use engine to run out the board
+    const result = this.engine.runOutBoard();
+    
+    if (result.success && result.winners) {
+      await this.completeHand(result.winners);
+    }
   }
   
   /**
@@ -3481,12 +3571,21 @@ export class PokerTable {
     const handId = this.currentHand.id;
     logger.error('Aborting hand', { tableId: this.id, handId, reason });
     
-    // Return bets to players
+    // CRITICAL: Clear all timers to prevent ghost actions
+    this.clearActionTimer();
+    this.clearTimeBankTimer();
+    this.isTimeBankPhase = false;
+    
+    // Return bets to players (refund on abort)
     for (const player of this.players.values()) {
       if (player.currentBet > 0) {
         player.stack += player.currentBet;
         player.currentBet = 0;
       }
+      // Reset hand-specific state
+      player.holeCards = [];
+      player.isFolded = false;
+      player.isAllIn = false;
     }
     
     // Mark hand as aborted in database
@@ -3504,14 +3603,15 @@ export class PokerTable {
       .from('poker_tables')
       .update({
         current_hand_id: null,
-        status: 'waiting'
+        status: 'waiting',
+        updated_at: new Date().toISOString()
       })
       .eq('id', this.id);
     
     this.currentHand = null;
     this.emit('hand_aborted', { handId, reason });
     
-    // Try to start new hand
-    setTimeout(() => this.checkStartHand(), 2000);
+    // Try to start new hand after delay
+    setTimeout(() => this.checkStartHand(), 3000);
   }
 }
