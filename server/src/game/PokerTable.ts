@@ -3135,8 +3135,27 @@ export class PokerTable {
   private lastRecoveryTimestamp: number = 0;
   private readonly RECOVERY_DEBOUNCE_MS = 5000; // 5 second debounce
   
-  forceRecovery(): void {
+  forceRecovery(expectedHandId?: string): void {
     const now = Date.now();
+
+    // SAFETY: If manager provided an expected hand id, never recover a different hand
+    if (expectedHandId && this.currentHand?.id && this.currentHand.id !== expectedHandId) {
+      logger.warn('Skipping recovery - expected hand mismatch', {
+        tableId: this.id,
+        expectedHandId,
+        currentHandId: this.currentHand.id,
+        phase: this.currentHand.phase
+      });
+      return;
+    }
+
+    if (expectedHandId && !this.currentHand) {
+      logger.warn('Skipping recovery - expected hand provided but no current hand in memory', {
+        tableId: this.id,
+        expectedHandId
+      });
+      return;
+    }
     
     // IDEMPOTENCY: Prevent duplicate recovery within 5 seconds for same hand
     if (

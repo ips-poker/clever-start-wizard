@@ -441,7 +441,7 @@ export class PokerGameManager {
         if (table) {
           logger.info('Triggering timeout recovery for stuck table', { tableId: hand.table_id });
           this.lastRecoveryTime.set(hand.table_id, now);
-          table.forceRecovery();
+          table.forceRecovery(hand.id);
           continue;
         }
 
