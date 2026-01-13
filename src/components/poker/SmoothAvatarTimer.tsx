@@ -1,10 +1,13 @@
-// Smooth 60fps Timer Ring Around Avatar with Pulsing Effect
-import React, { memo, useState, useEffect, useRef, useMemo } from 'react';
+// Smooth 60fps Timer Ring Around Avatar with Time Bank Pulsing Effect
+// Main timer (green) → Time bank (red pulsing)
+import React, { memo, useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 interface SmoothAvatarTimerProps {
-  remaining: number;
-  total: number;
+  remaining: number;        // Total remaining (main + timebank)
+  total: number;            // Total time (main + timebank)
+  mainTimerDuration?: number; // Main timer duration (default 30 sec)
+  timeBankDuration?: number;  // Time bank duration (default 15 sec)
   size: number;
   strokeWidth?: number;
   className?: string;
@@ -13,28 +16,40 @@ interface SmoothAvatarTimerProps {
 export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   remaining,
   total,
+  mainTimerDuration = 30,
+  timeBankDuration = 15,
   size,
   strokeWidth = 4,
   className
 }: SmoothAvatarTimerProps) {
-  const [progress, setProgress] = useState(remaining / total);
+  const [currentRemaining, setCurrentRemaining] = useState(remaining);
   const [pulsePhase, setPulsePhase] = useState(0);
   const animationRef = useRef<number>();
   const pulseRef = useRef<number>();
   const startTimeRef = useRef<number>(Date.now());
-  const startProgressRef = useRef<number>(remaining / total);
+  const startRemainingRef = useRef<number>(remaining);
+
+  // Determine if we're in time bank phase (remaining <= timeBankDuration)
+  const isInTimeBank = currentRemaining <= timeBankDuration;
+  
+  // Calculate progress for display
+  // During main timer: show progress of main timer (green)
+  // During time bank: show progress of time bank (red pulsing)
+  const progress = isInTimeBank 
+    ? currentRemaining / timeBankDuration  // Time bank progress (0-1)
+    : (currentRemaining - timeBankDuration) / mainTimerDuration; // Main timer progress (0-1)
 
   useEffect(() => {
-    // Reset animation when remaining time changes
+    // Reset animation when remaining time changes significantly
     startTimeRef.current = Date.now();
-    startProgressRef.current = remaining / total;
+    startRemainingRef.current = remaining;
 
     const animate = () => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
-      const newProgress = Math.max(0, startProgressRef.current - (elapsed / total));
-      setProgress(newProgress);
+      const newRemaining = Math.max(0, startRemainingRef.current - elapsed);
+      setCurrentRemaining(newRemaining);
 
-      if (newProgress > 0) {
+      if (newRemaining > 0) {
         animationRef.current = requestAnimationFrame(animate);
       }
     };
@@ -46,15 +61,13 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [remaining, total]);
+  }, [remaining]);
 
-  // Separate pulse animation for critical state - smooth 60fps pulsing
+  // Pulse animation for time bank phase - smooth 60fps pulsing
   useEffect(() => {
-    const isCritical = progress < 0.2;
-    
-    if (isCritical) {
+    if (isInTimeBank) {
       const startTime = Date.now();
-      const pulseDuration = 400; // ms for one pulse cycle - faster for urgency
+      const pulseDuration = 350; // ms for one pulse cycle - urgent
       
       const animatePulse = () => {
         const elapsed = Date.now() - startTime;
@@ -74,55 +87,46 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     } else {
       setPulsePhase(0);
     }
-  }, [progress < 0.2]);
+  }, [isInTimeBank]);
 
   const radius = (size / 2) - (strokeWidth / 2);
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - progress);
+  const strokeDashoffset = circumference * (1 - Math.max(0, Math.min(1, progress)));
 
-  // Color and style based on progress
-  const isCritical = progress < 0.2;
-  const isWarning = progress < 0.4;
-  
-  const strokeColor = isCritical 
-    ? '#ef4444' 
-    : isWarning 
-      ? '#f59e0b' 
-      : '#22c55e';
+  // Color based on phase: green for main timer, red for time bank
+  const strokeColor = isInTimeBank ? '#ef4444' : '#22c55e';
 
-  // Dynamic glow intensity based on pulse phase when critical
-  const glowIntensity = isCritical ? 0.4 + (pulsePhase * 0.6) : isWarning ? 0.5 : 0.4;
-  const glowSpread = isCritical ? 8 + (pulsePhase * 12) : 8;
+  // Dynamic glow intensity based on pulse phase when in time bank
+  const glowIntensity = isInTimeBank ? 0.4 + (pulsePhase * 0.6) : 0.4;
+  const glowSpread = isInTimeBank ? 8 + (pulsePhase * 12) : 6;
   
-  const glowColor = isCritical
+  const glowColor = isInTimeBank
     ? `rgba(239, 68, 68, ${glowIntensity})`
-    : isWarning
-      ? 'rgba(245, 158, 11, 0.5)'
-      : 'rgba(34, 197, 94, 0.4)';
+    : 'rgba(34, 197, 94, 0.4)';
 
-  // Dynamic stroke width when pulsing
-  const dynamicStrokeWidth = isCritical 
-    ? strokeWidth + (pulsePhase * 2) 
+  // Dynamic stroke width when pulsing in time bank
+  const dynamicStrokeWidth = isInTimeBank 
+    ? strokeWidth + (pulsePhase * 3) 
     : strokeWidth;
 
   // Outer ring scale for pulsing effect
-  const outerRingScale = isCritical ? 1 + (pulsePhase * 0.08) : 1;
-  const outerRingOpacity = isCritical ? 0.15 + (pulsePhase * 0.35) : 0;
+  const outerRingScale = isInTimeBank ? 1 + (pulsePhase * 0.1) : 1;
+  const outerRingOpacity = isInTimeBank ? 0.2 + (pulsePhase * 0.4) : 0;
 
   return (
     <div 
       className={cn("relative pointer-events-none", className)}
       style={{ width: size, height: size }}
     >
-      {/* Outer pulsing ring for critical state */}
-      {isCritical && (
+      {/* Outer pulsing ring for time bank */}
+      {isInTimeBank && (
         <div
           className="absolute inset-0 rounded-full"
           style={{
             transform: `scale(${outerRingScale})`,
             boxShadow: `0 0 ${glowSpread}px ${glowSpread / 2}px rgba(239, 68, 68, ${outerRingOpacity})`,
             border: `2px solid rgba(239, 68, 68, ${outerRingOpacity})`,
-            transition: 'none' // No CSS transition - we control with JS for 60fps
+            transition: 'none'
           }}
         />
       )}
@@ -159,36 +163,36 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
           strokeDashoffset={strokeDashoffset}
         />
 
-        {/* Inner glow circle when critical - follows pulse */}
-        {isCritical && (
+        {/* Inner glow circle when in time bank - follows pulse */}
+        {isInTimeBank && (
           <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
             fill="none"
             stroke={strokeColor}
-            strokeWidth={dynamicStrokeWidth + 6}
+            strokeWidth={dynamicStrokeWidth + 8}
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
-            opacity={0.2 + (pulsePhase * 0.15)}
+            opacity={0.15 + (pulsePhase * 0.2)}
           />
         )}
       </svg>
       
-      {/* Additional outer glow rings for dramatic effect when critical */}
-      {isCritical && (
+      {/* Additional outer glow rings for dramatic effect during time bank */}
+      {isInTimeBank && (
         <>
           <div
             className="absolute inset-[-4px] rounded-full pointer-events-none"
             style={{
-              boxShadow: `inset 0 0 ${4 + pulsePhase * 4}px rgba(239, 68, 68, ${0.1 + pulsePhase * 0.2})`,
+              boxShadow: `inset 0 0 ${6 + pulsePhase * 6}px rgba(239, 68, 68, ${0.15 + pulsePhase * 0.25})`,
             }}
           />
           <div
-            className="absolute inset-[-8px] rounded-full pointer-events-none"
+            className="absolute inset-[-10px] rounded-full pointer-events-none"
             style={{
-              boxShadow: `0 0 ${12 + pulsePhase * 8}px rgba(239, 68, 68, ${0.1 + pulsePhase * 0.15})`,
+              boxShadow: `0 0 ${16 + pulsePhase * 12}px rgba(239, 68, 68, ${0.12 + pulsePhase * 0.18})`,
             }}
           />
         </>

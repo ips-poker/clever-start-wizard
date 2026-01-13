@@ -670,7 +670,9 @@ const PlayerSeat = memo(function PlayerSeat({
           >
             <SmoothAvatarTimer 
               remaining={turnTimeRemaining} 
-              total={30} 
+              total={45}  // 30 sec main + 15 sec time bank
+              mainTimerDuration={30}
+              timeBankDuration={15}
               size={avatarSize + 6}
               strokeWidth={3}
             />
