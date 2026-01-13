@@ -1082,7 +1082,32 @@ export class PokerTable {
       });
       return { success: false, error: 'Not your turn' };
     }
-    
+
+    // If the player acts after the main action timer expired, consume used time bank (PokerStars-style).
+    // This prevents negative timeBank values and fixes premature sit-out when multiple timers/recovery triggers happen.
+    if (this.currentHand.actionStartTime) {
+      const mainMs = this.config.actionTimeSeconds * 1000;
+      const elapsedMs = Date.now() - this.currentHand.actionStartTime;
+      const overtimeMs = elapsedMs - mainMs;
+
+      if (overtimeMs > 0) {
+        const usedSeconds = Math.ceil(overtimeMs / 1000);
+        const prevBank = Math.max(0, player.timeBank);
+        const newBank = Math.max(0, prevBank - usedSeconds);
+
+        if (newBank !== prevBank) {
+          player.timeBank = newBank;
+          this.emit('time_bank_used', { playerId, remaining: player.timeBank, usedSeconds });
+        } else {
+          player.timeBank = prevBank;
+        }
+      } else {
+        player.timeBank = Math.max(0, player.timeBank);
+      }
+    } else {
+      player.timeBank = Math.max(0, player.timeBank);
+    }
+
     // Clear action timer before processing
     this.clearActionTimer();
     
