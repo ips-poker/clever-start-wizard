@@ -345,18 +345,21 @@ export class PokerGameManager {
 
   /**
    * Check for stuck tables and restart them
-   * A table is considered stuck if action_started_at is more than 2 minutes old
+   * A table is considered stuck if action_started_at is more than 3 minutes old
+   * (increased from 2 min to account for time bank usage)
    *
    * CRITICAL FIX:
    * Only recover the CURRENT hand for each table (poker_tables.current_hand_id).
    * Otherwise old orphaned hands (from previous crashes/restarts) will trigger
    * forceRecovery() on an active table and cause "random" actions/cards.
    * 
+   * POKERSTARS-STYLE: Skip recovery for showdown phase hands - they complete naturally.
    * Added cooldown to prevent repeated recovery calls.
    */
   private async checkStuckTables(): Promise<void> {
     try {
-      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      // POKERSTARS: 3 minutes threshold (action_time + time_bank + buffer)
+      const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
       const now = Date.now();
 
       // 1) Get currently active tables with their current_hand_id
@@ -382,12 +385,14 @@ export class PokerGameManager {
       if (currentHandIds.length === 0) return;
 
       // 2) Only consider those current hands for stuck detection
+      // POKERSTARS: Exclude showdown phase - hands in showdown complete naturally
       const { data: stuckHands, error: handsError } = await this.supabase
         .from('poker_hands')
         .select('id, table_id, action_started_at, phase')
         .in('id', currentHandIds)
-        .lt('action_started_at', twoMinutesAgo)
-        .is('completed_at', null);
+        .lt('action_started_at', threeMinutesAgo)
+        .is('completed_at', null)
+        .neq('phase', 'showdown'); // CRITICAL: Don't touch showdown hands
 
       if (handsError || !stuckHands || stuckHands.length === 0) {
         return;
