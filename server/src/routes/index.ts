@@ -80,8 +80,8 @@ export function setupRoutes(app: Express, gameManager: PokerGameManager, supabas
       const table = await gameManager.createTable({
         id: crypto.randomUUID(),
         ...config,
-        actionTimeSeconds: 15,  // PokerStars standard
-        timeBankSeconds: 15    // PokerStars standard
+        actionTimeSeconds: 30,  // Main timer
+        timeBankSeconds: 15    // Pulsing ring time bank
       });
       
       res.status(201).json({

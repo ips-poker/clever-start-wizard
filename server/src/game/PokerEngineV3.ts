@@ -81,8 +81,8 @@ const SHORT_DECK_STRAIGHT_PATTERNS = [
 export const PHASES = ['preflop', 'flop', 'turn', 'river', 'showdown'] as const;
 export type GamePhase = typeof PHASES[number];
 
-// PokerStars standard: 15 seconds action + 15 seconds time bank
-export const DEFAULT_ACTION_TIME_SECONDS = 15;
+// Action timer: 30 seconds, Time bank: 15 seconds (pulsing ring)
+export const DEFAULT_ACTION_TIME_SECONDS = 30;
 export const DEFAULT_TIME_BANK_SECONDS = 15;
 
 // ==========================================
