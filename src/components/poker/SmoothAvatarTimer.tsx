@@ -29,22 +29,26 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const startTimeRef = useRef<number>(Date.now());
   const startRemainingRef = useRef<number>(remaining);
 
-  // CORRECT LOGIC:
-  // If remaining > timeBankDuration (15 sec), we're still in MAIN timer phase (GREEN)
-  // If remaining <= timeBankDuration (15 sec), we're in TIME BANK phase (RED pulsing)
-  // Example: remaining=25 -> main timer (25 > 15) -> GREEN
-  // Example: remaining=10 -> time bank (10 <= 15) -> RED pulsing
+  // POKERSTARS TIMER LOGIC:
+  // Total time = mainTimerDuration (30 sec) + timeBankDuration (15 sec) = 45 sec
+  // 
+  // remaining > 15 sec → MAIN TIMER (GREEN ring, not pulsing)
+  //   Example: remaining=40 → main timer, green
+  //   Example: remaining=20 → main timer, green  
+  //
+  // remaining ≤ 15 sec → TIME BANK (RED pulsing ring)
+  //   Example: remaining=15 → time bank starts, red pulsing
+  //   Example: remaining=5 → time bank, red pulsing
+  //
   const isInTimeBank = currentRemaining <= timeBankDuration;
   
-  // Calculate progress for display
-  // During main timer: show how much of main timer is left
-  // During time bank: show how much of time bank is left
+  // Calculate progress (0 to 1) for the ring display
   let progress: number;
   if (isInTimeBank) {
-    // Time bank phase: remaining / timeBankDuration
+    // TIME BANK phase: 15 sec → progress=1, 0 sec → progress=0
     progress = Math.max(0, currentRemaining / timeBankDuration);
   } else {
-    // Main timer phase: (remaining - timeBankDuration) / mainTimerDuration
+    // MAIN TIMER phase: 45 sec → progress=1, 15 sec → progress=0
     progress = Math.max(0, (currentRemaining - timeBankDuration) / mainTimerDuration);
   }
 
