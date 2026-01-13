@@ -1108,8 +1108,10 @@ export class PokerTable {
       player.timeBank = Math.max(0, player.timeBank);
     }
 
-    // Clear action timer before processing
+    // POKERSTARS: Clear both action timer and time bank timer on successful action
     this.clearActionTimer();
+    this.clearTimeBankTimer();
+    this.isTimeBankPhase = false;
     
     logger.info('=== ACTION PROCESSING ===', {
       playerId: playerId.substring(0, 8),
@@ -1555,9 +1557,19 @@ export class PokerTable {
     }
   }
   
+  // ===== POKERSTARS-STYLE TIMER STATE =====
+  // Track whether we're currently in time bank phase for the active player
+  private isTimeBankPhase: boolean = false;
+  private timeBankTimerId: ReturnType<typeof setInterval> | null = null;
+  
   /**
-   * Handle player timeout
-   * After 2 consecutive timeouts, player is set to sitting_out
+   * Handle player timeout - POKERSTARS PROFESSIONAL IMPLEMENTATION
+   * 
+   * Two-phase timer system:
+   * 1. Main action timer (actionTimeSeconds) expires
+   * 2. If player has time bank → start time bank countdown (1 second ticks)
+   * 3. If time bank exhausted OR no time bank → auto-action + increment missedTurns
+   * 4. After 2 consecutive missed turns → sitting_out
    * 
    * CRITICAL: Do NOT process timeouts during showdown phase
    */
@@ -1571,6 +1583,14 @@ export class PokerTable {
       });
       return;
     }
+    
+    // CRITICAL: Skip if hand is already complete
+    if (this.currentHand.isComplete) {
+      logger.info('Skipping handleTimeout - hand is complete', { 
+        tableId: this.id 
+      });
+      return;
+    }
 
     const seat = this.currentHand.currentPlayerSeat;
     const playerId = this.seats[seat];
@@ -1579,7 +1599,6 @@ export class PokerTable {
     const player = this.players.get(playerId) ?? null;
 
     // If we somehow have a seat mapping but no player state yet, retry soon.
-    // This prevents tables from "freezing" at the start of a hand.
     if (!player) {
       logger.warn('handleTimeout: missing player state, retrying', {
         tableId: this.id,
@@ -1598,30 +1617,51 @@ export class PokerTable {
       return;
     }
 
-    logger.info('Player timed out', { playerId, missedTurns: player.missedTurns });
+    logger.info('Main timer expired', { 
+      playerId: playerId.substring(0, 8), 
+      timeBank: player.timeBank,
+      missedTurns: player.missedTurns 
+    });
 
-    // Use time bank if available
-    if (player.timeBank > 0) {
-      player.timeBank -= this.config.actionTimeSeconds;
-      this.emit('time_bank_used', { playerId, remaining: player.timeBank });
-      this.startActionTimer();
+    // ===== POKERSTARS PHASE 2: TIME BANK =====
+    // If player has time bank remaining, switch to time bank phase
+    if (player.timeBank > 0 && !this.isTimeBankPhase) {
+      logger.info('Starting time bank phase', {
+        playerId: playerId.substring(0, 8),
+        timeBankRemaining: player.timeBank
+      });
+      
+      this.isTimeBankPhase = true;
+      
+      // Emit event for frontend to show time bank UI
+      this.emit('time_bank_started', { 
+        playerId, 
+        remaining: player.timeBank,
+        seat 
+      });
+      
+      // Start time bank countdown - ticks every second
+      this.startTimeBankCountdown(playerId, player);
       return;
     }
 
+    // ===== TIME BANK EXHAUSTED OR NO TIME BANK =====
     // Increment missed turns counter
     player.missedTurns++;
+    this.isTimeBankPhase = false;
 
     // Auto fold/check - PROFESSIONAL: prefer check when possible
     const canCheck = player.currentBet >= this.currentHand.currentBet;
     const autoAction = canCheck ? 'check' : 'fold';
 
-    logger.warn('Player auto-action due to timeout', {
+    logger.warn('Player auto-action due to timeout (time bank exhausted)', {
       playerId: playerId.substring(0, 8),
       action: autoAction,
       timeBankRemaining: player.timeBank,
       missedTurns: player.missedTurns
     });
 
+    // Perform auto-action
     await this.action(playerId, autoAction);
 
     // After 2 consecutive missed turns, set player to sitting_out
@@ -1631,14 +1671,86 @@ export class PokerTable {
         missedTurns: player.missedTurns
       });
       player.status = 'sitting_out';
+      player.sitOutReason = 'timeout';
+      
       this.emit('player_sitting_out', {
         playerId,
         reason: 'missed_turns',
         missedTurns: player.missedTurns
       });
+      
+      // Update database
+      this.supabase
+        .from('poker_table_players')
+        .update({ 
+          status: 'sitting_out',
+          sit_out_reason: 'timeout',
+          sit_out_at: new Date().toISOString()
+        })
+        .eq('table_id', this.id)
+        .eq('player_id', playerId)
+        .then(({ error }) => {
+          if (error) {
+            logger.warn('Failed to update player sitting_out status', { error: error.message });
+          }
+        });
     }
 
     this.emit('timeout', { playerId, action: autoAction, missedTurns: player.missedTurns });
+  }
+  
+  /**
+   * POKERSTARS-STYLE: Time bank countdown
+   * Ticks every second, deducting from player's time bank.
+   * If player acts during time bank, consumed time is the delta.
+   */
+  private startTimeBankCountdown(playerId: string, player: PlayerState): void {
+    // Clear any existing time bank timer
+    this.clearTimeBankTimer();
+    
+    const timeBankStartTime = Date.now();
+    const initialTimeBank = player.timeBank;
+    
+    // Tick every second
+    this.timeBankTimerId = setInterval(() => {
+      const elapsedSeconds = Math.floor((Date.now() - timeBankStartTime) / 1000);
+      const remaining = Math.max(0, initialTimeBank - elapsedSeconds);
+      
+      player.timeBank = remaining;
+      
+      // Emit tick for frontend animation
+      this.emit('time_bank_tick', { 
+        playerId, 
+        remaining,
+        elapsed: elapsedSeconds 
+      });
+      
+      // Time bank exhausted
+      if (remaining <= 0) {
+        logger.info('Time bank exhausted', {
+          playerId: playerId.substring(0, 8),
+          usedSeconds: initialTimeBank
+        });
+        
+        this.clearTimeBankTimer();
+        this.handleTimeout(); // Will now trigger auto-action
+      }
+    }, 1000);
+    
+    logger.info('Time bank countdown started', {
+      playerId: playerId.substring(0, 8),
+      initialTimeBank
+    });
+  }
+  
+  /**
+   * Clear time bank timer
+   */
+  private clearTimeBankTimer(): void {
+    if (this.timeBankTimerId) {
+      clearInterval(this.timeBankTimerId);
+      this.timeBankTimerId = null;
+    }
   }
   
   /**
