@@ -55,6 +55,7 @@ export interface HandState {
   deck: string[];
   actionStartTime: number | null;
   playersActedThisRound: Set<string>; // Track who has acted in current betting round
+  isComplete?: boolean; // POKERSTARS: Track hand completion to prevent duplicate actions
 }
 
 type TableEventCallback = (event: TableEvent) => void;
@@ -1735,7 +1736,7 @@ export class PokerTable {
    * Ticks every second, deducting from player's time bank.
    * If player acts during time bank, consumed time is the delta.
    */
-  private startTimeBankCountdown(playerId: string, player: PlayerState): void {
+  private startTimeBankCountdown(playerId: string, player: Player): void {
     // Clear any existing time bank timer
     this.clearTimeBankTimer();
     

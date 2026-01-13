@@ -3059,6 +3059,69 @@ export class PokerEngineV3 {
 }
 
 // ==========================================
+// ENGINE VALIDATION (PokerStars-grade)
+// ==========================================
+
+/**
+ * Validate engine integrity by testing hand rankings
+ * Returns {passed, errors} for startup validation
+ */
+export function validateEngineIntegrity(): { passed: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  // Test 1: Royal Flush beats Straight Flush
+  const royalFlush = evaluateHand(['Ah', 'Kh'], ['Qh', 'Jh', 'Th', '2c', '3d']);
+  const straightFlush = evaluateHand(['9h', '8h'], ['7h', '6h', '5h', '2c', '3d']);
+  if (royalFlush.handRank <= straightFlush.handRank) {
+    errors.push('Royal Flush should beat Straight Flush');
+  }
+  
+  // Test 2: Full House beats Flush
+  const fullHouse = evaluateHand(['Ah', 'Ad'], ['Ac', 'Kh', 'Kd', '2c', '3d']);
+  const flush = evaluateHand(['Ah', 'Kh'], ['Qh', 'Jh', '9h', '2c', '3d']);
+  if (fullHouse.handRank <= flush.handRank) {
+    errors.push('Full House should beat Flush');
+  }
+  
+  // Test 3: Two Pair beats One Pair
+  const twoPair = evaluateHand(['Ah', 'Ad'], ['Kh', 'Kd', '2c', '3d', '4s']);
+  const onePair = evaluateHand(['Ah', 'Ad'], ['Kh', 'Qd', '2c', '3d', '4s']);
+  if (twoPair.handRank <= onePair.handRank) {
+    errors.push('Two Pair should beat One Pair');
+  }
+  
+  // Test 4: High Card comparison
+  const highAce = evaluateHand(['Ah', '2d'], ['3c', '4s', '6h', '8c', 'Td']);
+  const highKing = evaluateHand(['Kh', '2d'], ['3c', '4s', '6h', '8c', 'Td']);
+  if (highAce.handRank !== highKing.handRank) {
+    errors.push('Both should be high card');
+  }
+  // Compare kickers for high card
+  const aceKickers = highAce.kickers || [];
+  const kingKickers = highKing.kickers || [];
+  if (aceKickers[0] <= kingKickers[0]) {
+    errors.push('Ace high should beat King high');
+  }
+  
+  // Test 5: Straight detection
+  const straight = evaluateHand(['Ah', '2d'], ['3c', '4s', '5h', '8c', 'Td']);
+  if (straight.handRank !== 4) { // Straight is rank 4
+    errors.push(`Wheel straight not detected correctly, got rank ${straight.handRank}`);
+  }
+  
+  // Test 6: Quads detection
+  const quads = evaluateHand(['Ah', 'Ad'], ['Ac', 'As', '2c', '3d', '4s']);
+  if (quads.handRank !== 7) { // Quads is rank 7
+    errors.push(`Quads not detected correctly, got rank ${quads.handRank}`);
+  }
+  
+  return {
+    passed: errors.length === 0,
+    errors
+  };
+}
+
+// ==========================================
 // UTILITY EXPORTS
 // ==========================================
 export function parseCard(str: string): string {
