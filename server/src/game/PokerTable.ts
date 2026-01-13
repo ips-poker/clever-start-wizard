@@ -1587,6 +1587,14 @@ export class PokerTable {
   private isTimeBankPhase: boolean = false;
   private timeBankTimerId: ReturnType<typeof setInterval> | null = null;
   
+  // CRITICAL FIX V3: Guard against double-timeout race condition
+  // When both regular timer and forceRecovery trigger simultaneously,
+  // this prevents processing the same player/turn twice
+  private lastTimeoutHandId: string | null = null;
+  private lastTimeoutSeat: number | null = null;
+  private lastTimeoutTimestamp: number = 0;
+  private readonly TIMEOUT_DEBOUNCE_MS = 500; // 500ms debounce for same player/turn
+  
   /**
    * Handle player timeout - POKERSTARS PROFESSIONAL IMPLEMENTATION
    * 
@@ -1600,6 +1608,31 @@ export class PokerTable {
    */
   private async handleTimeout(): Promise<void> {
     if (!this.currentHand || this.currentHand.currentPlayerSeat === null) return;
+    
+    const currentSeat = this.currentHand.currentPlayerSeat;
+    const currentHandId = this.currentHand.id;
+    const now = Date.now();
+    
+    // CRITICAL FIX V3: Guard against double-timeout for same player/turn
+    // This prevents race condition when regular timer and forceRecovery both fire
+    if (
+      this.lastTimeoutHandId === currentHandId &&
+      this.lastTimeoutSeat === currentSeat &&
+      now - this.lastTimeoutTimestamp < this.TIMEOUT_DEBOUNCE_MS
+    ) {
+      logger.info('Skipping handleTimeout - debounce active for same player/turn', {
+        tableId: this.id,
+        handId: currentHandId,
+        seat: currentSeat,
+        msSinceLastTimeout: now - this.lastTimeoutTimestamp
+      });
+      return;
+    }
+    
+    // Record this timeout attempt
+    this.lastTimeoutHandId = currentHandId;
+    this.lastTimeoutSeat = currentSeat;
+    this.lastTimeoutTimestamp = now;
     
     // CRITICAL: Skip timeout during showdown - hand is completing naturally
     if (this.currentHand.phase === 'showdown') {
@@ -1745,10 +1778,31 @@ export class PokerTable {
     this.clearTimeBankTimer();
     
     const timeBankStartTime = Date.now();
-    const initialTimeBank = player.timeBank;
+    
+    // CRITICAL FIX V3: Ensure timeBank is never negative when starting countdown
+    // This fixes the root cause of negative timeBank propagation
+    if (player.timeBank < 0) {
+      logger.warn('startTimeBankCountdown: fixing negative timeBank', {
+        playerId: playerId.substring(0, 8),
+        oldTimeBank: player.timeBank
+      });
+      player.timeBank = 0;
+    }
+    
+    const initialTimeBank = Math.max(0, player.timeBank);
+    
+    // If no time bank remaining, don't start countdown - go straight to timeout
+    if (initialTimeBank <= 0) {
+      logger.info('startTimeBankCountdown: no time bank remaining, skipping to timeout', {
+        playerId: playerId.substring(0, 8)
+      });
+      this.handleTimeout();
+      return;
+    }
     
     // CRITICAL FIX V2: Store handId to prevent timer affecting wrong hand
     const timerHandId = this.currentHand?.id;
+    const timerSeat = this.currentHand?.currentPlayerSeat;
     
     // Tick every second
     this.timeBankTimerId = setInterval(() => {
@@ -1763,8 +1817,20 @@ export class PokerTable {
         return;
       }
       
-      // CRITICAL: If player is no longer current player, stop timer
+      // CRITICAL V3: Also check if seat changed (not just playerId)
+      // This catches cases where player mapping is stale
       const currentSeat = this.currentHand.currentPlayerSeat;
+      if (currentSeat !== timerSeat) {
+        logger.warn('Time bank timer cancelled - seat changed', {
+          playerId: playerId.substring(0, 8),
+          timerSeat,
+          currentSeat
+        });
+        this.clearTimeBankTimer();
+        return;
+      }
+      
+      // CRITICAL: If player is no longer current player, stop timer
       const currentPlayerId = currentSeat !== null ? this.seats[currentSeat] : null;
       if (currentPlayerId !== playerId) {
         logger.warn('Time bank timer cancelled - not player turn anymore', {
