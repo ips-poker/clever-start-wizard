@@ -104,9 +104,34 @@ const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
 
-// Debug logging
+// Debug logging - ENHANCED for full audit
 const DEBUG = true;
+const VERBOSE_LOG = true; // Enable comprehensive event logging
+
 const log = (...args: unknown[]) => DEBUG && console.log('[NodePoker]', ...args);
+
+// Comprehensive event logger for debugging
+const logEvent = (category: string, event: string, data?: unknown) => {
+  if (!VERBOSE_LOG) return;
+  const timestamp = new Date().toISOString().split('T')[1].slice(0, 12);
+  const prefix = `[${timestamp}][${category}]`;
+  
+  // Color coding for console
+  const styles: Record<string, string> = {
+    'STATE': 'color: #4CAF50; font-weight: bold',
+    'ACTION': 'color: #2196F3; font-weight: bold',
+    'PHASE': 'color: #FF9800; font-weight: bold',
+    'TIMER': 'color: #9C27B0; font-weight: bold',
+    'SHOWDOWN': 'color: #E91E63; font-weight: bold',
+    'ERROR': 'color: #F44336; font-weight: bold',
+    'PLAYER': 'color: #00BCD4; font-weight: bold',
+    'CARDS': 'color: #8BC34A; font-weight: bold',
+    'SIT_OUT': 'color: #FF5722; font-weight: bold',
+    'CONNECT': 'color: #673AB7; font-weight: bold',
+  };
+  
+  console.log(`%c${prefix} ${event}`, styles[category] || '', data ? JSON.stringify(data, null, 2) : '');
+};
 
 export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const { tableId, playerId, playerName = 'Player', buyIn = 10000, seatNumber } = options || {};
@@ -466,6 +491,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
       switch (data.type) {
         case 'connected':
+          logEvent('CONNECT', 'Server connected', { timestamp: data.timestamp });
           log('✅ Server connected, timestamp:', data.timestamp);
           // Server may auto-subscribe based on URL params
           break;
@@ -474,8 +500,55 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'state':
         case 'table_state':
           if (data.state && tableId) {
+            const rawState = data.state as Record<string, unknown>;
+            
+            // LOG ALL INCOMING STATE DATA
+            logEvent('STATE', `Received ${data.type}`, {
+              phase: rawState.phase,
+              pot: rawState.pot,
+              currentBet: rawState.currentBet,
+              currentPlayerSeat: rawState.currentPlayerSeat,
+              timeRemaining: rawState.timeRemaining,
+              communityCards: rawState.communityCards,
+              playersCount: (rawState.players as any[])?.length,
+              players: (rawState.players as any[])?.map((p: any) => ({
+                id: p.playerId || p.id,
+                name: p.name,
+                seat: p.seatNumber,
+                stack: p.stack,
+                bet: p.betAmount || p.currentBet,
+                isFolded: p.isFolded,
+                isSittingOut: p.isSittingOut,
+                isAllIn: p.isAllIn,
+                holeCards: p.holeCards?.length || 0,
+              })),
+            });
+            
             setTableState((prev) => {
               const newState = transformServerState(data.state, tableId);
+              
+              // Log phase transitions
+              if (prev?.phase !== newState.phase) {
+                logEvent('PHASE', `Phase changed: ${prev?.phase || 'null'} → ${newState.phase}`, {
+                  pot: newState.pot,
+                  currentBet: newState.currentBet,
+                  communityCards: newState.communityCards,
+                  currentPlayerSeat: newState.currentPlayerSeat,
+                });
+              }
+              
+              // Log sit-out changes
+              newState.players.forEach((p) => {
+                const prevPlayer = prev?.players.find((pp) => pp.playerId === p.playerId);
+                if (prevPlayer?.isSittingOut !== p.isSittingOut) {
+                  logEvent('SIT_OUT', `Player ${p.name} sit-out changed`, {
+                    playerId: p.playerId,
+                    name: p.name,
+                    wasSittingOut: prevPlayer?.isSittingOut,
+                    nowSittingOut: p.isSittingOut,
+                  });
+                }
+              });
 
               // If we're currently in showdown, keep showdown annotations stable even if
               // server keeps sending "state" snapshots without winner indices.
@@ -484,6 +557,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               const isWithinShowdownWindow = showdownElapsed < SHOWDOWN_DISPLAY_MS;
               
               if (prev?.phase === 'showdown' && isWithinShowdownWindow) {
+                logEvent('SHOWDOWN', 'Preserving showdown state within window', {
+                  elapsed: showdownElapsed,
+                  windowMs: SHOWDOWN_DISPLAY_MS,
+                });
                 const prevById = new Map(prev.players.map((p) => [p.playerId, p] as const));
                 newState.phase = 'showdown';
                 newState.players = newState.players.map((p) => {
@@ -514,6 +591,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             // Extract my cards and seat from server state (from getPlayerState)
             const stateData = data.state as Record<string, unknown>;
             if (stateData.myCards) {
+              logEvent('CARDS', 'My cards received', { cards: stateData.myCards });
               setMyCards(stateData.myCards as string[]);
             }
             
@@ -535,6 +613,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 // Get cards from player data
                 const cards = myPlayerData.holeCards as string[] | undefined;
                 if (cards && cards.length > 0) {
+                  logEvent('CARDS', 'My cards from player data', { cards });
                   setMyCards(cards);
                   log('🃏 My cards from player data:', cards);
                 }
@@ -554,6 +633,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             }
           }
           if (data.type === 'subscribed') {
+            logEvent('CONNECT', 'Subscribed to table', { tableId });
             log('✅ Subscribed to table:', tableId);
           }
           break;
@@ -618,6 +698,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'hand_started':
         case 'handStarted':  // Server sends camelCase
           // Clear showdown and ALL player cards when new hand starts
+          logEvent('PHASE', 'New hand started - clearing state', {
+            handId: (data.state as any)?.handId,
+            prevPhase: tableStateRef.current?.phase,
+          });
           log('🎴 New hand started - clearing showdown and player cards');
           showdownTokenRef.current += 1;
           showdownStartTimeRef.current = 0;  // Reset showdown timestamp
@@ -646,10 +730,16 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // Process state if included
           if (data.state && tableId) {
             const stateData = data.state as Record<string, unknown>;
+            logEvent('PHASE', 'Hand started with state', {
+              phase: stateData.phase,
+              pot: stateData.pot,
+              playersWithCards: (stateData.players as any[])?.filter((p: any) => p.holeCards?.length > 0).length,
+            });
             log('🎴 Hand started state:', JSON.stringify(stateData).substring(0, 500));
             setTableState(transformServerState(data.state, tableId));
             
             if (stateData.myCards) {
+              logEvent('CARDS', 'My cards from hand_started', { cards: stateData.myCards });
               setMyCards(stateData.myCards as string[]);
             }
             if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
@@ -892,6 +982,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
         case 'action':
         case 'player_action':
+          logEvent('ACTION', `Player action: ${(data.actionType || data.action) as string}`, {
+            playerId: data.playerId,
+            action: data.actionType || data.action,
+            amount: data.amount,
+            currentPlayerSeat: (data.state as any)?.currentPlayerSeat,
+          });
           setLastAction({
             playerId: data.playerId as string,
             action: (data.actionType || data.action) as string,
@@ -908,10 +1004,16 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'state_update':
           // State update after action - contains partial or full state
           // CRITICAL: Must merge with existing state, not replace (server may send partial updates)
-          log('📊 State update received:', data);
           {
             const stateData = (data.state || data.data || data) as Record<string, unknown>;
-            const hasPlayers = Array.isArray(stateData.players) && stateData.players.length > 0;
+            logEvent('STATE', 'State update received', {
+              hasPlayers: Array.isArray(stateData.players),
+              phase: stateData.phase,
+              currentPlayerSeat: stateData.currentPlayerSeat,
+              timeRemaining: stateData.timeRemaining,
+            });
+            log('📊 State update received:', data);
+            const hasPlayers = Array.isArray(stateData.players) && (stateData.players as unknown[]).length > 0;
             const hasPhase = typeof stateData.phase === 'string';
             
             if (tableId && (hasPlayers || hasPhase)) {
@@ -995,6 +1097,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           break;
 
         case 'showdown':
+          logEvent('SHOWDOWN', 'Showdown event received', { result: data.result });
           setShowdownResult(data.result as ShowdownResult);
           break;
 
@@ -1431,42 +1534,76 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
         case 'player_sitting_out':
           // Player started sitting out (manually or due to disconnect timeout)
-          log('💤 Player sitting out:', data.data);
-          setTableState((prev) => {
-            if (!prev) return prev;
+          {
             const eventData = data.data as Record<string, unknown> | undefined;
             const sittingOutPlayerId = eventData?.playerId as string | undefined;
-            if (!sittingOutPlayerId) return prev;
+            const reason = (eventData?.reason || data.reason || 'unknown') as string;
             
-            return {
-              ...prev,
-              players: prev.players.map(p => 
-                p.playerId === sittingOutPlayerId 
-                  ? { ...p, isSittingOut: true, isActive: false }
-                  : p
-              )
-            };
-          });
+            logEvent('SIT_OUT', 'Player sitting out event received', {
+              playerId: sittingOutPlayerId,
+              reason,
+              eventData,
+            });
+            log('💤 Player sitting out:', data.data);
+            
+            setTableState((prev) => {
+              if (!prev) return prev;
+              if (!sittingOutPlayerId) return prev;
+              
+              const player = prev.players.find(p => p.playerId === sittingOutPlayerId);
+              logEvent('SIT_OUT', `Setting player ${player?.name} to sitting out`, {
+                playerId: sittingOutPlayerId,
+                playerName: player?.name,
+                wasActive: player?.isActive,
+                wasSittingOut: player?.isSittingOut,
+              });
+              
+              return {
+                ...prev,
+                players: prev.players.map(p => 
+                  p.playerId === sittingOutPlayerId 
+                    ? { ...p, isSittingOut: true, isActive: false }
+                    : p
+                )
+              };
+            });
+          }
           break;
         
         case 'player_sitting_in':
           // Player returned to active play
-          log('🎮 Player sitting in:', data.data);
-          setTableState((prev) => {
-            if (!prev) return prev;
+          {
             const eventData = data.data as Record<string, unknown> | undefined;
             const sittingInPlayerId = eventData?.playerId as string | undefined;
-            if (!sittingInPlayerId) return prev;
             
-            return {
-              ...prev,
-              players: prev.players.map(p => 
-                p.playerId === sittingInPlayerId 
-                  ? { ...p, isSittingOut: false, isDisconnected: false, isActive: true }
-                  : p
-              )
-            };
-          });
+            logEvent('SIT_OUT', 'Player sitting in event received', {
+              playerId: sittingInPlayerId,
+              eventData,
+            });
+            log('🎮 Player sitting in:', data.data);
+            
+            setTableState((prev) => {
+              if (!prev) return prev;
+              if (!sittingInPlayerId) return prev;
+              
+              const player = prev.players.find(p => p.playerId === sittingInPlayerId);
+              logEvent('SIT_OUT', `Setting player ${player?.name} to sitting in`, {
+                playerId: sittingInPlayerId,
+                playerName: player?.name,
+                wasActive: player?.isActive,
+                wasSittingOut: player?.isSittingOut,
+              });
+              
+              return {
+                ...prev,
+                players: prev.players.map(p => 
+                  p.playerId === sittingInPlayerId 
+                    ? { ...p, isSittingOut: false, isDisconnected: false, isActive: true }
+                    : p
+                )
+              };
+            });
+          }
           break;
 
         case 'left_table':
@@ -1487,6 +1624,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
         case 'time_bank_used':
           // Time bank notification - update state if included
+          logEvent('TIMER', 'Time bank used', { data: data.data });
           log('⏱️ Time bank used:', data.data);
           if (data.state && tableId) {
             setTableState(transformServerState(data.state, tableId));
@@ -1495,11 +1633,16 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
         case 'timeout_warning':
           // Timeout warning - player is running low on time
+          logEvent('TIMER', 'Timeout warning received', { data });
           log('⚠️ Timeout warning');
           break;
 
         case 'timeout':
           // Player timed out - update state if included
+          logEvent('TIMER', 'Player timeout', { 
+            playerId: (data.data as any)?.playerId,
+            data: data.data 
+          });
           log('⏱️ Player timeout:', data.data);
           if (data.state && tableId) {
             setTableState(transformServerState(data.state, tableId));
