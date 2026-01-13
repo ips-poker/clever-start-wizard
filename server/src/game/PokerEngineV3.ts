@@ -1260,16 +1260,22 @@ export function validateAndProcessAction(
       newStack = 0;
       isAllIn = true;
       
-      // If this all-in is a raise, update raise tracking
+      // POKERSTARS RULE: If this all-in exceeds current bet, it's a raise
+      // ANY raise amount (even short) reopens action for other players
       if (newBet > currentBet) {
         const allInRaiseSize = newBet - currentBet;
-        // Only update minRaise and reopen action if this was a full raise
+        newCurrentBet = newBet;
+        
+        // CRITICAL FIX: ALL raises reopen action (PokerStars/GGPoker rule)
+        // Even short all-in raises allow others to respond
+        reopensAction = true;
+        
+        // Only update minRaise tracking for FULL raises (affects next raise sizing)
         if (allInRaiseSize >= Math.max(minRaise, lastRaiseAmount, bigBlind)) {
           newMinRaise = allInRaiseSize;
           newLastRaiseAmount = allInRaiseSize;
-          reopensAction = true;
         }
-        newCurrentBet = newBet;
+        // For short raises, keep previous minRaise but still reopen
       }
       break;
   }
@@ -2460,11 +2466,22 @@ export class PokerEngineV3 {
       };
     }
     
-    // Deal remaining community cards
-    while (this.state.communityCards.length < 5 && this.deck) {
-      const card = this.deck.deal(1)[0];
-      if (card) {
-        this.state.communityCards.push(card.id);
+    // Deal remaining community cards from state.deck
+    // CRITICAL FIX: Use this.state.deck, not this.deck (which doesn't exist)
+    while (this.state.communityCards.length < 5 && this.state.deck.length > 0) {
+      // Burn one card, deal one card (professional poker standard)
+      if (this.state.deck.length >= 2) {
+        this.state.deck.shift(); // Burn card
+        const card = this.state.deck.shift(); // Deal card
+        if (card) {
+          this.state.communityCards.push(card);
+        }
+      } else if (this.state.deck.length === 1) {
+        // Edge case: only one card left, deal it without burn
+        const card = this.state.deck.shift();
+        if (card) {
+          this.state.communityCards.push(card);
+        }
       }
     }
     
@@ -2481,8 +2498,9 @@ export class PokerEngineV3 {
     }
     this.state.currentBet = 0;
     
-    // Calculate side pots and winners
-    const winners = this.calculateShowdown();
+    // Calculate side pots and winners using existing determineWinners method
+    // CRITICAL FIX: calculateShowdown doesn't exist - use determineWinners instead
+    const winners = this.determineWinners();
     
     // Award pots to winners
     for (const winner of winners) {
@@ -3103,15 +3121,15 @@ export function validateEngineIntegrity(): { passed: boolean; errors: string[] }
     errors.push('Ace high should beat King high');
   }
   
-  // Test 5: Straight detection
+  // Test 5: Straight detection (wheel: A-2-3-4-5)
   const straight = evaluateHand(['Ah', '2d'], ['3c', '4s', '5h', '8c', 'Td']);
-  if (straight.handRank !== 4) { // Straight is rank 4
+  if (straight.handRank !== 5) { // Straight is rank 5
     errors.push(`Wheel straight not detected correctly, got rank ${straight.handRank}`);
   }
   
   // Test 6: Quads detection
   const quads = evaluateHand(['Ah', 'Ad'], ['Ac', 'As', '2c', '3d', '4s']);
-  if (quads.handRank !== 7) { // Quads is rank 7
+  if (quads.handRank !== 8) { // Quads is rank 8
     errors.push(`Quads not detected correctly, got rank ${quads.handRank}`);
   }
   

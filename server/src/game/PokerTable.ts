@@ -126,8 +126,9 @@ export class PokerTable {
     // PROFESSIONAL: Set timings based on table type (turbo/hyper/standard)
     this.timings = getTimingsForTableType(config.tableType || 'standard');
     
-    // CRITICAL: Load existing players from database and sync state
-    this.loadPlayersFromDatabase();
+    // NOTE: loadPlayersFromDatabase() is called by PokerGameManager after construction
+    // Do NOT call it here to avoid duplicate loading
+    // The caller (PokerGameManager) will await loadPlayersFromDatabase() explicitly
     
     logger.info('PokerTable initialized with Engine v3.0', {
       tableId: this.id,
@@ -1962,10 +1963,20 @@ export class PokerTable {
       const previousDealerSeat = this.dealerSeat;
       
       // Reset players and VALIDATE stacks
+      // POKERSTARS-STYLE: Reset ALL hand-specific state at start of new hand
       for (const player of this.players.values()) {
         player.holeCards = [];
         player.currentBet = 0;
         player.isAllIn = false;
+        
+        // CRITICAL FIX: Reset timeBank to never be negative
+        if (player.timeBank < 0) {
+          logger.warn('Fixing negative timeBank at hand start', {
+            playerId: player.id.substring(0, 8),
+            oldTimeBank: player.timeBank
+          });
+          player.timeBank = 0;
+        }
         
         // CRITICAL: Ensure no negative stacks (safety net)
         if (player.stack < 0) {
@@ -1975,6 +1986,11 @@ export class PokerTable {
             negativeStack: player.stack
           });
           player.stack = 0;
+        }
+        
+        // Reset missed turns counter when player successfully joins a new hand
+        if (player.status === 'active' && player.stack > 0) {
+          player.missedTurns = 0;
         }
         
         player.isFolded = player.status !== 'active' || player.stack <= 0;
