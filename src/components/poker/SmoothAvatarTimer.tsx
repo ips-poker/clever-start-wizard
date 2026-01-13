@@ -106,16 +106,21 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - Math.max(0, Math.min(1, progress)));
 
+  // Design tokens (NO hardcoded colors)
+  const mainColor = 'hsl(var(--poker-timer-main))';
+  const bankColor = 'hsl(var(--poker-timer-bank))';
+  const trackColor = 'hsla(var(--background), 0.35)';
+
   // Color based on phase: GREEN for main timer, RED for time bank
-  const strokeColor = isInTimeBank ? '#ef4444' : '#22c55e';
+  const strokeColor = isInTimeBank ? bankColor : mainColor;
 
   // Dynamic glow intensity based on pulse phase when in time bank
-  const glowIntensity = isInTimeBank ? 0.4 + (pulsePhase * 0.6) : 0.4;
+  const glowIntensity = isInTimeBank ? 0.4 + (pulsePhase * 0.6) : 0.35;
   const glowSpread = isInTimeBank ? 8 + (pulsePhase * 12) : 6;
-  
+
   const glowColor = isInTimeBank
-    ? `rgba(239, 68, 68, ${glowIntensity})`
-    : 'rgba(34, 197, 94, 0.4)';
+    ? `hsla(var(--poker-timer-bank), ${glowIntensity})`
+    : `hsla(var(--poker-timer-main), ${glowIntensity})`;
 
   // Dynamic stroke width when pulsing in time bank
   const dynamicStrokeWidth = isInTimeBank 
@@ -137,8 +142,8 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
           className="absolute inset-0 rounded-full"
           style={{
             transform: `scale(${outerRingScale})`,
-            boxShadow: `0 0 ${glowSpread}px ${glowSpread / 2}px rgba(239, 68, 68, ${outerRingOpacity})`,
-            border: `2px solid rgba(239, 68, 68, ${outerRingOpacity})`,
+            boxShadow: `0 0 ${glowSpread}px ${glowSpread / 2}px hsla(var(--poker-timer-bank), ${outerRingOpacity})`,
+            border: `2px solid hsla(var(--poker-timer-bank), ${outerRingOpacity})`,
             transition: 'none'
           }}
         />
@@ -159,7 +164,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(0,0,0,0.5)"
+          stroke={trackColor}
           strokeWidth={strokeWidth}
         />
         
@@ -199,13 +204,13 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
           <div
             className="absolute inset-[-4px] rounded-full pointer-events-none"
             style={{
-              boxShadow: `inset 0 0 ${6 + pulsePhase * 6}px rgba(239, 68, 68, ${0.15 + pulsePhase * 0.25})`,
+              boxShadow: `inset 0 0 ${6 + pulsePhase * 6}px hsla(var(--poker-timer-bank), ${0.15 + pulsePhase * 0.25})`,
             }}
           />
           <div
             className="absolute inset-[-10px] rounded-full pointer-events-none"
             style={{
-              boxShadow: `0 0 ${16 + pulsePhase * 12}px rgba(239, 68, 68, ${0.12 + pulsePhase * 0.18})`,
+              boxShadow: `0 0 ${16 + pulsePhase * 12}px hsla(var(--poker-timer-bank), ${0.12 + pulsePhase * 0.18})`,
             }}
           />
         </>
