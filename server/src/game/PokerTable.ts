@@ -1747,8 +1747,34 @@ export class PokerTable {
     const timeBankStartTime = Date.now();
     const initialTimeBank = player.timeBank;
     
+    // CRITICAL FIX V2: Store handId to prevent timer affecting wrong hand
+    const timerHandId = this.currentHand?.id;
+    
     // Tick every second
     this.timeBankTimerId = setInterval(() => {
+      // CRITICAL: If hand changed, stop this timer immediately
+      if (!this.currentHand || this.currentHand.id !== timerHandId) {
+        logger.warn('Time bank timer cancelled - hand changed', {
+          playerId: playerId.substring(0, 8),
+          timerHandId,
+          currentHandId: this.currentHand?.id
+        });
+        this.clearTimeBankTimer();
+        return;
+      }
+      
+      // CRITICAL: If player is no longer current player, stop timer
+      const currentSeat = this.currentHand.currentPlayerSeat;
+      const currentPlayerId = currentSeat !== null ? this.seats[currentSeat] : null;
+      if (currentPlayerId !== playerId) {
+        logger.warn('Time bank timer cancelled - not player turn anymore', {
+          playerId: playerId.substring(0, 8),
+          currentPlayerId: currentPlayerId?.substring(0, 8)
+        });
+        this.clearTimeBankTimer();
+        return;
+      }
+      
       const elapsedSeconds = Math.floor((Date.now() - timeBankStartTime) / 1000);
       const remaining = Math.max(0, initialTimeBank - elapsedSeconds);
       
@@ -1972,28 +1998,31 @@ export class PokerTable {
         player.currentBet = 0;
         player.isAllIn = false;
         
-        // CRITICAL FIX: Reset timeBank to never be negative
+        // CRITICAL FIX V2: ALWAYS reset timeBank to config value at hand start if negative or zero
+        // This ensures players NEVER start a hand with negative timeBank
         if (player.timeBank < 0) {
           logger.warn('Fixing negative timeBank at hand start', {
             playerId: player.id.substring(0, 8),
             oldTimeBank: player.timeBank
           });
-          player.timeBank = 0;
+          // Reset to full time bank, not zero - punishing players for server bugs is wrong
+          player.timeBank = this.config.timeBankSeconds;
         }
         
         // POKERSTARS: Refill time bank for new hand if empty (configurable)
         // This prevents players from being permanently disadvantaged
         if (player.timeBank === 0 && player.status === 'active') {
-          // Give a small amount back each hand (GGPoker style)
-          const timeBankRefill = Math.min(5, Math.floor(this.config.timeBankSeconds / 3));
-          if (timeBankRefill > 0) {
-            player.timeBank = timeBankRefill;
-            logger.info('Refilled time bank for new hand', {
-              playerId: player.id.substring(0, 8),
-              newTimeBank: player.timeBank
-            });
-          }
+          // Give more time back - at least half of config time bank (GGPoker style improved)
+          const timeBankRefill = Math.max(10, Math.floor(this.config.timeBankSeconds / 2));
+          player.timeBank = timeBankRefill;
+          logger.info('Refilled time bank for new hand', {
+            playerId: player.id.substring(0, 8),
+            newTimeBank: player.timeBank
+          });
         }
+        
+        // CRITICAL: Clamp timeBank to valid range
+        player.timeBank = Math.max(0, Math.min(player.timeBank, this.config.timeBankSeconds));
         
         // CRITICAL: Ensure no negative stacks (safety net)
         if (player.stack < 0) {
@@ -3013,13 +3042,16 @@ export class PokerTable {
       return p;
     });
     
+    // CRITICAL FIX V2: Always clamp timeBank to non-negative before returning to client
+    const safeTimeBank = Math.max(0, player.timeBank);
+    
     return {
       ...publicState,
       players,
       myCards: player.holeCards,
       mySeat: player.seatNumber,
       myStack: player.stack,
-      myTimeBank: player.timeBank,
+      myTimeBank: safeTimeBank, // CRITICAL: Never send negative timeBank to client
       isMyTurn: this.currentHand?.currentPlayerSeat === player.seatNumber
     };
   }
@@ -3278,54 +3310,92 @@ export class PokerTable {
    * 3. Verify current player actually exists and should act
    * 4. Idempotency: track last recovery action to prevent duplicates
    * 5. Never force-fold multiple players - that destroys game integrity
+   * 6. CRITICAL: Always require expectedHandId to prevent stale DB recovery
    */
   private lastRecoveryHandId: string | null = null;
   private lastRecoveryTimestamp: number = 0;
-  private readonly RECOVERY_DEBOUNCE_MS = 5000; // 5 second debounce
+  private readonly RECOVERY_DEBOUNCE_MS = 10000; // 10 second debounce (increased from 5)
   
   forceRecovery(expectedHandId?: string): void {
     const now = Date.now();
 
-    // CRITICAL FIX: If manager provided an expected hand id, verify it matches CURRENT hand
-    // This prevents recovering a stale hand when DB is out of sync with memory
-    if (expectedHandId) {
-      if (!this.currentHand) {
-        logger.warn('Skipping recovery - expected hand provided but no current hand in memory', {
-          tableId: this.id,
-          expectedHandId
+    // CRITICAL FIX V2: ALWAYS require expectedHandId - never trigger blind recovery
+    // This prevents stale DB references from corrupting active games
+    if (!expectedHandId) {
+      logger.warn('Skipping recovery - no expectedHandId provided (safety)', {
+        tableId: this.id,
+        hasCurrentHand: !!this.currentHand,
+        currentHandId: this.currentHand?.id
+      });
+      return;
+    }
+    
+    // If no current hand in memory, nothing to recover
+    if (!this.currentHand) {
+      logger.warn('Skipping recovery - no current hand in memory', {
+        tableId: this.id,
+        expectedHandId
+      });
+      // CRITICAL: Mark the orphaned hand in DB as aborted
+      this.supabase
+        .from('poker_hands')
+        .update({
+          completed_at: new Date().toISOString(),
+          phase: 'aborted'
+        })
+        .eq('id', expectedHandId)
+        .is('completed_at', null)
+        .then(({ error }) => {
+          if (error) {
+            logger.warn('Failed to mark orphaned hand as aborted', { error: error.message });
+          } else {
+            logger.info('Marked orphaned hand as aborted', { handId: expectedHandId });
+          }
         });
-        return;
-      }
+      return;
+    }
+    
+    // CRITICAL: Verify expectedHandId matches current hand in memory
+    if (this.currentHand.id !== expectedHandId) {
+      logger.warn('Skipping recovery - hand ID mismatch (stale DB reference)', {
+        tableId: this.id,
+        expectedHandId,
+        currentHandId: this.currentHand.id,
+        currentPhase: this.currentHand.phase
+      });
       
-      if (this.currentHand.id !== expectedHandId) {
-        logger.warn('Skipping recovery - expected hand mismatch (stale DB reference)', {
-          tableId: this.id,
-          expectedHandId,
-          currentHandId: this.currentHand.id,
-          currentPhase: this.currentHand.phase
-        });
-        
-        // CRITICAL: Update DB to point to correct current hand to prevent future stale recoveries
+      // Fix the stale reference in DB AND mark old hand as aborted
+      Promise.all([
         this.supabase
           .from('poker_tables')
           .update({
             current_hand_id: this.currentHand.id,
             updated_at: new Date().toISOString()
           })
-          .eq('id', this.id)
-          .then(({ error }) => {
-            if (error) {
-              logger.warn('Failed to fix stale current_hand_id in DB', { error: error.message });
-            } else {
-              logger.info('Fixed stale current_hand_id in DB', { 
-                tableId: this.id, 
-                newHandId: this.currentHand?.id 
-              });
-            }
+          .eq('id', this.id),
+        this.supabase
+          .from('poker_hands')
+          .update({
+            completed_at: new Date().toISOString(),
+            phase: 'aborted'
+          })
+          .eq('id', expectedHandId)
+          .is('completed_at', null)
+      ]).then(([tableResult, handResult]) => {
+        if (tableResult.error) {
+          logger.warn('Failed to fix stale current_hand_id in DB', { error: tableResult.error.message });
+        } else {
+          logger.info('Fixed stale current_hand_id in DB', { 
+            tableId: this.id, 
+            newHandId: this.currentHand?.id 
           });
-        
-        return;
-      }
+        }
+        if (handResult.error) {
+          logger.warn('Failed to mark old hand as aborted', { error: handResult.error.message });
+        }
+      });
+      
+      return;
     }
     
     // IDEMPOTENCY: Prevent duplicate recovery within 5 seconds for same hand
