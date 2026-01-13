@@ -186,27 +186,44 @@ export function FullscreenPokerTableWrapper({
     prevTimeRef.current = turnTimeRemaining;
   }, [isMyTurn, turnTimeRemaining, soundEnabled, isTournament, sounds, tournamentSounds]);
 
-  // Timer effect
+  // Timer effect (server-authoritative + SmoothAvatarTimer does the smooth animation)
   useEffect(() => {
-    const actionTimer = tableState?.actionTimer || 30;
-    
-    if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
-      setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
-    } else if (tableState?.currentPlayerSeat !== null) {
-      setTurnTimeRemaining(actionTimer);
-    } else {
+    const mainTimer = tableState?.actionTimer || 30;
+    const timeBankDuration = 15;
+
+    if (!tableState?.currentPlayerSeat && tableState?.currentPlayerSeat !== 0) {
       setTurnTimeRemaining(null);
       return;
     }
 
-    const interval = setInterval(() => {
-      setTurnTimeRemaining(prev => {
-        if (prev === null || prev <= 0) return 0;
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.timeRemaining]);
+    // Base remaining from server (preferred) or fallback to main timer when a turn starts
+    const baseRemaining =
+      tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined
+        ? Math.max(0, Math.ceil(tableState.timeRemaining))
+        : mainTimer;
+
+    // Some server builds send only MAIN time in timeRemaining and keep time bank on player.
+    // To render PokerStars-like ring (30s green + 15s red bank) we *compose* them when needed.
+    const currentPlayer = tableState.players?.find((p) => p.seatNumber === tableState.currentPlayerSeat);
+    const bankRemainingRaw = currentPlayer?.timeBankRemaining;
+    const bankRemaining = Number.isFinite(bankRemainingRaw as number)
+      ? Math.max(0, Math.min(timeBankDuration, Math.ceil(bankRemainingRaw as number)))
+      : 0;
+
+    const composedRemaining = baseRemaining > mainTimer ? baseRemaining : baseRemaining + bankRemaining;
+
+    // Debug: helps catch “ring is red immediately” cases by showing what the server sends.
+    console.log('[TimerDebug]', {
+      phase: tableState.phase,
+      currentPlayerSeat: tableState.currentPlayerSeat,
+      actionTimer: tableState.actionTimer,
+      timeRemaining: tableState.timeRemaining,
+      bankRemaining,
+      composedRemaining,
+    });
+
+    setTurnTimeRemaining(composedRemaining);
+  }, [tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.timeRemaining, tableState?.players, tableState?.phase]);
 
   // Auto-connect on mount
   useEffect(() => {

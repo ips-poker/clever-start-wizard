@@ -46,6 +46,10 @@
     --syndikate-metal: 0 0% 18%; /* Metal surface */
     --syndikate-metal-light: 0 0% 25%;
     --syndikate-rust: 15 70% 35%; /* Rust accent */
+
+    /* Poker timer tokens (semantic, PokerStars-like) */
+    --poker-timer-main: 142 71% 45%; /* green */
+    --poker-timer-bank: var(--syndikate-red); /* red */
     
     /* Industrial Gradients */
     --gradient-industrial: linear-gradient(135deg, hsl(var(--syndikate-concrete)), hsl(var(--syndikate-metal)));
