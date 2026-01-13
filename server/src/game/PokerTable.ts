@@ -1035,7 +1035,18 @@ export class PokerTable {
       logger.warn('Action rejected - no active hand', { playerId, actionType });
       return { success: false, error: 'No active hand' };
     }
-    
+
+    // CRITICAL: Do not accept any actions during showdown.
+    // Prevents duplicate/late actions when the client is behind or when recovery triggers.
+    if (this.currentHand.phase === 'showdown') {
+      logger.warn('Action rejected - hand is in showdown', {
+        tableId: this.id,
+        playerId: playerId.substring(0, 8),
+        actionType
+      });
+      return { success: false, error: 'Hand is complete' };
+    }
+
     // Validation 2: Check player exists
     const player = this.players.get(playerId);
     if (!player) {
@@ -1439,6 +1450,32 @@ export class PokerTable {
     const playerId = seat !== null ? this.seats[seat] : null;
 
     if (seat === null || !playerId) return;
+
+    // CRITICAL: keep poker_hands.action_started_at updated for the CURRENT turn.
+    // PokerGameManager.checkStuckTables relies on this field; if it stays at "hand start time",
+    // the table will be considered stuck after ~2 minutes and will auto-act (skipping streets).
+    if (this.currentHand?.id) {
+      this.supabase
+        .from('poker_hands')
+        .update({
+          action_started_at: new Date().toISOString(),
+          current_player_seat: seat,
+          phase: this.currentHand.phase,
+          current_bet: this.currentHand.currentBet,
+          pot: this.currentHand.pot,
+          community_cards: this.currentHand.communityCards
+        })
+        .eq('id', this.currentHand.id)
+        .then(({ error }) => {
+          if (error) {
+            logger.warn('Failed to update action_started_at', {
+              tableId: this.id,
+              handId: this.currentHand?.id,
+              error: error.message
+            });
+          }
+        });
+    }
 
     const player = this.players.get(playerId) ?? null;
 

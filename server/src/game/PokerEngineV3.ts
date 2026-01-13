@@ -2194,7 +2194,13 @@ export class PokerEngineV3 {
     if (!this.state) {
       return { success: false, error: 'No active hand' };
     }
-    
+
+    // Hard stop: no actions allowed after the hand is effectively over.
+    // Prevents "checks" on showdown and avoids accidental phase advancement loops.
+    if (this.state.isComplete || this.state.phase === 'showdown') {
+      return { success: false, error: 'Hand is complete' };
+    }
+
     const player = this.state.players.find(p => p.id === playerId);
     if (!player) {
       return { success: false, error: 'Player not found' };
