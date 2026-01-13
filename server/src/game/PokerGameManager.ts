@@ -159,7 +159,29 @@ export class PokerGameManager {
         }
       }
       
-      // 2. Delete old completed hands (older than 1 hour) to prevent database bloat
+      // 2. CRITICAL: Mark very old UNCOMPLETED hands as aborted
+      // These orphaned hands cause "random" auto-checks via checkStuckTables
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { data: orphanedHands, error: orphanedError } = await this.supabase
+        .from('poker_hands')
+        .update({ 
+          completed_at: new Date().toISOString(),
+          phase: 'aborted'
+        })
+        .is('completed_at', null)
+        .lt('created_at', tenMinutesAgo)
+        .select('id, table_id');
+      
+      if (orphanedError) {
+        logger.warn('Failed to mark orphaned hands as aborted', { error: orphanedError.message });
+      } else if (orphanedHands && orphanedHands.length > 0) {
+        logger.info('Marked orphaned uncompleted hands as aborted', { 
+          count: orphanedHands.length,
+          handIds: orphanedHands.map(h => h.id.substring(0, 8))
+        });
+      }
+      
+      // 3. Delete old completed hands (older than 1 hour) to prevent database bloat
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       const { error: deleteError } = await this.supabase
         .from('poker_hands')
@@ -317,6 +339,10 @@ export class PokerGameManager {
     }, 30000); // Save every 30 seconds
   }
   
+  // Track when we last triggered recovery for each table to prevent spam
+  private lastRecoveryTime: Map<string, number> = new Map();
+  private readonly RECOVERY_COOLDOWN_MS = 60_000; // 1 minute cooldown between recoveries
+
   /**
    * Check for stuck tables and restart them
    * A table is considered stuck if action_started_at is more than 2 minutes old
@@ -325,12 +351,15 @@ export class PokerGameManager {
    * Only recover the CURRENT hand for each table (poker_tables.current_hand_id).
    * Otherwise old orphaned hands (from previous crashes/restarts) will trigger
    * forceRecovery() on an active table and cause "random" actions/cards.
+   * 
+   * Added cooldown to prevent repeated recovery calls.
    */
   private async checkStuckTables(): Promise<void> {
     try {
       const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      const now = Date.now();
 
-      // 1) Get currently active hands per table
+      // 1) Get currently active tables with their current_hand_id
       const { data: tablesWithHands, error: tablesError } = await this.supabase
         .from('poker_tables')
         .select('id, current_hand_id, status')
@@ -341,10 +370,15 @@ export class PokerGameManager {
         return;
       }
 
-      const currentHandIds = tablesWithHands
-        .map(t => t.current_hand_id)
-        .filter(Boolean) as string[];
+      // Build a map of tableId -> currentHandId for fast lookup
+      const tableToCurrentHand = new Map<string, string>();
+      for (const t of tablesWithHands) {
+        if (t.current_hand_id) {
+          tableToCurrentHand.set(t.id, t.current_hand_id);
+        }
+      }
 
+      const currentHandIds = Array.from(tableToCurrentHand.values());
       if (currentHandIds.length === 0) return;
 
       // 2) Only consider those current hands for stuck detection
@@ -360,6 +394,36 @@ export class PokerGameManager {
       }
 
       for (const hand of stuckHands) {
+        // Verify this hand is actually the current hand for that table
+        const expectedCurrentHand = tableToCurrentHand.get(hand.table_id);
+        if (expectedCurrentHand !== hand.id) {
+          // This is an orphaned hand - just mark it as aborted, don't trigger recovery
+          logger.warn('Orphaned hand found (not current) - marking as aborted', {
+            handId: hand.id,
+            tableId: hand.table_id,
+            expectedCurrentHand
+          });
+          await this.supabase
+            .from('poker_hands')
+            .update({
+              completed_at: new Date().toISOString(),
+              phase: 'aborted'
+            })
+            .eq('id', hand.id);
+          continue;
+        }
+
+        // Check cooldown to prevent repeated recovery calls
+        const lastRecovery = this.lastRecoveryTime.get(hand.table_id) || 0;
+        if (now - lastRecovery < this.RECOVERY_COOLDOWN_MS) {
+          logger.info('Skipping recovery - cooldown active', {
+            tableId: hand.table_id,
+            handId: hand.id,
+            lastRecoveryAgo: now - lastRecovery
+          });
+          continue;
+        }
+
         logger.warn('Found stuck CURRENT hand - attempting recovery', {
           handId: hand.id,
           tableId: hand.table_id,
@@ -371,12 +435,12 @@ export class PokerGameManager {
 
         if (table) {
           logger.info('Triggering timeout recovery for stuck table', { tableId: hand.table_id });
+          this.lastRecoveryTime.set(hand.table_id, now);
           table.forceRecovery();
           continue;
         }
 
         // Table not in memory: abort ONLY this current hand + reset the table.
-        // (This branch is rare because active tables are normally loaded on startup.)
         logger.warn('Table not in memory - marking stuck current hand as aborted', {
           tableId: hand.table_id,
           handId: hand.id
@@ -398,7 +462,7 @@ export class PokerGameManager {
             updated_at: new Date().toISOString()
           })
           .eq('id', hand.table_id)
-          .eq('current_hand_id', hand.id); // extra safety
+          .eq('current_hand_id', hand.id);
       }
     } catch (err) {
       logger.error('Error checking stuck tables', { error: String(err) });
