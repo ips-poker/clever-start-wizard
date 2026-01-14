@@ -373,7 +373,7 @@ server.listen(config.port, () => {
   handHistoryService.initialize(supabase);
 
   // Build marker (helps verify PM2 is running the latest compiled dist)
-  const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-14-timeout-fix-v3';
+  const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-14-simple-timer-v5';
   logger.info(`🧩 Build tag: ${BUILD_TAG}`);
   
   logger.info(`🚀 Poker Server v3.5 running on port ${config.port}`);

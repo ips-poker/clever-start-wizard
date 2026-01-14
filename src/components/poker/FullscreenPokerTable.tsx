@@ -672,22 +672,12 @@ const PlayerSeat = memo(function PlayerSeat({
               height: avatarSize + 6
             }}
           >
-            {(() => {
-              const main = Number.isFinite(mainTimerDuration) && mainTimerDuration > 0 ? mainTimerDuration : 30;
-              const bank = Number.isFinite(timeBankDuration) && timeBankDuration >= 0 ? timeBankDuration : 15;
-              const total = main + bank;
-
-              return (
-                <SmoothAvatarTimer 
-                  remaining={turnTimeRemaining} 
-                  total={total}
-                  mainTimerDuration={main}
-                  timeBankDuration={bank}
-                  size={avatarSize + 6}
-                  strokeWidth={3}
-                />
-              );
-            })()}
+            <SmoothAvatarTimer 
+              remaining={turnTimeRemaining} 
+              total={mainTimerDuration}
+              size={avatarSize + 6}
+              strokeWidth={3}
+            />
           </div>
         )}
         
