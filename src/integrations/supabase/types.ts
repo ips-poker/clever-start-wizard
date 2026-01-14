@@ -1375,36 +1375,60 @@ export type Database = {
       }
       poker_table_players: {
         Row: {
+          auto_post_blinds: boolean | null
+          away_since: string | null
           id: string
           is_dealer: boolean
           joined_at: string
           last_action_at: string | null
+          leave_next_bb: boolean | null
+          missed_blinds: number | null
           player_id: string
+          return_warning_sent_at: string | null
           seat_number: number
+          session_started_at: string | null
+          sit_out_at: string | null
+          sit_out_reason: string | null
           stack: number
           status: string
           table_id: string
           time_bank_remaining: number | null
         }
         Insert: {
+          auto_post_blinds?: boolean | null
+          away_since?: string | null
           id?: string
           is_dealer?: boolean
           joined_at?: string
           last_action_at?: string | null
+          leave_next_bb?: boolean | null
+          missed_blinds?: number | null
           player_id: string
+          return_warning_sent_at?: string | null
           seat_number: number
+          session_started_at?: string | null
+          sit_out_at?: string | null
+          sit_out_reason?: string | null
           stack?: number
           status?: string
           table_id: string
           time_bank_remaining?: number | null
         }
         Update: {
+          auto_post_blinds?: boolean | null
+          away_since?: string | null
           id?: string
           is_dealer?: boolean
           joined_at?: string
           last_action_at?: string | null
+          leave_next_bb?: boolean | null
+          missed_blinds?: number | null
           player_id?: string
+          return_warning_sent_at?: string | null
           seat_number?: number
+          session_started_at?: string | null
+          sit_out_at?: string | null
+          sit_out_reason?: string | null
           stack?: number
           status?: string
           table_id?: string
@@ -1572,6 +1596,70 @@ export type Database = {
             columns: ["tournament_id"]
             isOneToOne: false
             referencedRelation: "online_poker_tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      poker_waiting_list: {
+        Row: {
+          expires_at: string | null
+          id: string
+          joined_at: string
+          max_buy_in: number
+          min_buy_in: number
+          notified_at: string | null
+          player_id: string
+          priority: number | null
+          requested_seat: number | null
+          status: string
+          table_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          id?: string
+          joined_at?: string
+          max_buy_in: number
+          min_buy_in: number
+          notified_at?: string | null
+          player_id: string
+          priority?: number | null
+          requested_seat?: number | null
+          status?: string
+          table_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          id?: string
+          joined_at?: string
+          max_buy_in?: number
+          min_buy_in?: number
+          notified_at?: string | null
+          player_id?: string
+          priority?: number | null
+          requested_seat?: number | null
+          status?: string
+          table_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poker_waiting_list_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poker_waiting_list_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poker_waiting_list_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "poker_tables"
             referencedColumns: ["id"]
           },
         ]
