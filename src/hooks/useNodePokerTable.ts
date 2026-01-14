@@ -106,9 +106,19 @@ const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
 
-// Debug logging - ENHANCED for full audit
-const DEBUG = true;
-const VERBOSE_LOG = true; // Enable comprehensive event logging
+// Debug logging
+// In production this MUST be off to avoid UI lag.
+const getLsFlag = (key: string) => {
+  try {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem(key) === '1';
+  } catch {
+    return false;
+  }
+};
+
+const DEBUG = (import.meta.env.DEV && getLsFlag('poker_debug')) || getLsFlag('poker_debug');
+const VERBOSE_LOG = getLsFlag('poker_verbose');
 
 const log = (...args: unknown[]) => DEBUG && console.log('[NodePoker]', ...args);
 
@@ -117,22 +127,25 @@ const logEvent = (category: string, event: string, data?: unknown) => {
   if (!VERBOSE_LOG) return;
   const timestamp = new Date().toISOString().split('T')[1].slice(0, 12);
   const prefix = `[${timestamp}][${category}]`;
-  
-  // Color coding for console
+
   const styles: Record<string, string> = {
-    'STATE': 'color: #4CAF50; font-weight: bold',
-    'ACTION': 'color: #2196F3; font-weight: bold',
-    'PHASE': 'color: #FF9800; font-weight: bold',
-    'TIMER': 'color: #9C27B0; font-weight: bold',
-    'SHOWDOWN': 'color: #E91E63; font-weight: bold',
-    'ERROR': 'color: #F44336; font-weight: bold',
-    'PLAYER': 'color: #00BCD4; font-weight: bold',
-    'CARDS': 'color: #8BC34A; font-weight: bold',
-    'SIT_OUT': 'color: #FF5722; font-weight: bold',
-    'CONNECT': 'color: #673AB7; font-weight: bold',
+    STATE: 'color: #4CAF50; font-weight: bold',
+    ACTION: 'color: #2196F3; font-weight: bold',
+    PHASE: 'color: #FF9800; font-weight: bold',
+    TIMER: 'color: #9C27B0; font-weight: bold',
+    SHOWDOWN: 'color: #E91E63; font-weight: bold',
+    ERROR: 'color: #F44336; font-weight: bold',
+    PLAYER: 'color: #00BCD4; font-weight: bold',
+    CARDS: 'color: #8BC34A; font-weight: bold',
+    SIT_OUT: 'color: #FF5722; font-weight: bold',
+    CONNECT: 'color: #673AB7; font-weight: bold',
   };
-  
-  console.log(`%c${prefix} ${event}`, styles[category] || '', data ? JSON.stringify(data, null, 2) : '');
+
+  console.log(
+    `%c${prefix} ${event}`,
+    styles[category] || '',
+    data ? JSON.stringify(data, null, 2) : ''
+  );
 };
 
 export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
@@ -293,6 +306,23 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     // Detect which format we're receiving
     const isOldFormat = !!config;
 
+    // Phase MUST be resolved before mapping players (to avoid leaking hole cards)
+    const rawPhase = (state.phase || config?.phase || 'waiting') as string;
+    const normalizedPhase = (() => {
+      const p0 = String(rawPhase).toLowerCase().trim();
+      const p = p0.replace(/[\s-]+/g, '_');
+
+      if (p === 'no_hand' || p === 'nohand' || p === 'idle' || p === 'lobby') return 'waiting';
+      if (p === 'pre_flop' || p === 'preflop') return 'preflop';
+
+      if (p === 'waiting' || p === 'flop' || p === 'turn' || p === 'river' || p === 'showdown') {
+        return p as TableState['phase'];
+      }
+
+      // Unknown phase from server -> treat as waiting (safe default)
+      return 'waiting';
+    })();
+
     const rawMyTimeBank = (state as any).myTimeBank ?? (state as any).my_time_bank;
     const myTimeBank = Number.isFinite(Number(rawMyTimeBank)) ? Number(rawMyTimeBank) : undefined;
 
@@ -314,13 +344,19 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       myCards: state.myCards,
       mySeat: state.mySeat,
       isMyTurn: state.isMyTurn,
-      hasPlayers: !!state.players
+      hasPlayers: !!state.players,
     });
 
     // Get players from root
     const playersRaw = (state.players || []) as Record<string, unknown>[];
 
     const mappedPlayers: PokerPlayer[] = playersRaw.map((p) => {
+      const mappedPlayerId = ((p as any).playerId || (p as any).id) as string;
+      const status = String((p as any).status || '').toLowerCase();
+
+      const isFolded = Boolean(((p as any).isFolded ?? (p as any).is_folded) || false);
+      const isAllIn = Boolean(((p as any).isAllIn ?? (p as any).is_all_in) || false);
+
       // Bet amount: accept multiple server shapes
       const betAmount = Number(
         (p as any).betAmount ??
@@ -332,18 +368,6 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           (p as any).street_bet ??
           0
       );
-
-      // Debug: log player bets
-      if (betAmount > 0) {
-        log('💰 Player bet:', {
-          name: (p as any).name,
-          betAmount,
-          stack: (p as any).stack,
-          isFolded: (p as any).isFolded
-        });
-      }
-
-      const mappedPlayerId = ((p as any).playerId || (p as any).id) as string;
 
       const rawPlayerTimeBank =
         (p as any).timeBank ??
@@ -359,6 +383,18 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         return 0;
       })();
 
+      // IMPORTANT: never show other players' hole cards before showdown.
+      const rawHoleCards = (((p as any).holeCards || (p as any).cards) ?? []) as string[];
+      const holeCards =
+        mappedPlayerId === playerId
+          ? rawHoleCards
+          : normalizedPhase === 'showdown' && !isFolded
+            ? rawHoleCards
+            : [];
+
+      // Note: sit-out removed; treat as normal active/inactive based on disconnect/fold only.
+      const isDisconnected = status === 'disconnected';
+
       return {
         playerId: mappedPlayerId,
         name: ((p as any).name || 'Player') as string,
@@ -367,38 +403,20 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         stack: ((p as any).stack || 0) as number,
         betAmount,
         totalBetInHand: (((p as any).totalBetInHand ?? (p as any).total_bet_in_hand) ?? betAmount ?? 0) as number,
-        holeCards: (((p as any).holeCards || (p as any).cards) ?? []) as string[],
-        isFolded: (((p as any).isFolded ?? (p as any).is_folded) || false) as boolean,
-        isAllIn: (((p as any).isAllIn ?? (p as any).is_all_in) || false) as boolean,
-        isActive: ((p as any).isActive !== false && (p as any).status !== 'disconnected' && (p as any).status !== 'folded' && (p as any).status !== 'sitting_out') as boolean,
-        isDisconnected: ((p as any).status === 'disconnected') as boolean,
-        isSittingOut: (((p as any).isSittingOut ?? (p as any).is_sitting_out) || (p as any).status === 'sitting_out') as boolean,
-        missedTurns: (((p as any).missedTurns ?? (p as any).missed_turns) || 0) as number,
+        holeCards,
+        isFolded,
+        isAllIn,
+        isActive: ((p as any).isActive !== false && !isDisconnected && status !== 'folded') as boolean,
+        isDisconnected,
+        isSittingOut: false,
+        missedTurns: 0,
         timeBankRemaining: Math.max(0, resolvedTimeBank),
         // Showdown fields
         handName: ((p as any).handName || (p as any).handRank || (p as any).hand_rank) as string | undefined,
         isWinner: Boolean((p as any).isWinner || ((p as any).wonAmount as number) > 0 || ((p as any).won_amount as number) > 0),
-        bestCards: (((p as any).bestCards ?? (p as any).best_cards) || []) as string[]
+        bestCards: (((p as any).bestCards ?? (p as any).best_cards) || []) as string[],
       };
     });
-
-    // Server sends phase at root level after rebuilding
-    // Also check config for old format fallback
-    const rawPhase = (state.phase || config?.phase || 'waiting') as string;
-    const normalizedPhase = (() => {
-      const p0 = String(rawPhase).toLowerCase().trim();
-      const p = p0.replace(/[\s-]+/g, '_');
-
-      if (p === 'no_hand' || p === 'nohand' || p === 'idle' || p === 'lobby') return 'waiting';
-      if (p === 'pre_flop' || p === 'preflop') return 'preflop';
-
-      if (p === 'waiting' || p === 'flop' || p === 'turn' || p === 'river' || p === 'showdown') {
-        return p as TableState['phase'];
-      }
-
-      // Unknown phase from server -> treat as waiting (safe default)
-      return 'waiting';
-    })();
 
     const pot = (state.pot ?? 0) as number;
     const currentBet = (state.currentBet ?? 0) as number;
@@ -463,7 +481,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
     const players = mappedPlayers.map((p) => {
       if (!isPreflopLike) return p;
-      if (p.isFolded || p.isSittingOut || p.isDisconnected) return p;
+      if (p.isFolded || p.isDisconnected) return p;
       if (p.betAmount > 0) return p;
 
       if (p.seatNumber === smallBlindSeat && smallBlind > 0) {

@@ -80,7 +80,7 @@ export function FullscreenPokerTableWrapper({
   const [selectedSeatForJoin, setSelectedSeatForJoin] = useState<number | null>(null);
   const [isProcessingCashout, setIsProcessingCashout] = useState(false);
   const [actualBuyIn, setActualBuyIn] = useState<number>(buyIn);
-  const [isTimeBankActive, setIsTimeBankActive] = useState(false);
+  
   
   const { preferences, currentTableTheme, updatePreference } = usePokerPreferences();
   
@@ -96,7 +96,7 @@ export function FullscreenPokerTableWrapper({
   
   const {
     isConnected, isConnecting, error, tableState, myCards, mySeat, myPlayer, isMyTurn, canCheck, callAmount, lastAction, showdownResult,
-    connect, disconnect, joinTable, fold, check, call, raise, allIn, addChips, sitOut, sitIn,
+    connect, disconnect, joinTable, fold, check, call, raise, allIn, addChips,
     rebuyAvailable, clearRebuyAvailable,
     tournamentBreak, clearTournamentBreak,
     // Elimination data for professional animation
@@ -182,45 +182,23 @@ export function FullscreenPokerTableWrapper({
     prevTimeRef.current = turnTimeRemaining;
   }, [isMyTurn, turnTimeRemaining, soundEnabled, isTournament, sounds, tournamentSounds]);
 
-  // Timer effect (server-authoritative + SmoothAvatarTimer does the smooth animation)
+  // Timer effect (server-authoritative)
+  // Time bank removed: UI shows only main action timer.
   useEffect(() => {
     const mainTimer = tableState?.actionTimer || 30;
-    const timeBankDuration = tableState?.timeBankSeconds ?? 15;
 
-    if (!tableState?.currentPlayerSeat && tableState?.currentPlayerSeat !== 0) {
+    if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
       setTurnTimeRemaining(null);
       return;
     }
 
-    // Base remaining from server (preferred) or fallback to main timer when a turn starts
-    const baseRemaining =
+    const remaining =
       tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined
         ? Math.max(0, Math.ceil(tableState.timeRemaining))
         : mainTimer;
 
-    // Some server builds send only MAIN time in timeRemaining and keep time bank on player.
-    // To render PokerStars-like ring we *compose* them when needed.
-    const currentPlayer = tableState.players?.find((p) => p.seatNumber === tableState.currentPlayerSeat);
-    const bankRemainingRaw = currentPlayer?.timeBankRemaining;
-    const bankRemaining = Number.isFinite(bankRemainingRaw as number)
-      ? Math.max(0, Math.min(timeBankDuration, Math.ceil(bankRemainingRaw as number)))
-      : 0;
-
-    const composedRemaining = baseRemaining > mainTimer ? baseRemaining : baseRemaining + bankRemaining;
-
-    // Debug: helps catch “ring is red immediately” cases by showing what the server sends.
-    console.log('[TimerDebug]', {
-      phase: tableState.phase,
-      currentPlayerSeat: tableState.currentPlayerSeat,
-      actionTimer: tableState.actionTimer,
-      timeRemaining: tableState.timeRemaining,
-      timeBankDuration,
-      bankRemaining,
-      composedRemaining,
-    });
-
-    setTurnTimeRemaining(composedRemaining);
-  }, [tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.timeRemaining, tableState?.players, tableState?.phase, tableState?.timeBankSeconds]);
+    setTurnTimeRemaining((prev) => (prev === remaining ? prev : remaining));
+  }, [tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.timeRemaining]);
 
   // Auto-connect on mount
   useEffect(() => {
@@ -742,8 +720,8 @@ export function FullscreenPokerTableWrapper({
               currentPlayerId={playerId}
               onComplete={() => setKnockoutEvent(null)}
             />
-            
-            {/* Time bank disabled */}
+          </>
+        )}
         
         {/* Fallback Blinds Display - shows when TournamentHUD is not available */}
         {tableState && !tournamentId && (
