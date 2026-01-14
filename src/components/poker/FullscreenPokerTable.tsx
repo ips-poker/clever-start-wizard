@@ -637,21 +637,19 @@ const PlayerSeat = memo(function PlayerSeat({
   const isReplaceableBot = canJoin && /bot/i.test(player.name ?? '');
 
   return (
-    <div
+    <motion.div
       className={cn(
         "absolute -translate-x-1/2 -translate-y-1/2",
         isHero ? "z-20" : "z-10",
         isReplaceableBot && "cursor-pointer"
       )}
       style={{ left: `${position.x}%`, top: `${position.y}%` }}
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
       onClick={() => {
         if (isReplaceableBot) onSeatClick?.(seatNumber);
       }}
     >
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-      >
 
       {/* Avatar with status border and opponent cards */}
       <div className="relative">
@@ -879,8 +877,7 @@ const PlayerSeat = memo(function PlayerSeat({
           <PPPokerActionBadge action={lastAction} amount={player.betAmount} />
         )}
       </AnimatePresence>
-      </motion.div>
-    </div>
+    </motion.div>
   );
 });
 
