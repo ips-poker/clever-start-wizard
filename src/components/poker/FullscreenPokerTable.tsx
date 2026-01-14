@@ -503,6 +503,8 @@ interface PlayerSeatProps {
   isBB: boolean;
   isCurrentTurn: boolean;
   turnTimeRemaining?: number;
+  mainTimerDuration?: number;
+  timeBankDuration?: number;
   heroCards?: string[];
   communityCards?: string[];
   gamePhase?: string;
@@ -564,6 +566,8 @@ const PlayerSeat = memo(function PlayerSeat({
   isBB,
   isCurrentTurn,
   turnTimeRemaining,
+  mainTimerDuration = 30,
+  timeBankDuration = 15,
   heroCards,
   communityCards = [],
   gamePhase = 'waiting',
@@ -668,14 +672,22 @@ const PlayerSeat = memo(function PlayerSeat({
               height: avatarSize + 6
             }}
           >
-            <SmoothAvatarTimer 
-              remaining={turnTimeRemaining} 
-              total={45}  // 30 sec main + 15 sec time bank
-              mainTimerDuration={30}
-              timeBankDuration={15}
-              size={avatarSize + 6}
-              strokeWidth={3}
-            />
+            {(() => {
+              const main = Number.isFinite(mainTimerDuration) && mainTimerDuration > 0 ? mainTimerDuration : 30;
+              const bank = Number.isFinite(timeBankDuration) && timeBankDuration >= 0 ? timeBankDuration : 15;
+              const total = main + bank;
+
+              return (
+                <SmoothAvatarTimer 
+                  remaining={turnTimeRemaining} 
+                  total={total}
+                  mainTimerDuration={main}
+                  timeBankDuration={bank}
+                  size={avatarSize + 6}
+                  strokeWidth={3}
+                />
+              );
+            })()}
           </div>
         )}
         
@@ -1379,6 +1391,7 @@ export interface FullscreenPokerTableProps {
 }
 
 export const FullscreenPokerTable = memo(function FullscreenPokerTable({
+  tableState,
   players,
   heroSeat,
   heroCards,
@@ -1691,6 +1704,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               isBB={player?.seatNumber === bigBlindSeat}
               isCurrentTurn={player?.seatNumber === currentPlayerSeat}
               turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
+              mainTimerDuration={Number((tableState as any)?.actionTimer ?? 30)}
+              timeBankDuration={Number((tableState as any)?.timeBankSeconds ?? 15)}
               heroCards={idx === 0 ? heroCards : undefined}
               communityCards={communityCards}
               gamePhase={phase}
