@@ -28,11 +28,9 @@ import { RebuyDialog } from './RebuyDialog';
 import { TournamentRebuyDialog } from './TournamentRebuyDialog';
 import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
 import { ProTournamentLobby } from './tournament-lobby';
-import { TimeBankIndicator } from './TimeBankIndicator';
 import { TournamentBreakBanner } from './TournamentBreakBanner';
 import { TournamentBreakOverlay } from './TournamentBreakOverlay';
 import { EliminationAnimation } from './EliminationAnimation';
-import { ActionTimeIndicator } from './ActionTimeIndicator';
 
 
 // Syndikate branding
@@ -119,15 +117,13 @@ export function FullscreenPokerTableWrapper({
   // Table readiness hint (why hand isn't starting)
   const startHandHint = useMemo(() => {
     const players = tableState?.players ?? [];
-    const activePlayers = players.filter((p) => p.isActive && !p.isSittingOut && !p.isDisconnected);
-    const sittingOutPlayers = players.filter((p) => p.isSittingOut);
+    const activePlayers = players.filter((p) => p.isActive && !p.isDisconnected);
     const required = 2;
 
     return {
       required,
       activeCount: activePlayers.length,
       canStart: activePlayers.length >= required,
-      sittingOutPlayers
     };
   }, [tableState?.players]);
 
@@ -747,21 +743,7 @@ export function FullscreenPokerTableWrapper({
               onComplete={() => setKnockoutEvent(null)}
             />
             
-            {/* Time Bank Indicator for tournaments */}
-            {myPlayer && (
-              <TimeBankIndicator
-                timeBankRemaining={myPlayer.timeBankRemaining ?? 30}
-                timeBankInitial={30}
-                timeBankPerLevel={5}
-                isMyTurn={isMyTurn}
-                isTimeBankActive={isTimeBankActive}
-                actionTimeRemaining={turnTimeRemaining ?? undefined}
-                onUseTimeBank={() => setIsTimeBankActive(true)}
-                size="md"
-              />
-            )}
-          </>
-        )}
+            {/* Time bank disabled */}
         
         {/* Fallback Blinds Display - shows when TournamentHUD is not available */}
         {tableState && !tournamentId && (
@@ -786,46 +768,13 @@ export function FullscreenPokerTableWrapper({
             paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 56px)'
           }}
         >
-          {/* Why there is no hand yet */}
           {tableState?.phase === 'waiting' && !startHandHint.canStart && (
             <div className="pointer-events-none absolute left-1/2 top-3 z-20 w-[min(520px,calc(100%-24px))] -translate-x-1/2">
               <div className="rounded-xl bg-black/60 backdrop-blur-md border border-white/10 px-4 py-3 shadow-lg">
                 <div className="text-sm text-white/90 font-medium">
                   Ожидание раздачи: нужно {startHandHint.required} активных игрока (сейчас {startHandHint.activeCount}).
                 </div>
-                {startHandHint.sittingOutPlayers.length > 0 && (
-                  <div className="mt-1 text-xs text-white/70">
-                    Вне игры (Sit Out): {startHandHint.sittingOutPlayers.map(p => p.name || p.playerId.slice(0, 8)).join(', ')}
-                  </div>
-                )}
               </div>
-            </div>
-          )}
-
-          {/* If YOU are sitting out OR disconnected - show a prominent "Return" button */}
-          {(myPlayer?.isSittingOut || myPlayer?.isDisconnected) && (
-            <div className="pointer-events-auto absolute left-1/2 bottom-44 z-30 -translate-x-1/2">
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="flex flex-col items-center gap-2"
-              >
-                <div className="text-white/70 text-sm bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm">
-                  {myPlayer?.isDisconnected ? 'Соединение потеряно' : 'Вы вне игры'}
-                </div>
-                <Button
-                  variant="default"
-                  size="lg"
-                  className="rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-8 py-3 shadow-lg shadow-emerald-500/30"
-                  onClick={() => {
-                    sitIn();
-                    toast.success('Вы вернулись в игру');
-                  }}
-                >
-                  <RotateCcw className="h-5 w-5 mr-2" />
-                  Вернуться в игру
-                </Button>
-              </motion.div>
             </div>
           )}
 
@@ -850,7 +799,6 @@ export function FullscreenPokerTableWrapper({
               smallBlindSeat={smallBlindSeat}
               bigBlindSeat={bigBlindSeat}
               currentPlayerSeat={currentPlayerSeat}
-              turnTimeRemaining={turnTimeRemaining || undefined}
               smallBlind={tableState?.smallBlindAmount || 10}
               bigBlind={tableState?.bigBlindAmount || 20}
               canJoinTable={canJoinTable}
