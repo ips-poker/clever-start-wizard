@@ -1,13 +1,13 @@
-// Smooth 60fps Timer Ring Around Avatar with Time Bank Pulsing Effect
-// Main timer (30 sec, GREEN) → Time bank (15 sec, RED pulsing)
+// Simple 60fps Timer Ring Around Avatar
+// SIMPLIFIED V4: No time bank, just a simple countdown timer
 import React, { memo, useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 interface SmoothAvatarTimerProps {
   remaining: number;        // Remaining seconds from server
-  total: number;            // Total time allocated (main + timebank = 45 sec)
-  mainTimerDuration?: number; // Main timer duration (default 30 sec)
-  timeBankDuration?: number;  // Time bank duration (default 15 sec)
+  total: number;            // Total time allocated (actionTimeSeconds)
+  mainTimerDuration?: number; // Kept for compatibility but ignored
+  timeBankDuration?: number;  // Kept for compatibility but ignored
   size: number;
   strokeWidth?: number;
   className?: string;
@@ -16,41 +16,22 @@ interface SmoothAvatarTimerProps {
 export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   remaining,
   total,
-  mainTimerDuration = 30,
-  timeBankDuration = 15,
   size,
   strokeWidth = 4,
   className
 }: SmoothAvatarTimerProps) {
   const [currentRemaining, setCurrentRemaining] = useState(remaining);
-  const [pulsePhase, setPulsePhase] = useState(0);
   const animationRef = useRef<number>();
-  const pulseRef = useRef<number>();
   const startTimeRef = useRef<number>(Date.now());
   const startRemainingRef = useRef<number>(remaining);
 
-  // POKERSTARS TIMER LOGIC:
-  // Total time = mainTimerDuration (30 sec) + timeBankDuration (15 sec) = 45 sec
-  // 
-  // remaining > 15 sec → MAIN TIMER (GREEN ring, not pulsing)
-  //   Example: remaining=40 → main timer, green
-  //   Example: remaining=20 → main timer, green  
-  //
-  // remaining ≤ 15 sec → TIME BANK (RED pulsing ring)
-  //   Example: remaining=15 → time bank starts, red pulsing
-  //   Example: remaining=5 → time bank, red pulsing
-  //
-  const isInTimeBank = currentRemaining <= timeBankDuration;
+  // Simple progress calculation: remaining / total
+  const progress = Math.max(0, Math.min(1, currentRemaining / total));
   
-  // Calculate progress (0 to 1) for the ring display
-  let progress: number;
-  if (isInTimeBank) {
-    // TIME BANK phase: 15 sec → progress=1, 0 sec → progress=0
-    progress = Math.max(0, currentRemaining / timeBankDuration);
-  } else {
-    // MAIN TIMER phase: 45 sec → progress=1, 15 sec → progress=0
-    progress = Math.max(0, (currentRemaining - timeBankDuration) / mainTimerDuration);
-  }
+  // Warning threshold: less than 25% of time remaining
+  const isWarning = currentRemaining <= total * 0.25;
+  // Critical threshold: less than 10% of time remaining
+  const isCritical = currentRemaining <= total * 0.10;
 
   useEffect(() => {
     // Reset animation when remaining time changes significantly
@@ -76,79 +57,35 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     };
   }, [remaining]);
 
-  // Pulse animation for time bank phase - smooth 60fps pulsing
-  useEffect(() => {
-    if (isInTimeBank) {
-      const startTime = Date.now();
-      const pulseDuration = 350; // ms for one pulse cycle - urgent
-      
-      const animatePulse = () => {
-        const elapsed = Date.now() - startTime;
-        // Sin wave for smooth pulsing (0 to 1 to 0)
-        const phase = (Math.sin((elapsed / pulseDuration) * Math.PI * 2) + 1) / 2;
-        setPulsePhase(phase);
-        pulseRef.current = requestAnimationFrame(animatePulse);
-      };
-      
-      pulseRef.current = requestAnimationFrame(animatePulse);
-      
-      return () => {
-        if (pulseRef.current) {
-          cancelAnimationFrame(pulseRef.current);
-        }
-      };
-    } else {
-      setPulsePhase(0);
-    }
-  }, [isInTimeBank]);
-
   const radius = (size / 2) - (strokeWidth / 2);
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - Math.max(0, Math.min(1, progress)));
+  const strokeDashoffset = circumference * (1 - progress);
 
-  // Design tokens (NO hardcoded colors)
-  const mainColor = 'hsl(var(--poker-timer-main))';
-  const bankColor = 'hsl(var(--poker-timer-bank))';
+  // Design tokens - colors based on time remaining
   const trackColor = 'hsla(var(--background), 0.35)';
+  
+  // Color progression: green → yellow → red
+  let strokeColor: string;
+  let glowColor: string;
+  
+  if (isCritical) {
+    strokeColor = 'hsl(0, 85%, 55%)'; // Red
+    glowColor = 'hsla(0, 85%, 55%, 0.5)';
+  } else if (isWarning) {
+    strokeColor = 'hsl(40, 95%, 55%)'; // Yellow/Orange
+    glowColor = 'hsla(40, 95%, 55%, 0.4)';
+  } else {
+    strokeColor = 'hsl(140, 75%, 50%)'; // Green
+    glowColor = 'hsla(140, 75%, 50%, 0.35)';
+  }
 
-  // Color based on phase: GREEN for main timer, RED for time bank
-  const strokeColor = isInTimeBank ? bankColor : mainColor;
-
-  // Dynamic glow intensity based on pulse phase when in time bank
-  const glowIntensity = isInTimeBank ? 0.4 + (pulsePhase * 0.6) : 0.35;
-  const glowSpread = isInTimeBank ? 8 + (pulsePhase * 12) : 6;
-
-  const glowColor = isInTimeBank
-    ? `hsla(var(--poker-timer-bank), ${glowIntensity})`
-    : `hsla(var(--poker-timer-main), ${glowIntensity})`;
-
-  // Dynamic stroke width when pulsing in time bank
-  const dynamicStrokeWidth = isInTimeBank 
-    ? strokeWidth + (pulsePhase * 3) 
-    : strokeWidth;
-
-  // Outer ring scale for pulsing effect
-  const outerRingScale = isInTimeBank ? 1 + (pulsePhase * 0.1) : 1;
-  const outerRingOpacity = isInTimeBank ? 0.2 + (pulsePhase * 0.4) : 0;
+  const glowSpread = isCritical ? 10 : isWarning ? 8 : 6;
 
   return (
     <div 
       className={cn("relative pointer-events-none", className)}
       style={{ width: size, height: size }}
     >
-      {/* Outer pulsing ring for time bank */}
-      {isInTimeBank && (
-        <div
-          className="absolute inset-0 rounded-full"
-          style={{
-            transform: `scale(${outerRingScale})`,
-            boxShadow: `0 0 ${glowSpread}px ${glowSpread / 2}px hsla(var(--poker-timer-bank), ${outerRingOpacity})`,
-            border: `2px solid hsla(var(--poker-timer-bank), ${outerRingOpacity})`,
-            transition: 'none'
-          }}
-        />
-      )}
-      
       {/* Main SVG ring */}
       <svg
         width={size}
@@ -175,46 +112,15 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
           r={radius}
           fill="none"
           stroke={strokeColor}
-          strokeWidth={dynamicStrokeWidth}
+          strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
+          style={{
+            transition: 'stroke 0.3s ease'
+          }}
         />
-
-        {/* Inner glow circle when in time bank - follows pulse */}
-        {isInTimeBank && (
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke={strokeColor}
-            strokeWidth={dynamicStrokeWidth + 8}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            opacity={0.15 + (pulsePhase * 0.2)}
-          />
-        )}
       </svg>
-      
-      {/* Additional outer glow rings for dramatic effect during time bank */}
-      {isInTimeBank && (
-        <>
-          <div
-            className="absolute inset-[-4px] rounded-full pointer-events-none"
-            style={{
-              boxShadow: `inset 0 0 ${6 + pulsePhase * 6}px hsla(var(--poker-timer-bank), ${0.15 + pulsePhase * 0.25})`,
-            }}
-          />
-          <div
-            className="absolute inset-[-10px] rounded-full pointer-events-none"
-            style={{
-              boxShadow: `0 0 ${16 + pulsePhase * 12}px hsla(var(--poker-timer-bank), ${0.12 + pulsePhase * 0.18})`,
-            }}
-          />
-        </>
-      )}
     </div>
   );
 });
