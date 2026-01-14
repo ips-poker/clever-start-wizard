@@ -48,6 +48,8 @@ export interface TableState {
   anteAmount?: number;
   actionTimer?: number;
   timeRemaining?: number | null;
+  timeBankSeconds?: number; // Table-configured time bank (seconds)
+  myTimeBank?: number; // Convenience from server for current user
   lastRaiserSeat?: number | null;
   playersNeeded?: number;
   gameStartingCountdown?: number;
@@ -284,13 +286,25 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   // Server sends flat structure with phase, pot, currentPlayerSeat, myCards at root level
   const transformServerState = useCallback((serverState: unknown, tblId: string): TableState => {
     const state = serverState as Record<string, unknown>;
-    
+
     // Handle nested config if present (old server format)
     const config = state.config as Record<string, unknown> | undefined;
-    
+
     // Detect which format we're receiving
     const isOldFormat = !!config;
-    
+
+    const rawMyTimeBank = (state as any).myTimeBank ?? (state as any).my_time_bank;
+    const myTimeBank = Number.isFinite(Number(rawMyTimeBank)) ? Number(rawMyTimeBank) : undefined;
+
+    const rawTimeBankSeconds =
+      (state as any).timeBankSeconds ??
+      (state as any).time_bank_seconds ??
+      (state as any).timeBank ??
+      (state as any).time_bank_seconds_total ??
+      config?.timeBankSeconds ??
+      (config as any)?.time_bank_seconds;
+    const timeBankSeconds = Number.isFinite(Number(rawTimeBankSeconds)) ? Number(rawTimeBankSeconds) : undefined;
+
     // Debug log the full state structure
     log('🔄 Transforming state:', {
       format: isOldFormat ? 'OLD (nested config)' : 'NEW (flat)',
@@ -302,10 +316,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       isMyTurn: state.isMyTurn,
       hasPlayers: !!state.players
     });
-    
+
     // Get players from root
     const playersRaw = (state.players || []) as Record<string, unknown>[];
-    
+
     const mappedPlayers: PokerPlayer[] = playersRaw.map((p) => {
       // Bet amount: accept multiple server shapes
       const betAmount = Number(
@@ -329,8 +343,24 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         });
       }
 
+      const mappedPlayerId = ((p as any).playerId || (p as any).id) as string;
+
+      const rawPlayerTimeBank =
+        (p as any).timeBank ??
+        (p as any).timeBankRemaining ??
+        (p as any).time_bank_remaining ??
+        (p as any).time_bank;
+
+      const resolvedTimeBank = (() => {
+        const n = Number(rawPlayerTimeBank);
+        if (Number.isFinite(n)) return n;
+        if (mappedPlayerId && mappedPlayerId === playerId && myTimeBank !== undefined) return myTimeBank;
+        if (timeBankSeconds !== undefined) return timeBankSeconds;
+        return 0;
+      })();
+
       return {
-        playerId: ((p as any).playerId || (p as any).id) as string,
+        playerId: mappedPlayerId,
         name: ((p as any).name || 'Player') as string,
         avatarUrl: ((p as any).avatarUrl || (p as any).avatar) as string | undefined,
         seatNumber: ((p as any).seatNumber ?? (p as any).seat_number ?? 0) as number,
@@ -344,7 +374,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         isDisconnected: ((p as any).status === 'disconnected') as boolean,
         isSittingOut: (((p as any).isSittingOut ?? (p as any).is_sitting_out) || (p as any).status === 'sitting_out') as boolean,
         missedTurns: (((p as any).missedTurns ?? (p as any).missed_turns) || 0) as number,
-        timeBankRemaining: (((p as any).timeBank ?? (p as any).time_bank_remaining) || 60) as number,
+        timeBankRemaining: Math.max(0, resolvedTimeBank),
         // Showdown fields
         handName: ((p as any).handName || (p as any).handRank || (p as any).hand_rank) as string | undefined,
         isWinner: Boolean((p as any).isWinner || ((p as any).wonAmount as number) > 0 || ((p as any).won_amount as number) > 0),
@@ -474,9 +504,11 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       anteAmount: ante,
       actionTimer,
       timeRemaining: (state as any).timeRemaining as number | null | undefined,
+      timeBankSeconds,
+      myTimeBank,
       playersNeeded: ((state as any).playersNeeded || 0) as number
     };
-  }, []);
+  }, [playerId]);
 
   // Handle incoming messages
   const handleMessage = useCallback((event: MessageEvent) => {
@@ -1623,12 +1655,26 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           break;
 
         case 'time_bank_used':
-          // Time bank notification - update state if included
+          // Time bank notification - server may not include it in state.players, so patch locally.
           logEvent('TIMER', 'Time bank used', { data: data.data });
           log('⏱️ Time bank used:', data.data);
-          if (data.state && tableId) {
-            setTableState(transformServerState(data.state, tableId));
-          }
+
+          setTableState((prev) => {
+            const base = data.state && tableId ? transformServerState(data.state, tableId) : prev;
+            if (!base) return base;
+
+            const eventData = (data.data || {}) as any;
+            const pid = eventData.playerId as string | undefined;
+            const remaining = Number(eventData.remaining);
+            if (!pid || !Number.isFinite(remaining)) return base;
+
+            return {
+              ...base,
+              players: base.players.map((p) =>
+                p.playerId === pid ? { ...p, timeBankRemaining: Math.max(0, remaining) } : p
+              )
+            };
+          });
           break;
 
         case 'timeout_warning':
@@ -2388,16 +2434,11 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         log('👁️ Window visible again, ensuring active status');
-        
-        // If WebSocket is still connected, send a heartbeat to confirm we're active
-        // This prevents false sitout if user just switched between windows
+
+        // Server doesn't support custom heartbeat messages (activity_ping).
+        // Use a normal ping if socket is alive.
         if (wsRef.current?.readyState === WebSocket.OPEN) {
-          sendMessage({ 
-            type: 'activity_ping', 
-            tableId, 
-            playerId,
-            isPopup: isPopupWindow 
-          });
+          sendMessage({ type: 'ping' });
         } else {
           // WebSocket was closed - attempt reconnect
           log('🔄 WebSocket closed during visibility hide, reconnecting...');
@@ -2409,17 +2450,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         log('👁️ Window hidden (popup:', isPopupWindow, ') - NOT sending sitout');
       }
     };
-    
+
     const handleWindowFocus = () => {
       // Window regained focus - ensure we're still active
       if (wsRef.current?.readyState === WebSocket.OPEN) {
-        log('👁️ Window focus regained, sending activity ping');
-        sendMessage({ 
-          type: 'activity_ping', 
-          tableId, 
-          playerId,
-          isPopup: isPopupWindow 
-        });
+        log('👁️ Window focus regained, sending ping');
+        sendMessage({ type: 'ping' });
       }
     };
     
