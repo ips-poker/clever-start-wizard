@@ -384,6 +384,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       })();
 
       // IMPORTANT: never show other players' hole cards before showdown.
+      // Server sends cards at showdown - trust server, don't do local checks
       const rawHoleCards = (((p as any).holeCards || (p as any).cards) ?? []) as string[];
       const holeCards =
         mappedPlayerId === playerId
@@ -392,7 +393,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             ? rawHoleCards
             : [];
 
-      // Note: sit-out removed; treat as normal active/inactive based on disconnect/fold only.
+      // Note: sit-out removed completely - no sitting_out status
       const isDisconnected = status === 'disconnected';
 
       return {
@@ -408,10 +409,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         isAllIn,
         isActive: ((p as any).isActive !== false && !isDisconnected && status !== 'folded') as boolean,
         isDisconnected,
-        isSittingOut: false,
-        missedTurns: 0,
-        timeBankRemaining: Math.max(0, resolvedTimeBank),
-        // Showdown fields
+        isSittingOut: false, // Always false - sitout disabled
+        missedTurns: 0,      // Always 0 - no tracking
+        timeBankRemaining: 0, // Time bank disabled
+        // Showdown fields (server-authoritative)
         handName: ((p as any).handName || (p as any).handRank || (p as any).hand_rank) as string | undefined,
         isWinner: Boolean((p as any).isWinner || ((p as any).wonAmount as number) > 0 || ((p as any).won_amount as number) > 0),
         bestCards: (((p as any).bestCards ?? (p as any).best_cards) || []) as string[],

@@ -778,73 +778,20 @@ export class PokerTable {
   }
 
   /**
-   * Sit out - player will auto-fold when it's their turn
+   * Sit out - DISABLED per PokerStars simplification
+   * Players stay active until they leave or disconnect
    */
   async sitOut(playerId: string): Promise<{ success: boolean; error?: string }> {
-    const player = this.players.get(playerId);
-    if (!player) {
-      return { success: false, error: 'Player not at table' };
-    }
-    
-    if (player.status === 'sitting_out') {
-      return { success: false, error: 'Already sitting out' };
-    }
-    
-    player.status = 'sitting_out';
-    player.sitOutReason = 'manual'; // Track that this was manual sitout
-    logger.info('Player sitting out', { playerId: playerId.substring(0, 8), reason: 'manual' });
-    
-    // Update database
-    await this.supabase
-      .from('poker_table_players')
-      .update({ status: 'sitting_out', sit_out_reason: 'manual' })
-      .eq('table_id', this.id)
-      .eq('player_id', playerId);
-    
-    this.emit('player_sitting_out', { playerId, reason: 'manual' });
-    
-    return { success: true };
+    logger.info('sitOut disabled - players stay active', { playerId: playerId.substring(0, 8) });
+    return { success: false, error: 'Sit out disabled' };
   }
 
   /**
-   * Sit in - return to active play
+   * Sit in - DISABLED (sitout is disabled)
    */
   async sitIn(playerId: string): Promise<{ success: boolean; error?: string }> {
-    const player = this.players.get(playerId);
-    if (!player) {
-      return { success: false, error: 'Player not at table' };
-    }
-    
-    if (player.status === 'active') {
-      return { success: false, error: 'Already active' };
-    }
-    
-    if (player.stack <= 0) {
-      return { success: false, error: 'No chips to play' };
-    }
-    
-    player.status = 'active';
-    player.missedTurns = 0; // Reset missed turns counter
-    player.sitOutReason = undefined; // Clear sitout reason
-    player.isDisconnected = false; // Mark as connected
-    player.lastActivityTime = Date.now(); // Update activity time
-    logger.info('Player sitting in', { playerId: playerId.substring(0, 8) });
-    
-    // Update database
-    await this.supabase
-      .from('poker_table_players')
-      .update({ status: 'active', sit_out_reason: null })
-      .eq('table_id', this.id)
-      .eq('player_id', playerId);
-    
-    this.emit('player_sitting_in', { playerId });
-    
-    // Check if we can start a hand now
-    if (!this.currentHand) {
-      this.checkStartHand();
-    }
-    
-    return { success: true };
+    logger.info('sitIn disabled - sitout is disabled', { playerId: playerId.substring(0, 8) });
+    return { success: false, error: 'Sit out disabled' };
   }
   
   /**
@@ -971,6 +918,7 @@ export class PokerTable {
   /**
    * Check if disconnected player should be auto-folded/removed
    * Called after RECONNECT_WINDOW_MS timeout
+   * SIMPLIFIED: No sitout - just fold if in hand
    */
   private checkDisconnectTimeout(playerId: string): void {
     const disconnectInfo = this.disconnectedPlayers.get(playerId);
@@ -986,7 +934,7 @@ export class PokerTable {
       wasInHand: disconnectInfo.wasInHand
     });
     
-    // If in active hand, fold them
+    // If in active hand, fold them (no sitout, just fold)
     if (this.currentHand && !player.isFolded) {
       player.isFolded = true;
       this.emit('player_folded', { 
@@ -2807,6 +2755,18 @@ export class PokerTable {
       };
     });
 
+    // Calculate remaining time server-side for accurate client display
+    let timeRemaining: number | null = null;
+    if (this.currentHand?.currentPlayerSeat !== null && this.currentHand?.currentPlayerSeat !== undefined) {
+      const actionStartedAt = this.currentHand.actionStartTime;
+      if (actionStartedAt) {
+        const elapsed = (Date.now() - actionStartedAt) / 1000;
+        timeRemaining = Math.max(0, this.config.actionTimeSeconds - elapsed);
+      } else {
+        timeRemaining = this.config.actionTimeSeconds;
+      }
+    }
+
     return {
       tableId: this.id,
       id: this.id,
@@ -2817,6 +2777,8 @@ export class PokerTable {
       bigBlind: this.config.bigBlind,
       ante: this.config.ante,
       actionTimer: this.config.actionTimeSeconds,
+      // CRITICAL: Server-calculated timeRemaining for client synchronization
+      timeRemaining,
       players,
       // Hand state - CRITICAL: only show pot/bet when hand is active
       phase: this.currentHand?.phase || 'waiting',
@@ -2829,6 +2791,7 @@ export class PokerTable {
       currentPlayerSeat: this.currentHand?.currentPlayerSeat ?? null,
       minRaise: this.currentHand?.minRaise || this.config.bigBlind,
       handNumber: this.currentHand?.handNumber || 0,
+      handId: this.currentHand?.id || null,
       // Countdown info
       playersNeeded: this.getPlayersNeededToStart(),
       // CRITICAL: Explicitly indicate if hand is active for client

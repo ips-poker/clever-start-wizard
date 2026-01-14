@@ -518,61 +518,17 @@ export class PokerWebSocketHandler {
   }
   
   /**
-   * Handle sit out request
+   * Handle sit out request - DISABLED per PokerStars simplification
    */
   private async handleSitOut(ws: WebSocket, message: unknown): Promise<void> {
-    const result = SitOutSchema.safeParse(message);
-    if (!result.success) {
-      this.sendError(ws, 'Invalid sit out request');
-      return;
-    }
-    
-    const { tableId, playerId } = result.data;
-    
-    const table = await this.gameManager.loadTableIfNeeded(tableId);
-    if (!table) {
-      this.sendError(ws, 'Table not found');
-      return;
-    }
-    
-    const sitOutResult = await table.sitOut(playerId);
-    
-    if (!sitOutResult.success) {
-      this.sendError(ws, sitOutResult.error || 'Failed to sit out');
-      return;
-    }
-    
-    const state = table.getPlayerState(playerId);
-    this.send(ws, { type: 'sit_out_success', tableId, state });
+    this.send(ws, { type: 'error', error: 'Sit out is disabled' });
   }
   
   /**
-   * Handle sit in request
+   * Handle sit in request - DISABLED per PokerStars simplification
    */
   private async handleSitIn(ws: WebSocket, message: unknown): Promise<void> {
-    const result = SitInSchema.safeParse(message);
-    if (!result.success) {
-      this.sendError(ws, 'Invalid sit in request');
-      return;
-    }
-    
-    const { tableId, playerId } = result.data;
-    
-    const table = await this.gameManager.loadTableIfNeeded(tableId);
-    if (!table) {
-      this.sendError(ws, 'Table not found');
-      return;
-    }
-    
-    const sitInResult = await table.sitIn(playerId);
-    
-    if (!sitInResult.success) {
-      this.sendError(ws, sitInResult.error || 'Failed to sit in');
-      return;
-    }
-    
-    const state = table.getPlayerState(playerId);
-    this.send(ws, { type: 'sit_in_success', tableId, state });
+    this.send(ws, { type: 'error', error: 'Sit out is disabled' });
   }
   
   /**
