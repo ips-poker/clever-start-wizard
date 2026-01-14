@@ -52,8 +52,7 @@ interface ActionResult {
   stack?: number;
 }
 
-// POKERSTARS STANDARD: Server handles ALL timeouts - client only tracks for display
-const ACTION_TIMEOUT_DISPLAY_SECONDS = 15;
+const ACTION_TIMEOUT_MS = 16000; // 15s + buffer
 
 export function usePokerGameEngine(tableId: string, playerId: string) {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -63,6 +62,7 @@ export function usePokerGameEngine(tableId: string, playerId: string) {
   const [lastAction, setLastAction] = useState<ActionResult | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   
+  const timeoutCheckRef = useRef<NodeJS.Timeout | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Call Edge Function
@@ -204,10 +204,32 @@ export function usePokerGameEngine(tableId: string, playerId: string) {
     };
   }, [gameState?.actionStartedAt, gameState?.currentPlayerSeat]);
 
-  // POKERSTARS STANDARD: Server handles ALL player timeouts
-  // Client should NEVER call check_timeout for other players
-  // This prevents race conditions, duplicate actions, and false sit-outs
-  // The server-side PokerTable.handleTimeout() is authoritative
+  // Auto-check timeout for current player
+  useEffect(() => {
+    if (timeoutCheckRef.current) {
+      clearTimeout(timeoutCheckRef.current);
+    }
+
+    const myPlayer = gameState?.players.find(p => p.playerId === playerId);
+    const isMyTurn = gameState?.currentPlayerSeat === myPlayer?.seatNumber;
+
+    // Only check timeout if it's NOT our turn (let server handle timeouts for other players)
+    if (gameState?.actionStartedAt && gameState?.currentPlayerSeat && !isMyTurn) {
+      const started = new Date(gameState.actionStartedAt).getTime();
+      const delay = ACTION_TIMEOUT_MS - (Date.now() - started);
+
+      if (delay > 0) {
+        timeoutCheckRef.current = setTimeout(async () => {
+          console.log('[Engine Hook] Checking timeout for player at seat', gameState.currentPlayerSeat);
+          await callEngine('check_timeout');
+        }, delay);
+      }
+    }
+
+    return () => {
+      if (timeoutCheckRef.current) clearTimeout(timeoutCheckRef.current);
+    };
+  }, [gameState?.actionStartedAt, gameState?.currentPlayerSeat, playerId, callEngine]);
 
   // Subscribe to updates
   useEffect(() => {
@@ -223,6 +245,7 @@ export function usePokerGameEngine(tableId: string, playerId: string) {
 
     return () => {
       supabase.removeChannel(channel);
+      if (timeoutCheckRef.current) clearTimeout(timeoutCheckRef.current);
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
   }, [tableId, loadGameState]);

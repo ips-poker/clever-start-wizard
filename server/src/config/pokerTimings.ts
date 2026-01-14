@@ -75,52 +75,51 @@ export interface ProfessionalTimings {
  * Default professional timings - similar to PokerStars
  */
 export const PROFESSIONAL_TIMINGS: ProfessionalTimings = {
-  // 300ms after each action for UI feedback (PokerStars-style)
-  afterAction: 300,
+  // 400ms after each action for UI feedback
+  afterAction: 400,
   
   phases: {
     flop: {
-      preDealDelay: 400,      // Pause before flop
-      perCardDelay: 100,      // 3 cards: 0, 100, 200ms = 300ms total
-      postDealDelay: 200,     // Pause after flop dealt
+      preDealDelay: 600,      // Pause before flop
+      perCardDelay: 150,      // 3 cards: 0, 150, 300ms = 450ms total
+      postDealDelay: 300,     // Pause after flop dealt
     },
     turn: {
-      preDealDelay: 350,      // Burn + deal
+      preDealDelay: 500,      // Burn + deal
       perCardDelay: 0,        // Single card
-      postDealDelay: 150,     // Pause after turn
+      postDealDelay: 250,     // Pause after turn
     },
     river: {
-      preDealDelay: 350,      // Burn + deal
+      preDealDelay: 500,      // Burn + deal
       perCardDelay: 0,        // Single card
-      postDealDelay: 150,     // Pause after river
+      postDealDelay: 250,     // Pause after river
     },
     showdown: {
-      preDealDelay: 200,      // Transition to showdown
+      preDealDelay: 300,      // Transition to showdown
       perCardDelay: 0,
       postDealDelay: 0,
     },
   },
   
-  // PokerStars-style showdown: fast and professional (~2-3 sec total)
   showdown: {
-    perPlayerReveal: 300,    // Time to reveal each player's cards (quick flip)
-    winnerHighlight: 1000,   // Time to highlight winning hand (1 sec)
-    potCollection: 400,      // Pot slides from center
-    potSlideToWinner: 300,   // Chips slide to winner
-    winnerCelebration: 500,  // Winner overlay display (brief)
+    perPlayerReveal: 600,    // Time to reveal each player's cards (with flip animation)
+    winnerHighlight: 2500,   // Time to highlight winning hand
+    potCollection: 800,      // Pot slides from center
+    potSlideToWinner: 600,   // Chips slide to winner
+    winnerCelebration: 2000, // Winner overlay display
   },
   
   betCollection: {
-    slideToCenter: 300,      // Chips slide to pot center
-    staggerPerPlayer: 50,    // Stagger for realistic collection
-    pauseAfterCollection: 150, // Brief pause before next phase
+    slideToCenter: 500,      // Chips slide to pot center
+    staggerPerPlayer: 80,    // Stagger for realistic collection
+    pauseAfterCollection: 300, // Brief pause before next phase
   },
   
-  betweenHands: 1500,        // 1.5 seconds between hands (PokerStars standard)
-  shuffleAnimation: 300,     // Shuffle sound/animation
-  minimumHandDisplay: 800,   // Minimum time to see showdown result
-  preDealHoleCards: 200,     // Pause before dealing hole cards
-  perHoleCard: 80,           // Time per hole card dealt
+  betweenHands: 3000,        // 3 seconds between hands
+  shuffleAnimation: 500,     // Shuffle sound/animation
+  minimumHandDisplay: 2000,  // Minimum time to see showdown result
+  preDealHoleCards: 300,     // Pause before dealing hole cards
+  perHoleCard: 100,          // Time per hole card dealt
 };
 
 /**

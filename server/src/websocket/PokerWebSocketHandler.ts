@@ -60,14 +60,6 @@ const SitInSchema = z.object({
   playerId: z.string().uuid()
 });
 
-// Activity ping schema - used to confirm player is still active (especially for popup windows)
-const ActivityPingSchema = z.object({
-  type: z.literal('activity_ping'),
-  tableId: z.string().uuid(),
-  playerId: z.string().uuid(),
-  isPopup: z.boolean().optional()
-});
-
 const SubscribeSchema = z.object({
   type: z.literal('subscribe'),
   tableId: z.string().uuid(),
@@ -335,11 +327,6 @@ export class PokerWebSocketHandler {
           this.send(ws, { type: 'pong', timestamp: Date.now() });
           break;
         
-        // Activity ping - confirm player is still active (for popup windows)
-        case 'activity_ping':
-          await this.handleActivityPing(ws, message);
-          break;
-        
         // Tournament messages
         case 'tournament_subscribe':
           await this.handleTournamentSubscribe(ws, message);
@@ -510,6 +497,7 @@ export class PokerWebSocketHandler {
     if (table) {
       await table.leaveTable(playerId);
     }
+    }
     
     // Remove from subscribers
     this.connectionPool.unsubscribeFromTable(ws, tableId);
@@ -518,65 +506,61 @@ export class PokerWebSocketHandler {
   }
   
   /**
-   * Handle sit out request - DISABLED per PokerStars simplification
+   * Handle sit out request
    */
   private async handleSitOut(ws: WebSocket, message: unknown): Promise<void> {
-    this.send(ws, { type: 'error', error: 'Sit out is disabled' });
-  }
-  
-  /**
-   * Handle sit in request - DISABLED per PokerStars simplification
-   */
-  private async handleSitIn(ws: WebSocket, message: unknown): Promise<void> {
-    this.send(ws, { type: 'error', error: 'Sit out is disabled' });
-  }
-  
-  /**
-   * Handle activity ping - confirms player is still active
-   * CRITICAL: Popup windows may lose visibility without disconnecting
-   * This prevents false sitout detection
-   */
-  private async handleActivityPing(ws: WebSocket, message: unknown): Promise<void> {
-    const result = ActivityPingSchema.safeParse(message);
+    const result = SitOutSchema.safeParse(message);
     if (!result.success) {
-      // Just ignore invalid pings - don't error
+      this.sendError(ws, 'Invalid sit out request');
       return;
     }
     
-    const { tableId, playerId, isPopup } = result.data;
+    const { tableId, playerId } = result.data;
     
     const table = await this.gameManager.loadTableIfNeeded(tableId);
     if (!table) {
-      return; // Silently ignore - table may have been closed
+      this.sendError(ws, 'Table not found');
+      return;
     }
     
-    // Update player's last activity timestamp
-    // This prevents the disconnect timeout from triggering sitout
-    const player = table.getPlayer(playerId);
-    if (player) {
-      // Mark player as active and update their connection info
-      player.lastActivityTime = Date.now();
-      player.isDisconnected = false;
-      
-      // If player was sitting out due to inactivity, consider auto sit-in
-      // But only if they didn't manually sit out
-      if (player.isSittingOut && player.sitOutReason === 'disconnect') {
-        logger.info('Activity ping received - auto sit-in from disconnect sitout', {
-          tableId,
-          playerId: playerId.substring(0, 8),
-          isPopup
-        });
-        await table.sitIn(playerId);
-      }
+    const sitOutResult = await table.sitOut(playerId);
+    
+    if (!sitOutResult.success) {
+      this.sendError(ws, sitOutResult.error || 'Failed to sit out');
+      return;
     }
     
-    // Send acknowledgment
-    this.send(ws, { 
-      type: 'activity_pong', 
-      tableId, 
-      playerId,
-      timestamp: Date.now()
-    });
+    const state = table.getPlayerState(playerId);
+    this.send(ws, { type: 'sit_out_success', tableId, state });
+  }
+  
+  /**
+   * Handle sit in request
+   */
+  private async handleSitIn(ws: WebSocket, message: unknown): Promise<void> {
+    const result = SitInSchema.safeParse(message);
+    if (!result.success) {
+      this.sendError(ws, 'Invalid sit in request');
+      return;
+    }
+    
+    const { tableId, playerId } = result.data;
+    
+    const table = await this.gameManager.loadTableIfNeeded(tableId);
+    if (!table) {
+      this.sendError(ws, 'Table not found');
+      return;
+    }
+    
+    const sitInResult = await table.sitIn(playerId);
+    
+    if (!sitInResult.success) {
+      this.sendError(ws, sitInResult.error || 'Failed to sit in');
+      return;
+    }
+    
+    const state = table.getPlayerState(playerId);
+    this.send(ws, { type: 'sit_in_success', tableId, state });
   }
   
   /**

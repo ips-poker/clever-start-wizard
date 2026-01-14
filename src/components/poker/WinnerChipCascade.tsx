@@ -3,7 +3,7 @@
  * Clean, direct trajectory animation
  */
 
-import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PPPokerChip } from './RealisticPokerChip';
 
@@ -118,32 +118,14 @@ export const WinnerChipCascade = memo(function WinnerChipCascade({
     }));
   }, [isActive, amount]);
 
-  const completedChipIndexesRef = useRef<Set<number>>(new Set());
-  const completeTimeoutRef = useRef<number | null>(null);
+  let completedCount = 0;
 
-  // Reset completion tracking whenever we (re)start the animation
-  useEffect(() => {
-    completedChipIndexesRef.current = new Set();
-    if (completeTimeoutRef.current !== null) {
-      window.clearTimeout(completeTimeoutRef.current);
-      completeTimeoutRef.current = null;
+  const handleChipComplete = () => {
+    completedCount++;
+    if (completedCount >= chips.length) {
+      setTimeout(() => onComplete?.(), 100);
     }
-  }, [isActive, chips.length, amount]);
-
-  const handleChipComplete = useCallback((chipIndex: number) => {
-    const completed = completedChipIndexesRef.current;
-    if (completed.has(chipIndex)) return;
-    completed.add(chipIndex);
-
-    if (completed.size >= chips.length) {
-      if (completeTimeoutRef.current !== null) {
-        window.clearTimeout(completeTimeoutRef.current);
-      }
-      completeTimeoutRef.current = window.setTimeout(() => {
-        onComplete?.();
-      }, 100);
-    }
-  }, [chips.length, onComplete]);
+  };
 
   if (!isActive) return null;
 
@@ -162,7 +144,7 @@ export const WinnerChipCascade = memo(function WinnerChipCascade({
             toX={toPosition.x}
             toY={toPosition.y}
             bbValue={chip.bbValue}
-            onComplete={() => handleChipComplete(chip.index)}
+            onComplete={handleChipComplete}
           />
         ))}
       </AnimatePresence>

@@ -4,7 +4,6 @@
 import React, { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { translateHandRank } from '@/utils/handRankTranslations';
 
 interface PPPokerPlayerCardsProps {
   cards: string[];
@@ -340,7 +339,7 @@ export const PPPokerPlayerCards = memo(function PPPokerPlayerCards({
               isMobile ? "text-[8px]" : "text-[9px]",
               isWinning ? "text-white" : "text-white/80"
             )}>
-              {translateHandRank(handName)}
+              {handName}
             </span>
           </motion.div>
         )}

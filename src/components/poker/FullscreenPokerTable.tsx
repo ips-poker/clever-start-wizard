@@ -10,7 +10,7 @@ import { PokerPlayer } from '@/hooks/useNodePokerTable';
 import { resolveAvatarUrl } from '@/utils/avatarResolver';
 import { usePokerPreferences, TABLE_THEMES, CARD_BACKS } from '@/hooks/usePokerPreferences';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
-// SmoothAvatarTimer import removed - timer ring disabled per user request
+import { SmoothAvatarTimer } from './SmoothAvatarTimer';
 import { PPPokerChipStack } from './PPPokerChipStack';
 import { PotChips } from './RealisticPokerChip';
 import { SyndikateTableBackground } from './SyndikateTableBackground';
@@ -503,8 +503,6 @@ interface PlayerSeatProps {
   isBB: boolean;
   isCurrentTurn: boolean;
   turnTimeRemaining?: number;
-  mainTimerDuration?: number;
-  timeBankDuration?: number;
   heroCards?: string[];
   communityCards?: string[];
   gamePhase?: string;
@@ -566,8 +564,6 @@ const PlayerSeat = memo(function PlayerSeat({
   isBB,
   isCurrentTurn,
   turnTimeRemaining,
-  mainTimerDuration = 30,
-  timeBankDuration = 15,
   heroCards,
   communityCards = [],
   gamePhase = 'waiting',
@@ -659,7 +655,26 @@ const PlayerSeat = memo(function PlayerSeat({
 
       {/* Avatar with status border and opponent cards */}
       <div className="relative">
-        {/* Timer ring removed per user request - using action badge only */}
+        {/* Timer ring - UNDER cards and game elements, around avatar */}
+        {isCurrentTurn && turnTimeRemaining !== undefined && !player.isFolded && (
+          <div 
+            className="absolute z-0 pointer-events-none"
+            style={{
+              left: '50%',
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: avatarSize + 6,
+              height: avatarSize + 6
+            }}
+          >
+            <SmoothAvatarTimer 
+              remaining={turnTimeRemaining} 
+              total={30} 
+              size={avatarSize + 6}
+              strokeWidth={3}
+            />
+          </div>
+        )}
         
         {/* Level badge - PPPoker style (5YR, VIP, etc.) */}
         <PPPokerLevelBadge level={(player as any).level} isVIP={(player as any).isVIP} />
@@ -1361,7 +1376,6 @@ export interface FullscreenPokerTableProps {
 }
 
 export const FullscreenPokerTable = memo(function FullscreenPokerTable({
-  tableState,
   players,
   heroSeat,
   heroCards,
@@ -1442,7 +1456,6 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   
   // Win distribution animation state
   const [winDistribution, setWinDistribution] = useState<{ winnerSeat: number; amount: number } | null>(null);
-  const lastWinAnimationKeyRef = useRef<string | null>(null);
   
   // Когда heroSeat ещё неизвестен (зритель/до посадки), мы НЕ применяем preferredSeatRotation.
   // Калибровка в админке задаёт «реальные» координаты мест (seatNumber -> (x,y)).
@@ -1475,35 +1488,24 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   }, [betsBeingCollected, heroSeat, maxPlayers, positions]);
 
   // Trigger win distribution animation when winners change
-  // IMPORTANT: guard against repeated triggers during showdown caused by frequent players/stack updates.
   useEffect(() => {
-    if (!(winners && winners.length > 0 && phase === 'showdown')) {
-      lastWinAnimationKeyRef.current = null;
-      setWinDistribution(null);
-      return;
-    }
-
-    // Multi-winner safe key (split pots)
-    const winKey = winners.map(w => `${w.playerId}:${w.amount}`).join('|');
-
-    // Find winner's seat (based on the first winner for positioning)
-    const winner = winners[0];
-    const winnerPlayer = players.find((p) => p.playerId === winner.playerId);
-    if (!winnerPlayer) return;
-
-    // Only trigger once per unique winners payload in a showdown phase
-    if (lastWinAnimationKeyRef.current === winKey) return;
-
-    // Calculate visual position
-    let visualPos = 0;
-    if (heroSeat !== null) {
-      visualPos = (winnerPlayer.seatNumber - heroSeat + maxPlayers) % maxPlayers;
+    if (winners && winners.length > 0 && phase === 'showdown') {
+      const winner = winners[0];
+      // Find winner's seat
+      const winnerPlayer = players.find((p) => p.playerId === winner.playerId);
+      if (winnerPlayer) {
+        // Calculate visual position
+        let visualPos = 0;
+        if (heroSeat !== null) {
+          visualPos = (winnerPlayer.seatNumber - heroSeat + maxPlayers) % maxPlayers;
+        } else {
+          visualPos = (winnerPlayer.seatNumber + spectatorRotationOffset) % maxPlayers;
+        }
+        setWinDistribution({ winnerSeat: visualPos, amount: winner.amount });
+      }
     } else {
-      visualPos = (winnerPlayer.seatNumber + spectatorRotationOffset) % maxPlayers;
+      setWinDistribution(null);
     }
-
-    lastWinAnimationKeyRef.current = winKey;
-    setWinDistribution({ winnerSeat: visualPos, amount: winner.amount });
   }, [winners, phase, players, heroSeat, maxPlayers]);
 
   // Detect phase change and trigger collection animation
@@ -1595,10 +1597,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         />
       )}
       
-      {/* Winner announcement - compact in-table display 
-          CRITICAL: Only show when NOT using professional showdownReveals 
-          This prevents duplicate animations */}
-      {phase === 'showdown' && winners && winners.length > 0 && !showdownReveals?.length && (
+      {/* Winner announcement - compact in-table display */}
+      {phase === 'showdown' && winners && winners.length > 0 && (
         <WinnerAnnouncement
           winners={winners.map(w => {
             const player = players.find(p => p.playerId === w.playerId);
@@ -1674,8 +1674,6 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               isBB={player?.seatNumber === bigBlindSeat}
               isCurrentTurn={player?.seatNumber === currentPlayerSeat}
               turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
-              mainTimerDuration={Number((tableState as any)?.actionTimer ?? 30)}
-              timeBankDuration={Number((tableState as any)?.timeBankSeconds ?? 15)}
               heroCards={idx === 0 ? heroCards : undefined}
               communityCards={communityCards}
               gamePhase={phase}
@@ -1726,21 +1724,19 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       {/* Professional Showdown with combinations display */}
       {showdownReveals && showdownReveals.length > 0 && phase === 'showdown' && (
         <ProfessionalShowdown
-          players={showdownReveals
-            .filter(r => r.holeCards && r.holeCards.length > 0)
-            .map(r => ({
-              playerId: r.playerId,
-              name: r.playerName,
-              seatNumber: r.seatNumber,
-              holeCards: r.holeCards || [],
-              handName: r.handName,
-              bestCards: r.bestCards,
-              isWinner: r.isWinner,
-              wonAmount: winnerAnnouncement?.winners.find(w => w.playerId === r.playerId)?.amount
-            }))}
-          communityCards={communityCards || []}
+          players={showdownReveals.map(r => ({
+            playerId: r.playerId,
+            name: r.playerName,
+            seatNumber: r.seatNumber,
+            holeCards: r.holeCards,
+            handName: r.handName,
+            bestCards: r.bestCards,
+            isWinner: r.isWinner,
+            wonAmount: winnerAnnouncement?.winners.find(w => w.playerId === r.playerId)?.amount
+          }))}
+          communityCards={communityCards}
           pot={pot}
-          revealDelay={300}
+          revealDelay={500}
         />
       )}
       

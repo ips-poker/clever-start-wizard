@@ -7,7 +7,6 @@ import React, { memo, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { translateHandRank } from '@/utils/handRankTranslations';
 
 interface Winner {
   playerId: string;
@@ -104,7 +103,7 @@ export const WinnerAnnouncement = memo(function WinnerAnnouncement({
               </span>
               {mainWinner.handName && (
                 <span className="text-gray-400 text-xs">
-                  {translateHandRank(mainWinner.handName)}
+                  {mainWinner.handName}
                 </span>
               )}
             </div>

@@ -81,9 +81,8 @@ const SHORT_DECK_STRAIGHT_PATTERNS = [
 export const PHASES = ['preflop', 'flop', 'turn', 'river', 'showdown'] as const;
 export type GamePhase = typeof PHASES[number];
 
-// Action timer: 30 seconds, Time bank: 15 seconds (pulsing ring)
 export const DEFAULT_ACTION_TIME_SECONDS = 30;
-export const DEFAULT_TIME_BANK_SECONDS = 15;
+export const DEFAULT_TIME_BANK_SECONDS = 60;
 
 // ==========================================
 // TYPES
@@ -478,7 +477,6 @@ export function calculateSidePots(contributions: PlayerContribution[]): PotResul
   const activeBettors = contributions.filter(c => c.totalBet > 0);
   if (activeBettors.length === 0) return empty;
 
-  // POKERSTARS-STYLE: Collect all unique bet levels (all-in amounts)
   const allInLevels = new Set<number>();
   for (const c of activeBettors) {
     if (c.isAllIn && c.totalBet > 0) allInLevels.add(c.totalBet);
@@ -499,8 +497,6 @@ export function calculateSidePots(contributions: PlayerContribution[]): PotResul
     for (const c of activeBettors) {
       if (c.totalBet > previousLevel) {
         potAmount += Math.min(c.totalBet - previousLevel, increment);
-        // POKERSTARS FIX: Player is eligible if they contributed AT LEAST up to this level
-        // AND they haven't folded. Don't require exact match.
         if (!c.isFolded && c.totalBet >= level && !eligiblePlayers.includes(c.playerId)) {
           eligiblePlayers.push(c.playerId);
         }
@@ -511,18 +507,6 @@ export function calculateSidePots(contributions: PlayerContribution[]): PotResul
       pots.push({ amount: potAmount, eligiblePlayers, cappedAt: level });
     }
     previousLevel = level;
-  }
-
-  // POKERSTARS FIX: Ensure at least one pot exists with eligible players
-  // If all players folded except one, that player wins
-  if (pots.length === 0 && activeBettors.length > 0) {
-    const totalPot = activeBettors.reduce((sum, c) => sum + c.totalBet, 0);
-    const nonFolded = activeBettors.filter(c => !c.isFolded);
-    return {
-      mainPot: { amount: totalPot, eligiblePlayers: nonFolded.map(c => c.playerId), cappedAt: totalPot },
-      sidePots: [],
-      totalPot
-    };
   }
 
   const [mainPot, ...sidePots] = pots;
@@ -1275,22 +1259,16 @@ export function validateAndProcessAction(
       newStack = 0;
       isAllIn = true;
       
-      // POKERSTARS RULE: If this all-in exceeds current bet, it's a raise
-      // ANY raise amount (even short) reopens action for other players
+      // If this all-in is a raise, update raise tracking
       if (newBet > currentBet) {
         const allInRaiseSize = newBet - currentBet;
-        newCurrentBet = newBet;
-        
-        // CRITICAL FIX: ALL raises reopen action (PokerStars/GGPoker rule)
-        // Even short all-in raises allow others to respond
-        reopensAction = true;
-        
-        // Only update minRaise tracking for FULL raises (affects next raise sizing)
+        // Only update minRaise and reopen action if this was a full raise
         if (allInRaiseSize >= Math.max(minRaise, lastRaiseAmount, bigBlind)) {
           newMinRaise = allInRaiseSize;
           newLastRaiseAmount = allInRaiseSize;
+          reopensAction = true;
         }
-        // For short raises, keep previous minRaise but still reopen
+        newCurrentBet = newBet;
       }
       break;
   }
@@ -1993,8 +1971,6 @@ export class PokerEngineV3 {
   private config: GameConfig;
   private state: GameState | null = null;
   private actions: { playerId: string; type: string; phase: string; amount: number }[] = [];
-  private advancePhaseDepth: number = 0; // Recursion guard for advancePhase
-  private static readonly MAX_ADVANCE_DEPTH = 4; // max: preflop->flop->turn->river->showdown
   
   constructor(gameType: GameType, config: GameConfig) {
     this.gameType = gameType;
@@ -2218,25 +2194,7 @@ export class PokerEngineV3 {
     if (!this.state) {
       return { success: false, error: 'No active hand' };
     }
-
-    // POKERSTARS-STYLE: Comprehensive validation before ANY action processing
-    // Hard stop: no actions allowed after the hand is effectively over.
-    if (this.state.isComplete) {
-      console.log('[Engine] Action rejected - hand marked complete');
-      return { success: false, error: 'Hand is complete' };
-    }
     
-    if (this.state.phase === 'showdown') {
-      console.log('[Engine] Action rejected - showdown phase');
-      return { success: false, error: 'Hand is complete' };
-    }
-    
-    // CRITICAL: If currentPlayerSeat is null, betting round is in transition (cards being dealt)
-    if (this.state.currentPlayerSeat === null) {
-      console.log('[Engine] Action rejected - no current player (phase transition)');
-      return { success: false, error: 'Please wait for your turn' };
-    }
-
     const player = this.state.players.find(p => p.id === playerId);
     if (!player) {
       return { success: false, error: 'Player not found' };
@@ -2244,15 +2202,6 @@ export class PokerEngineV3 {
     
     if (player.seatNumber !== this.state.currentPlayerSeat) {
       return { success: false, error: 'Not your turn' };
-    }
-    
-    // POKERSTARS: Additional validation - player must be able to act
-    if (player.isFolded) {
-      return { success: false, error: 'You have already folded' };
-    }
-    
-    if (player.isAllIn) {
-      return { success: false, error: 'You are already all-in' };
     }
     
     // Map action type
@@ -2446,98 +2395,6 @@ export class PokerEngineV3 {
   }
   
   /**
-   * POKERSTARS-STYLE: Run out the board when all remaining players are all-in
-   * Deals remaining community cards and determines winners
-   * Returns ActionResult with winners if successful
-   */
-  runOutBoard(): ActionResult {
-    if (!this.state) {
-      return { success: false, error: 'No active game' };
-    }
-    
-    if (this.state.isComplete) {
-      return { success: false, error: 'Hand already complete' };
-    }
-    
-    const remainingPlayers = this.state.players.filter(p => !p.isFolded);
-    
-    // If only one player remains, they win
-    if (remainingPlayers.length === 1) {
-      const winner = remainingPlayers[0];
-      const winAmount = this.state.pot;
-      winner.stack += winAmount;
-      
-      this.state.isComplete = true;
-      this.state.phase = 'showdown';
-      
-      return {
-        success: true,
-        handComplete: true,
-        winners: [{
-          playerId: winner.id,
-          amount: winAmount,
-          handName: 'Last Standing'
-        }]
-      };
-    }
-    
-    // Deal remaining community cards from state.deck
-    // CRITICAL FIX: Use this.state.deck, not this.deck (which doesn't exist)
-    while (this.state.communityCards.length < 5 && this.state.deck.length > 0) {
-      // Burn one card, deal one card (professional poker standard)
-      if (this.state.deck.length >= 2) {
-        this.state.deck.shift(); // Burn card
-        const card = this.state.deck.shift(); // Deal card
-        if (card) {
-          this.state.communityCards.push(card);
-        }
-      } else if (this.state.deck.length === 1) {
-        // Edge case: only one card left, deal it without burn
-        const card = this.state.deck.shift();
-        if (card) {
-          this.state.communityCards.push(card);
-        }
-      }
-    }
-    
-    // Move to showdown
-    this.state.phase = 'showdown';
-    this.state.currentPlayerSeat = null;
-    
-    // Collect any remaining bets
-    for (const p of this.state.players) {
-      if (p.betAmount > 0) {
-        // Already tracked in totalBetThisHand
-        p.betAmount = 0;
-      }
-    }
-    this.state.currentBet = 0;
-    
-    // Calculate side pots and winners using existing determineWinners method
-    // CRITICAL FIX: calculateShowdown doesn't exist - use determineWinners instead
-    const winners = this.determineWinners();
-    
-    // Award pots to winners
-    for (const winner of winners) {
-      const player = this.state.players.find(p => p.id === winner.playerId);
-      if (player) {
-        player.stack += winner.amount;
-      }
-    }
-    
-    this.state.isComplete = true;
-    
-    return {
-      success: true,
-      handComplete: true,
-      winners,
-      phase: 'showdown',
-      communityCards: this.state.communityCards,
-      pot: 0 // Pot distributed
-    };
-  }
-  
-  /**
    * PROFESSIONAL: Validate game state integrity
    * Returns list of issues found (empty = valid)
    */
@@ -2620,37 +2477,12 @@ export class PokerEngineV3 {
   /**
    * Advance to next phase
    * Professional implementation: handles all-in runouts and proper pot tracking
-   * 
-   * POKERSTARS RULE: Phase ONLY advances when:
-   * 1. Betting round is complete (all players acted and matched)
-   * 2. All but one player folded
-   * 3. All remaining players are all-in
    */
   private advancePhase(): void {
     if (!this.state) return;
     
-    // CRITICAL SAFETY: Prevent infinite recursion
-    this.advancePhaseDepth++;
-    if (this.advancePhaseDepth > PokerEngineV3.MAX_ADVANCE_DEPTH) {
-      console.error('[Engine] CRITICAL: advancePhase recursion limit reached! Breaking loop.');
-      this.advancePhaseDepth = 0;
-      return;
-    }
-    
-    // CRITICAL SAFETY: Never advance from showdown or complete hand
-    if (this.state.phase === 'showdown' || this.state.isComplete) {
-      console.log('[Engine] advancePhase blocked - already at showdown or complete');
-      this.advancePhaseDepth = 0;
-      return;
-    }
-    
     const phaseOrder: GamePhase[] = ['preflop', 'flop', 'turn', 'river', 'showdown'];
     const currentIndex = phaseOrder.indexOf(this.state.phase);
-    
-    console.log('[Engine] advancePhase called:', {
-      fromPhase: this.state.phase,
-      recursionDepth: this.advancePhaseDepth
-    });
     
     if (currentIndex < phaseOrder.length - 1) {
       // NOTE: totalBetThisHand is now updated in processAction, not here
@@ -2703,117 +2535,29 @@ export class PokerEngineV3 {
         p.hasActedThisRound = false;
       }
       
-      // Check if we need to run to showdown (everyone is all-in)
+      // Check if we need to run to showdown (all but one all-in)
       const activePlayers = this.state.players.filter(p => !p.isFolded);
       const playersWhoCanAct = activePlayers.filter(p => !p.isAllIn && p.stack > 0);
       
-      console.log('[Engine] advancePhase analysis:', {
-        nextPhase,
-        activeCount: activePlayers.length,
-        canActCount: playersWhoCanAct.length,
-        allInCount: activePlayers.filter(p => p.isAllIn).length,
-        players: this.state.players.map(p => ({
-          id: p.id.substring(0, 8),
-          seat: p.seatNumber,
-          folded: p.isFolded,
-          allIn: p.isAllIn,
-          stack: p.stack,
-          hasActed: p.hasActedThisRound,
-          bet: p.betAmount
-        }))
-      });
-      
-      // CRITICAL FIX: Handle showdown phase separately - no betting needed
-      if (nextPhase === 'showdown') {
-        console.log('[Engine] Reached showdown phase - no more betting');
-        this.state.currentPlayerSeat = null;
-        this.advancePhaseDepth = 0; // Reset recursion counter
-        return; // Don't recurse, showdown reached
-      }
-      
-      // CRITICAL: Only auto-run to showdown if ALL remaining players are truly all-in
-      // A player with isAllIn=false and stack>0 MUST be allowed to act
-      // CRITICAL FIX: TRUE all-in runout ONLY when ALL remaining players are ACTUALLY all-in
-      // A player with stack=0 but isAllIn=false should NOT trigger runout - they need to be properly marked
-      const allPlayersAllIn = activePlayers.every(p => p.isAllIn || p.stack === 0);
-      const trueAllInRunout = allPlayersAllIn && activePlayers.length > 1;
-      
-      if (trueAllInRunout) {
+      if (playersWhoCanAct.length <= 1 && activePlayers.length > 1) {
         // All-in runout scenario - deal remaining cards automatically
-        console.log('[Engine] TRUE ALL-IN RUNOUT: All active players are all-in, dealing next street');
-        console.log('[Engine] Active players status:', activePlayers.map(p => ({
-          id: p.id.substring(0, 8),
-          isAllIn: p.isAllIn,
-          stack: p.stack
-        })));
-        
-        // POKERSTARS: Mark any player with stack=0 as all-in to prevent future issues
-        for (const p of activePlayers) {
-          if (p.stack === 0 && !p.isAllIn) {
-            console.log('[Engine] Marking stack=0 player as all-in:', p.id.substring(0, 8));
-            p.isAllIn = true;
-          }
+        console.log('[Engine] All-in detected, running to showdown');
+        if (nextPhase !== 'showdown') {
+          // Continue to next phase automatically
+          this.advancePhase();
+          return;
         }
-        
-        this.advancePhase();
-        return;
       }
       
       // Find first to act post-flop (first active player after dealer clockwise)
-      this.state.currentPlayerSeat = this.findFirstPostFlopActor();
-      
-      console.log('[Engine] First post-flop actor:', this.state.currentPlayerSeat);
-      
-      // SAFETY: If no actor found but players can act, this is a bug - use fallback
-      if (this.state.currentPlayerSeat === null && playersWhoCanAct.length > 0) {
-        console.error('[Engine] BUG: playersWhoCanAct > 0 but no first actor found! Using fallback.');
-        console.error('[Engine] playersWhoCanAct:', playersWhoCanAct.map(p => ({ 
-          id: p.id.substring(0, 8), 
-          seat: p.seatNumber,
-          stack: p.stack,
-          isAllIn: p.isAllIn 
-        })));
-        // Set to first available player as fallback
-        this.state.currentPlayerSeat = playersWhoCanAct[0].seatNumber;
-      }
-      
-      // CRITICAL FIX: If no players can act AND trueAllInRunout didn't trigger,
-      // this is an edge case where all remaining players have stack=0 but not marked all-in.
-      // Mark them and recurse ONCE to complete the hand.
-      if (this.state.currentPlayerSeat === null && playersWhoCanAct.length === 0 && !trueAllInRunout) {
-        console.warn('[Engine] EDGE CASE: No actors but not true all-in runout - fixing state', {
-          activePlayers: activePlayers.map(p => ({
-            id: p.id.substring(0, 8),
-            isAllIn: p.isAllIn,
-            stack: p.stack
-          }))
-        });
+      if (nextPhase !== 'showdown') {
+        this.state.currentPlayerSeat = this.findFirstPostFlopActor();
         
-        // Mark remaining players as all-in
-        let anyFixed = false;
-        for (const p of activePlayers) {
-          if (!p.isAllIn && p.stack === 0) {
-            p.isAllIn = true;
-            anyFixed = true;
-          }
-        }
-        
-        // Only recurse if we actually fixed something (prevents infinite loop)
-        if (anyFixed) {
+        // If no one can act (everyone all-in), advance to showdown
+        if (this.state.currentPlayerSeat === null) {
+          console.log('[Engine] No players can act, advancing to showdown');
           this.advancePhase();
-        } else {
-          // Nothing to fix, just go to showdown to avoid stuck state
-          console.warn('[Engine] Cannot fix state - forcing showdown');
-          this.state.phase = 'showdown';
-          this.state.currentPlayerSeat = null;
-          this.advancePhaseDepth = 0;
         }
-        return;
-      }
-      
-      // Reset recursion counter on successful phase advance with actor found
-      if (this.state.currentPlayerSeat !== null) {
-        this.advancePhaseDepth = 0;
       }
     }
   }
@@ -2861,40 +2605,26 @@ export class PokerEngineV3 {
   /**
    * Find first to act post-flop - first active player clockwise from dealer
    * PROFESSIONAL TDA: First active seat left of dealer button
-   * CRITICAL: Must correctly handle edge cases where dealer/SB/BB positions overlap
    */
   private findFirstPostFlopActor(): number | null {
     if (!this.state) return null;
     
-    // Get players who can still act (not folded, not all-in, have chips)
     const activePlayers = this.state.players
-      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0);
+      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0)
+      .sort((a, b) => a.seatNumber - b.seatNumber);
     
-    if (activePlayers.length === 0) {
-      console.log('[Engine] findFirstPostFlopActor: no active players can act');
-      return null;
-    }
+    if (activePlayers.length === 0) return null;
     
-    // Sort by seat number
-    const sortedPlayers = [...activePlayers].sort((a, b) => a.seatNumber - b.seatNumber);
     const dealerSeat = this.state.dealerSeat;
     
-    console.log('[Engine] findFirstPostFlopActor:', {
-      dealerSeat,
-      activePlayers: sortedPlayers.map(p => ({ id: p.id.substring(0, 8), seat: p.seatNumber }))
-    });
-    
-    // Find first active player clockwise from dealer (seat > dealerSeat)
-    const afterDealer = sortedPlayers.find(p => p.seatNumber > dealerSeat);
+    // Find first active player clockwise from dealer
+    const afterDealer = activePlayers.find(p => p.seatNumber > dealerSeat);
     if (afterDealer) {
-      console.log('[Engine] First actor after dealer:', afterDealer.seatNumber);
       return afterDealer.seatNumber;
     }
     
     // Wrap around - first player in sorted order
-    const firstPlayer = sortedPlayers[0];
-    console.log('[Engine] First actor (wrap around):', firstPlayer?.seatNumber);
-    return firstPlayer?.seatNumber ?? null;
+    return activePlayers[0]?.seatNumber ?? null;
   }
   
   /**
@@ -3102,69 +2832,6 @@ export class PokerEngineV3 {
     
     return showdownResult.winners;
   }
-}
-
-// ==========================================
-// ENGINE VALIDATION (PokerStars-grade)
-// ==========================================
-
-/**
- * Validate engine integrity by testing hand rankings
- * Returns {passed, errors} for startup validation
- */
-export function validateEngineIntegrity(): { passed: boolean; errors: string[] } {
-  const errors: string[] = [];
-  
-  // Test 1: Royal Flush beats Straight Flush
-  const royalFlush = evaluateHand(['Ah', 'Kh'], ['Qh', 'Jh', 'Th', '2c', '3d']);
-  const straightFlush = evaluateHand(['9h', '8h'], ['7h', '6h', '5h', '2c', '3d']);
-  if (royalFlush.handRank <= straightFlush.handRank) {
-    errors.push('Royal Flush should beat Straight Flush');
-  }
-  
-  // Test 2: Full House beats Flush
-  const fullHouse = evaluateHand(['Ah', 'Ad'], ['Ac', 'Kh', 'Kd', '2c', '3d']);
-  const flush = evaluateHand(['Ah', 'Kh'], ['Qh', 'Jh', '9h', '2c', '3d']);
-  if (fullHouse.handRank <= flush.handRank) {
-    errors.push('Full House should beat Flush');
-  }
-  
-  // Test 3: Two Pair beats One Pair
-  const twoPair = evaluateHand(['Ah', 'Ad'], ['Kh', 'Kd', '2c', '3d', '4s']);
-  const onePair = evaluateHand(['Ah', 'Ad'], ['Kh', 'Qd', '2c', '3d', '4s']);
-  if (twoPair.handRank <= onePair.handRank) {
-    errors.push('Two Pair should beat One Pair');
-  }
-  
-  // Test 4: High Card comparison
-  const highAce = evaluateHand(['Ah', '2d'], ['3c', '4s', '6h', '8c', 'Td']);
-  const highKing = evaluateHand(['Kh', '2d'], ['3c', '4s', '6h', '8c', 'Td']);
-  if (highAce.handRank !== highKing.handRank) {
-    errors.push('Both should be high card');
-  }
-  // Compare kickers for high card
-  const aceKickers = highAce.kickers || [];
-  const kingKickers = highKing.kickers || [];
-  if (aceKickers[0] <= kingKickers[0]) {
-    errors.push('Ace high should beat King high');
-  }
-  
-  // Test 5: Straight detection (wheel: A-2-3-4-5)
-  const straight = evaluateHand(['Ah', '2d'], ['3c', '4s', '5h', '8c', 'Td']);
-  if (straight.handRank !== 5) { // Straight is rank 5
-    errors.push(`Wheel straight not detected correctly, got rank ${straight.handRank}`);
-  }
-  
-  // Test 6: Quads detection
-  const quads = evaluateHand(['Ah', 'Ad'], ['Ac', 'As', '2c', '3d', '4s']);
-  if (quads.handRank !== 8) { // Quads is rank 8
-    errors.push(`Quads not detected correctly, got rank ${quads.handRank}`);
-  }
-  
-  return {
-    passed: errors.length === 0,
-    errors
-  };
 }
 
 // ==========================================

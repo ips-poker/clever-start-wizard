@@ -15,7 +15,7 @@ import { WebSocketServer } from 'ws';
 import { config } from './config.js';
 import { PokerWebSocketHandler } from './websocket/PokerWebSocketHandler.js';
 import { PokerGameManager } from './game/PokerGameManager.js';
-import { validateEngineIntegrity } from './game/PokerEngineV3.js';
+import { PokerEngine } from './game/PokerEngine.js';
 import { TournamentManager } from './game/TournamentManager.js';
 import { createSupabaseClient } from './db/supabase.js';
 import { setupRoutes } from './routes/index.js';
@@ -357,14 +357,15 @@ const gracefulShutdown = async () => {
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
-// Validate poker engine v3 on startup
-const engineValidation = validateEngineIntegrity();
-if (!engineValidation.passed) {
-  logger.error('CRITICAL: Poker Engine V3 validation failed!');
-  engineValidation.errors.forEach(e => logger.error(e));
+// Validate poker engine on startup
+const engine = new PokerEngine();
+const validation = engine.validateHandRanking();
+if (!validation.passed) {
+  logger.error('CRITICAL: Poker engine validation failed!');
+  validation.errors.forEach(e => logger.error(e));
   process.exit(1);
 } else {
-  logger.info('✅ Poker Engine V3 validation passed - all hand rankings correct');
+  logger.info('✅ Poker engine validation passed - all hand rankings correct');
 }
 
 // Start server
@@ -373,7 +374,7 @@ server.listen(config.port, () => {
   handHistoryService.initialize(supabase);
 
   // Build marker (helps verify PM2 is running the latest compiled dist)
-  const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-14-simple-timer-v5';
+  const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2025-12-29-fast-hands';
   logger.info(`🧩 Build tag: ${BUILD_TAG}`);
   
   logger.info(`🚀 Poker Server v3.5 running on port ${config.port}`);

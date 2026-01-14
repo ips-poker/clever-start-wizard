@@ -31,10 +31,7 @@ export interface Player {
   isAllIn: boolean;
   timeBank: number;
   lastActionTime: number | null;
-  lastActivityTime: number | null; // CRITICAL: Track last activity for popup window handling
   missedTurns: number; // Count of consecutive missed turns (timeouts)
-  sitOutReason?: 'manual' | 'disconnect' | 'timeout'; // Track why player is sitting out
-  isDisconnected?: boolean; // Track if player is disconnected
 }
 
 export interface HandState {
@@ -55,7 +52,6 @@ export interface HandState {
   deck: string[];
   actionStartTime: number | null;
   playersActedThisRound: Set<string>; // Track who has acted in current betting round
-  isComplete?: boolean; // POKERSTARS: Track hand completion to prevent duplicate actions
 }
 
 type TableEventCallback = (event: TableEvent) => void;
@@ -126,9 +122,8 @@ export class PokerTable {
     // PROFESSIONAL: Set timings based on table type (turbo/hyper/standard)
     this.timings = getTimingsForTableType(config.tableType || 'standard');
     
-    // NOTE: loadPlayersFromDatabase() is called by PokerGameManager after construction
-    // Do NOT call it here to avoid duplicate loading
-    // The caller (PokerGameManager) will await loadPlayersFromDatabase() explicitly
+    // CRITICAL: Load existing players from database and sync state
+    this.loadPlayersFromDatabase();
     
     logger.info('PokerTable initialized with Engine v3.0', {
       tableId: this.id,
@@ -195,18 +190,13 @@ export class PokerTable {
             stack: dbPlayer.stack
           });
           // Clean up this orphaned record
-          (async () => {
-            try {
-              await this.supabase
-                .from('poker_table_players')
-                .delete()
-                .eq('table_id', this.id)
-                .eq('player_id', dbPlayer.player_id);
-              logger.info('Cleaned up orphaned zero-stack player', { playerId: dbPlayer.player_id.substring(0, 8) });
-            } catch (err: unknown) {
-              logger.warn('Failed to clean up orphaned player', { error: String(err) });
-            }
-          })();
+          this.supabase
+            .from('poker_table_players')
+            .delete()
+            .eq('table_id', this.id)
+            .eq('player_id', dbPlayer.player_id)
+            .then(() => logger.info('Cleaned up orphaned zero-stack player', { playerId: dbPlayer.player_id.substring(0, 8) }))
+            .catch(err => logger.warn('Failed to clean up orphaned player', { error: String(err) }));
           continue;
         }
         
@@ -241,10 +231,7 @@ export class PokerTable {
           isAllIn: false,
           timeBank: isBot ? 0 : this.config.timeBankSeconds,
           lastActionTime: null,
-          lastActivityTime: Date.now(),
-          missedTurns: 0,
-          sitOutReason: undefined,
-          isDisconnected: false
+          missedTurns: 0
         };
         
         this.players.set(dbPlayer.player_id, player);
@@ -411,10 +398,7 @@ export class PokerTable {
         isAllIn: false,
         timeBank: isBot ? 0 : this.config.timeBankSeconds,
         lastActionTime: null,
-        lastActivityTime: Date.now(),
-        missedTurns: 0,
-        sitOutReason: undefined,
-        isDisconnected: false
+        missedTurns: 0
       };
 
       this.players.set(playerId, player);
@@ -638,10 +622,7 @@ export class PokerTable {
       isAllIn: false,
       timeBank: isBot ? 0 : this.config.timeBankSeconds,
       lastActionTime: null,
-      lastActivityTime: Date.now(),
-      missedTurns: 0,
-      sitOutReason: undefined,
-      isDisconnected: false
+      missedTurns: 0
     };
     
     this.players.set(playerId, player);
@@ -777,28 +758,69 @@ export class PokerTable {
     return true;
   }
 
-  /**
-   * Sit out - DISABLED per PokerStars simplification
-   * Players stay active until they leave or disconnect
+   * Sit out - player will auto-fold when it's their turn
    */
   async sitOut(playerId: string): Promise<{ success: boolean; error?: string }> {
-    logger.info('sitOut disabled - players stay active', { playerId: playerId.substring(0, 8) });
-    return { success: false, error: 'Sit out disabled' };
+    const player = this.players.get(playerId);
+    if (!player) {
+      return { success: false, error: 'Player not at table' };
+    }
+    
+    if (player.status === 'sitting_out') {
+      return { success: false, error: 'Already sitting out' };
+    }
+    
+    player.status = 'sitting_out';
+    logger.info('Player sitting out', { playerId: playerId.substring(0, 8) });
+    
+    // Update database
+    await this.supabase
+      .from('poker_table_players')
+      .update({ status: 'sitting_out' })
+      .eq('table_id', this.id)
+      .eq('player_id', playerId);
+    
+    this.emit('player_sitting_out', { playerId, reason: 'manual' });
+    
+    return { success: true };
   }
 
   /**
-   * Sit in - DISABLED (sitout is disabled)
+   * Sit in - return to active play
    */
   async sitIn(playerId: string): Promise<{ success: boolean; error?: string }> {
-    logger.info('sitIn disabled - sitout is disabled', { playerId: playerId.substring(0, 8) });
-    return { success: false, error: 'Sit out disabled' };
-  }
-  
-  /**
-   * Get player by ID (for external access)
-   */
-  getPlayer(playerId: string): Player | undefined {
-    return this.players.get(playerId);
+    const player = this.players.get(playerId);
+    if (!player) {
+      return { success: false, error: 'Player not at table' };
+    }
+    
+    if (player.status === 'active') {
+      return { success: false, error: 'Already active' };
+    }
+    
+    if (player.stack <= 0) {
+      return { success: false, error: 'No chips to play' };
+    }
+    
+    player.status = 'active';
+    player.missedTurns = 0; // Reset missed turns counter
+    logger.info('Player sitting in', { playerId: playerId.substring(0, 8) });
+    
+    // Update database
+    await this.supabase
+      .from('poker_table_players')
+      .update({ status: 'active' })
+      .eq('table_id', this.id)
+      .eq('player_id', playerId);
+    
+    this.emit('player_sitting_in', { playerId });
+    
+    // Check if we can start a hand now
+    if (!this.currentHand) {
+      this.checkStartHand();
+    }
+    
+    return { success: true };
   }
   
   // ==========================================
@@ -918,7 +940,6 @@ export class PokerTable {
   /**
    * Check if disconnected player should be auto-folded/removed
    * Called after RECONNECT_WINDOW_MS timeout
-   * SIMPLIFIED: No sitout - just fold if in hand
    */
   private checkDisconnectTimeout(playerId: string): void {
     const disconnectInfo = this.disconnectedPlayers.get(playerId);
@@ -934,7 +955,7 @@ export class PokerTable {
       wasInHand: disconnectInfo.wasInHand
     });
     
-    // If in active hand, fold them (no sitout, just fold)
+    // If in active hand, fold them
     if (this.currentHand && !player.isFolded) {
       player.isFolded = true;
       this.emit('player_folded', { 
@@ -985,41 +1006,7 @@ export class PokerTable {
       logger.warn('Action rejected - no active hand', { playerId, actionType });
       return { success: false, error: 'No active hand' };
     }
-
-    // POKERSTARS-STYLE: Triple validation - isComplete, showdown phase, and null currentPlayerSeat
-    // This prevents ANY actions during hand completion sequence
-    if (this.currentHand.isComplete) {
-      logger.warn('Action rejected - hand is already complete', {
-        tableId: this.id,
-        playerId: playerId.substring(0, 8),
-        actionType,
-        phase: this.currentHand.phase
-      });
-      return { success: false, error: 'Hand is complete' };
-    }
-
-    // CRITICAL: Do not accept any actions during showdown.
-    // Prevents duplicate/late actions when the client is behind or when recovery triggers.
-    if (this.currentHand.phase === 'showdown') {
-      logger.warn('Action rejected - hand is in showdown', {
-        tableId: this.id,
-        playerId: playerId.substring(0, 8),
-        actionType
-      });
-      return { success: false, error: 'Hand is complete' };
-    }
     
-    // POKERSTARS: If no current player seat, betting round is transitioning
-    if (this.currentHand.currentPlayerSeat === null) {
-      logger.warn('Action rejected - no current player (phase transition)', {
-        tableId: this.id,
-        playerId: playerId.substring(0, 8),
-        actionType,
-        phase: this.currentHand.phase
-      });
-      return { success: false, error: 'Please wait for your turn' };
-    }
-
     // Validation 2: Check player exists
     const player = this.players.get(playerId);
     if (!player) {
@@ -1055,36 +1042,9 @@ export class PokerTable {
       });
       return { success: false, error: 'Not your turn' };
     }
-
-    // If the player acts after the main action timer expired, consume used time bank (PokerStars-style).
-    // This prevents negative timeBank values and fixes premature sit-out when multiple timers/recovery triggers happen.
-    if (this.currentHand.actionStartTime) {
-      const mainMs = this.config.actionTimeSeconds * 1000;
-      const elapsedMs = Date.now() - this.currentHand.actionStartTime;
-      const overtimeMs = elapsedMs - mainMs;
-
-      if (overtimeMs > 0) {
-        const usedSeconds = Math.ceil(overtimeMs / 1000);
-        const prevBank = Math.max(0, player.timeBank);
-        const newBank = Math.max(0, prevBank - usedSeconds);
-
-        if (newBank !== prevBank) {
-          player.timeBank = newBank;
-          this.emit('time_bank_used', { playerId, remaining: player.timeBank, usedSeconds });
-        } else {
-          player.timeBank = prevBank;
-        }
-      } else {
-        player.timeBank = Math.max(0, player.timeBank);
-      }
-    } else {
-      player.timeBank = Math.max(0, player.timeBank);
-    }
-
-    // POKERSTARS: Clear both action timer and time bank timer on successful action
+    
+    // Clear action timer before processing
     this.clearActionTimer();
-    this.clearTimeBankTimer();
-    this.isTimeBankPhase = false;
     
     logger.info('=== ACTION PROCESSING ===', {
       playerId: playerId.substring(0, 8),
@@ -1233,15 +1193,10 @@ export class PokerTable {
       await this.delay(collectionTime);
       
       // Emit phase change with dealing delay for client animation
-      // CRITICAL FIX: Include full state with players to prevent client state loss
-      const phaseChangeState = this.getPublicState() as Record<string, unknown>;
       this.emit('phase_change', {
-        ...phaseChangeState,
         phase: newPhase,
         communityCards: this.currentHand.communityCards,
         pot: this.currentHand.pot,
-        currentBet: 0, // Bets reset after phase
-        currentPlayerSeat: this.currentHand.currentPlayerSeat,
         dealDelay: this.timings.phases[newPhase]?.perCardDelay || 0,
         preDealDelay: this.timings.phases[newPhase]?.preDealDelay || 0,
         postDealDelay: this.timings.phases[newPhase]?.postDealDelay || 0
@@ -1251,10 +1206,7 @@ export class PokerTable {
       await this.delay(phaseDelay);
       
       // Now emit state update after cards are visually dealt
-      // CRITICAL FIX: Include full state with players
-      const stateUpdateData = this.getPublicState() as Record<string, unknown>;
       this.emit('state_update', {
-        ...stateUpdateData,
         pot: this.currentHand.pot,
         currentBet: 0, // Bets reset after phase
         currentPlayerSeat: this.currentHand.currentPlayerSeat,
@@ -1265,10 +1217,7 @@ export class PokerTable {
       // Normal state update without phase change - minimal delay
       await this.delay(Math.min(afterActionDelay, 200));
       
-      // CRITICAL FIX: Include full state with players
-      const stateUpdateData = this.getPublicState() as Record<string, unknown>;
       this.emit('state_update', {
-        ...stateUpdateData,
         pot: this.currentHand?.pot || 0,
         currentBet: this.currentHand?.currentBet || 0,
         currentPlayerSeat: this.currentHand?.currentPlayerSeat,
@@ -1284,9 +1233,28 @@ export class PokerTable {
     return { success: true, nextState: this.getPublicState() };
   }
   
-  // REMOVED: updatePlayerFromAction was deprecated and caused double subtraction bugs
-  // Engine state is now authoritative - we sync from engine.getState() directly
-  // See action() method for the correct approach
+  /**
+   * Update player after action - DEPRECATED
+   * Engine state is now authoritative - do not use this method
+   * Left for reference only
+   */
+  private updatePlayerFromAction(player: Player, result: ActionResult): void {
+    // REMOVED: Double subtraction bug - engine already updates player stack
+    // The engine is now the source of truth for all player state
+    // We sync from engine state instead of manually updating here
+    
+    // Only update timestamp
+    player.lastActionTime = Date.now();
+    
+    // Log for debugging - don't modify values
+    logger.info('updatePlayerFromAction called (deprecated)', {
+      playerId: player.id,
+      actionAmount: result.amount,
+      engineStack: player.stack, // Already synced from engine
+      isAllIn: result.isAllIn,
+      isFolded: result.isFolded
+    });
+  }
   
   /**
    * Bot detection: keep it consistent across the table code.
@@ -1451,32 +1419,6 @@ export class PokerTable {
 
     if (seat === null || !playerId) return;
 
-    // CRITICAL: keep poker_hands.action_started_at updated for the CURRENT turn.
-    // PokerGameManager.checkStuckTables relies on this field; if it stays at "hand start time",
-    // the table will be considered stuck after ~2 minutes and will auto-act (skipping streets).
-    if (this.currentHand?.id) {
-      this.supabase
-        .from('poker_hands')
-        .update({
-          action_started_at: new Date().toISOString(),
-          current_player_seat: seat,
-          phase: this.currentHand.phase,
-          current_bet: this.currentHand.currentBet,
-          pot: this.currentHand.pot,
-          community_cards: this.currentHand.communityCards
-        })
-        .eq('id', this.currentHand.id)
-        .then(({ error }) => {
-          if (error) {
-            logger.warn('Failed to update action_started_at', {
-              tableId: this.id,
-              handId: this.currentHand?.id,
-              error: error.message
-            });
-          }
-        });
-    }
-
     const player = this.players.get(playerId) ?? null;
 
     // Avoid "30s stalls" if the seat is known but player state isn't loaded yet.
@@ -1530,68 +1472,12 @@ export class PokerTable {
     }
   }
   
-  // ===== SIMPLIFIED TIMER STATE V4 =====
-  // Time bank is DISABLED - keeping fields for cleanup only
-  private isTimeBankPhase: boolean = false;
-  private timeBankTimerId: ReturnType<typeof setInterval> | null = null;
-  
-  // Guard against double-timeout race condition
-  private lastTimeoutHandId: string | null = null;
-  private lastTimeoutSeat: number | null = null;
-  private lastTimeoutTimestamp: number = 0;
-  private readonly TIMEOUT_DEBOUNCE_MS = 500; // 500ms debounce
-  
   /**
-   * Handle player timeout - SIMPLIFIED V4
-   * 
-   * Simple logic: Timer expires → auto check/fold
-   * NO time bank, NO sitout automation, NO missedTurns tracking
-   * Players stay active forever - only manual sitout or leave
-   * 
-   * CRITICAL: Do NOT process timeouts during showdown phase
+   * Handle player timeout
+   * After 2 consecutive timeouts, player is set to sitting_out
    */
   private async handleTimeout(): Promise<void> {
     if (!this.currentHand || this.currentHand.currentPlayerSeat === null) return;
-    
-    const currentSeat = this.currentHand.currentPlayerSeat;
-    const currentHandId = this.currentHand.id;
-    const now = Date.now();
-    
-    // Guard against double-timeout for same player/turn (race condition protection)
-    if (
-      this.lastTimeoutHandId === currentHandId &&
-      this.lastTimeoutSeat === currentSeat &&
-      now - this.lastTimeoutTimestamp < this.TIMEOUT_DEBOUNCE_MS
-    ) {
-      logger.info('Skipping handleTimeout - debounce active for same player/turn', {
-        tableId: this.id,
-        handId: currentHandId,
-        seat: currentSeat,
-        msSinceLastTimeout: now - this.lastTimeoutTimestamp
-      });
-      return;
-    }
-    
-    // Record this timeout attempt
-    this.lastTimeoutHandId = currentHandId;
-    this.lastTimeoutSeat = currentSeat;
-    this.lastTimeoutTimestamp = now;
-    
-    // Skip timeout during showdown - hand is completing naturally
-    if (this.currentHand.phase === 'showdown') {
-      logger.info('Skipping handleTimeout - hand is in showdown phase', { 
-        tableId: this.id 
-      });
-      return;
-    }
-    
-    // Skip if hand is already complete
-    if (this.currentHand.isComplete) {
-      logger.info('Skipping handleTimeout - hand is complete', { 
-        tableId: this.id 
-      });
-      return;
-    }
 
     const seat = this.currentHand.currentPlayerSeat;
     const playerId = this.seats[seat];
@@ -1600,6 +1486,7 @@ export class PokerTable {
     const player = this.players.get(playerId) ?? null;
 
     // If we somehow have a seat mapping but no player state yet, retry soon.
+    // This prevents tables from "freezing" at the start of a hand.
     if (!player) {
       logger.warn('handleTimeout: missing player state, retrying', {
         tableId: this.id,
@@ -1618,41 +1505,47 @@ export class PokerTable {
       return;
     }
 
-    logger.info('Timer expired - auto action', { 
-      playerId: playerId.substring(0, 8),
-      seatNumber: seat
-    });
+    logger.info('Player timed out', { playerId, missedTurns: player.missedTurns });
 
-    // Update activity time
-    player.lastActivityTime = Date.now();
+    // Use time bank if available
+    if (player.timeBank > 0) {
+      player.timeBank -= this.config.actionTimeSeconds;
+      this.emit('time_bank_used', { playerId, remaining: player.timeBank });
+      this.startActionTimer();
+      return;
+    }
 
-    // SIMPLE AUTO ACTION: check if possible, otherwise fold
+    // Increment missed turns counter
+    player.missedTurns++;
+
+    // Auto fold/check - PROFESSIONAL: prefer check when possible
     const canCheck = player.currentBet >= this.currentHand.currentBet;
     const autoAction = canCheck ? 'check' : 'fold';
 
-    logger.info('Player auto-action due to timeout', {
+    logger.warn('Player auto-action due to timeout', {
       playerId: playerId.substring(0, 8),
-      action: autoAction
+      action: autoAction,
+      timeBankRemaining: player.timeBank,
+      missedTurns: player.missedTurns
     });
 
-    // Perform auto-action
     await this.action(playerId, autoAction);
 
-    // NO sitout automation - player stays active
-    // NO missedTurns increment
-
-    this.emit('timeout', { playerId, action: autoAction });
-  }
-  
-  /**
-   * Time bank countdown is DISABLED in simplified V4
-   * Keeping clearTimeBankTimer for safety (if any old timers exist)
-   */
-  private clearTimeBankTimer(): void {
-    if (this.timeBankTimerId) {
-      clearInterval(this.timeBankTimerId);
-      this.timeBankTimerId = null;
+    // After 2 consecutive missed turns, set player to sitting_out
+    if (player.missedTurns >= 2) {
+      logger.info('Player auto sitting out after 2 missed turns', {
+        playerId: playerId.substring(0, 8),
+        missedTurns: player.missedTurns
+      });
+      player.status = 'sitting_out';
+      this.emit('player_sitting_out', {
+        playerId,
+        reason: 'missed_turns',
+        missedTurns: player.missedTurns
+      });
     }
+
+    this.emit('timeout', { playerId, action: autoAction, missedTurns: player.missedTurns });
   }
   
   /**
@@ -1794,7 +1687,7 @@ export class PokerTable {
       }
 
       // Not a tournament or not on break - start hand
-      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-14-timeout-fix-v3';
+      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-04-pro-timings';
       logger.info('checkStartHand: starting hand immediately', { build: BUILD_TAG });
 
       await this.startHand();
@@ -1832,7 +1725,6 @@ export class PokerTable {
       const previousDealerSeat = this.dealerSeat;
       
       // Reset players and VALIDATE stacks
-      // SIMPLIFIED V4: Reset ALL hand-specific state at start of new hand
       for (const player of this.players.values()) {
         player.holeCards = [];
         player.currentBet = 0;
@@ -1847,10 +1739,6 @@ export class PokerTable {
           });
           player.stack = 0;
         }
-        
-        // SIMPLIFIED: No missedTurns tracking, no timeBank usage
-        // timeBank field kept for DB compatibility but not used
-        player.missedTurns = 0;
         
         player.isFolded = player.status !== 'active' || player.stack <= 0;
       }
@@ -1963,9 +1851,8 @@ export class PokerTable {
       
       // CRITICAL: Save hand to database at START (not just at completion)
       // This ensures current_hand_id always points to existing record
-      // IMPORTANT: Use await and verify success - stale current_hand_id causes false stuck detection
       try {
-        const { error: insertError } = await this.supabase.from('poker_hands').insert({
+        await this.supabase.from('poker_hands').insert({
           id: this.currentHand.id,
           table_id: this.id,
           hand_number: this.currentHand.handNumber,
@@ -1981,16 +1868,8 @@ export class PokerTable {
           // completed_at is NULL - hand is in progress
         });
         
-        if (insertError) {
-          logger.warn('Failed to insert poker_hands record', { 
-            error: insertError.message,
-            handId: this.currentHand.id 
-          });
-        }
-        
-        // CRITICAL: Update poker_tables.current_hand_id and verify it succeeded
-        // This is crucial - if this fails, checkStuckTables will find old hands and cause false recoveries
-        const { error: updateError } = await this.supabase
+        // Also update poker_tables.current_hand_id
+        await this.supabase
           .from('poker_tables')
           .update({
             current_hand_id: this.currentHand.id,
@@ -1998,30 +1877,6 @@ export class PokerTable {
             updated_at: new Date().toISOString()
           })
           .eq('id', this.id);
-        
-        if (updateError) {
-          logger.error('CRITICAL: Failed to update current_hand_id - may cause false stuck detection!', {
-            tableId: this.id,
-            handId: this.currentHand.id,
-            error: updateError.message
-          });
-          
-          // RETRY once
-          const { error: retryError } = await this.supabase
-            .from('poker_tables')
-            .update({
-              current_hand_id: this.currentHand.id,
-              status: 'playing',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', this.id);
-          
-          if (retryError) {
-            logger.error('CRITICAL: Retry also failed for current_hand_id update', { error: retryError.message });
-          } else {
-            logger.info('current_hand_id update succeeded on retry', { handId: this.currentHand.id });
-          }
-        }
           
         logger.info('Hand saved to database at start', {
           tableId: this.id,
@@ -2326,11 +2181,6 @@ export class PokerTable {
     // Wait for winner highlight animation
     await this.delay(this.timings.showdown.winnerHighlight);
     
-    // POKERSTARS: Clear any remaining timers to prevent ghost timeouts
-    this.clearActionTimer();
-    this.clearTimeBankTimer();
-    this.isTimeBankPhase = false;
-    
     this.emit('hand_complete', {
       handNumber: this.handNumber,
       winners,
@@ -2386,10 +2236,7 @@ export class PokerTable {
     this.currentHand = null;
     
     // Emit state update to clear client displays
-    // CRITICAL FIX: Include full state with players
-    const clearStateData = this.getPublicState() as Record<string, unknown>;
     this.emit('state_update', {
-      ...clearStateData,
       pot: 0,
       currentBet: 0,
       currentPlayerSeat: null,
@@ -2638,90 +2485,22 @@ export class PokerTable {
       reason: 'all_folded'
     });
     
-    // POKERSTARS: Clear timers and mark hand complete
-    this.clearActionTimer();
-    this.clearTimeBankTimer();
-    this.isTimeBankPhase = false;
-    
     // Clear hand state
     this.currentHand = null;
     
-    // Save winner to DB
-    this.saveHandResult([{ playerId: winnerId, amount: pot, handName: 'Last Standing' }]);
-    
-    // Check for new hand after delay
+    // Check for new hand
     setTimeout(() => {
       this.checkStartHand();
-    }, 2000); // 2 second delay for visual feedback
-  }
-  
-  /**
-   * Save hand result to database (used for tracking)
-   */
-  private async saveHandResult(winners: { playerId: string; amount: number; handName: string }[]): Promise<void> {
-    // Update poker_hands with completion
-    // This is handled in completeHand() - this is a simplified version for edge cases
-    try {
-      if (this.handNumber > 0) {
-        logger.info('Hand result saved', { 
-          handNumber: this.handNumber, 
-          winners: winners.map(w => ({ id: w.playerId.substring(0, 8), amount: w.amount }))
-        });
-      }
-    } catch (err) {
-      logger.warn('Failed to save hand result', { error: String(err) });
-    }
+    }, 1000);
   }
   
   /**
    * Check if phase should transition (all active players acted)
    */
   private checkPhaseTransition(): void {
-    // If no current hand, nothing to do
-    if (!this.currentHand) return;
-    
-    // Get active players who can still act
-    const activePlayers = Array.from(this.players.values())
-      .filter(p => !p.isFolded && !p.isAllIn && p.status === 'active' && p.stack > 0);
-    
-    // If no one can act, check if we need to run out the board or go to showdown
-    if (activePlayers.length === 0) {
-      const remainingPlayers = Array.from(this.players.values())
-        .filter(p => !p.isFolded);
-      
-      if (remainingPlayers.length > 1) {
-        // Multiple players but all all-in - run out the board
-        logger.info('All active players are all-in - triggering runout');
-        this.triggerAllInRunout();
-      } else if (remainingPlayers.length === 1) {
-        // Only one player left - they win
-        this.endHandWithWinner(remainingPlayers[0].id);
-      }
-    } else {
-      // Someone can still act - find them and set as current player
-      const nextPlayer = activePlayers
-        .sort((a, b) => a.seatNumber - b.seatNumber)[0];
-      
-      if (nextPlayer && this.currentHand) {
-        this.currentHand.currentPlayerSeat = nextPlayer.seatNumber;
-        this.currentHand.actionStartTime = Date.now();
-        this.startActionTimer();
-      }
-    }
-  }
-  
-  /**
-   * Trigger all-in runout (deal remaining community cards)
-   */
-  private async triggerAllInRunout(): Promise<void> {
-    if (!this.currentHand) return;
-    
-    // Use engine to run out the board
-    const result = this.engine.runOutBoard();
-    
-    if (result.success && result.winners) {
-      await this.completeHand(result.winners);
-    }
+    // This will be called if the normal action flow is broken
+    // For now, just log and let the normal flow handle it
+    logger.info('Phase transition check triggered');
   }
   
   /**
@@ -2755,18 +2534,6 @@ export class PokerTable {
       };
     });
 
-    // Calculate remaining time server-side for accurate client display
-    let timeRemaining: number | null = null;
-    if (this.currentHand?.currentPlayerSeat !== null && this.currentHand?.currentPlayerSeat !== undefined) {
-      const actionStartedAt = this.currentHand.actionStartTime;
-      if (actionStartedAt) {
-        const elapsed = (Date.now() - actionStartedAt) / 1000;
-        timeRemaining = Math.max(0, this.config.actionTimeSeconds - elapsed);
-      } else {
-        timeRemaining = this.config.actionTimeSeconds;
-      }
-    }
-
     return {
       tableId: this.id,
       id: this.id,
@@ -2777,8 +2544,6 @@ export class PokerTable {
       bigBlind: this.config.bigBlind,
       ante: this.config.ante,
       actionTimer: this.config.actionTimeSeconds,
-      // CRITICAL: Server-calculated timeRemaining for client synchronization
-      timeRemaining,
       players,
       // Hand state - CRITICAL: only show pot/bet when hand is active
       phase: this.currentHand?.phase || 'waiting',
@@ -2791,7 +2556,6 @@ export class PokerTable {
       currentPlayerSeat: this.currentHand?.currentPlayerSeat ?? null,
       minRaise: this.currentHand?.minRaise || this.config.bigBlind,
       handNumber: this.currentHand?.handNumber || 0,
-      handId: this.currentHand?.id || null,
       // Countdown info
       playersNeeded: this.getPlayersNeededToStart(),
       // CRITICAL: Explicitly indicate if hand is active for client
@@ -2870,16 +2634,13 @@ export class PokerTable {
       return p;
     });
     
-    // CRITICAL FIX V2: Always clamp timeBank to non-negative before returning to client
-    const safeTimeBank = Math.max(0, player.timeBank);
-    
     return {
       ...publicState,
       players,
       myCards: player.holeCards,
       mySeat: player.seatNumber,
       myStack: player.stack,
-      myTimeBank: safeTimeBank, // CRITICAL: Never send negative timeBank to client
+      myTimeBank: player.timeBank,
       isMyTurn: this.currentHand?.currentPlayerSeat === player.seatNumber
     };
   }
@@ -3042,10 +2803,7 @@ export class PokerTable {
       isAllIn: false,
       timeBank: isBot ? 0 : this.config.timeBankSeconds,
       lastActionTime: null,
-      lastActivityTime: Date.now(),
-      missedTurns: 0,
-      sitOutReason: undefined,
-      isDisconnected: false
+      missedTurns: 0
     };
     
     this.players.set(playerId, player);
@@ -3131,385 +2889,58 @@ export class PokerTable {
   /**
    * Force recovery for stuck table
    * Called by PokerGameManager when table is detected as stuck
-   * 
-   * POKERSTARS-STYLE PROFESSIONAL RECOVERY:
-   * 1. Skip recovery during showdown/complete hands
-   * 2. Validate action_started_at is truly stale (not just slow time bank usage)
-   * 3. Verify current player actually exists and should act
-   * 4. Idempotency: track last recovery action to prevent duplicates
-   * 5. Never force-fold multiple players - that destroys game integrity
-   * 6. CRITICAL: Always require expectedHandId to prevent stale DB recovery
    */
-  private lastRecoveryHandId: string | null = null;
-  private lastRecoveryTimestamp: number = 0;
-  private readonly RECOVERY_DEBOUNCE_MS = 10000; // 10 second debounce (increased from 5)
-  
-  forceRecovery(expectedHandId?: string): void {
-    const now = Date.now();
-
-    // CRITICAL FIX V2: ALWAYS require expectedHandId - never trigger blind recovery
-    // This prevents stale DB references from corrupting active games
-    if (!expectedHandId) {
-      logger.warn('Skipping recovery - no expectedHandId provided (safety)', {
-        tableId: this.id,
-        hasCurrentHand: !!this.currentHand,
-        currentHandId: this.currentHand?.id
-      });
-      return;
-    }
-    
-    // If no current hand in memory, nothing to recover
-    if (!this.currentHand) {
-      logger.warn('Skipping recovery - no current hand in memory', {
-        tableId: this.id,
-        expectedHandId
-      });
-      // CRITICAL: Mark the orphaned hand in DB as aborted
-      this.supabase
-        .from('poker_hands')
-        .update({
-          completed_at: new Date().toISOString(),
-          phase: 'aborted'
-        })
-        .eq('id', expectedHandId)
-        .is('completed_at', null)
-        .then(({ error }) => {
-          if (error) {
-            logger.warn('Failed to mark orphaned hand as aborted', { error: error.message });
-          } else {
-            logger.info('Marked orphaned hand as aborted', { handId: expectedHandId });
-          }
-        });
-      return;
-    }
-    
-    // CRITICAL: Verify expectedHandId matches current hand in memory
-    if (this.currentHand.id !== expectedHandId) {
-      logger.warn('Skipping recovery - hand ID mismatch (stale DB reference)', {
-        tableId: this.id,
-        expectedHandId,
-        currentHandId: this.currentHand.id,
-        currentPhase: this.currentHand.phase
-      });
-      
-      // Fix the stale reference in DB AND mark old hand as aborted
-      Promise.all([
-        this.supabase
-          .from('poker_tables')
-          .update({
-            current_hand_id: this.currentHand.id,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', this.id),
-        this.supabase
-          .from('poker_hands')
-          .update({
-            completed_at: new Date().toISOString(),
-            phase: 'aborted'
-          })
-          .eq('id', expectedHandId)
-          .is('completed_at', null)
-      ]).then(([tableResult, handResult]) => {
-        if (tableResult.error) {
-          logger.warn('Failed to fix stale current_hand_id in DB', { error: tableResult.error.message });
-        } else {
-          logger.info('Fixed stale current_hand_id in DB', { 
-            tableId: this.id, 
-            newHandId: this.currentHand?.id 
-          });
-        }
-        if (handResult.error) {
-          logger.warn('Failed to mark old hand as aborted', { error: handResult.error.message });
-        }
-      });
-      
-      return;
-    }
-    
-    // IDEMPOTENCY: Prevent duplicate recovery within 5 seconds for same hand
-    if (
-      this.currentHand?.id === this.lastRecoveryHandId &&
-      now - this.lastRecoveryTimestamp < this.RECOVERY_DEBOUNCE_MS
-    ) {
-      logger.info('Skipping recovery - debounce active for this hand', {
-        tableId: this.id,
-        handId: this.currentHand?.id,
-        msSinceLastRecovery: now - this.lastRecoveryTimestamp
-      });
-      return;
-    }
-    
+  forceRecovery(): void {
     logger.warn('Force recovery initiated for stuck table', {
       tableId: this.id,
       hasCurrentHand: !!this.currentHand,
-      currentPlayerSeat: this.currentHand?.currentPlayerSeat,
-      phase: this.currentHand?.phase,
-      isComplete: this.currentHand?.isComplete
+      currentPlayerSeat: this.currentHand?.currentPlayerSeat
     });
     
-    // CRITICAL: Skip recovery if hand is in showdown phase - it's completing naturally
-    if (this.currentHand?.phase === 'showdown') {
-      logger.info('Skipping force recovery - hand is in showdown phase', { 
-        tableId: this.id,
-        handId: this.currentHand.id 
-      });
-      return;
-    }
-    
-    // CRITICAL: Skip if hand is already marked complete
-    if (this.currentHand?.isComplete) {
-      logger.info('Skipping force recovery - hand is already complete', { 
-        tableId: this.id,
-        handId: this.currentHand.id 
-      });
-      return;
-    }
-    
-    // VALIDATION: Check if action_started_at is truly stale
-    // If player is using time bank, action might legitimately take longer
-    if (this.currentHand?.actionStartTime) {
-      const actionAgeMs = now - this.currentHand.actionStartTime;
-      const maxAllowedMs = (this.config.actionTimeSeconds + this.config.timeBankSeconds + 30) * 1000;
-      
-      if (actionAgeMs < maxAllowedMs) {
-        logger.info('Skipping recovery - action time within allowed range (including time bank)', {
-          tableId: this.id,
-          actionAgeMs,
-          maxAllowedMs,
-          actionTimeSeconds: this.config.actionTimeSeconds,
-          timeBankSeconds: this.config.timeBankSeconds
-        });
-        return;
-      }
-    }
-    
-    // Track this recovery attempt
-    this.lastRecoveryHandId = this.currentHand?.id || null;
-    this.lastRecoveryTimestamp = now;
-    
-    // Clear any existing timers
+    // Clear any existing timer
     this.clearActionTimer();
-    this.clearTimeBankTimer();
-    this.isTimeBankPhase = false;
     
     if (this.currentHand && this.currentHand.currentPlayerSeat !== null) {
-      // VALIDATION: Verify current player exists and can act
-      const currentPlayerId = this.seats[this.currentHand.currentPlayerSeat];
-      const currentPlayer = currentPlayerId ? this.players.get(currentPlayerId) : null;
-      
-      if (!currentPlayer) {
-        logger.warn('Recovery: current player not found - finding next valid player', {
-          tableId: this.id,
-          seat: this.currentHand.currentPlayerSeat
-        });
-        
-        // Try to find next valid player instead of forcing timeout on ghost
-        const nextSeat = this.findNextActivePlayer(this.currentHand.currentPlayerSeat);
-        if (nextSeat !== null && nextSeat !== this.currentHand.currentPlayerSeat) {
-          this.currentHand.currentPlayerSeat = nextSeat;
-          this.startActionTimer();
-          return;
-        }
-      }
-      
-      if (currentPlayer?.isFolded || currentPlayer?.isAllIn) {
-        logger.warn('Recovery: current player already folded/all-in - advancing', {
-          tableId: this.id,
-          playerId: currentPlayerId?.substring(0, 8),
-          isFolded: currentPlayer?.isFolded,
-          isAllIn: currentPlayer?.isAllIn
-        });
-        
-        // Find next player
-        const nextSeat = this.findNextActivePlayer(this.currentHand.currentPlayerSeat);
-        if (nextSeat !== null) {
-          this.currentHand.currentPlayerSeat = nextSeat;
-          this.startActionTimer();
-        } else {
-          // No more players to act - check if betting round is complete
-          this.checkBettingRoundComplete();
-        }
-        return;
-      }
-      
-      // Force timeout for current player - this is legitimate stuck situation
-      logger.warn('Recovery: forcing timeout for stuck player', {
-        tableId: this.id,
-        playerId: currentPlayerId?.substring(0, 8),
-        seat: this.currentHand.currentPlayerSeat
-      });
+      // Force timeout for current player
       this.handleTimeout();
-      
     } else if (this.currentHand) {
-      // Hand exists but no current player - determine correct action
-      logger.warn('Recovery: hand exists but no current player', { 
+      // Hand exists but no current player - complete the hand
+      logger.warn('Force completing stuck hand (no current player)', { 
         tableId: this.id, 
-        handId: this.currentHand.id,
-        phase: this.currentHand.phase
+        handId: this.currentHand.id 
       });
       
-      // Check if all players are all-in or folded
+      // Find any remaining active players
       const activePlayers = Array.from(this.players.values())
-        .filter(p => !p.isFolded && p.stack > 0 && !p.isAllIn);
+        .filter(p => !p.isFolded && p.stack > 0);
       
-      const allInPlayers = Array.from(this.players.values())
-        .filter(p => !p.isFolded && p.isAllIn);
-      
-      const remainingPlayers = Array.from(this.players.values())
-        .filter(p => !p.isFolded);
-      
-      if (remainingPlayers.length === 1) {
-        // Only one player remains - award pot
-        const winner = remainingPlayers[0];
-        logger.info('Recovery: awarding pot to last remaining player', {
-          tableId: this.id,
-          winnerId: winner.id.substring(0, 8)
-        });
-        void this.completeHand([{
+      if (activePlayers.length === 1) {
+        // Award pot to last remaining player
+        const winner = activePlayers[0];
+        this.completeHand([{
           playerId: winner.id,
           amount: this.currentHand.pot,
-          handName: 'Last Standing'
+          handRank: 'Last standing'
         }]);
-        
-      } else if (activePlayers.length === 0 && allInPlayers.length >= 1) {
-        // All remaining players are all-in - run out the board
-        logger.info('Recovery: all players all-in, running out board', {
-          tableId: this.id,
-          allInCount: allInPlayers.length
-        });
-        this.runOutBoard();
-        
-      } else if (activePlayers.length > 0) {
-        // Find next active player and continue
-        const firstActive = activePlayers[0];
-        const seat = firstActive.seatNumber;
-        logger.info('Recovery: resuming with first active player', {
-          tableId: this.id,
-          playerId: firstActive.id.substring(0, 8),
-          seat
-        });
-        this.currentHand.currentPlayerSeat = seat;
-        this.startActionTimer();
-        
+      } else if (activePlayers.length === 0) {
+        // No active players - just reset
+        this.currentHand = null;
+        this.checkStartHand();
       } else {
-        // Edge case: no active players, no all-in - abort hand
-        logger.error('Recovery: no valid players found - aborting hand', {
-          tableId: this.id,
-          handId: this.currentHand.id
-        });
-        this.abortHand('no_valid_players');
+        // Multiple players but stuck - force fold everyone except first
+        logger.warn('Force folding to recover stuck hand', { tableId: this.id });
+        for (let i = 1; i < activePlayers.length; i++) {
+          activePlayers[i].isFolded = true;
+        }
+        this.completeHand([{
+          playerId: activePlayers[0].id,
+          amount: this.currentHand.pot,
+          handRank: 'Recovery win'
+        }]);
       }
-      
     } else {
       // No current hand - try to start one
-      logger.info('Recovery: no current hand - checking if new hand can start', {
-        tableId: this.id
-      });
       this.checkStartHand();
     }
-  }
-  
-  /**
-   * Find next active player who can act
-   */
-  private findNextActivePlayer(fromSeat: number): number | null {
-    const maxPlayers = this.config.maxPlayers;
-    
-    for (let i = 1; i <= maxPlayers; i++) {
-      const nextSeat = (fromSeat + i) % maxPlayers;
-      const playerId = this.seats[nextSeat];
-      if (!playerId) continue;
-      
-      const player = this.players.get(playerId);
-      if (player && !player.isFolded && !player.isAllIn && player.stack > 0) {
-        return nextSeat;
-      }
-    }
-    
-    return null;
-  }
-  
-  /**
-   * Check if betting round is complete and advance phase
-   */
-  private checkBettingRoundComplete(): void {
-    if (!this.currentHand) return;
-    
-    const activePlayers = Array.from(this.players.values())
-      .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0);
-    
-    // If no active players can act, phase should advance
-    if (activePlayers.length === 0) {
-      logger.info('Betting round complete - all players all-in or folded', {
-        tableId: this.id
-      });
-      this.runOutBoard();
-    }
-  }
-  
-  /**
-   * Run out the board when all players are all-in
-   */
-  private runOutBoard(): void {
-    if (!this.currentHand) return;
-    
-    // Let the engine handle the runout
-    const result = this.engine.runOutBoard();
-    if (result.success && result.winners) {
-      void this.completeHand(result.winners);
-    }
-  }
-  
-  /**
-   * Abort hand due to unrecoverable error
-   */
-  private async abortHand(reason: string): Promise<void> {
-    if (!this.currentHand) return;
-    
-    const handId = this.currentHand.id;
-    logger.error('Aborting hand', { tableId: this.id, handId, reason });
-    
-    // CRITICAL: Clear all timers to prevent ghost actions
-    this.clearActionTimer();
-    this.clearTimeBankTimer();
-    this.isTimeBankPhase = false;
-    
-    // Return bets to players (refund on abort)
-    for (const player of this.players.values()) {
-      if (player.currentBet > 0) {
-        player.stack += player.currentBet;
-        player.currentBet = 0;
-      }
-      // Reset hand-specific state
-      player.holeCards = [];
-      player.isFolded = false;
-      player.isAllIn = false;
-    }
-    
-    // Mark hand as aborted in database
-    await this.supabase
-      .from('poker_hands')
-      .update({
-        completed_at: new Date().toISOString(),
-        phase: 'aborted',
-        winners: [{ reason }]
-      })
-      .eq('id', handId);
-    
-    // Clear table state
-    await this.supabase
-      .from('poker_tables')
-      .update({
-        current_hand_id: null,
-        status: 'waiting',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', this.id);
-    
-    this.currentHand = null;
-    this.emit('hand_aborted', { handId, reason });
-    
-    // Try to start new hand after delay
-    setTimeout(() => this.checkStartHand(), 3000);
   }
 }

@@ -439,11 +439,7 @@ export function calculateTableBalancing(
       if (!forcedMove) break;
     }
     
-    const playerInfo = playerToMove!;
-    // Find full player data from source table to get chips
-    const fullPlayer = sourceTable.players.find(p => p.playerId === playerInfo.playerId);
-    if (!fullPlayer) break; // Should not happen
-    
+    const player = playerToMove!;
     const toSeat = findBestSeat(targetTable);
     
     if (toSeat === null) break; // No available seats
@@ -451,17 +447,17 @@ export function calculateTableBalancing(
     moves.push({
       fromTable: sourceTable.tableId,
       toTable: targetTable.tableId,
-      playerId: playerInfo.playerId,
-      fromSeat: playerInfo.seatNumber,
+      playerId: player.playerId,
+      fromSeat: player.seatNumber,
       toSeat,
       reason: 'balance'
     });
     
     // Update state
     sourceTable.playerCount--;
-    sourceTable.players = sourceTable.players.filter(p => p.playerId !== playerInfo.playerId);
+    sourceTable.players = sourceTable.players.filter(p => p.playerId !== player.playerId);
     targetTable.playerCount++;
-    targetTable.players.push({ ...fullPlayer, seatNumber: toSeat });
+    targetTable.players.push({ ...player, seatNumber: toSeat });
   }
   
   return moves;
@@ -1035,7 +1031,7 @@ export function createConfigFromDatabase(dbTournament: {
     payoutStructure: [],
     lateRegistrationLevel: dbTournament.late_registration_level || 6,
     actionTimeSeconds: dbTournament.action_time_seconds || 30,
-    timeBankSeconds: dbTournament.time_bank_initial || 15,
+    timeBankSeconds: dbTournament.time_bank_initial || 30,
     timeBankPerLevel: dbTournament.time_bank_per_level || 5,
     tablesCount: Math.ceil(dbTournament.max_players / 9),
     playersPerTable: Math.min(9, dbTournament.max_players),

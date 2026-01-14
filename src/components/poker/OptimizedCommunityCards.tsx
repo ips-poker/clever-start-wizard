@@ -2,7 +2,6 @@ import React, { memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { MemoizedPokerCard } from './MemoizedPokerCard';
-import { translateHandRank } from '@/utils/handRankTranslations';
 
 type GamePhase = 'preflop' | 'flop' | 'turn' | 'river' | 'showdown' | 'waiting';
 
@@ -191,7 +190,7 @@ export const HeroCards = memo(function HeroCards({
           className="mt-2"
         >
           <div className="px-3 py-1 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold shadow-lg">
-            {translateHandRank(handName)}
+            {handName}
           </div>
         </motion.div>
       )}
