@@ -183,22 +183,22 @@ export function FullscreenPokerTableWrapper({
   }, [isMyTurn, turnTimeRemaining, soundEnabled, isTournament, sounds, tournamentSounds]);
 
   // Timer effect (server-authoritative)
-  // Time bank removed: UI shows only main action timer.
+  // Server sends timeRemaining calculated from actionStartTime
+  // No local intervals - just use server value directly
   useEffect(() => {
-    const mainTimer = tableState?.actionTimer || 30;
-
     if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
       setTurnTimeRemaining(null);
       return;
     }
 
+    // Use server-provided timeRemaining directly (no local calculation)
     const remaining =
       tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined
         ? Math.max(0, Math.ceil(tableState.timeRemaining))
-        : mainTimer;
+        : tableState?.actionTimer || 30;
 
-    setTurnTimeRemaining((prev) => (prev === remaining ? prev : remaining));
-  }, [tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.timeRemaining]);
+    setTurnTimeRemaining(remaining);
+  }, [tableState?.currentPlayerSeat, tableState?.timeRemaining, tableState?.actionTimer]);
 
   // Auto-connect on mount
   useEffect(() => {

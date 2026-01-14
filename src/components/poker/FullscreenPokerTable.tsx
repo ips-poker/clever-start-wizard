@@ -10,7 +10,7 @@ import { PokerPlayer } from '@/hooks/useNodePokerTable';
 import { resolveAvatarUrl } from '@/utils/avatarResolver';
 import { usePokerPreferences, TABLE_THEMES, CARD_BACKS } from '@/hooks/usePokerPreferences';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
-import { SmoothAvatarTimer } from './SmoothAvatarTimer';
+// SmoothAvatarTimer import removed - timer ring disabled per user request
 import { PPPokerChipStack } from './PPPokerChipStack';
 import { PotChips } from './RealisticPokerChip';
 import { SyndikateTableBackground } from './SyndikateTableBackground';
@@ -659,27 +659,7 @@ const PlayerSeat = memo(function PlayerSeat({
 
       {/* Avatar with status border and opponent cards */}
       <div className="relative">
-        {/* Timer ring - UNDER cards and game elements, around avatar */}
-        {/* CRITICAL FIX: Never show timer during showdown phase - all actions complete */}
-        {isCurrentTurn && turnTimeRemaining !== undefined && !player.isFolded && gamePhase !== 'showdown' && (
-          <div 
-            className="absolute z-0 pointer-events-none"
-            style={{
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: avatarSize + 6,
-              height: avatarSize + 6
-            }}
-          >
-            <SmoothAvatarTimer 
-              remaining={turnTimeRemaining} 
-              total={mainTimerDuration}
-              size={avatarSize + 6}
-              strokeWidth={3}
-            />
-          </div>
-        )}
+        {/* Timer ring removed per user request - using action badge only */}
         
         {/* Level badge - PPPoker style (5YR, VIP, etc.) */}
         <PPPokerLevelBadge level={(player as any).level} isVIP={(player as any).isVIP} />
