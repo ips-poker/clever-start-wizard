@@ -336,26 +336,9 @@ function getSeatPositions(playerCount: number, forTelegram?: boolean): Array<{ x
   const positions = getCalibratedPositions(mode);
   const defaults = isTelegram ? DEFAULT_TELEGRAM_SEAT_POSITIONS_BY_COUNT : DEFAULT_SEAT_POSITIONS_BY_COUNT;
   
-  // Гарантируем что всегда возвращаем массив, даже если данные некорректны
-  const fallback = defaults[6] || [{ x: 50, y: 87 }, { x: 24, y: 65 }, { x: 24, y: 35 }, { x: 50, y: 13 }, { x: 76, y: 35 }, { x: 76, y: 65 }];
-  
-  let result: Array<{ x: number; y: number }> | undefined;
-  
-  if (playerCount <= 2) {
-    result = positions[2] || defaults[2];
-  } else if (playerCount >= 9) {
-    result = positions[9] || defaults[9];
-  } else {
-    result = positions[playerCount] || defaults[playerCount] || positions[6] || defaults[6];
-  }
-  
-  // Защита от undefined
-  if (!result || !Array.isArray(result) || result.length === 0) {
-    console.warn('[getSeatPositions] No positions found, using fallback', { playerCount, mode });
-    return fallback;
-  }
-  
-  return result;
+  if (playerCount <= 2) return positions[2] || defaults[2];
+  if (playerCount >= 9) return positions[9] || defaults[9];
+  return positions[playerCount] || defaults[playerCount] || positions[6] || defaults[6];
 }
 
 // ============= PREMIUM POKER CARD with personalization =============
