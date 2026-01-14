@@ -189,7 +189,7 @@ export function FullscreenPokerTableWrapper({
   // Timer effect (server-authoritative + SmoothAvatarTimer does the smooth animation)
   useEffect(() => {
     const mainTimer = tableState?.actionTimer || 30;
-    const timeBankDuration = 15;
+    const timeBankDuration = tableState?.timeBankSeconds ?? 15;
 
     if (!tableState?.currentPlayerSeat && tableState?.currentPlayerSeat !== 0) {
       setTurnTimeRemaining(null);
@@ -203,7 +203,7 @@ export function FullscreenPokerTableWrapper({
         : mainTimer;
 
     // Some server builds send only MAIN time in timeRemaining and keep time bank on player.
-    // To render PokerStars-like ring (30s green + 15s red bank) we *compose* them when needed.
+    // To render PokerStars-like ring we *compose* them when needed.
     const currentPlayer = tableState.players?.find((p) => p.seatNumber === tableState.currentPlayerSeat);
     const bankRemainingRaw = currentPlayer?.timeBankRemaining;
     const bankRemaining = Number.isFinite(bankRemainingRaw as number)
@@ -218,12 +218,13 @@ export function FullscreenPokerTableWrapper({
       currentPlayerSeat: tableState.currentPlayerSeat,
       actionTimer: tableState.actionTimer,
       timeRemaining: tableState.timeRemaining,
+      timeBankDuration,
       bankRemaining,
       composedRemaining,
     });
 
     setTurnTimeRemaining(composedRemaining);
-  }, [tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.timeRemaining, tableState?.players, tableState?.phase]);
+  }, [tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.timeRemaining, tableState?.players, tableState?.phase, tableState?.timeBankSeconds]);
 
   // Auto-connect on mount
   useEffect(() => {
