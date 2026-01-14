@@ -648,13 +648,13 @@ const PlayerSeat = memo(function PlayerSeat({
         if (isReplaceableBot) onSeatClick?.(seatNumber);
       }}
     >
-      <motion.div
+      {/* Avatar with status border and opponent cards - entrance animation on content only */}
+      <motion.div 
+        className="relative"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       >
-
-      {/* Avatar with status border and opponent cards */}
-      <div className="relative">
         {/* Timer ring - UNDER cards and game elements, around avatar */}
         {isCurrentTurn && turnTimeRemaining !== undefined && !player.isFolded && (
           <div 
@@ -838,7 +838,7 @@ const PlayerSeat = memo(function PlayerSeat({
             )}>{isBB ? 'BB' : 'SB'}</span>
           </motion.div>
         )}
-      </div>
+      </motion.div>
       
       {/* Name and stack panel - anchored to avatar center (doesn't affect seat positioning) */}
       <div 
@@ -879,7 +879,6 @@ const PlayerSeat = memo(function PlayerSeat({
           <PPPokerActionBadge action={lastAction} amount={player.betAmount} />
         )}
       </AnimatePresence>
-      </motion.div>
     </div>
   );
 });
