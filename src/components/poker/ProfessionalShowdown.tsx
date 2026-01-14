@@ -210,6 +210,9 @@ export const ProfessionalShowdown = memo(function ProfessionalShowdown({
 
   // Sort players by showdown order if provided, else by seat
   const orderedPlayers = useMemo(() => {
+    // Guard against undefined/null players
+    if (!players || players.length === 0) return [];
+    
     if (!showdownOrder || showdownOrder.length === 0) {
       return [...players].sort((a, b) => a.seatNumber - b.seatNumber);
     }

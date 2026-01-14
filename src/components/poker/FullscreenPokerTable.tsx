@@ -1489,7 +1489,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
 
   // Trigger win distribution animation when winners change
   useEffect(() => {
-    if (winners && winners.length > 0 && phase === 'showdown') {
+    if (winners && winners.length > 0 && phase === 'showdown' && players && Array.isArray(players)) {
       const winner = winners[0];
       // Find winner's seat
       const winnerPlayer = players.find((p) => p.playerId === winner.playerId);
@@ -1516,7 +1516,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
     const currIndex = phasesOrder.indexOf(phase);
 
     // Phase advanced (not reset) - collect bets
-    if (currIndex > prevIndex && prevIndex >= 0) {
+    if (currIndex > prevIndex && prevIndex >= 0 && players && Array.isArray(players)) {
       // Gather all player bets for animation
       const betsToCollect = players
         .filter((p) => p.betAmount > 0)
@@ -1530,7 +1530,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
             visualPos = (p.seatNumber + spectatorRotationOffset) % maxPlayers;
           }
           return {
-            seatPosition: positions[visualPos],
+            seatPosition: positions[visualPos] || { x: 50, y: 50 },
             amount: p.betAmount,
           };
         });
@@ -1548,6 +1548,9 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   // Build players array positioned relative to hero
   const positionedPlayers = useMemo(() => {
     const result: (PokerPlayer | null)[] = new Array(maxPlayers).fill(null);
+
+    // Guard against undefined/null players array
+    if (!players || !Array.isArray(players)) return result;
 
     players.forEach((player) => {
       let visualPosition: number;
@@ -1598,7 +1601,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       )}
       
       {/* Winner announcement - compact in-table display */}
-      {phase === 'showdown' && winners && winners.length > 0 && (
+      {phase === 'showdown' && winners && winners.length > 0 && players && Array.isArray(players) && (
         <WinnerAnnouncement
           winners={winners.map(w => {
             const player = players.find(p => p.playerId === w.playerId);
@@ -1618,7 +1621,9 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       )}
       
       {(() => {
-        const winnerPlayer = players.find(p => (p as any).isWinner);
+        const winnerPlayer = players && Array.isArray(players) 
+          ? players.find(p => (p as any).isWinner) 
+          : undefined;
         const winningCommIndices = (winnerPlayer as any)?.communityCardIndices || [];
         
         return (
