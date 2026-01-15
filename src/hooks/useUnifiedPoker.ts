@@ -345,8 +345,8 @@ export function useUnifiedPoker({
           maxPlayers: table.max_players,
           gameType: 'holdem',
           tableType: table.table_type as 'cash' | 'tournament',
-          actionTime: 15,
-          timeBankTime: 30
+          actionTime: table.action_time_seconds || 45,  // PokerStars-style: 45 seconds default
+          timeBankTime: table.time_bank_seconds || 60
         }
       };
 

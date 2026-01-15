@@ -1032,8 +1032,8 @@ export function createConfigFromDatabase(dbTournament: {
     blindStructure: generateBlindStructure(50, 20, levelDuration, true, breakInterval),
     payoutStructure: [],
     lateRegistrationLevel: dbTournament.late_registration_level || 6,
-    actionTimeSeconds: dbTournament.action_time_seconds || 30,
-    timeBankSeconds: dbTournament.time_bank_initial || 30,
+    actionTimeSeconds: dbTournament.action_time_seconds || 45,  // PokerStars-style: 45 seconds
+    timeBankSeconds: dbTournament.time_bank_initial || 60,
     timeBankPerLevel: dbTournament.time_bank_per_level || 5,
     tablesCount: Math.ceil(dbTournament.max_players / 9),
     playersPerTable: Math.min(9, dbTournament.max_players),
