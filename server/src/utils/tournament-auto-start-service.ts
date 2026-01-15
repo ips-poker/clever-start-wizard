@@ -250,6 +250,7 @@ class TournamentAutoStartService {
           small_blind: tournament.small_blind,
           big_blind: tournament.big_blind,
           ante: tournament.ante || 0,
+          // POKERSTARS-STYLE: Tournament = 30s base time
           action_time_seconds: tournament.action_time_seconds || 30,
           status: 'waiting',
           auto_start_enabled: true

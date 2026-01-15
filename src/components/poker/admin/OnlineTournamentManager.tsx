@@ -187,7 +187,8 @@ export function OnlineTournamentManager() {
     break_interval: 0,
     break_duration: 300,
     guaranteed_prize_pool: 0,
-    time_bank_initial: 30,
+    // POKERSTARS-STYLE: Tournament = 30s base, 60s time bank
+    time_bank_initial: 60,
     time_bank_per_level: 5,
     action_time_seconds: 30,
     scheduled_start_at: '',

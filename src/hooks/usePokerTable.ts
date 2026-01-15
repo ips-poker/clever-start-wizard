@@ -263,7 +263,8 @@ export function usePokerTable(options: UsePokerTableOptions | null) {
       let dealerSeat = tableData.current_dealer_seat || 1;
       let currentPlayerSeat: number | null = null;
       let handPlayersMap = new Map<string, any>();
-      let actionTimeSeconds = tableData.action_time_seconds || 30;
+      // POKERSTARS-STYLE: Cash = 15s (server provides actual value)
+      let actionTimeSeconds = tableData.action_time_seconds || 15;
       let timeRemaining: number | null = null;
       let actionStartedAt: string | null = null;
 
