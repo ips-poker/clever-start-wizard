@@ -132,13 +132,12 @@ export function FullscreenPokerTableWrapper({
 
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
 
-  // Timer effect - FIXED: Reset timer on ANY state change that affects turn
-  // PokerStars-style: 45 seconds default action time
-  // Dependencies: handId (new hand), phase (new street), currentPlayerSeat (turn change), timeRemaining (server sync)
+  // POKERSTARS-STYLE TIMER: Server-authoritative timing
+  // Server sends: timeRemaining, actionStartTime, isTimeBankPhase
+  // Client syncs from server and counts down locally
   const timerResetKey = useMemo(() => {
-    // Create a unique key that changes when timer should reset
-    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.timeRemaining ?? 'auto'}`;
-  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.timeRemaining]);
+    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}`;
+  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase]);
 
   useEffect(() => {
     const actionTimer = tableState?.actionTimer || 45;
@@ -146,18 +145,27 @@ export function FullscreenPokerTableWrapper({
     // No active player = no timer
     if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
       setTurnTimeRemaining(null);
+      setIsTimeBankActive(false);
       return;
     }
 
-    // Server provides explicit timeRemaining - use it
+    // Update time bank phase indicator
+    setIsTimeBankActive(tableState?.isTimeBankPhase || false);
+
+    // POKERSTARS-STYLE: Use server's timeRemaining if provided
     if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
       setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
+    } else if (tableState?.actionStartTime) {
+      // Calculate from actionStartTime for precise sync
+      const elapsed = (Date.now() - tableState.actionStartTime) / 1000;
+      const remaining = Math.max(0, actionTimer - elapsed);
+      setTurnTimeRemaining(Math.ceil(remaining));
     } else {
-      // Reset to full timer on new turn/phase/hand
+      // Fallback: full timer
       setTurnTimeRemaining(actionTimer);
     }
 
-    // Countdown interval
+    // Local countdown interval (server is authoritative, this is just for smooth display)
     const interval = setInterval(() => {
       setTurnTimeRemaining(prev => {
         if (prev === null || prev <= 0) return 0;
@@ -166,7 +174,7 @@ export function FullscreenPokerTableWrapper({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timerResetKey, tableState?.actionTimer]);
+  }, [timerResetKey, tableState?.actionTimer, tableState?.timeRemaining, tableState?.actionStartTime, tableState?.isTimeBankPhase]);
 
   // Auto-connect handled inside useNodePokerTable
 

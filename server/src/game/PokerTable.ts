@@ -29,9 +29,15 @@ export interface Player {
   currentBet: number;
   isFolded: boolean;
   isAllIn: boolean;
+  // POKERSTARS-STYLE TIME BANK:
+  // - Persists across hands (NOT reset every hand)
+  // - Activates ONLY when main timer expires
+  // - Slowly replenishes (+5 sec every N hands, configurable)
   timeBank: number;
+  timeBankUsedThisAction: number; // Track how much time bank used in current action
   lastActionTime: number | null;
   missedTurns: number; // Count of consecutive missed turns (timeouts)
+  handsPlayedSinceLastTimeBank: number; // For time bank replenishment
 }
 
 export interface HandState {
@@ -50,7 +56,11 @@ export interface HandState {
   bigBlind: number; // Store BB for min bet calculations
   sidePots: { amount: number; eligiblePlayers: string[] }[];
   deck: string[];
+  // POKERSTARS-STYLE TIMING:
+  // Server tracks exact start time for each action
+  // Client syncs via: remaining = actionTime - (now - actionStartTime)
   actionStartTime: number | null;
+  isTimeBankPhase: boolean; // True when main timer expired, now using time bank
   playersActedThisRound: Set<string>; // Track who has acted in current betting round
 }
 
@@ -228,9 +238,12 @@ export class PokerTable {
           currentBet: 0, // CRITICAL: No bet until hand starts
           isFolded: false,
           isAllIn: false,
+          // POKERSTARS-STYLE: Time bank persists, replenishes slowly
           timeBank: isBot ? 0 : this.config.timeBankSeconds,
+          timeBankUsedThisAction: 0,
           lastActionTime: null,
-          missedTurns: 0
+          missedTurns: 0,
+          handsPlayedSinceLastTimeBank: 0
         };
         
         this.players.set(dbPlayer.player_id, player);
@@ -395,9 +408,12 @@ export class PokerTable {
         currentBet: 0,
         isFolded: false,
         isAllIn: false,
+        // POKERSTARS-STYLE: Time bank persists, replenishes slowly
         timeBank: isBot ? 0 : this.config.timeBankSeconds,
+        timeBankUsedThisAction: 0,
         lastActionTime: null,
-        missedTurns: 0
+        missedTurns: 0,
+        handsPlayedSinceLastTimeBank: 0
       };
 
       this.players.set(playerId, player);
@@ -619,9 +635,12 @@ export class PokerTable {
       currentBet: 0,
       isFolded: false,
       isAllIn: false,
+      // POKERSTARS-STYLE: Time bank persists, replenishes slowly
       timeBank: isBot ? 0 : this.config.timeBankSeconds,
+      timeBankUsedThisAction: 0,
       lastActionTime: null,
-      missedTurns: 0
+      missedTurns: 0,
+      handsPlayedSinceLastTimeBank: 0
     };
     
     this.players.set(playerId, player);
@@ -1568,9 +1587,14 @@ export class PokerTable {
   }
   
   /**
-   * Handle player timeout
-   * After 2 consecutive timeouts, player is set to sitting_out
-   * CRITICAL: This function has multiple guards to prevent spurious auto-actions
+   * Handle player timeout - POKERSTARS STYLE
+   * 
+   * Key Principles:
+   * 1. Server is authoritative - client NEVER triggers auto-fold
+   * 2. Time bank activates ONLY after main timer expires (not concurrent)
+   * 3. Graceful timeout: auto-CHECK if possible, otherwise auto-FOLD
+   * 4. After 2 missed turns, player is set to sitting_out
+   * 5. Time bank is separate from main timer and persists across hands
    */
   private async handleTimeout(): Promise<void> {
     // Guard 1: Never process timeout during showdown
@@ -1603,7 +1627,6 @@ export class PokerTable {
         playerId: playerId.substring(0, 8),
         seat
       });
-      // Don't retry - the timer will be started fresh when appropriate
       return;
     }
     
@@ -1625,69 +1648,97 @@ export class PokerTable {
       return;
     }
 
-    logger.info('Player timed out', { 
-      playerId, 
-      missedTurns: player.missedTurns,
-      timeBank: player.timeBank,
-      phase: this.currentHand?.phase
-    });
-
-    // CRITICAL FIX: Time bank handling
-    // Correct behavior: after main timer expires, we grant the remaining time bank (up to actionTimeSeconds)
-    // and start a NEW shorter timer for that amount. Only when that expires do we auto-check/fold.
+    // Clamp negative time bank (safety)
     if (player.timeBank < 0) {
-      logger.warn('CRITICAL: timeBank was negative at timeout start, clamping', {
+      logger.warn('CRITICAL: timeBank was negative, clamping', {
         playerId: playerId.substring(0, 8),
         timeBank: player.timeBank
       });
       player.timeBank = 0;
     }
 
-    // We already early-return during showdown above, so no need to check for it here.
-    if (player.timeBank > 0) {
+    // POKERSTARS-STYLE TIME BANK:
+    // Time bank activates ONLY when main timer expires
+    // It's a separate phase, not concurrent with main timer
+    const isTimeBankPhase = this.currentHand.isTimeBankPhase;
+    
+    if (!isTimeBankPhase && player.timeBank > 0) {
+      // Main timer expired - enter time bank phase
+      this.currentHand.isTimeBankPhase = true;
+      
+      // Use time bank for next timer slice
       const timeToUse = Math.min(player.timeBank, this.config.actionTimeSeconds);
       player.timeBank = Math.max(0, player.timeBank - timeToUse);
+      player.timeBankUsedThisAction = timeToUse;
 
-      this.emit('time_bank_used', {
+      this.emit('time_bank_activated', {
         playerId,
-        remaining: player.timeBank,
-        used: timeToUse
+        timeUsed: timeToUse,
+        remaining: player.timeBank
       });
 
-      logger.info('Time bank activated', {
+      logger.info('POKERSTARS: Time bank ACTIVATED', {
         playerId: playerId.substring(0, 8),
         timeUsedSeconds: timeToUse,
-        remainingSeconds: player.timeBank
+        remainingTimeBank: player.timeBank
       });
 
-      // Start a shorter timer for the granted time bank slice.
-      // IMPORTANT: Do not count this as a missed turn yet.
+      // CRITICAL: Reset actionStartTime for time bank phase
+      this.currentHand.actionStartTime = Date.now();
+
+      // Start time bank timer
       if (timeToUse > 0) {
         this.startActionTimer(timeToUse);
+        
+        // Emit state update so client knows we're in time bank phase
+        this.emit('state_update', {
+          pot: this.currentHand.pot,
+          currentBet: this.currentHand.currentBet,
+          currentPlayerSeat: this.currentHand.currentPlayerSeat,
+          phase: this.currentHand.phase,
+          isTimeBankPhase: true,
+          timeRemaining: timeToUse
+        });
         return;
       }
     }
 
+    // Reset time bank phase flag
+    if (this.currentHand) {
+      this.currentHand.isTimeBankPhase = false;
+    }
+    player.timeBankUsedThisAction = 0;
+
     // Increment missed turns counter
     player.missedTurns++;
 
-    // Auto fold/check - PROFESSIONAL: prefer check when possible
+    logger.info('POKERSTARS: Player timed out completely', { 
+      playerId: playerId.substring(0, 8), 
+      missedTurns: player.missedTurns,
+      timeBank: player.timeBank,
+      phase: this.currentHand?.phase
+    });
+
+    // GRACEFUL TIMEOUT (PokerStars style):
+    // 1. If check is possible -> auto-CHECK
+    // 2. Otherwise -> auto-FOLD
     const canCheck = player.currentBet >= this.currentHand.currentBet;
     const autoAction = canCheck ? 'check' : 'fold';
 
-    logger.warn('Player auto-action due to timeout', {
+    logger.warn('POKERSTARS: Graceful auto-action', {
       playerId: playerId.substring(0, 8),
       action: autoAction,
-      timeBankRemaining: player.timeBank,
-      missedTurns: player.missedTurns,
-      phase: this.currentHand?.phase
+      canCheck,
+      playerBet: player.currentBet,
+      currentBet: this.currentHand.currentBet,
+      missedTurns: player.missedTurns
     });
 
     await this.action(playerId, autoAction);
 
     // After 2 consecutive missed turns, set player to sitting_out
     if (player.missedTurns >= 2) {
-      logger.info('Player auto sitting out after 2 missed turns', {
+      logger.info('POKERSTARS: Player auto sitting out after 2 missed turns', {
         playerId: playerId.substring(0, 8),
         missedTurns: player.missedTurns
       });
@@ -1956,9 +2007,31 @@ export class PokerTable {
         bigBlind: this.config.bigBlind,
         sidePots: [],
         deck: [], // Deck is managed internally by engine v3
+        // POKERSTARS-STYLE: Track action timing precisely
         actionStartTime: Date.now(),
+        isTimeBankPhase: false, // Main timer first, time bank only after it expires
         playersActedThisRound: new Set()
       };
+      
+      // POKERSTARS-STYLE: Reset per-action time bank tracking and replenish if eligible
+      for (const player of activePlayers) {
+        player.timeBankUsedThisAction = 0;
+        player.handsPlayedSinceLastTimeBank++;
+        
+        // Replenish time bank: +5 seconds every 10 hands played (configurable)
+        const HANDS_PER_REPLENISH = 10;
+        const REPLENISH_AMOUNT = 5;
+        if (player.handsPlayedSinceLastTimeBank >= HANDS_PER_REPLENISH) {
+          const maxTimeBank = this.config.timeBankSeconds || 60;
+          player.timeBank = Math.min(maxTimeBank, player.timeBank + REPLENISH_AMOUNT);
+          player.handsPlayedSinceLastTimeBank = 0;
+          logger.info('POKERSTARS: Time bank replenished', {
+            playerId: player.id.substring(0, 8),
+            newTimeBank: player.timeBank,
+            replenishAmount: REPLENISH_AMOUNT
+          });
+        }
+      }
       
       // Get dealt hole cards from engine state
       for (const player of activePlayers) {
@@ -2674,6 +2747,12 @@ export class PokerTable {
       };
     });
 
+    // Get current player's time bank for display
+    const currentPlayerId = this.currentHand?.currentPlayerSeat !== null 
+      ? this.seats[this.currentHand?.currentPlayerSeat ?? -1] 
+      : null;
+    const currentPlayer = currentPlayerId ? this.players.get(currentPlayerId) : null;
+
     return {
       tableId: this.id,
       id: this.id,
@@ -2702,11 +2781,18 @@ export class PokerTable {
       playersNeeded: this.getPlayersNeededToStart(),
       // CRITICAL: Explicitly indicate if hand is active for client
       isHandActive: this.currentHand !== null,
-      // POKERSTARS-STYLE: Send time remaining for accurate client sync
-      // Client calculates: remaining = actionTime - (now - actionStartTime)
-      // But we also send computed timeRemaining for simpler client logic
+      // POKERSTARS-STYLE TIMING: Server-authoritative time sync
+      // Client receives:
+      // 1. actionStartTime - when this player's turn started (Unix ms)
+      // 2. timeRemaining - computed remaining seconds (for simple clients)
+      // 3. isTimeBankPhase - whether time bank is active (main timer expired)
+      // 4. currentPlayerTimeBank - time bank available for current player
+      // Client can either use timeRemaining directly OR calculate:
+      //   remaining = actionTime - (now - actionStartTime)
       actionStartTime: this.currentHand?.actionStartTime || null,
-      timeRemaining: this.calculateTimeRemaining()
+      timeRemaining: this.calculateTimeRemaining(),
+      isTimeBankPhase: this.currentHand?.isTimeBankPhase || false,
+      currentPlayerTimeBank: currentPlayer?.timeBank || 0
     };
   }
   
@@ -2797,7 +2883,10 @@ export class PokerTable {
       myCards: player.holeCards,
       mySeat: player.seatNumber,
       myStack: player.stack,
+      // POKERSTARS-STYLE: Include player's personal time bank info
       myTimeBank: safeTimeBank,
+      myTimeBankUsedThisAction: player.timeBankUsedThisAction || 0,
+      myMissedTurns: player.missedTurns || 0,
       // CRITICAL: isMyTurn must be false during showdown - no actions allowed
       isMyTurn: this.currentHand?.phase !== 'showdown' && this.currentHand?.currentPlayerSeat === player.seatNumber
     };
