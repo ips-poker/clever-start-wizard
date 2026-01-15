@@ -1602,39 +1602,49 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         // PROFESSIONAL: Sequential card reveal for each player
         case 'showdown_reveal':
           {
-            const revealData = data as Record<string, unknown>;
+            // Server sends data in data.data field
+            const rawData = data as Record<string, unknown>;
+            const revealData = (rawData.data || rawData) as Record<string, unknown>;
             log('🃏 Showdown reveal:', revealData);
+            
+            // Validate required fields
+            const revealPlayerId = revealData.playerId as string;
+            const revealHoleCards = revealData.holeCards as string[] | undefined;
+            
+            if (!revealPlayerId || !revealHoleCards || revealHoleCards.length < 2) {
+              log('⚠️ Invalid showdown_reveal data, missing playerId or holeCards:', revealData);
+              break;
+            }
             
             setShowdownReveals(prev => [
               ...prev,
               {
-                playerId: revealData.playerId as string,
+                playerId: revealPlayerId,
                 playerName: revealData.playerName as string || 'Unknown',
-                seatNumber: revealData.seatNumber as number,
-                holeCards: revealData.holeCards as string[],
+                seatNumber: revealData.seatNumber as number ?? 0,
+                holeCards: revealHoleCards,
                 handName: revealData.handName as string | undefined,
                 bestCards: revealData.bestCards as string[] | undefined,
-                revealIndex: revealData.revealIndex as number || prev.length,
-                revealDelay: revealData.revealDelay as number || 0,
-                isWinner: revealData.isWinner as boolean || false
+                revealIndex: revealData.revealIndex as number ?? prev.length,
+                revealDelay: revealData.revealDelay as number ?? 0,
+                isWinner: revealData.isWinner as boolean ?? false
               }
             ]);
             
             // Update player's hole cards in table state
             setTableState(prev => {
               if (!prev) return prev;
-              const revealedPlayerId = revealData.playerId as string;
               
               return {
                 ...prev,
                 players: prev.players.map(p => 
-                  p.playerId === revealedPlayerId
+                  p.playerId === revealPlayerId
                     ? {
                         ...p,
-                        holeCards: revealData.holeCards as string[],
+                        holeCards: revealHoleCards,
                         handName: revealData.handName as string | undefined,
                         bestCards: revealData.bestCards as string[] | undefined,
-                        isWinner: revealData.isWinner as boolean || false
+                        isWinner: revealData.isWinner as boolean ?? false
                       }
                     : p
                 )
@@ -1646,17 +1656,19 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         // PROFESSIONAL: Winner announcement with pot slide animation
         case 'winner_announcement':
           {
-            const winnerData = data as Record<string, unknown>;
+            // Server sends data in data.data field
+            const rawData = data as Record<string, unknown>;
+            const winnerData = (rawData.data || rawData) as Record<string, unknown>;
             log('🏆 Winner announcement:', winnerData);
             
-            const winners = winnerData.winners as Array<{
+            const winners = (winnerData.winners || []) as Array<{
               playerId: string;
               playerName: string;
               seatNumber: number;
               amount: number;
               handName?: string;
               newStack: number;
-            }> || [];
+            }>;
             
             setWinnerAnnouncement({
               winners,
