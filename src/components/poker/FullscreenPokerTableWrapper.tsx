@@ -747,6 +747,7 @@ export function FullscreenPokerTableWrapper({
             timeRemaining={tableState?.timeRemaining ?? null}
             totalTime={turnTimeTotal}
             lastUpdateTime={Date.now()}
+            isTimeBankPhase={tableState?.isTimeBankPhase || false}
             smallBlind={tableState?.smallBlindAmount || 10}
             bigBlind={tableState?.bigBlindAmount || 20}
             canJoinTable={canJoinTable}
