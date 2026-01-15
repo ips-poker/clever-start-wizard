@@ -132,28 +132,41 @@ export function FullscreenPokerTableWrapper({
 
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
 
-  // Timer effect
+  // Timer effect - FIXED: Reset timer on ANY state change that affects turn
   // PokerStars-style: 45 seconds default action time
+  // Dependencies: handId (new hand), phase (new street), currentPlayerSeat (turn change), timeRemaining (server sync)
+  const timerResetKey = useMemo(() => {
+    // Create a unique key that changes when timer should reset
+    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.timeRemaining ?? 'auto'}`;
+  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.timeRemaining]);
+
   useEffect(() => {
     const actionTimer = tableState?.actionTimer || 45;
     
-    if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
-      setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
-    } else if (tableState?.currentPlayerSeat !== null) {
-      setTurnTimeRemaining(actionTimer);
-    } else {
+    // No active player = no timer
+    if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
       setTurnTimeRemaining(null);
       return;
     }
 
+    // Server provides explicit timeRemaining - use it
+    if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
+      setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
+    } else {
+      // Reset to full timer on new turn/phase/hand
+      setTurnTimeRemaining(actionTimer);
+    }
+
+    // Countdown interval
     const interval = setInterval(() => {
       setTurnTimeRemaining(prev => {
         if (prev === null || prev <= 0) return 0;
         return prev - 1;
       });
     }, 1000);
+
     return () => clearInterval(interval);
-  }, [tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.timeRemaining]);
+  }, [timerResetKey, tableState?.actionTimer]);
 
   // Auto-connect handled inside useNodePokerTable
 
