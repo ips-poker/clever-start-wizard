@@ -270,11 +270,10 @@ export const TimerRing = memo(function TimerRing({
   const circumference = (size - 4) * Math.PI;
   const strokeDashoffset = circumference * (1 - progress);
 
-  const color = progress > 0.5 
-    ? 'hsl(142, 71%, 45%)' 
-    : progress > 0.25 
-      ? 'hsl(45, 93%, 47%)' 
-      : 'hsl(0, 72%, 51%)';
+  // POKERSTARS-STYLE: Green > 10s, Yellow 5-10s, Red < 5s
+  const isCritical = remaining <= 5;
+  const isWarning = remaining <= 10 && !isCritical;
+  const color = isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#22c55e';
 
   return (
     <svg 
