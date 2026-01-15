@@ -52,8 +52,8 @@ interface ActionResult {
   stack?: number;
 }
 
-// PokerStars-style: 45 second action time (server handles timeout, client only displays)
-const DEFAULT_ACTION_TIME_SECONDS = 45;
+// POKERSTARS-STYLE: Cash Game = 15s, Tournament = 30s
+const DEFAULT_ACTION_TIME_SECONDS = 15;
 
 export function usePokerGameEngine(tableId: string, playerId: string) {
   const [gameState, setGameState] = useState<GameState | null>(null);
