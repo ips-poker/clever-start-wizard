@@ -1,18 +1,18 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Two-Phase Style
-// Shows CURRENT phase timer (base OR time bank) - server authoritative
-// Ring resets to full when entering time bank phase
+// CRITICAL: Server is ONLY source of truth via actionStartTime
+// Ring resets on EVERY new turn (detected by resetKey containing actionStartTime)
 // Colors change based on remaining time: green > yellow > red
 import React, { memo, useState, useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { POKERSTARS_TIMER } from '@/constants/pokerTimerConfig';
 
 interface SmoothAvatarTimerProps {
-  remaining: number;  // Remaining time for CURRENT phase (from server)
+  remaining: number;  // Initial remaining time from server
   total: number;      // Total time for CURRENT phase (base OR time bank)
   size: number;
   strokeWidth?: number;
   className?: string;
-  resetKey?: string;  // Unique key to force reset (e.g., seat-phase-isTimeBank)
+  resetKey?: string;  // MUST include actionStartTime to detect new turns
 }
 
 export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
@@ -31,29 +31,29 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const currentTotalRef = useRef<number>(total);
 
   useEffect(() => {
-    // CRITICAL: resetKey changed = new turn/phase - always do full reset
+    // CRITICAL: Any resetKey change = new turn - FULL RESET
+    // resetKey includes actionStartTime, so server timer restart = new key
     const isNewTurn = resetKey !== lastResetKeyRef.current;
     
     if (isNewTurn) {
-      // New turn OR entered time bank - FULL reset with server values
+      // New turn detected - fully reset animation state
       lastResetKeyRef.current = resetKey;
       startTimeRef.current = Date.now();
       startRemainingRef.current = remaining;
       currentTotalRef.current = total;
       setCurrentRemaining(remaining);
-    } else {
-      // Same turn - check if server resync is significant (>2s diff)
-      const diff = Math.abs(remaining - startRemainingRef.current + 
-                            (Date.now() - startTimeRef.current) / 1000);
-      if (diff >= 2) {
-        // Significant desync - resync with server
-        startTimeRef.current = Date.now();
-        startRemainingRef.current = remaining;
-        setCurrentRemaining(remaining);
-      }
-      // Small resync (<2s) = continue smooth animation without visual jumps
+      
+      // Debug log for timer resets
+      console.log('[Timer] RESET - new turn detected', { 
+        remaining, 
+        total, 
+        resetKey: resetKey.substring(0, 50) 
+      });
     }
+    // NOTE: We no longer try to "soft sync" - server updates come with new actionStartTime
+    // which generates new resetKey, causing full reset. This is the correct behavior.
 
+    // 60fps animation loop
     const animate = () => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
       const newRemaining = Math.max(0, startRemainingRef.current - elapsed);
@@ -77,25 +77,25 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     };
   }, [remaining, total, resetKey]);
 
-  // Use the stable total for progress calculation
+  // Progress calculation using stable total
   const stableTotal = currentTotalRef.current;
-  const progress = stableTotal > 0 ? Math.max(0, currentRemaining / stableTotal) : 0;
+  const progress = stableTotal > 0 ? Math.max(0, Math.min(1, currentRemaining / stableTotal)) : 0;
   const radius = (size / 2) - (strokeWidth / 2);
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
 
-  // Color based on remaining seconds (from centralized config)
+  // Color based on remaining seconds
   const { strokeColor, glowColor, isCritical } = useMemo(() => {
-    const remaining = currentRemaining;
+    const rem = currentRemaining;
     
-    if (remaining <= POKERSTARS_TIMER.CRITICAL_SECONDS) {
+    if (rem <= POKERSTARS_TIMER.CRITICAL_SECONDS) {
       return {
         strokeColor: '#ef4444',
         glowColor: 'rgba(239, 68, 68, 0.8)',
         isCritical: true
       };
     }
-    if (remaining <= POKERSTARS_TIMER.WARNING_SECONDS) {
+    if (rem <= POKERSTARS_TIMER.WARNING_SECONDS) {
       return {
         strokeColor: '#f59e0b',
         glowColor: 'rgba(245, 158, 11, 0.6)',
@@ -133,7 +133,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
         strokeWidth={strokeWidth}
       />
       
-      {/* Progress arc - single continuous ring */}
+      {/* Progress arc */}
       <circle
         cx={size / 2}
         cy={size / 2}

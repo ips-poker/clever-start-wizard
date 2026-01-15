@@ -134,42 +134,33 @@ export function FullscreenPokerTableWrapper({
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
 
   // POKERSTARS-STYLE TIMER: Two-phase system (base → time bank)
-  // Server sends: timeRemaining (for CURRENT phase), isTimeBankPhase, actionStartTime
-  // Ring shows CURRENT phase only - resets when entering time bank
+  // Server sends: timeRemaining, isTimeBankPhase, actionStartTime
+  // Ring shows CURRENT phase only - resets fully on new turn
   
-  // Timer identity - resets when turn OR phase changes
+  // CRITICAL: timerResetKey MUST include actionStartTime to detect NEW turns
+  // Server resets actionStartTime on EVERY new turn, even if same player/phase
   const timerResetKey = useMemo(() => {
     const isTimeBankPhase = tableState?.isTimeBankPhase || false;
-    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${isTimeBankPhase}`;
-  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase]);
+    const actionStart = tableState?.actionStartTime || 0;
+    // Include actionStartTime to ensure reset on every new turn
+    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${isTimeBankPhase}-${actionStart}`;
+  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase, tableState?.actionStartTime]);
 
-  // Track total time for CURRENT phase (base OR time bank, not combined)
-  const turnTimeTotalRef = useRef(15);
-  const lastResetKeyRef = useRef('');
-
-  // Calculate total time for the CURRENT phase
+  // Total time for CURRENT phase (used as ring denominator)
   const turnTimeTotal = useMemo(() => {
     const baseTimer = tableState?.actionTimer || 15;
     const isTimeBankPhase = tableState?.isTimeBankPhase || false;
     
-    // Recalculate when phase changes (new turn OR entered time bank)
-    if (timerResetKey !== lastResetKeyRef.current) {
-      lastResetKeyRef.current = timerResetKey;
-      
-      if (isTimeBankPhase) {
-        // Time bank phase: server reset actionStartTime, use timeRemaining as total
-        // Server sends remaining time bank, use it as the "total" for full ring
-        const timeBankRemaining = tableState?.timeRemaining ?? tableState?.currentPlayerTimeBank ?? 30;
-        turnTimeTotalRef.current = Math.max(timeBankRemaining, baseTimer);
-      } else {
-        // Base phase: use base timer
-        turnTimeTotalRef.current = baseTimer;
-      }
+    if (isTimeBankPhase) {
+      // Time bank phase: use time bank remaining as "full ring"
+      // Server sends timeRemaining as the available time bank
+      return tableState?.currentPlayerTimeBank ?? 30;
     }
-    
-    return turnTimeTotalRef.current;
-  }, [timerResetKey, tableState?.actionTimer, tableState?.isTimeBankPhase, tableState?.timeRemaining, tableState?.currentPlayerTimeBank]);
+    // Base phase: use configured base timer
+    return baseTimer;
+  }, [tableState?.actionTimer, tableState?.isTimeBankPhase, tableState?.currentPlayerTimeBank]);
 
+  // Server-synced remaining time - recalculates on EVERY state update
   useEffect(() => {
     const baseTimer = tableState?.actionTimer || 15;
     
@@ -180,27 +171,33 @@ export function FullscreenPokerTableWrapper({
       return;
     }
 
-    // Time bank phase indicator (for visual glow effect)
+    // Time bank phase indicator
     const isTimeBankPhase = tableState?.isTimeBankPhase || false;
     setIsTimeBankActive(isTimeBankPhase);
 
-    // Server sends timeRemaining for CURRENT phase (base OR time bank)
-    if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
-      setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
-    } else if (tableState?.actionStartTime) {
-      // Calculate from actionStartTime for precise sync
+    // CRITICAL: Calculate remaining time using actionStartTime for EXACT sync
+    // This ensures we're always in sync with server's timer
+    let initialRemaining: number;
+    
+    if (tableState?.actionStartTime) {
+      // Use actionStartTime for precise calculation
       const elapsed = (Date.now() - tableState.actionStartTime) / 1000;
-      // Use current phase's total time
       const phaseTotal = isTimeBankPhase 
         ? (tableState?.currentPlayerTimeBank ?? 30)
         : baseTimer;
-      setTurnTimeRemaining(Math.max(0, Math.ceil(phaseTotal - elapsed)));
+      initialRemaining = Math.max(0, phaseTotal - elapsed);
+    } else if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
+      // Fallback: use server's pre-calculated timeRemaining
+      initialRemaining = tableState.timeRemaining;
     } else {
-      // Fallback: full phase timer
-      setTurnTimeRemaining(isTimeBankPhase ? (tableState?.currentPlayerTimeBank ?? 30) : baseTimer);
+      // Final fallback: full phase timer
+      initialRemaining = isTimeBankPhase ? (tableState?.currentPlayerTimeBank ?? 30) : baseTimer;
     }
+    
+    setTurnTimeRemaining(Math.ceil(initialRemaining));
 
-    // Local countdown interval (smooth display between server updates)
+    // Local countdown for smooth display (updates every second)
+    // IMPORTANT: This is just for display smoothness, server is authoritative
     const interval = setInterval(() => {
       setTurnTimeRemaining(prev => {
         if (prev === null || prev <= 0) return 0;
