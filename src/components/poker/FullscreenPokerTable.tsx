@@ -646,6 +646,7 @@ const PlayerSeat = memo(function PlayerSeat({
               timeRemaining={timeRemaining}
               totalTime={totalTime}
               lastUpdateTime={lastUpdateTime}
+              isTimeBankPhase={tableState?.isTimeBankPhase || false}
               size={avatarSize + 6}
               strokeWidth={3}
             />

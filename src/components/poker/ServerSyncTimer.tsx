@@ -1,36 +1,36 @@
 /**
- * ServerSyncTimer - Timer Ring synchronized with server's timeRemaining
+ * ServerSyncTimer - PokerStars-Style Timer Ring
  * 
- * ARCHITECTURE (Fixed for perfect sync):
- * - Server sends: actionStartTime (ms), timeRemaining (sec), totalTime (sec)
- * - Client calculates serverTimeOffset via ping/pong to compensate clock drift
- * - Timer uses BOTH: 
- *   1. timeRemaining from server as the authoritative source
- *   2. Local elapsed time since last update for smooth animation
- * - On each server update, we recalibrate to server's timeRemaining
+ * ARCHITECTURE (CORRECT - MATCHES SERVER):
+ * - Server logic: TWO SEPARATE PHASES (not one continuous timer)
+ *   1. Base phase (15s cash / 30s tournament) - green ring
+ *   2. Time bank phase (30s cash / 60s tournament) - starts fresh when base expires
+ * - When time bank activates: server RESETS actionStartTime = Date.now()
+ * - Client receives: timeRemaining (current phase only), totalTime (current phase)
  * 
- * KEY FIX: Don't rely solely on (now - actionStartTime) because:
- * - Client/server clocks may differ by seconds
- * - Time bank phase doesn't reset actionStartTime
+ * SYNC STRATEGY:
+ * - Use server's timeRemaining as authoritative source
+ * - Interpolate locally between server updates for smooth animation
+ * - On phase change (base→timebank): ring resets to full, new color scheme
  * 
- * Instead: Use timeRemaining from server + smooth local interpolation
+ * CRITICAL: Do NOT try to show "one ring for base+timebank" - that's not how server works!
  */
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface ServerSyncTimerProps {
-  /** Remaining time in seconds - from server (authoritative) */
+  /** Remaining time in seconds - from server (authoritative, CURRENT PHASE ONLY) */
   timeRemaining: number;
-  /** Total time for this phase in seconds (15s base or 30s time bank) */
+  /** Total time for this phase in seconds (base: 15s cash/30s tournament, timebank: 30s/60s) */
   totalTime: number;
-  /** Server time offset in ms (serverTime - clientTime) for clock compensation */
-  serverTimeOffset?: number;
-  /** Unix timestamp (ms) when last server update was received - for interpolation */
+  /** Unix timestamp (ms) when last server update was received - for smooth interpolation */
   lastUpdateTime?: number;
   /** Visual size of the ring in pixels */
   size: number;
   /** Ring stroke width */
   strokeWidth?: number;
+  /** Is time bank phase active? (changes color scheme) */
+  isTimeBankPhase?: boolean;
   className?: string;
 }
 
@@ -41,10 +41,10 @@ const CRITICAL_THRESHOLD = 5;
 export const ServerSyncTimer = memo(function ServerSyncTimer({
   timeRemaining,
   totalTime,
-  serverTimeOffset = 0,
   lastUpdateTime,
   size,
   strokeWidth = 3,
+  isTimeBankPhase = false,
   className
 }: ServerSyncTimerProps) {
   // Current displayed remaining time - updated every frame
@@ -98,19 +98,28 @@ export const ServerSyncTimer = memo(function ServerSyncTimer({
   const progress = totalTime > 0 ? Math.max(0, Math.min(1, displayRemaining / totalTime)) : 0;
   const strokeDashoffset = circumference * (1 - progress);
 
-  // Color based on remaining time
+  // Color based on remaining time AND phase
+  // Base phase: always green (player has time bank backup)
+  // Time bank phase: yellow→red (this is the last reserve)
   let strokeColor: string;
   let glowColor: string;
   let isCritical = false;
 
-  if (displayRemaining <= CRITICAL_THRESHOLD) {
-    strokeColor = '#ef4444'; // Red
-    glowColor = 'rgba(239, 68, 68, 0.8)';
-    isCritical = true;
-  } else if (displayRemaining <= WARNING_THRESHOLD) {
-    strokeColor = '#f59e0b'; // Yellow/Amber
-    glowColor = 'rgba(245, 158, 11, 0.6)';
+  if (isTimeBankPhase) {
+    // Time bank colors: more urgent
+    if (displayRemaining <= CRITICAL_THRESHOLD) {
+      strokeColor = '#ef4444'; // Red - critical!
+      glowColor = 'rgba(239, 68, 68, 0.8)';
+      isCritical = true;
+    } else if (displayRemaining <= WARNING_THRESHOLD) {
+      strokeColor = '#f59e0b'; // Amber - warning
+      glowColor = 'rgba(245, 158, 11, 0.6)';
+    } else {
+      strokeColor = '#f59e0b'; // Start amber for time bank (urgent feel)
+      glowColor = 'rgba(245, 158, 11, 0.5)';
+    }
   } else {
+    // Base phase: green (player still has time bank reserve)
     strokeColor = '#22c55e'; // Green
     glowColor = 'rgba(34, 197, 94, 0.4)';
   }
