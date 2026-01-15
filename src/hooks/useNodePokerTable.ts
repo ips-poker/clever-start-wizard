@@ -47,7 +47,12 @@ export interface TableState {
   bigBlindAmount?: number;
   anteAmount?: number;
   actionTimer?: number;
-  timeRemaining?: number | null;
+  // POKERSTARS-STYLE: Server-authoritative timing
+  // Server sends all timing info - client just displays
+  timeRemaining?: number | null;       // Computed remaining seconds (for simple clients)
+  actionStartTime?: number | null;     // When turn started (Unix ms) for precise sync
+  isTimeBankPhase?: boolean;           // True when main timer expired, using time bank
+  currentPlayerTimeBank?: number;      // Time bank available for current player
   lastRaiserSeat?: number | null;
   playersNeeded?: number;
   gameStartingCountdown?: number;
@@ -432,7 +437,11 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       bigBlindAmount: bigBlind,
       anteAmount: ante,
       actionTimer,
+      // POKERSTARS-STYLE: Server-authoritative timing
       timeRemaining: (state as any).timeRemaining as number | null | undefined,
+      actionStartTime: (state as any).actionStartTime as number | null | undefined,
+      isTimeBankPhase: Boolean((state as any).isTimeBankPhase),
+      currentPlayerTimeBank: Number((state as any).currentPlayerTimeBank ?? 0),
       playersNeeded: ((state as any).playersNeeded || 0) as number
     };
   }, []);
