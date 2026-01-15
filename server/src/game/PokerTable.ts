@@ -3077,7 +3077,9 @@ export class PokerTable {
       isAllIn: false,
       timeBank: isBot ? 0 : this.config.timeBankSeconds,
       lastActionTime: null,
-      missedTurns: 0
+      missedTurns: 0,
+      timeBankUsedThisAction: 0,
+      handsPlayedSinceLastTimeBank: 0
     };
     
     this.players.set(playerId, player);
