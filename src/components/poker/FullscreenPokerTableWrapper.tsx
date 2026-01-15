@@ -133,17 +133,20 @@ export function FullscreenPokerTableWrapper({
 
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
 
-  // POKERSTARS-STYLE TIMER: Now handled directly by ServerSyncTimer component
-  // Server sends actionStartTime, component calculates remaining time on every frame
+  // POKERSTARS-STYLE TIMER: Server manages TWO SEPARATE PHASES
+  // Phase 1: Base time (15s cash / 30s tournament) - green
+  // Phase 2: Time bank (30s cash / 60s tournament) - amber/red, STARTS FRESH
   
-  // Total time for CURRENT phase (base or time bank)
+  // Total time for CURRENT phase ONLY (not summed!)
   const turnTimeTotal = useMemo(() => {
     const baseTimer = tableState?.actionTimer || 15;
     const isTimeBankPhase = tableState?.isTimeBankPhase || false;
     
     if (isTimeBankPhase) {
+      // Time bank phase: use currentPlayerTimeBank as total
       return tableState?.currentPlayerTimeBank ?? 30;
     }
+    // Base phase: use base timer
     return baseTimer;
   }, [tableState?.actionTimer, tableState?.isTimeBankPhase, tableState?.currentPlayerTimeBank]);
 
