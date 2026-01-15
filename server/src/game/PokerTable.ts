@@ -1421,6 +1421,13 @@ export class PokerTable {
       return;
     }
     
+    // CRITICAL FIX: Check if hand is being processed (between phases)
+    // Don't start timer if we're waiting for phase transition animations
+    if (!this.currentHand || this.currentHand.currentPlayerSeat === null) {
+      logger.info('startActionTimer: Skipping - no current player');
+      return;
+    }
+    
     if (this.currentHand) {
       this.currentHand.actionStartTime = Date.now();
     }
@@ -1465,14 +1472,30 @@ export class PokerTable {
       
       // CRITICAL: For bots, execute their decision after think delay (not timeout)
       this.actionTimer = setTimeout(async () => {
-        await this.executeBotDecision(player);
+        // Double-check we're still on this player's turn before executing
+        if (this.currentHand?.currentPlayerSeat === seat && 
+            this.currentHand.phase !== 'showdown') {
+          await this.executeBotDecision(player);
+        }
       }, delayMs);
     } else {
       delayMs = this.config.actionTimeSeconds * 1000;
       
+      logger.info('Human turn timer started', {
+        tableId: this.id,
+        playerId: playerId.substring(0, 8),
+        seat,
+        name: player.name,
+        delayMs,
+        phase: this.currentHand?.phase
+      });
+      
       // For humans, use standard timeout
       this.actionTimer = setTimeout(() => {
-        this.handleTimeout();
+        // CRITICAL: Double-check phase hasn't changed before handling timeout
+        if (this.currentHand?.phase !== 'showdown') {
+          this.handleTimeout();
+        }
       }, delayMs);
     }
   }
@@ -1491,13 +1514,17 @@ export class PokerTable {
    * After 2 consecutive timeouts, player is set to sitting_out
    */
   private async handleTimeout(): Promise<void> {
-    // CRITICAL FIX: Never process timeout during showdown - prevents spurious auto-actions
+    // CRITICAL FIX: Never process timeout during showdown or phase transitions
+    // This prevents spurious auto-actions during animations
     if (this.currentHand?.phase === 'showdown') {
       logger.info('handleTimeout: Ignoring - in showdown phase');
       return;
     }
     
-    if (!this.currentHand || this.currentHand.currentPlayerSeat === null) return;
+    if (!this.currentHand || this.currentHand.currentPlayerSeat === null) {
+      logger.info('handleTimeout: Ignoring - no active hand or current player');
+      return;
+    }
 
     const seat = this.currentHand.currentPlayerSeat;
     const playerId = this.seats[seat];
@@ -1525,23 +1552,44 @@ export class PokerTable {
       return;
     }
 
-    logger.info('Player timed out', { playerId, missedTurns: player.missedTurns });
+    logger.info('Player timed out', { 
+      playerId, 
+      missedTurns: player.missedTurns,
+      timeBank: player.timeBank,
+      phase: this.currentHand?.phase
+    });
 
-    // Use time bank if available
-    // CRITICAL FIX: Only use time bank if it's positive, and don't let it go negative
-    if (player.timeBank > 0) {
+    // CRITICAL FIX: Time bank handling with proper bounds checking
+    // Only use time bank if it's positive and hand is still active
+    if (player.timeBank > 0 && this.currentHand?.phase !== 'showdown') {
+      // Calculate time to use - don't exceed available time bank
       const timeToUse = Math.min(player.timeBank, this.config.actionTimeSeconds);
       player.timeBank -= timeToUse;
       
-      // Ensure time bank is never negative
+      // CRITICAL: Ensure time bank is never negative
       if (player.timeBank < 0) {
+        logger.warn('Time bank went negative, clamping to 0', {
+          playerId: playerId.substring(0, 8),
+          wasTimeBank: player.timeBank + timeToUse,
+          usedTime: timeToUse
+        });
         player.timeBank = 0;
       }
       
-      this.emit('time_bank_used', { playerId, remaining: player.timeBank });
+      this.emit('time_bank_used', { 
+        playerId, 
+        remaining: player.timeBank,
+        used: timeToUse
+      });
       
-      // Only restart timer if time bank still has time
-      if (player.timeBank >= 0) {
+      logger.info('Time bank activated', {
+        playerId: playerId.substring(0, 8),
+        timeUsed: timeToUse,
+        remaining: player.timeBank
+      });
+      
+      // Only restart timer if time bank had enough for a full extension
+      if (timeToUse >= this.config.actionTimeSeconds) {
         this.startActionTimer();
         return;
       }
@@ -1558,7 +1606,8 @@ export class PokerTable {
       playerId: playerId.substring(0, 8),
       action: autoAction,
       timeBankRemaining: player.timeBank,
-      missedTurns: player.missedTurns
+      missedTurns: player.missedTurns,
+      phase: this.currentHand?.phase
     });
 
     await this.action(playerId, autoAction);
