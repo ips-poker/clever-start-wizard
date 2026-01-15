@@ -133,8 +133,9 @@ export function FullscreenPokerTableWrapper({
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
 
   // Timer effect
+  // PokerStars-style: 45 seconds default action time
   useEffect(() => {
-    const actionTimer = tableState?.actionTimer || 30;
+    const actionTimer = tableState?.actionTimer || 45;
     
     if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
       setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
