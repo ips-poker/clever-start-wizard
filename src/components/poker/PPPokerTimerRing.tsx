@@ -79,26 +79,36 @@ export const PPPokerTimerRing = memo(function PPPokerTimerRing({
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
   
-  // PPPoker-style color transitions
-  const isWarning = progress < 0.35;
-  const isCritical = progress < 0.15;
+  // PokerStars-style color transitions optimized for 45s timer:
+  // - Green (40s): progress > 5/45 = ~11.1%
+  // - Yellow (warning): 5s-3s remaining = 6.7%-11.1%
+  // - Red (critical): ≤3s remaining = progress < 6.7%
+  const criticalThreshold = 3 / total;  // Last 3 seconds - red pulsing
+  const warningThreshold = 5 / total;   // Last 5 seconds - start warning
   
-  // Color scheme matching PPPoker
+  const isCritical = progress <= criticalThreshold;
+  const isWarning = progress <= warningThreshold && !isCritical;
+  
+  // Color scheme matching PokerStars professional style
+  // Green → Yellow → Red transition
   const strokeColor = isCritical 
-    ? '#ef4444' // Red
+    ? '#ef4444' // Red - critical (last 3s)
     : isWarning 
-      ? '#f59e0b' // Amber
-      : '#22c55e'; // Green (PPPoker signature)
+      ? '#f59e0b' // Amber/Yellow - warning (3-5s)
+      : '#22c55e'; // Green - normal (>5s)
 
   const glowColor = isCritical
-    ? 'rgba(239, 68, 68, 0.7)'
+    ? 'rgba(239, 68, 68, 0.8)'
     : isWarning
       ? 'rgba(245, 158, 11, 0.6)'
       : 'rgba(34, 197, 94, 0.6)';
 
   // PPPoker uses thick strokes with bright glow
+  // Enhanced glow for critical state
   const glowFilter = enableGlow 
-    ? `drop-shadow(0 0 8px ${glowColor}) drop-shadow(0 0 16px ${glowColor})`
+    ? isCritical 
+      ? `drop-shadow(0 0 12px ${glowColor}) drop-shadow(0 0 24px ${glowColor}) drop-shadow(0 0 36px ${glowColor})`
+      : `drop-shadow(0 0 8px ${glowColor}) drop-shadow(0 0 16px ${glowColor})`
     : 'none';
 
   return (
@@ -148,10 +158,15 @@ export const PPPokerTimerRing = memo(function PPPokerTimerRing({
         strokeDashoffset={strokeDashoffset}
         className={cn(
           "transition-colors duration-300",
-          isCritical && isAnimating && "animate-[pulse_0.5s_ease-in-out_infinite]"
+          isCritical && isAnimating && "animate-[pulse_0.4s_ease-in-out_infinite]"
         )}
         style={{
-          transition: 'stroke-dashoffset 0.05s linear, stroke 0.3s ease'
+          transition: 'stroke-dashoffset 0.05s linear, stroke 0.3s ease',
+          // Add scale animation for critical state
+          transformOrigin: 'center',
+          animation: isCritical && isAnimating 
+            ? 'pulse-scale 0.4s ease-in-out infinite' 
+            : undefined
         }}
       />
 

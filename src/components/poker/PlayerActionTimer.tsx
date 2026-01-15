@@ -74,8 +74,15 @@ export const PlayerActionTimer = memo(function PlayerActionTimer({
   if (!isActive && externalTimeRemaining === null) return null;
 
   const progress = timeLeft / duration;
-  const isCritical = timeLeft <= 5;
-  const isWarning = timeLeft <= 10;
+  
+  // PokerStars-style thresholds optimized for 45s timer:
+  // - Critical (red pulsing): last 5 seconds
+  // - Warning (yellow): last 10 seconds for smooth transition
+  const criticalSeconds = 5;
+  const warningSeconds = Math.min(10, duration * 0.22); // ~10s for 45s timer, or 22% of duration
+  
+  const isCritical = timeLeft <= criticalSeconds;
+  const isWarning = timeLeft <= warningSeconds;
   
   const sizeClasses = {
     sm: { container: 'w-12 h-12', text: 'text-sm', icon: 'w-3 h-3' },
@@ -146,16 +153,27 @@ export const PlayerActionTimer = memo(function PlayerActionTimer({
         </motion.span>
       </div>
 
-      {/* Critical pulse ring */}
+      {/* Critical pulse ring - enhanced for PokerStars feel */}
       <AnimatePresence>
         {isCritical && isMyTurn && (
-          <motion.div
-            initial={{ scale: 1, opacity: 0.8 }}
-            animate={{ scale: 1.3, opacity: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, repeat: Infinity }}
-            className="absolute inset-0 rounded-full border-2 border-red-500"
-          />
+          <>
+            {/* Inner pulse */}
+            <motion.div
+              initial={{ scale: 1, opacity: 0.8 }}
+              animate={{ scale: 1.2, opacity: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, repeat: Infinity }}
+              className="absolute inset-0 rounded-full border-2 border-red-500"
+            />
+            {/* Outer pulse */}
+            <motion.div
+              initial={{ scale: 1, opacity: 0.6 }}
+              animate={{ scale: 1.4, opacity: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, repeat: Infinity, delay: 0.2 }}
+              className="absolute inset-0 rounded-full border border-red-500"
+            />
+          </>
         )}
       </AnimatePresence>
     </div>
