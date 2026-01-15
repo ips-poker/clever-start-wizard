@@ -497,7 +497,6 @@ export class PokerWebSocketHandler {
     if (table) {
       await table.leaveTable(playerId);
     }
-    }
     
     // Remove from subscribers
     this.connectionPool.unsubscribeFromTable(ws, tableId);
