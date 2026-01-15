@@ -1473,16 +1473,17 @@ export class PokerWebSocketHandler {
           const bountyResult = await pkoBountyService.processKnockout(tournamentId, playerId, eliminatedBy);
           if (bountyResult) {
             // Broadcast bounty event
+            const bountySubscribers = this.connectionPool.getTournamentSubscribers(tournamentId);
             const bountyMessage = {
               type: 'pko_knockout',
               tournamentId,
               eliminatedPlayerId: playerId,
               eliminatorPlayerId: eliminatedBy,
               bountyAmount: bountyResult.bountyAmount,
-              collectedAmount: bountyResult.collectedAmount,
+              collectedRPS: bountyResult.collectedRPS,
               timestamp: Date.now()
             };
-            messageQueue.enqueueBroadcast(subscribers, bountyMessage, 'high');
+            messageQueue.enqueueBroadcast(bountySubscribers, bountyMessage, 'high');
             logger.info('PKO knockout processed', bountyResult);
           }
         } catch (bountyErr) {

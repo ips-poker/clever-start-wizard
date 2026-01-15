@@ -184,13 +184,18 @@ export class PokerTable {
             stack: dbPlayer.stack
           });
           // Clean up this orphaned record
-          this.supabase
-            .from('poker_table_players')
-            .delete()
-            .eq('table_id', this.id)
-            .eq('player_id', dbPlayer.player_id)
-            .then(() => logger.info('Cleaned up orphaned zero-stack player', { playerId: dbPlayer.player_id.substring(0, 8) }))
-            .catch(err => logger.warn('Failed to clean up orphaned player', { error: String(err) }));
+          (async () => {
+            try {
+              await this.supabase
+                .from('poker_table_players')
+                .delete()
+                .eq('table_id', this.id)
+                .eq('player_id', dbPlayer.player_id);
+              logger.info('Cleaned up orphaned zero-stack player', { playerId: dbPlayer.player_id.substring(0, 8) });
+            } catch (err: unknown) {
+              logger.warn('Failed to clean up orphaned player', { error: String(err) });
+            }
+          })();
           continue;
         }
         
@@ -2899,7 +2904,7 @@ export class PokerTable {
         this.completeHand([{
           playerId: winner.id,
           amount: this.currentHand.pot,
-          handRank: 'Last standing'
+          handName: 'Last standing'
         }]);
       } else if (activePlayers.length === 0) {
         // No active players - just reset
@@ -2914,7 +2919,7 @@ export class PokerTable {
         this.completeHand([{
           playerId: activePlayers[0].id,
           amount: this.currentHand.pot,
-          handRank: 'Recovery win'
+          handName: 'Recovery win'
         }]);
       }
     } else {
