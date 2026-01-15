@@ -2249,27 +2249,6 @@ export class PokerTable {
     if (!this.currentHand) return;
     
     try {
-      // Get winners info from engine for saving to DB
-      const engineState = this.engine.getState();
-      const winnersForDb = engineState ? 
-        Array.from(this.players.values())
-          .filter(p => !p.isFolded)
-          .map(p => {
-            const handResult = engineState.communityCards && engineState.communityCards.length >= 5 && p.holeCards.length >= 2
-              ? evaluateHand(p.holeCards, engineState.communityCards)
-              : null;
-            return {
-              playerId: p.id,
-              name: p.name,
-              holeCards: p.holeCards,
-              stack: p.stack,
-              handName: handResult?.handName,
-              handRank: handResult?.handRank,
-              bestCards: handResult?.bestCards
-            };
-          })
-        : [];
-      
       // Use upsert since hand was already created at start
       await this.supabase.from('poker_hands').upsert({
         id: this.currentHand.id,
@@ -2283,8 +2262,7 @@ export class PokerTable {
         phase: this.currentHand.phase,
         current_bet: this.currentHand.currentBet,
         current_player_seat: null, // Hand is complete
-        completed_at: new Date().toISOString(),
-        winners: winnersForDb // Save winners data for debugging
+        completed_at: new Date().toISOString()
       }, { onConflict: 'id' });
       
       // CRITICAL: Clear current_hand_id from poker_tables to allow consolidation

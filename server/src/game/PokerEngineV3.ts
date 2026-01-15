@@ -2727,23 +2727,7 @@ export class PokerEngineV3 {
       return { ...result, playerId: p.id };
     });
     
-    // CRITICAL DEBUG: Detailed hand evaluation log for debugging ranking issues
-    console.log('[Engine] 🎯 HAND EVALUATION DEBUG - All players:', {
-      communityCards: this.state!.communityCards,
-      players: activePlayers.map((p, idx) => ({
-        id: p.id.substring(0, 8),
-        holeCards: p.holeCards,
-        handRank: handResults[idx].handRank,
-        handName: handResults[idx].handName,
-        kickers: handResults[idx].kickers,
-        value: handResults[idx].value,
-        bestCards: handResults[idx].bestCards
-      }))
-    });
-    
-    // Sort by hand strength for comparison
-    const sortedByStrength = [...handResults].sort((a, b) => compareHands(b, a));
-    console.log('[Engine] 🏆 Hands sorted by strength (highest first):', sortedByStrength.map(h => ({
+    console.log('[Engine] Hand evaluations:', handResults.map(h => ({
       id: h.playerId.substring(0, 8),
       hand: h.handName,
       rank: h.handRank,
