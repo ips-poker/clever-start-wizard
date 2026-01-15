@@ -1162,12 +1162,15 @@ export class PokerTable {
       const newPhase = this.currentHand.phase as 'flop' | 'turn' | 'river' | 'showdown';
       const phaseDelay = calculatePhaseDelay(newPhase);
       
-      // CRITICAL FIX: Clear timer IMMEDIATELY when entering showdown phase
-      // This prevents timeout events from firing during showdown animations
-      if (newPhase === 'showdown') {
-        this.clearActionTimer();
-        logger.info('Showdown phase - timer cleared to prevent spurious timeouts');
-      }
+      // CRITICAL FIX: Clear timer IMMEDIATELY on ANY phase change
+      // This prevents stale timers from previous phase from triggering auto-actions
+      // The timer will be restarted AFTER the phase animation completes (at line 1237)
+      this.clearActionTimer();
+      logger.info('Phase transition - timer cleared', { 
+        newPhase, 
+        phaseDelay,
+        isShowdown: newPhase === 'showdown'
+      });
       
       logger.info('Phase advancing with professional delay', {
         newPhase,
@@ -1222,6 +1225,9 @@ export class PokerTable {
       
     } else {
       // Normal state update without phase change - minimal delay
+      // CRITICAL FIX: Clear timer before delay to prevent race conditions
+      this.clearActionTimer();
+      
       await this.delay(Math.min(afterActionDelay, 200));
       
       this.emit('state_update', {
@@ -1232,8 +1238,15 @@ export class PokerTable {
       });
     }
     
-    // Start timer for next player
-    if (!result.handComplete && this.currentHand?.currentPlayerSeat !== null) {
+    // Start timer for next player ONLY after all delays and animations complete
+    // CRITICAL: Never start timer during showdown phase
+    if (!result.handComplete && 
+        this.currentHand?.currentPlayerSeat !== null && 
+        this.currentHand?.phase !== 'showdown') {
+      logger.info('Starting action timer after action processing', {
+        phase: this.currentHand?.phase,
+        currentPlayerSeat: this.currentHand?.currentPlayerSeat
+      });
       this.startActionTimer();
     }
     
@@ -1491,13 +1504,33 @@ export class PokerTable {
       });
       
       // For humans, use standard timeout
+      // Store the expected seat and phase at timer start for validation
+      const expectedSeat = seat;
+      const expectedPhase = this.currentHand?.phase;
+      
       this.actionTimer = setTimeout(() => {
-        // CRITICAL: Double-check phase hasn't changed before handling timeout
-        if (this.currentHand?.phase !== 'showdown') {
-          this.handleTimeout();
+        // CRITICAL: Validate state hasn't changed before handling timeout
+        // This prevents spurious timeouts from stale timers
+        if (this.currentHand?.phase === 'showdown') {
+          logger.info('Timer callback: Ignoring - now in showdown phase');
+          return;
         }
+        if (this.currentHand?.currentPlayerSeat !== expectedSeat) {
+          logger.info('Timer callback: Ignoring - seat changed', {
+            expectedSeat,
+            currentSeat: this.currentHand?.currentPlayerSeat
+          });
+          return;
+        }
+        if (this.currentHand?.phase !== expectedPhase) {
+          logger.info('Timer callback: Ignoring - phase changed', {
+            expectedPhase,
+            currentPhase: this.currentHand?.phase
+          });
+          return;
+        }
+        this.handleTimeout();
       }, delayMs);
-    }
   }
   /**
    * Clear action timer
@@ -1512,15 +1545,16 @@ export class PokerTable {
   /**
    * Handle player timeout
    * After 2 consecutive timeouts, player is set to sitting_out
+   * CRITICAL: This function has multiple guards to prevent spurious auto-actions
    */
   private async handleTimeout(): Promise<void> {
-    // CRITICAL FIX: Never process timeout during showdown or phase transitions
-    // This prevents spurious auto-actions during animations
+    // Guard 1: Never process timeout during showdown
     if (this.currentHand?.phase === 'showdown') {
       logger.info('handleTimeout: Ignoring - in showdown phase');
       return;
     }
     
+    // Guard 2: Must have active hand with current player
     if (!this.currentHand || this.currentHand.currentPlayerSeat === null) {
       logger.info('handleTimeout: Ignoring - no active hand or current player');
       return;
@@ -1528,19 +1562,33 @@ export class PokerTable {
 
     const seat = this.currentHand.currentPlayerSeat;
     const playerId = this.seats[seat];
-    if (!playerId) return;
+    
+    // Guard 3: Must have valid player ID for seat
+    if (!playerId) {
+      logger.warn('handleTimeout: No player ID for seat', { seat });
+      return;
+    }
 
     const player = this.players.get(playerId) ?? null;
 
-    // If we somehow have a seat mapping but no player state yet, retry soon.
-    // This prevents tables from "freezing" at the start of a hand.
+    // Guard 4: Must have player object
     if (!player) {
-      logger.warn('handleTimeout: missing player state, retrying', {
+      logger.warn('handleTimeout: missing player state, ignoring', {
         tableId: this.id,
         playerId: playerId.substring(0, 8),
         seat
       });
-      this.startActionTimer();
+      // Don't retry - the timer will be started fresh when appropriate
+      return;
+    }
+    
+    // Guard 5: Player must not be folded or all-in
+    if (player.isFolded || player.isAllIn) {
+      logger.info('handleTimeout: Ignoring - player already folded or all-in', {
+        playerId: playerId.substring(0, 8),
+        isFolded: player.isFolded,
+        isAllIn: player.isAllIn
+      });
       return;
     }
 
