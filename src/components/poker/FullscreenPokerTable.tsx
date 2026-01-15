@@ -10,7 +10,7 @@ import { PokerPlayer } from '@/hooks/useNodePokerTable';
 import { resolveAvatarUrl } from '@/utils/avatarResolver';
 import { usePokerPreferences, TABLE_THEMES, CARD_BACKS } from '@/hooks/usePokerPreferences';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
-import { SmoothAvatarTimer } from './SmoothAvatarTimer';
+import { ServerSyncTimer } from './ServerSyncTimer';
 import { PPPokerChipStack } from './PPPokerChipStack';
 import { PotChips } from './RealisticPokerChip';
 import { SyndikateTableBackground } from './SyndikateTableBackground';
@@ -460,8 +460,8 @@ const PremiumCard = memo(function PremiumCard({
   );
 });
 
-// ============= TIMER RING (now uses SmoothAvatarTimer) =============
-// Timer ring is now imported from SmoothAvatarTimer component for 60fps smooth animation
+// ============= TIMER RING (now uses ServerSyncTimer) =============
+// Timer ring uses actionStartTime from server for perfect sync
 
 // ============= PLAYER SEAT with personalized cards =============
 interface PlayerSeatProps {
@@ -473,9 +473,9 @@ interface PlayerSeatProps {
   isSB: boolean;
   isBB: boolean;
   isCurrentTurn: boolean;
-  turnTimeRemaining?: number;
-  turnTimeTotal?: number;
-  timerResetKey?: string;
+  // Server-sync timer props (new approach)
+  actionStartTime?: number | null;  // Unix timestamp when turn started
+  actionTotalTime?: number;         // Total time for this phase (15s or 30s)
   heroCards?: string[];
   communityCards?: string[];
   gamePhase?: string;
@@ -536,9 +536,8 @@ const PlayerSeat = memo(function PlayerSeat({
   isSB,
   isBB,
   isCurrentTurn,
-  turnTimeRemaining,
-  turnTimeTotal = 15,
-  timerResetKey = '',
+  actionStartTime,
+  actionTotalTime = 15,
   heroCards,
   communityCards = [],
   gamePhase = 'waiting',
@@ -630,7 +629,7 @@ const PlayerSeat = memo(function PlayerSeat({
       {/* Avatar with status border and opponent cards */}
       <div className="relative">
         {/* Timer ring - UNDER cards and game elements, around avatar */}
-        {isCurrentTurn && turnTimeRemaining !== undefined && !player.isFolded && (
+        {isCurrentTurn && actionStartTime && !player.isFolded && (
           <div 
             className="absolute z-0 pointer-events-none"
             style={{
@@ -641,12 +640,11 @@ const PlayerSeat = memo(function PlayerSeat({
               height: avatarSize + 6
             }}
           >
-            <SmoothAvatarTimer 
-              remaining={turnTimeRemaining} 
-              total={turnTimeTotal}
+            <ServerSyncTimer 
+              actionStartTime={actionStartTime}
+              totalTime={actionTotalTime}
               size={avatarSize + 6}
               strokeWidth={3}
-              resetKey={timerResetKey}
             />
           </div>
         )}
@@ -1284,9 +1282,9 @@ export interface FullscreenPokerTableProps {
   smallBlindSeat: number;
   bigBlindSeat: number;
   currentPlayerSeat: number | null;
-  turnTimeRemaining?: number;
-  turnTimeTotal?: number;
-  timerResetKey?: string;  // Key to force timer reset on turn/phase change
+  // Server-sync timer (new approach - uses actionStartTime directly)
+  actionStartTime?: number | null;  // Unix timestamp when turn started
+  actionTotalTime?: number;         // Total time for current phase (15s or 30s)
   smallBlind: number;
   bigBlind: number;
   canJoinTable: boolean;
@@ -1362,9 +1360,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   smallBlindSeat,
   bigBlindSeat,
   currentPlayerSeat,
-  turnTimeRemaining,
-  turnTimeTotal,
-  timerResetKey,
+  actionStartTime,
+  actionTotalTime,
   smallBlind,
   bigBlind,
   canJoinTable,
@@ -1601,9 +1598,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               isSB={player?.seatNumber === smallBlindSeat}
               isBB={player?.seatNumber === bigBlindSeat}
               isCurrentTurn={player?.seatNumber === currentPlayerSeat}
-              turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
-              turnTimeTotal={turnTimeTotal}
-              timerResetKey={timerResetKey}
+              actionStartTime={player?.seatNumber === currentPlayerSeat ? actionStartTime : undefined}
+              actionTotalTime={actionTotalTime}
               heroCards={idx === 0 ? heroCards : undefined}
               communityCards={communityCards}
               gamePhase={phase}
