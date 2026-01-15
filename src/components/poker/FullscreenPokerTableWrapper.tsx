@@ -133,23 +133,16 @@ export function FullscreenPokerTableWrapper({
 
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
 
-  // POKERSTARS-STYLE TIMER: Single continuous ring
-  // Server sends: timeRemaining (includes time bank if active), actionStartTime
-  // NO separate rings for base time vs time bank - one smooth countdown
-  
-  // Timer resets ONLY when: new hand, new phase, or new player's turn
-  // NOT when time bank activates (that's just a continuation)
+  // POKERSTARS-STYLE TIMER: Server-authoritative timing
+  // Server sends: timeRemaining, actionStartTime, isTimeBankPhase
+  // Client syncs from server and counts down locally
   const timerResetKey = useMemo(() => {
-    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}`;
-  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat]);
-
-  // Track total time for this turn (base + time bank = one ring)
-  const [turnTimeTotal, setTurnTimeTotal] = useState(15);
+    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}`;
+  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase]);
 
   useEffect(() => {
-    // POKERSTARS-STYLE: Cash = 15s base, but if time bank is used, total is higher
-    const baseTimer = tableState?.actionTimer || 15;
-    const timeBank = tableState?.currentPlayerTimeBank || 0;
+    // POKERSTARS-STYLE: Cash = 15s, Tournament = 30s (server provides actual value)
+    const actionTimer = tableState?.actionTimer || 15;
     
     // No active player = no timer
     if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
@@ -158,34 +151,20 @@ export function FullscreenPokerTableWrapper({
       return;
     }
 
-    // Update time bank phase indicator (visual only - for glow effect)
+    // Update time bank phase indicator
     setIsTimeBankActive(tableState?.isTimeBankPhase || false);
 
-    // POKERSTARS-STYLE: Server sends timeRemaining which is authoritative
-    // This already accounts for time bank usage
+    // POKERSTARS-STYLE: Use server's timeRemaining if provided
     if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
-      const serverRemaining = Math.ceil(tableState.timeRemaining);
-      setTurnTimeRemaining(serverRemaining);
-      
-      // Calculate total based on whether we're in time bank phase
-      // If time bank is active, total = base + time bank, otherwise just base
-      if (tableState?.isTimeBankPhase) {
-        // In time bank phase: total is base + whatever time bank was available
-        setTurnTimeTotal(baseTimer + timeBank);
-      } else {
-        // In base timer: total is just base
-        setTurnTimeTotal(baseTimer);
-      }
+      setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
     } else if (tableState?.actionStartTime) {
       // Calculate from actionStartTime for precise sync
       const elapsed = (Date.now() - tableState.actionStartTime) / 1000;
-      const remaining = Math.max(0, baseTimer - elapsed);
+      const remaining = Math.max(0, actionTimer - elapsed);
       setTurnTimeRemaining(Math.ceil(remaining));
-      setTurnTimeTotal(baseTimer);
     } else {
       // Fallback: full timer
-      setTurnTimeRemaining(baseTimer);
-      setTurnTimeTotal(baseTimer);
+      setTurnTimeRemaining(actionTimer);
     }
 
     // Local countdown interval (server is authoritative, this is just for smooth display)
@@ -197,7 +176,7 @@ export function FullscreenPokerTableWrapper({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timerResetKey, tableState?.actionTimer, tableState?.timeRemaining, tableState?.actionStartTime, tableState?.isTimeBankPhase, tableState?.currentPlayerTimeBank]);
+  }, [timerResetKey, tableState?.actionTimer, tableState?.timeRemaining, tableState?.actionStartTime, tableState?.isTimeBankPhase]);
 
   // Auto-connect handled inside useNodePokerTable
 
@@ -778,7 +757,7 @@ export function FullscreenPokerTableWrapper({
             bigBlindSeat={bigBlindSeat}
             currentPlayerSeat={currentPlayerSeat}
             turnTimeRemaining={turnTimeRemaining ?? undefined}
-            turnTimeTotal={turnTimeTotal}
+            turnTimeTotal={tableState?.actionTimer ?? 15}
             smallBlind={tableState?.smallBlindAmount || 10}
             bigBlind={tableState?.bigBlindAmount || 20}
             canJoinTable={canJoinTable}
