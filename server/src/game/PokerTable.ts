@@ -1841,7 +1841,7 @@ export class PokerTable {
       }
 
       // Not a tournament or not on break - start hand
-      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-15-handid-timer-fix';
+      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-15-45sec-timer-fix';
       logger.info('checkStartHand: starting hand immediately', { build: BUILD_TAG });
 
       await this.startHand();

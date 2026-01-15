@@ -52,7 +52,8 @@ interface ActionResult {
   stack?: number;
 }
 
-const ACTION_TIMEOUT_MS = 16000; // 15s + buffer
+// PokerStars-style: 45 second action time (server handles timeout, client only displays)
+const DEFAULT_ACTION_TIME_SECONDS = 45;
 
 export function usePokerGameEngine(tableId: string, playerId: string) {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -62,7 +63,6 @@ export function usePokerGameEngine(tableId: string, playerId: string) {
   const [lastAction, setLastAction] = useState<ActionResult | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   
-  const timeoutCheckRef = useRef<NodeJS.Timeout | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Call Edge Function
@@ -161,6 +161,9 @@ export function usePokerGameEngine(tableId: string, playerId: string) {
         setMyCards([]);
       }
 
+      // Get action time from table config or use default 45 seconds
+      const actionTime = table.action_time_seconds || DEFAULT_ACTION_TIME_SECONDS;
+      
       setGameState({
         tableId,
         handId: table.current_hand_id,
@@ -171,7 +174,7 @@ export function usePokerGameEngine(tableId: string, playerId: string) {
         dealerSeat: table.current_dealer_seat,
         currentPlayerSeat: handData?.current_player_seat,
         players,
-        actionTime: 15,
+        actionTime,
         actionStartedAt: handData?.action_started_at,
       });
     } catch (err) {
@@ -179,17 +182,19 @@ export function usePokerGameEngine(tableId: string, playerId: string) {
     }
   }, [tableId, playerId]);
 
-  // Timer countdown
+  // Timer countdown - uses server's actionTime (default 45 seconds)
   useEffect(() => {
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
     }
 
     if (gameState?.actionStartedAt && gameState?.currentPlayerSeat) {
+      const actionTime = gameState?.actionTime || DEFAULT_ACTION_TIME_SECONDS;
+      
       const updateTimer = () => {
         const started = new Date(gameState.actionStartedAt!).getTime();
         const elapsed = (Date.now() - started) / 1000;
-        const remaining = Math.max(0, 15 - elapsed);
+        const remaining = Math.max(0, actionTime - elapsed);
         setTimeRemaining(Math.ceil(remaining));
       };
 
@@ -202,34 +207,10 @@ export function usePokerGameEngine(tableId: string, playerId: string) {
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
-  }, [gameState?.actionStartedAt, gameState?.currentPlayerSeat]);
+  }, [gameState?.actionStartedAt, gameState?.currentPlayerSeat, gameState?.actionTime]);
 
-  // Auto-check timeout for current player
-  useEffect(() => {
-    if (timeoutCheckRef.current) {
-      clearTimeout(timeoutCheckRef.current);
-    }
-
-    const myPlayer = gameState?.players.find(p => p.playerId === playerId);
-    const isMyTurn = gameState?.currentPlayerSeat === myPlayer?.seatNumber;
-
-    // Only check timeout if it's NOT our turn (let server handle timeouts for other players)
-    if (gameState?.actionStartedAt && gameState?.currentPlayerSeat && !isMyTurn) {
-      const started = new Date(gameState.actionStartedAt).getTime();
-      const delay = ACTION_TIMEOUT_MS - (Date.now() - started);
-
-      if (delay > 0) {
-        timeoutCheckRef.current = setTimeout(async () => {
-          console.log('[Engine Hook] Checking timeout for player at seat', gameState.currentPlayerSeat);
-          await callEngine('check_timeout');
-        }, delay);
-      }
-    }
-
-    return () => {
-      if (timeoutCheckRef.current) clearTimeout(timeoutCheckRef.current);
-    };
-  }, [gameState?.actionStartedAt, gameState?.currentPlayerSeat, playerId, callEngine]);
+  // NOTE: Server handles all timeouts - no client-side timeout checking needed
+  // This prevents race conditions and duplicate timeout triggers
 
   // Subscribe to updates
   useEffect(() => {
@@ -245,7 +226,6 @@ export function usePokerGameEngine(tableId: string, playerId: string) {
 
     return () => {
       supabase.removeChannel(channel);
-      if (timeoutCheckRef.current) clearTimeout(timeoutCheckRef.current);
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
   }, [tableId, loadGameState]);

@@ -89,7 +89,7 @@ export class PokerGameManager {
           ante: tableData.ante || 0,
           minBuyIn: tableData.min_buy_in,
           maxBuyIn: tableData.max_buy_in,
-          actionTimeSeconds: tableData.action_time_seconds || 30,
+          actionTimeSeconds: tableData.action_time_seconds || 45,  // PokerStars-style: 45 seconds
           timeBankSeconds: tableData.time_bank_seconds || 60
         };
         
@@ -255,7 +255,7 @@ export class PokerGameManager {
         ante: tableData.ante || 0,
         minBuyIn: tableData.min_buy_in,
         maxBuyIn: tableData.max_buy_in,
-        actionTimeSeconds: tableData.action_time_seconds || 30,
+        actionTimeSeconds: tableData.action_time_seconds || 45,  // PokerStars-style: 45 seconds
         timeBankSeconds: tableData.time_bank_seconds || 60
       };
       

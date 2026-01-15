@@ -382,7 +382,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       (state as any).bigBlind ?? (state as any).big_blind ?? (state as any).bb ?? config?.bigBlind ?? 20
     );
     const ante = Number((state as any).ante ?? (state as any).ante_amount ?? config?.ante ?? 0);
-    const actionTimer = Number((state as any).actionTimer ?? (state as any).action_timer ?? config?.actionTimeSeconds ?? 30);
+    // PokerStars-style: 45 seconds default action time
+    const actionTimer = Number((state as any).actionTimer ?? (state as any).action_timer ?? config?.actionTimeSeconds ?? 45);
 
     // If server doesn't include blinds as per-player bets, show them client-side on preflop
     const isPreflopLike =
