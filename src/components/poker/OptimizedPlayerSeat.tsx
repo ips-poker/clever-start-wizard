@@ -259,7 +259,7 @@ export const OptimizedPlayerSeat = memo(function OptimizedPlayerSeat({
   isWinner = false,
   showCards = false,
   timeRemaining = 0,
-  maxTime = 30,
+  maxTime = 15,  // POKERSTARS: Cash = 15s default
   hudStats
 }: OptimizedPlayerSeatProps) {
   const position = SEAT_POSITIONS_6MAX[seatNumber - 1];
