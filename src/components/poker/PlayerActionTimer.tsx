@@ -1,7 +1,19 @@
+// POKERSTARS-STYLE PLAYER ACTION TIMER
+// UNIFIED TIMER LOGIC:
+// - Green: > 10 seconds remaining
+// - Yellow (warning): 5-10 seconds remaining  
+// - Red (critical + pulsing glow): ≤ 5 seconds remaining
+
 import React, { useState, useEffect, memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Timer, AlertTriangle } from 'lucide-react';
+
+// PokerStars-style timer thresholds (in seconds) - MUST MATCH ALL TIMER COMPONENTS
+const POKERSTARS_TIMER = {
+  WARNING_SECONDS: 10,   // Yellow warning starts at 10 seconds
+  CRITICAL_SECONDS: 5,   // Red pulsing starts at 5 seconds
+};
 
 interface PlayerActionTimerProps {
   isActive?: boolean;
@@ -75,14 +87,9 @@ export const PlayerActionTimer = memo(function PlayerActionTimer({
 
   const progress = timeLeft / duration;
   
-  // PokerStars-style thresholds optimized for 45s timer:
-  // - Critical (red pulsing): last 5 seconds
-  // - Warning (yellow): last 10 seconds for smooth transition
-  const criticalSeconds = 5;
-  const warningSeconds = Math.min(10, duration * 0.22); // ~10s for 45s timer, or 22% of duration
-  
-  const isCritical = timeLeft <= criticalSeconds;
-  const isWarning = timeLeft <= warningSeconds;
+  // PokerStars-style: use SECONDS-based thresholds (not percentages)
+  const isCritical = timeLeft <= POKERSTARS_TIMER.CRITICAL_SECONDS;
+  const isWarning = timeLeft <= POKERSTARS_TIMER.WARNING_SECONDS && !isCritical;
   
   const sizeClasses = {
     sm: { container: 'w-12 h-12', text: 'text-sm', icon: 'w-3 h-3' },
@@ -198,11 +205,14 @@ export const CircularTimer = memo(function CircularTimer({
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   
-  const timerColor = progress > 0.5 ? '#22c55e' : progress > 0.25 ? '#fbbf24' : '#ef4444';
+  // PokerStars-style: use SECONDS-based thresholds
+  const isCritical = timeRemaining <= POKERSTARS_TIMER.CRITICAL_SECONDS;
+  const isWarning = timeRemaining <= POKERSTARS_TIMER.WARNING_SECONDS && !isCritical;
+  const timerColor = isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#22c55e';
 
   return (
     <svg 
-      width={size} 
+      width={size}
       height={size}
       style={{ filter: `drop-shadow(0 0 8px ${timerColor}40)` }}
     >
@@ -248,8 +258,9 @@ export const TimerBar = memo(function TimerBar({
   if (timeRemaining === null) return null;
 
   const progress = (timeRemaining / totalTime) * 100;
-  const isCritical = timeRemaining <= 5;
-  const isWarning = timeRemaining <= 10;
+  // PokerStars-style: use SECONDS-based thresholds
+  const isCritical = timeRemaining <= POKERSTARS_TIMER.CRITICAL_SECONDS;
+  const isWarning = timeRemaining <= POKERSTARS_TIMER.WARNING_SECONDS && !isCritical;
 
   return (
     <div className={cn("relative h-1.5 bg-white/10 rounded-full overflow-hidden", className)}>
