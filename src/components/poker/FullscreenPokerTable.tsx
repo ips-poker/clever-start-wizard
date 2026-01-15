@@ -461,7 +461,7 @@ const PremiumCard = memo(function PremiumCard({
 });
 
 // ============= TIMER RING (now uses ServerSyncTimer) =============
-// Timer ring uses actionStartTime from server for perfect sync
+// Timer ring uses timeRemaining from server for perfect sync
 
 // ============= PLAYER SEAT with personalized cards =============
 interface PlayerSeatProps {
@@ -473,9 +473,10 @@ interface PlayerSeatProps {
   isSB: boolean;
   isBB: boolean;
   isCurrentTurn: boolean;
-  // Server-sync timer props (new approach)
-  actionStartTime?: number | null;  // Unix timestamp when turn started
-  actionTotalTime?: number;         // Total time for this phase (15s or 30s)
+  // Server-sync timer props (new approach - using timeRemaining from server)
+  timeRemaining?: number | null;      // Remaining time in seconds from server
+  totalTime?: number;                 // Total time for this phase (15s or 30s)
+  lastUpdateTime?: number;            // When we received this state update
   heroCards?: string[];
   communityCards?: string[];
   gamePhase?: string;
@@ -536,8 +537,9 @@ const PlayerSeat = memo(function PlayerSeat({
   isSB,
   isBB,
   isCurrentTurn,
-  actionStartTime,
-  actionTotalTime = 15,
+  timeRemaining,
+  totalTime = 15,
+  lastUpdateTime,
   heroCards,
   communityCards = [],
   gamePhase = 'waiting',
@@ -629,7 +631,7 @@ const PlayerSeat = memo(function PlayerSeat({
       {/* Avatar with status border and opponent cards */}
       <div className="relative">
         {/* Timer ring - UNDER cards and game elements, around avatar */}
-        {isCurrentTurn && actionStartTime && !player.isFolded && (
+        {isCurrentTurn && timeRemaining != null && timeRemaining > 0 && !player.isFolded && (
           <div 
             className="absolute z-0 pointer-events-none"
             style={{
@@ -641,8 +643,9 @@ const PlayerSeat = memo(function PlayerSeat({
             }}
           >
             <ServerSyncTimer 
-              actionStartTime={actionStartTime}
-              totalTime={actionTotalTime}
+              timeRemaining={timeRemaining}
+              totalTime={totalTime}
+              lastUpdateTime={lastUpdateTime}
               size={avatarSize + 6}
               strokeWidth={3}
             />
@@ -1282,9 +1285,10 @@ export interface FullscreenPokerTableProps {
   smallBlindSeat: number;
   bigBlindSeat: number;
   currentPlayerSeat: number | null;
-  // Server-sync timer (new approach - uses actionStartTime directly)
-  actionStartTime?: number | null;  // Unix timestamp when turn started
-  actionTotalTime?: number;         // Total time for current phase (15s or 30s)
+  // Server-sync timer (new approach - uses timeRemaining from server)
+  timeRemaining?: number | null;      // Remaining time in seconds from server
+  totalTime?: number;                 // Total time for current phase (15s or 30s)
+  lastUpdateTime?: number;            // When we received this state update
   smallBlind: number;
   bigBlind: number;
   canJoinTable: boolean;
@@ -1360,8 +1364,9 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   smallBlindSeat,
   bigBlindSeat,
   currentPlayerSeat,
-  actionStartTime,
-  actionTotalTime,
+  timeRemaining,
+  totalTime,
+  lastUpdateTime,
   smallBlind,
   bigBlind,
   canJoinTable,
@@ -1598,8 +1603,9 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               isSB={player?.seatNumber === smallBlindSeat}
               isBB={player?.seatNumber === bigBlindSeat}
               isCurrentTurn={player?.seatNumber === currentPlayerSeat}
-              actionStartTime={player?.seatNumber === currentPlayerSeat ? actionStartTime : undefined}
-              actionTotalTime={actionTotalTime}
+              timeRemaining={player?.seatNumber === currentPlayerSeat ? timeRemaining : undefined}
+              totalTime={totalTime}
+              lastUpdateTime={lastUpdateTime}
               heroCards={idx === 0 ? heroCards : undefined}
               communityCards={communityCards}
               gamePhase={phase}

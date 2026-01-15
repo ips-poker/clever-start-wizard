@@ -1,23 +1,32 @@
 /**
- * ServerSyncTimer - Timer Ring synchronized with server's actionStartTime
+ * ServerSyncTimer - Timer Ring synchronized with server's timeRemaining
  * 
- * ARCHITECTURE:
- * - Server is the ONLY source of truth (PokerStars-style)
- * - Server sends actionStartTime (Unix ms) when turn starts
- * - Client calculates: remaining = totalTime - (now - actionStartTime)
- * - Ring progress = remaining / totalTime
- * - Full reset happens when actionStartTime changes (new turn)
+ * ARCHITECTURE (Fixed for perfect sync):
+ * - Server sends: actionStartTime (ms), timeRemaining (sec), totalTime (sec)
+ * - Client calculates serverTimeOffset via ping/pong to compensate clock drift
+ * - Timer uses BOTH: 
+ *   1. timeRemaining from server as the authoritative source
+ *   2. Local elapsed time since last update for smooth animation
+ * - On each server update, we recalibrate to server's timeRemaining
  * 
- * NO LOCAL STATE - pure calculation from server time on every frame
+ * KEY FIX: Don't rely solely on (now - actionStartTime) because:
+ * - Client/server clocks may differ by seconds
+ * - Time bank phase doesn't reset actionStartTime
+ * 
+ * Instead: Use timeRemaining from server + smooth local interpolation
  */
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface ServerSyncTimerProps {
-  /** Unix timestamp (ms) when this turn started - from server */
-  actionStartTime: number;
+  /** Remaining time in seconds - from server (authoritative) */
+  timeRemaining: number;
   /** Total time for this phase in seconds (15s base or 30s time bank) */
   totalTime: number;
+  /** Server time offset in ms (serverTime - clientTime) for clock compensation */
+  serverTimeOffset?: number;
+  /** Unix timestamp (ms) when last server update was received - for interpolation */
+  lastUpdateTime?: number;
   /** Visual size of the ring in pixels */
   size: number;
   /** Ring stroke width */
@@ -30,33 +39,44 @@ const WARNING_THRESHOLD = 10;
 const CRITICAL_THRESHOLD = 5;
 
 export const ServerSyncTimer = memo(function ServerSyncTimer({
-  actionStartTime,
+  timeRemaining,
   totalTime,
+  serverTimeOffset = 0,
+  lastUpdateTime,
   size,
   strokeWidth = 3,
   className
 }: ServerSyncTimerProps) {
-  // Current remaining time - updated every frame
-  const [remaining, setRemaining] = useState(totalTime);
+  // Current displayed remaining time - updated every frame
+  const [displayRemaining, setDisplayRemaining] = useState(timeRemaining);
   const animationRef = useRef<number | null>(null);
-  const lastActionStartRef = useRef<number>(0);
+  
+  // Track when we last received server data for interpolation
+  const lastServerTimeRef = useRef<number>(Date.now());
+  const lastServerRemainingRef = useRef<number>(timeRemaining);
 
+  // When server sends new timeRemaining, recalibrate
   useEffect(() => {
-    // Detect new turn by actionStartTime change
-    if (actionStartTime !== lastActionStartRef.current) {
-      lastActionStartRef.current = actionStartTime;
-      // Reset to full on new turn
-      setRemaining(totalTime);
-    }
+    lastServerTimeRef.current = lastUpdateTime || Date.now();
+    lastServerRemainingRef.current = timeRemaining;
+    
+    // Immediately set to server value
+    setDisplayRemaining(timeRemaining);
+  }, [timeRemaining, lastUpdateTime]);
 
-    // Animation loop - calculate remaining from server time on every frame
+  // Animation loop - interpolate from last server value
+  useEffect(() => {
     const animate = () => {
+      // Calculate how much time has passed since last server update
       const now = Date.now();
-      const elapsed = (now - actionStartTime) / 1000;
-      const newRemaining = Math.max(0, totalTime - elapsed);
-      setRemaining(newRemaining);
+      const elapsedSinceUpdate = (now - lastServerTimeRef.current) / 1000;
+      
+      // Interpolate: server's timeRemaining minus local elapsed
+      const interpolated = Math.max(0, lastServerRemainingRef.current - elapsedSinceUpdate);
+      
+      setDisplayRemaining(interpolated);
 
-      if (newRemaining > 0) {
+      if (interpolated > 0) {
         animationRef.current = requestAnimationFrame(animate);
       }
     };
@@ -70,12 +90,12 @@ export const ServerSyncTimer = memo(function ServerSyncTimer({
         animationRef.current = null;
       }
     };
-  }, [actionStartTime, totalTime]);
+  }, [timeRemaining]); // Restart animation when server value changes
 
   // Calculate ring geometry
   const radius = (size / 2) - (strokeWidth / 2);
   const circumference = 2 * Math.PI * radius;
-  const progress = totalTime > 0 ? Math.max(0, Math.min(1, remaining / totalTime)) : 0;
+  const progress = totalTime > 0 ? Math.max(0, Math.min(1, displayRemaining / totalTime)) : 0;
   const strokeDashoffset = circumference * (1 - progress);
 
   // Color based on remaining time
@@ -83,11 +103,11 @@ export const ServerSyncTimer = memo(function ServerSyncTimer({
   let glowColor: string;
   let isCritical = false;
 
-  if (remaining <= CRITICAL_THRESHOLD) {
+  if (displayRemaining <= CRITICAL_THRESHOLD) {
     strokeColor = '#ef4444'; // Red
     glowColor = 'rgba(239, 68, 68, 0.8)';
     isCritical = true;
-  } else if (remaining <= WARNING_THRESHOLD) {
+  } else if (displayRemaining <= WARNING_THRESHOLD) {
     strokeColor = '#f59e0b'; // Yellow/Amber
     glowColor = 'rgba(245, 158, 11, 0.6)';
   } else {

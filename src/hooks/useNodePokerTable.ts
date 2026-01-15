@@ -189,12 +189,19 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     timestamp: number;
   } | null>(null);
 
+  // Server time offset for timer synchronization (serverTime - clientTime in ms)
+  const [serverTimeOffset, setServerTimeOffset] = useState<number>(0);
+  // Timestamp of last state update (for timer interpolation)
+  const [lastStateUpdateTime, setLastStateUpdateTime] = useState<number>(Date.now());
+  
   // Refs
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptRef = useRef(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
+  // For ping/pong latency calculation
+  const lastPingTimeRef = useRef<number>(0);
 
   // Showdown token to ensure timers don't clear a newer hand/showdown
   const showdownTokenRef = useRef(0);
@@ -472,7 +479,29 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             engine: data.engine,
             timestamp: data.timestamp
           });
+          // Calculate initial server time offset from connected message
+          if (data.timestamp) {
+            const serverTime = data.timestamp as number;
+            const clientTime = Date.now();
+            const offset = serverTime - clientTime;
+            setServerTimeOffset(offset);
+            log('⏱️ Initial server time offset:', offset, 'ms');
+          }
           // Server may auto-subscribe based on URL params
+          break;
+          
+        case 'pong':
+          // Calculate server time offset from pong response
+          if (data.timestamp && lastPingTimeRef.current) {
+            const serverTime = data.timestamp as number;
+            const roundTrip = Date.now() - lastPingTimeRef.current;
+            // Estimate: server timestamp was generated at (clientPingTime + roundTrip/2)
+            const estimatedClientTimeAtServer = lastPingTimeRef.current + roundTrip / 2;
+            const offset = serverTime - estimatedClientTimeAtServer;
+            // Smoothly update offset (exponential moving average)
+            setServerTimeOffset(prev => prev * 0.7 + offset * 0.3);
+            log('⏱️ Pong - server offset updated:', offset, 'ms, smoothed');
+          }
           break;
 
         case 'subscribed':
@@ -515,6 +544,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               }
               return newState;
             });
+            
+            // Update timestamp for timer interpolation
+            setLastStateUpdateTime(Date.now());
 
             // Extract my cards and seat from server state (from getPlayerState)
             const stateData = data.state as Record<string, unknown>;
@@ -2143,6 +2175,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     showdownReveals,
     winnerAnnouncement,
     clearWinnerAnnouncement: () => setWinnerAnnouncement(null),
+    
+    // Timer synchronization
+    serverTimeOffset,
+    lastStateUpdateTime,
 
     // Computed
     isMyTurn,
