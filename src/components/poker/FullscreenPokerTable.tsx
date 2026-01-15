@@ -477,6 +477,7 @@ interface PlayerSeatProps {
   timeRemaining?: number | null;      // Remaining time in seconds from server
   totalTime?: number;                 // Total time for this phase (15s or 30s)
   lastUpdateTime?: number;            // When we received this state update
+  isTimeBankPhase?: boolean;          // Whether we're in time bank phase (for timer color)
   heroCards?: string[];
   communityCards?: string[];
   gamePhase?: string;
@@ -540,6 +541,7 @@ const PlayerSeat = memo(function PlayerSeat({
   timeRemaining,
   totalTime = 15,
   lastUpdateTime,
+  isTimeBankPhase = false,
   heroCards,
   communityCards = [],
   gamePhase = 'waiting',
@@ -646,7 +648,7 @@ const PlayerSeat = memo(function PlayerSeat({
               timeRemaining={timeRemaining}
               totalTime={totalTime}
               lastUpdateTime={lastUpdateTime}
-              isTimeBankPhase={tableState?.isTimeBankPhase || false}
+              isTimeBankPhase={isTimeBankPhase}
               size={avatarSize + 6}
               strokeWidth={3}
             />
@@ -1290,6 +1292,7 @@ export interface FullscreenPokerTableProps {
   timeRemaining?: number | null;      // Remaining time in seconds from server
   totalTime?: number;                 // Total time for current phase (15s or 30s)
   lastUpdateTime?: number;            // When we received this state update
+  isTimeBankPhase?: boolean;          // Whether we're in time bank phase
   smallBlind: number;
   bigBlind: number;
   canJoinTable: boolean;
@@ -1368,6 +1371,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   timeRemaining,
   totalTime,
   lastUpdateTime,
+  isTimeBankPhase = false,
   smallBlind,
   bigBlind,
   canJoinTable,
@@ -1607,6 +1611,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               timeRemaining={player?.seatNumber === currentPlayerSeat ? timeRemaining : undefined}
               totalTime={totalTime}
               lastUpdateTime={lastUpdateTime}
+              isTimeBankPhase={player?.seatNumber === currentPlayerSeat ? isTimeBankPhase : false}
               heroCards={idx === 0 ? heroCards : undefined}
               communityCards={communityCards}
               gamePhase={phase}
