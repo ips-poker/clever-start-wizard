@@ -9,15 +9,23 @@ import { getSupabaseBaseUrl, getSupabaseMode, DIRECT_SUPABASE_URL, PROXY_SUPABAS
 // и перезагрузить страницу.
 const SUPABASE_URL = getSupabaseBaseUrl();
 
-console.log('🌐 Supabase mode:', getSupabaseMode());
-console.log('🌐 Supabase API URL:', SUPABASE_URL);
-console.log('ℹ️ Direct URL:', DIRECT_SUPABASE_URL);
-console.log('ℹ️ Proxy URL:', PROXY_SUPABASE_URL);
+// Prefer env config when available (Vite). Fallback keeps current behavior.
+const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2hzc21ub3JyaG9ocm93eHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODUzNDYsImV4cCI6MjA2ODY2MTM0Nn0.ZWYgSZFeidY0b_miC7IyfXVPh1EUR2WtxlEvt_fFmGc";
 
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1va2hzc21ub3JyaG9ocm93eHZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODUzNDYsImV4cCI6MjA2ODY2MTM0Nn0.ZWYgSZFeidY0b_miC7IyfXVPh1EUR2WtxlEvt_fFmGc";
+// Debug logs: enable in dev or via localStorage.setItem('SUPABASE_DEBUG','1')
+const SUPABASE_DEBUG =
+  import.meta.env.DEV || localStorage.getItem('SUPABASE_DEBUG') === '1';
 
-console.log('🔥 Supabase Client инициализирован');
-console.log('🔑 API Key:', SUPABASE_PUBLISHABLE_KEY.substring(0, 20) + '...');
+if (SUPABASE_DEBUG) {
+  console.log('🌐 Supabase mode:', getSupabaseMode());
+  console.log('🌐 Supabase API URL:', SUPABASE_URL);
+  console.log('ℹ️ Direct URL:', DIRECT_SUPABASE_URL);
+  console.log('ℹ️ Proxy URL:', PROXY_SUPABASE_URL);
+  console.log('🔥 Supabase Client инициализирован');
+}
+
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
