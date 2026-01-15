@@ -474,6 +474,7 @@ interface PlayerSeatProps {
   isBB: boolean;
   isCurrentTurn: boolean;
   turnTimeRemaining?: number;
+  turnTimeTotal?: number;
   heroCards?: string[];
   communityCards?: string[];
   gamePhase?: string;
@@ -535,6 +536,7 @@ const PlayerSeat = memo(function PlayerSeat({
   isBB,
   isCurrentTurn,
   turnTimeRemaining,
+  turnTimeTotal = 15,
   heroCards,
   communityCards = [],
   gamePhase = 'waiting',
@@ -639,7 +641,7 @@ const PlayerSeat = memo(function PlayerSeat({
           >
             <SmoothAvatarTimer 
               remaining={turnTimeRemaining} 
-              total={turnTimeRemaining > 15 ? 30 : 15}  // POKERSTARS: Cash=15s, Tournament=30s
+              total={turnTimeTotal}
               size={avatarSize + 6}
               strokeWidth={3}
             />
@@ -1280,6 +1282,7 @@ export interface FullscreenPokerTableProps {
   bigBlindSeat: number;
   currentPlayerSeat: number | null;
   turnTimeRemaining?: number;
+  turnTimeTotal?: number;
   smallBlind: number;
   bigBlind: number;
   canJoinTable: boolean;
@@ -1356,6 +1359,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   bigBlindSeat,
   currentPlayerSeat,
   turnTimeRemaining,
+  turnTimeTotal,
   smallBlind,
   bigBlind,
   canJoinTable,
@@ -1593,6 +1597,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               isBB={player?.seatNumber === bigBlindSeat}
               isCurrentTurn={player?.seatNumber === currentPlayerSeat}
               turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
+              turnTimeTotal={turnTimeTotal}
               heroCards={idx === 0 ? heroCards : undefined}
               communityCards={communityCards}
               gamePhase={phase}

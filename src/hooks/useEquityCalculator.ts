@@ -4,7 +4,7 @@ import {
   EquityResult, 
   isAllInSituation 
 } from '@/utils/equityCalculator';
-import { PokerPlayer } from './usePokerTable';
+import { PokerPlayer } from './useNodePokerTable';
 
 interface UseEquityCalculatorOptions {
   players: PokerPlayer[];

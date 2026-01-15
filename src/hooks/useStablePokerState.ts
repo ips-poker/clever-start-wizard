@@ -5,7 +5,7 @@
 // Optimized for PPPoker-like smooth experience
 
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { PokerPlayer, TableState } from './usePokerTable';
+import { PokerPlayer, TableState } from './useNodePokerTable';
 
 export interface StablePlayerState {
   playerId: string;

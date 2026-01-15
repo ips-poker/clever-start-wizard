@@ -1,7 +1,17 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Coins } from 'lucide-react';
-import { SidePotsDisplay as SidePotsData } from '@/hooks/usePokerTable';
+// SidePotsData type defined locally since it's specific to this component
+interface SidePotInfo {
+  amount: number;
+  eligiblePlayers: string[];
+  contributors: string[];
+}
+interface SidePotsData {
+  mainPot: SidePotInfo;
+  sidePots: SidePotInfo[];
+  totalPot: number;
+}
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SidePotsDisplayProps {

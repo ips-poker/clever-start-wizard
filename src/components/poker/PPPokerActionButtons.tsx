@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { ChevronUp, ChevronDown, Zap, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TimerBar } from './PlayerActionTimer';
+import { POKERSTARS_TIMER, getTimerColorHex } from '@/constants/pokerTimerConfig';
 import { formatChipAmount } from './AnimatedChips';
 
 interface PPPokerActionButtonsProps {
@@ -220,7 +220,15 @@ export const PPPokerActionButtons = memo(function PPPokerActionButtons({
     >
       {/* Timer bar */}
       {timeRemaining !== null && timeRemaining !== undefined && (
-        <TimerBar timeRemaining={timeRemaining} totalTime={15} className="mb-1" />
+        <div className="w-full h-1 rounded-full mb-1 overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+          <div 
+            className="h-full rounded-full transition-all duration-300" 
+            style={{ 
+              width: `${Math.max(0, (timeRemaining / 15) * 100)}%`,
+              background: getTimerColorHex(timeRemaining)
+            }} 
+          />
+        </div>
       )}
 
       {/* Bet slider & presets */}
