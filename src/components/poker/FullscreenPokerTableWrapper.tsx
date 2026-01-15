@@ -133,44 +133,42 @@ export function FullscreenPokerTableWrapper({
 
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
 
-  // POKERSTARS-STYLE TIMER: Server-authoritative timing
-  // Server sends: timeRemaining (current phase), isTimeBankPhase (base vs time bank)
-  // Ring shows current phase duration - does NOT pre-add time bank to base
+  // SINGLE RING TIMER: Shows combined base + time bank as ONE continuous countdown
+  // Cash: 15s base + 30s time bank = 45s total ring
+  // Tournament: 30s base + 60s time bank = 90s total ring
   
-  // Timer identity - resets ONLY when new turn starts (hand/phase/player change)
+  // Timer identity - resets ONLY when NEW TURN starts (different hand/phase/player)
   const timerResetKey = useMemo(() => {
     return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}`;
   }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat]);
 
-  // Track the total time for CURRENT PHASE (not combined base+timebank)
-  // This allows smooth single-ring display without "jumps"
-  const turnTimeTotalRef = useRef(15);
+  // Track total time - set ONCE at turn start, never changes mid-turn
+  const turnTimeTotalRef = useRef(45);
   const lastResetKeyRef = useRef('');
-  const lastTimeBankPhaseRef = useRef(false);
 
-  // Calculate total time for the current timer phase
+  // Calculate COMBINED time (base + available time bank) at start of turn
   const turnTimeTotal = useMemo(() => {
     const baseTimer = tableState?.actionTimer || 15;
-    const isTimeBankPhase = tableState?.isTimeBankPhase || false;
     
-    // New turn OR phase changed (entered time bank)
-    if (timerResetKey !== lastResetKeyRef.current || isTimeBankPhase !== lastTimeBankPhaseRef.current) {
+    // Only recalculate on NEW turn (reset key changed)
+    if (timerResetKey !== lastResetKeyRef.current) {
       lastResetKeyRef.current = timerResetKey;
-      lastTimeBankPhaseRef.current = isTimeBankPhase;
       
-      // In time bank phase, use time bank duration; otherwise use base
-      // Server sends timeRemaining for current phase
-      if (isTimeBankPhase && tableState?.timeRemaining) {
-        // Time bank just started - use remaining as the "total" for this phase
-        // This creates a full ring that drains to 0
-        turnTimeTotalRef.current = Math.max(tableState.timeRemaining, baseTimer);
-      } else {
-        turnTimeTotalRef.current = baseTimer;
-      }
+      // Get current player's time bank from players array
+      const currentPlayerSeat = tableState?.currentPlayerSeat;
+      const currentPlayer = currentPlayerSeat !== null && currentPlayerSeat !== undefined
+        ? tableState?.players?.find(p => p.seatNumber === currentPlayerSeat)
+        : null;
+      
+      // Use player's timeBankRemaining OR table default time bank OR 30s for cash
+      const playerTimeBank = currentPlayer?.timeBankRemaining ?? tableState?.currentPlayerTimeBank ?? 30;
+      
+      // Total = base + time bank (single ring for entire turn)
+      turnTimeTotalRef.current = baseTimer + playerTimeBank;
     }
     
     return turnTimeTotalRef.current;
-  }, [timerResetKey, tableState?.actionTimer, tableState?.isTimeBankPhase, tableState?.timeRemaining]);
+  }, [timerResetKey, tableState?.actionTimer, tableState?.players, tableState?.currentPlayerSeat, tableState?.currentPlayerTimeBank]);
 
   useEffect(() => {
     const baseTimer = tableState?.actionTimer || 15;
@@ -182,23 +180,36 @@ export function FullscreenPokerTableWrapper({
       return;
     }
 
-    // Update time bank phase indicator (visual only - for glow/color effect)
+    // Time bank phase indicator (for glow/color effect)
     const isTimeBankPhase = tableState?.isTimeBankPhase || false;
     setIsTimeBankActive(isTimeBankPhase);
 
-    // Server sends authoritative timeRemaining for CURRENT phase
+    // Get current player's time bank
+    const currentPlayer = tableState?.players?.find(p => p.seatNumber === tableState?.currentPlayerSeat);
+    const playerTimeBank = currentPlayer?.timeBankRemaining ?? tableState?.currentPlayerTimeBank ?? 30;
+
+    // Calculate COMBINED remaining time (base remaining + time bank remaining)
     if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
-      setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
+      // Server sends timeRemaining for CURRENT phase
+      if (isTimeBankPhase) {
+        // In time bank phase: just the time bank remaining
+        setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
+      } else {
+        // In base phase: base remaining + full time bank
+        setTurnTimeRemaining(Math.ceil(tableState.timeRemaining + playerTimeBank));
+      }
     } else if (tableState?.actionStartTime) {
-      // Calculate from actionStartTime for precise sync
+      // Calculate from actionStartTime
       const elapsed = (Date.now() - tableState.actionStartTime) / 1000;
-      setTurnTimeRemaining(Math.max(0, Math.ceil(baseTimer - elapsed)));
+      const baseRemaining = Math.max(0, baseTimer - elapsed);
+      // Base remaining + time bank (single ring)
+      setTurnTimeRemaining(Math.ceil(baseRemaining + playerTimeBank));
     } else {
-      // Fallback: full timer
-      setTurnTimeRemaining(baseTimer);
+      // Fallback: full timer (base + time bank)
+      setTurnTimeRemaining(baseTimer + playerTimeBank);
     }
 
-    // Local countdown interval (server is authoritative, this is for smooth display)
+    // Local countdown interval (smooth display between server updates)
     const interval = setInterval(() => {
       setTurnTimeRemaining(prev => {
         if (prev === null || prev <= 0) return 0;
@@ -207,7 +218,7 @@ export function FullscreenPokerTableWrapper({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timerResetKey, tableState?.actionTimer, tableState?.timeRemaining, tableState?.actionStartTime, tableState?.isTimeBankPhase, tableState?.currentPlayerSeat]);
+  }, [timerResetKey, tableState?.actionTimer, tableState?.timeRemaining, tableState?.actionStartTime, tableState?.isTimeBankPhase, tableState?.currentPlayerSeat, tableState?.players, tableState?.currentPlayerTimeBank]);
 
   // Auto-connect handled inside useNodePokerTable
 
