@@ -1082,20 +1082,20 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
           const shouldForceShowdown =
             isShowdown ||
-            winners.length > 0 ||
+            (winners && winners.length > 0) ||
             Boolean(showdownPlayers?.some((sp) => sp.holeCards?.some(isRealCard)));
 
           log('🏆 Event data:', {
             isShowdown,
             shouldForceShowdown,
-            winnersCount: winners.length,
+            winnersCount: winners?.length || 0,
             showdownPlayersCount: showdownPlayers?.length,
             communityCardsCount: communityCards?.length,
           });
 
           const potAmount = Number(eventData.pot ?? (data as any).pot ?? 0);
 
-          if (shouldForceShowdown || winners.length > 0) {
+          if (shouldForceShowdown || (winners && winners.length > 0)) {
             // Start / refresh showdown token and timestamp
             showdownTokenRef.current += 1;
             showdownStartTimeRef.current = Date.now();
@@ -1120,7 +1120,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             console.log('🎯 [HAND EVALUATION DEBUG] All players at showdown:', {
               communityCards,
               players: evaluatedPlayers,
-              serverWinners: winners.map(w => ({
+              serverWinners: (winners || []).map(w => ({
                 playerId: w.playerId?.substring(0, 8),
                 amount: w.amount,
                 serverHandName: w.handName
@@ -1191,7 +1191,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             }
 
             setShowdownResult({
-              winners: winners.map((w) => {
+              winners: (winners || []).map((w) => {
                 const winnerPlayer = showdownPlayers?.find((sp) => sp.playerId === w.playerId);
                 const computed = winnerPlayer && communityCards
                   ? evaluateShowdown(winnerPlayer.holeCards, communityCards, false)
@@ -1209,7 +1209,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
             // Apply pot payout locally so UI always reflects winner stack even if server state snapshot lags.
             // (Server should still eventually send corrected stacks; this is a visual correctness patch.)
-            if (winners.length > 0) {
+            if (winners && winners.length > 0) {
               const winByPlayerId = new Map(winners.map((w) => [w.playerId, w.amount] as const));
               setTableState((prev) => {
                 if (!prev) return prev;
@@ -1818,7 +1818,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             // Mark winners in table state
             setTableState(prev => {
               if (!prev) return prev;
-              const winnerIds = new Set(winners.map(w => w.playerId));
+              const winnerIds = new Set((winners || []).map(w => w.playerId));
               
               return {
                 ...prev,
