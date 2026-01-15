@@ -1925,6 +1925,10 @@ export class PokerTable {
    * CRITICAL: Ensures stacks never go negative and properly awards pot
    */
   private async completeHand(winners: { playerId: string; amount: number; handName: string }[]): Promise<void> {
+    // CRITICAL: Stop action timer immediately when entering showdown/completion
+    // This prevents timeout events firing during winner animations
+    this.clearActionTimer();
+    
     logger.info('=== HAND COMPLETION START ===', {
       tableId: this.id,
       handNumber: this.handNumber,
@@ -2525,7 +2529,8 @@ export class PokerTable {
       dealerSeat: this.currentHand?.dealerSeat ?? this.dealerSeat ?? 0,
       smallBlindSeat: this.currentHand?.smallBlindSeat ?? 0,
       bigBlindSeat: this.currentHand?.bigBlindSeat ?? 1,
-      currentPlayerSeat: this.currentHand?.currentPlayerSeat ?? null,
+      // CRITICAL: currentPlayerSeat must be null during showdown - no one is "to act"
+      currentPlayerSeat: (this.currentHand?.phase === 'showdown') ? null : (this.currentHand?.currentPlayerSeat ?? null),
       minRaise: this.currentHand?.minRaise || this.config.bigBlind,
       handNumber: this.currentHand?.handNumber || 0,
       // Countdown info
@@ -2613,7 +2618,8 @@ export class PokerTable {
       mySeat: player.seatNumber,
       myStack: player.stack,
       myTimeBank: player.timeBank,
-      isMyTurn: this.currentHand?.currentPlayerSeat === player.seatNumber
+      // CRITICAL: isMyTurn must be false during showdown - no actions allowed
+      isMyTurn: this.currentHand?.phase !== 'showdown' && this.currentHand?.currentPlayerSeat === player.seatNumber
     };
   }
   
