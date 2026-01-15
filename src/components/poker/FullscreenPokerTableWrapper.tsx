@@ -29,6 +29,7 @@ import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
 import { ProTournamentLobby } from './tournament-lobby';
 import { TimeBankIndicator } from './TimeBankIndicator';
 import { TournamentBreakBanner } from './TournamentBreakBanner';
+import { POKERSTARS_TIMER } from '@/constants/pokerTimerConfig';
 
 
 // Syndikate branding
@@ -664,9 +665,9 @@ export function FullscreenPokerTableWrapper({
             {/* Time Bank Indicator for tournaments */}
             {myPlayer && (
               <TimeBankIndicator
-                timeBankRemaining={myPlayer.timeBankRemaining ?? 30}
-                timeBankInitial={30}
-                timeBankPerLevel={5}
+                timeBankRemaining={myPlayer.timeBankRemaining ?? POKERSTARS_TIMER.TOURNAMENT.TIME_BANK_INITIAL}
+                timeBankInitial={POKERSTARS_TIMER.TOURNAMENT.TIME_BANK_INITIAL}
+                timeBankPerLevel={POKERSTARS_TIMER.TOURNAMENT.TIME_BANK_PER_LEVEL}
                 isMyTurn={isMyTurn}
                 isTimeBankActive={isTimeBankActive}
                 actionTimeRemaining={turnTimeRemaining ?? undefined}
