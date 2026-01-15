@@ -1819,7 +1819,7 @@ export class PokerTable {
       }
 
       // Not a tournament or not on break - start hand
-      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-04-pro-timings';
+      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-15-timer-fixes';
       logger.info('checkStartHand: starting hand immediately', { build: BUILD_TAG });
 
       await this.startHand();
