@@ -133,34 +133,44 @@ export function FullscreenPokerTableWrapper({
 
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
 
-  // POKERSTARS-STYLE TIMER: Single continuous ring for entire turn
-  // Total = base + time bank from the START (not changed mid-turn)
-  // This prevents "two rings" visual - just one ring that drains completely
+  // POKERSTARS-STYLE TIMER: Server-authoritative timing
+  // Server sends: timeRemaining (current phase), isTimeBankPhase (base vs time bank)
+  // Ring shows current phase duration - does NOT pre-add time bank to base
   
-  // Timer resets ONLY when new turn starts (hand/phase/player change)
+  // Timer identity - resets ONLY when new turn starts (hand/phase/player change)
   const timerResetKey = useMemo(() => {
     return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}`;
   }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat]);
 
-  // Track total time for this turn - SET ONCE at turn start, never changed mid-turn
+  // Track the total time for CURRENT PHASE (not combined base+timebank)
+  // This allows smooth single-ring display without "jumps"
   const turnTimeTotalRef = useRef(15);
   const lastResetKeyRef = useRef('');
+  const lastTimeBankPhaseRef = useRef(false);
 
-  // Calculate total time and remaining time
+  // Calculate total time for the current timer phase
   const turnTimeTotal = useMemo(() => {
     const baseTimer = tableState?.actionTimer || 15;
-    const timeBank = tableState?.currentPlayerTimeBank || 0;
+    const isTimeBankPhase = tableState?.isTimeBankPhase || false;
     
-    // Only recalculate total when turn starts (new resetKey)
-    if (timerResetKey !== lastResetKeyRef.current) {
+    // New turn OR phase changed (entered time bank)
+    if (timerResetKey !== lastResetKeyRef.current || isTimeBankPhase !== lastTimeBankPhaseRef.current) {
       lastResetKeyRef.current = timerResetKey;
-      // IMPORTANT: Total = base + available time bank FROM THE START
-      // Player always has full time available, ring shows entire duration
-      turnTimeTotalRef.current = baseTimer + timeBank;
+      lastTimeBankPhaseRef.current = isTimeBankPhase;
+      
+      // In time bank phase, use time bank duration; otherwise use base
+      // Server sends timeRemaining for current phase
+      if (isTimeBankPhase && tableState?.timeRemaining) {
+        // Time bank just started - use remaining as the "total" for this phase
+        // This creates a full ring that drains to 0
+        turnTimeTotalRef.current = Math.max(tableState.timeRemaining, baseTimer);
+      } else {
+        turnTimeTotalRef.current = baseTimer;
+      }
     }
     
     return turnTimeTotalRef.current;
-  }, [timerResetKey, tableState?.actionTimer, tableState?.currentPlayerTimeBank]);
+  }, [timerResetKey, tableState?.actionTimer, tableState?.isTimeBankPhase, tableState?.timeRemaining]);
 
   useEffect(() => {
     const baseTimer = tableState?.actionTimer || 15;
@@ -173,9 +183,10 @@ export function FullscreenPokerTableWrapper({
     }
 
     // Update time bank phase indicator (visual only - for glow/color effect)
-    setIsTimeBankActive(tableState?.isTimeBankPhase || false);
+    const isTimeBankPhase = tableState?.isTimeBankPhase || false;
+    setIsTimeBankActive(isTimeBankPhase);
 
-    // Server sends authoritative timeRemaining
+    // Server sends authoritative timeRemaining for CURRENT phase
     if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
       setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
     } else if (tableState?.actionStartTime) {

@@ -1,5 +1,5 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Style
-// SINGLE RING that shows full time (base + time bank) as one continuous animation
+// Shows current phase timer (base OR time bank) - server authoritative
 // Colors change based on remaining time: green > yellow > red
 import React, { memo, useState, useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
@@ -7,7 +7,7 @@ import { POKERSTARS_TIMER } from '@/constants/pokerTimerConfig';
 
 interface SmoothAvatarTimerProps {
   remaining: number;  // Current remaining time (server authoritative)
-  total: number;      // Total time for this turn (base + time bank, set at turn start)
+  total: number;      // Total time for current phase (set when phase starts)
   size: number;
   strokeWidth?: number;
   className?: string;
@@ -25,39 +25,30 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const startTimeRef = useRef<number>(Date.now());
   const startRemainingRef = useRef<number>(remaining);
   const lastRemainingRef = useRef<number>(remaining);
-  
-  // Store the initial total for this turn - never changes mid-animation
-  const initialTotalRef = useRef<number>(total);
-
-  // Update initial total only when turn resets (remaining goes up significantly)
-  useEffect(() => {
-    const isNewTurn = remaining > lastRemainingRef.current + 2;
-    if (isNewTurn) {
-      initialTotalRef.current = total;
-    }
-  }, [remaining, total]);
+  const currentTotalRef = useRef<number>(total);
 
   useEffect(() => {
-    // Detect new turn: remaining went up = reset animation
-    const isNewTurn = remaining > lastRemainingRef.current + 2;
+    // Detect phase change: remaining went up OR total changed significantly
+    const isNewPhase = remaining > lastRemainingRef.current + 2 || 
+                       Math.abs(total - currentTotalRef.current) > 2;
     const diff = Math.abs(remaining - lastRemainingRef.current);
     const isServerResync = diff < 2;
     
     lastRemainingRef.current = remaining;
     
-    if (isNewTurn) {
-      // New turn - full reset
+    if (isNewPhase) {
+      // New turn/phase - full reset with new total
       startTimeRef.current = Date.now();
       startRemainingRef.current = remaining;
-      initialTotalRef.current = total;
+      currentTotalRef.current = total;
       setCurrentRemaining(remaining);
-    } else if (!isServerResync) {
-      // Significant change but not new turn - update start point
+    } else if (!isServerResync && diff >= 2) {
+      // Significant change but not new phase - resync
       startTimeRef.current = Date.now();
       startRemainingRef.current = remaining;
       setCurrentRemaining(remaining);
     }
-    // Small resync = continue smooth animation
+    // Small resync (<2s diff) = continue smooth animation
 
     const animate = () => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
@@ -82,8 +73,8 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     };
   }, [remaining, total]);
 
-  // Use the stable total from turn start
-  const stableTotal = initialTotalRef.current;
+  // Use the stable total for progress calculation
+  const stableTotal = currentTotalRef.current;
   const progress = stableTotal > 0 ? Math.max(0, currentRemaining / stableTotal) : 0;
   const radius = (size / 2) - (strokeWidth / 2);
   const circumference = 2 * Math.PI * radius;
@@ -154,23 +145,6 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
           transition: 'stroke 0.3s ease'
         }}
       />
-
-      {/* Outer glow ring when critical - PokerStars pulsing effect */}
-      {isCritical && (
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius + 2}
-          fill="none"
-          stroke={strokeColor}
-          strokeWidth={strokeWidth + 4}
-          strokeLinecap="round"
-          strokeDasharray={circumference * 1.1}
-          strokeDashoffset={strokeDashoffset * 1.1}
-          opacity={0.4}
-          className="animate-[pulse_0.4s_ease-in-out_infinite]"
-        />
-      )}
     </svg>
   );
 });
