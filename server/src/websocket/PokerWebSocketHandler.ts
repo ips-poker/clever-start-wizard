@@ -190,12 +190,18 @@ export class PokerWebSocketHandler {
     });
     
     // Send welcome message
-    this.send(ws, { 
-      type: 'connected', 
+    // IMPORTANT: serverVersion MUST be dynamic so we can verify deployments from browser logs
+    const baseVersion = process.env.SERVER_VERSION || '3.1.0';
+    const buildId = process.env.BUILD_ID || process.env.GIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || '';
+    const serverVersion = buildId ? `${baseVersion}+${buildId.substring(0, 8)}` : baseVersion;
+
+    this.send(ws, {
+      type: 'connected',
       timestamp: Date.now(),
       tableId,
       playerId,
-      serverVersion: '3.1.0',
+      serverVersion,
+      buildId: buildId || null,
       engine: 'Professional Poker Engine v3.1 (Tournament-Grade)',
       loadLevel: loadManager.getLevel()
     });
