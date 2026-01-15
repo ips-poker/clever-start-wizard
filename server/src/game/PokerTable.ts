@@ -1484,7 +1484,18 @@ export class PokerTable {
       });
       
       // CRITICAL: For bots, execute their decision after think delay (not timeout)
+      // Capture hand ID at timer start to validate timer is still valid
+      const botExpectedHandId = this.currentHand?.id;
+      
       this.actionTimer = setTimeout(async () => {
+        // CRITICAL FIX: Validate hand ID hasn't changed (new hand started)
+        if (this.currentHand?.id !== botExpectedHandId) {
+          logger.info('Bot timer callback: Ignoring - hand changed', {
+            expectedHandId: botExpectedHandId?.substring(0, 8),
+            currentHandId: this.currentHand?.id?.substring(0, 8)
+          });
+          return;
+        }
         // Double-check we're still on this player's turn before executing
         if (this.currentHand?.currentPlayerSeat === seat && 
             this.currentHand.phase !== 'showdown') {
@@ -1495,6 +1506,12 @@ export class PokerTable {
       const duration = Math.max(0, durationSeconds ?? this.config.actionTimeSeconds);
       delayMs = duration * 1000;
       
+      // CRITICAL FIX: Capture hand ID, seat, and phase at timer start for validation
+      // This prevents stale timers from triggering when a new hand has the same seat/phase
+      const expectedHandId = this.currentHand?.id;
+      const expectedSeat = seat;
+      const expectedPhase = this.currentHand?.phase;
+      
       logger.info('Human turn timer started', {
         tableId: this.id,
         playerId: playerId.substring(0, 8),
@@ -1502,17 +1519,22 @@ export class PokerTable {
         name: player.name,
         durationSeconds: duration,
         delayMs,
-        phase: this.currentHand?.phase
+        phase: this.currentHand?.phase,
+        handId: expectedHandId?.substring(0, 8)
       });
       
-      // For humans, use standard timeout
-      // Store the expected seat and phase at timer start for validation
-      const expectedSeat = seat;
-      const expectedPhase = this.currentHand?.phase;
-      
       this.actionTimer = setTimeout(() => {
-        // CRITICAL: Validate state hasn't changed before handling timeout
-        // This prevents spurious timeouts from stale timers
+        // CRITICAL FIX: First check hand ID - this is the most reliable validation
+        // If hand has changed, this timer is definitely stale
+        if (this.currentHand?.id !== expectedHandId) {
+          logger.info('Timer callback: Ignoring - hand changed', {
+            expectedHandId: expectedHandId?.substring(0, 8),
+            currentHandId: this.currentHand?.id?.substring(0, 8)
+          });
+          return;
+        }
+        
+        // Additional validations for safety
         if (this.currentHand?.phase === 'showdown') {
           logger.info('Timer callback: Ignoring - now in showdown phase');
           return;
@@ -1819,7 +1841,7 @@ export class PokerTable {
       }
 
       // Not a tournament or not on break - start hand
-      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-15-timer-fixes';
+      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-15-handid-timer-fix';
       logger.info('checkStartHand: starting hand immediately', { build: BUILD_TAG });
 
       await this.startHand();
@@ -2359,6 +2381,10 @@ export class PokerTable {
     
     // Wait for winner celebration before resetting
     await this.delay(this.timings.showdown.winnerCelebration);
+    
+    // CRITICAL FIX: Clear action timer BEFORE resetting hand state
+    // This ensures no stale timers can trigger after hand is null
+    this.clearActionTimer();
     
     // CRITICAL: Reset all player states for clean slate before next hand
     // This prevents cards/bets from previous hand showing for new players
