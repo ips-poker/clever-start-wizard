@@ -55,16 +55,20 @@ interface OptimizedPlayerSeatProps {
 }
 
 // Timer ring component - memoized separately for performance
+// Uses POKERSTARS-STYLE thresholds: warning < 10s, critical < 5s
 const TimerRing = memo(function TimerRing({ 
   timeRemaining, 
-  maxTime = 30 
+  maxTime = 15  // POKERSTARS: Cash = 15s default
 }: { 
   timeRemaining: number; 
   maxTime?: number;
 }) {
   const progress = timeRemaining / maxTime;
   const strokeDashoffset = 283 - (283 * progress);
-  const color = progress > 0.3 ? '#ffc800' : progress > 0.1 ? '#ff8800' : '#ff0000';
+  // POKERSTARS-STYLE: Green > 10s, Yellow 5-10s, Red < 5s
+  const isCritical = timeRemaining <= 5;
+  const isWarning = timeRemaining <= 10 && !isCritical;
+  const color = isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#22c55e';
 
   return (
     <svg 
