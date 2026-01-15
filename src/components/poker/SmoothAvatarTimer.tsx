@@ -12,6 +12,7 @@ interface SmoothAvatarTimerProps {
   size: number;
   strokeWidth?: number;
   className?: string;
+  resetKey?: string;  // Unique key to force reset (e.g., seat-phase-isTimeBank)
 }
 
 export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
@@ -19,37 +20,39 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   total,
   size,
   strokeWidth = 4,
-  className
+  className,
+  resetKey = ''
 }: SmoothAvatarTimerProps) {
   const [currentRemaining, setCurrentRemaining] = useState(remaining);
   const animationRef = useRef<number>();
   const startTimeRef = useRef<number>(Date.now());
   const startRemainingRef = useRef<number>(remaining);
-  const lastRemainingRef = useRef<number>(remaining);
+  const lastResetKeyRef = useRef<string>(resetKey);
   const currentTotalRef = useRef<number>(total);
 
   useEffect(() => {
-    // Detect new phase or turn: remaining jumped up OR total changed significantly
-    const isNewPhase = remaining > lastRemainingRef.current + 2 || 
-                       Math.abs(total - currentTotalRef.current) > 2;
-    const diff = Math.abs(remaining - lastRemainingRef.current);
-    const isSmallResync = diff < 2;
+    // CRITICAL: resetKey changed = new turn/phase - always do full reset
+    const isNewTurn = resetKey !== lastResetKeyRef.current;
     
-    lastRemainingRef.current = remaining;
-    
-    if (isNewPhase) {
-      // New turn OR entered time bank - full reset with new total
+    if (isNewTurn) {
+      // New turn OR entered time bank - FULL reset with server values
+      lastResetKeyRef.current = resetKey;
       startTimeRef.current = Date.now();
       startRemainingRef.current = remaining;
       currentTotalRef.current = total;
       setCurrentRemaining(remaining);
-    } else if (!isSmallResync && diff >= 2) {
-      // Significant server resync - update remaining but keep total
-      startTimeRef.current = Date.now();
-      startRemainingRef.current = remaining;
-      setCurrentRemaining(remaining);
+    } else {
+      // Same turn - check if server resync is significant (>2s diff)
+      const diff = Math.abs(remaining - startRemainingRef.current + 
+                            (Date.now() - startTimeRef.current) / 1000);
+      if (diff >= 2) {
+        // Significant desync - resync with server
+        startTimeRef.current = Date.now();
+        startRemainingRef.current = remaining;
+        setCurrentRemaining(remaining);
+      }
+      // Small resync (<2s) = continue smooth animation without visual jumps
     }
-    // Small resync (<2s) = continue smooth animation without visual jumps
 
     const animate = () => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
@@ -72,7 +75,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [remaining, total]);
+  }, [remaining, total, resetKey]);
 
   // Use the stable total for progress calculation
   const stableTotal = currentTotalRef.current;

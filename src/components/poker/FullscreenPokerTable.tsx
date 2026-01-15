@@ -475,6 +475,7 @@ interface PlayerSeatProps {
   isCurrentTurn: boolean;
   turnTimeRemaining?: number;
   turnTimeTotal?: number;
+  timerResetKey?: string;
   heroCards?: string[];
   communityCards?: string[];
   gamePhase?: string;
@@ -537,6 +538,7 @@ const PlayerSeat = memo(function PlayerSeat({
   isCurrentTurn,
   turnTimeRemaining,
   turnTimeTotal = 15,
+  timerResetKey = '',
   heroCards,
   communityCards = [],
   gamePhase = 'waiting',
@@ -644,6 +646,7 @@ const PlayerSeat = memo(function PlayerSeat({
               total={turnTimeTotal}
               size={avatarSize + 6}
               strokeWidth={3}
+              resetKey={timerResetKey}
             />
           </div>
         )}
@@ -1283,6 +1286,7 @@ export interface FullscreenPokerTableProps {
   currentPlayerSeat: number | null;
   turnTimeRemaining?: number;
   turnTimeTotal?: number;
+  timerResetKey?: string;  // Key to force timer reset on turn/phase change
   smallBlind: number;
   bigBlind: number;
   canJoinTable: boolean;
@@ -1360,6 +1364,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   currentPlayerSeat,
   turnTimeRemaining,
   turnTimeTotal,
+  timerResetKey,
   smallBlind,
   bigBlind,
   canJoinTable,
@@ -1598,6 +1603,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               isCurrentTurn={player?.seatNumber === currentPlayerSeat}
               turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
               turnTimeTotal={turnTimeTotal}
+              timerResetKey={timerResetKey}
               heroCards={idx === 0 ? heroCards : undefined}
               communityCards={communityCards}
               gamePhase={phase}
