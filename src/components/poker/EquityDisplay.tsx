@@ -8,7 +8,7 @@ import {
   getEquityBarColor,
   isAllInSituation 
 } from '@/utils/equityCalculator';
-import { PokerPlayer } from '@/hooks/usePokerTable';
+import { PokerPlayer } from '@/hooks/useNodePokerTable';
 import { TrendingUp, Percent } from 'lucide-react';
 
 interface EquityDisplayProps {
