@@ -898,10 +898,9 @@ export class PokerWebSocketHandler {
             await this.handleTournamentElimination(tournamentId, playerId);
             await this.handForHandIntegration.playerEliminated(tournamentId, playerId);
             
-            // Broadcast elimination - main elimination handler will send full data
-            // But also send table-specific event for immediate UI update
+            // Broadcast elimination
             this.broadcastToTable(tableId, {
-              type: 'player_eliminated_from_table',
+              type: 'player_eliminated',
               playerId,
               reason: 'rebuy_timeout',
               timestamp: Date.now()
@@ -1492,82 +1491,21 @@ export class PokerWebSocketHandler {
         }
       }
       
-      // Broadcast elimination event with full data for frontend animation
+      // Broadcast elimination event
       const subscribers = this.connectionPool.getTournamentSubscribers(tournamentId);
-      const tableSubscribers = result.table_id ? this.connectionPool.getTableSubscribers(result.table_id) : new Set<WebSocket>();
-      
-      // Get player name and avatar for animation
-      let playerName = 'Player';
-      let playerAvatar: string | null = null;
-      let tournamentName = 'Tournament';
-      let eliminatorName: string | undefined;
-      let eliminatorAvatar: string | null = null;
-      
-      try {
-        // Fetch player info
-        const { data: playerData } = await this.supabase
-          .from('players')
-          .select('name, avatar_url')
-          .eq('id', playerId)
-          .single();
-        if (playerData) {
-          playerName = playerData.name || 'Player';
-          playerAvatar = playerData.avatar_url;
-        }
-        
-        // Fetch tournament name
-        const { data: tournamentData } = await this.supabase
-          .from('online_poker_tournaments')
-          .select('name')
-          .eq('id', tournamentId)
-          .single();
-        if (tournamentData) {
-          tournamentName = tournamentData.name || 'Tournament';
-        }
-        
-        // Fetch eliminator info if applicable
-        if (eliminatedBy) {
-          const { data: eliminatorData } = await this.supabase
-            .from('players')
-            .select('name, avatar_url')
-            .eq('id', eliminatedBy)
-            .single();
-          if (eliminatorData) {
-            eliminatorName = eliminatorData.name || 'Player';
-            eliminatorAvatar = eliminatorData.avatar_url;
-          }
-        }
-      } catch (infoErr) {
-        logger.warn('Failed to fetch player/tournament info for elimination', { error: String(infoErr) });
-      }
-      
-      // Combine all subscribers (tournament + table)
-      const allSubscribers = new Set([...subscribers, ...tableSubscribers]);
-      
-      if (allSubscribers.size > 0) {
-        // Professional elimination message with full data for animation
+      if (subscribers.size > 0) {
         const message = {
-          type: 'player_eliminated',
-          playerId,
-          playerName,
-          playerAvatar,
+          type: 'tournament_elimination',
           tournamentId,
-          tournamentName,
-          finishPosition: result.position,
-          totalPlayers: result.total_players || result.remaining_players + 1,
-          prizeAmount: result.prize_amount || 0,
-          prizeType: 'diamonds' as const,
+          playerId,
+          position: result.position,
+          prize: result.prize_amount || 0,
           remainingPlayers: result.remaining_players,
           tournamentCompleted: result.tournament_completed,
-          eliminatedBy: eliminatedBy ? {
-            id: eliminatedBy,
-            name: eliminatorName || 'Player',
-            avatar: eliminatorAvatar
-          } : undefined,
           timestamp: Date.now()
         };
         
-        messageQueue.enqueueBroadcast(allSubscribers, message, 'high');
+        messageQueue.enqueueBroadcast(subscribers, message, 'high');
       }
       
       this.broadcastTournamentUpdate(tournamentId);

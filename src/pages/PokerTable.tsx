@@ -1,16 +1,13 @@
 // Dedicated Poker Table Page - Opens in popup window for multi-tabling
-// PokerStars-style: auto-reconnect after refresh/network issues
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { OnlinePokerTable } from '@/components/poker/OnlinePokerTable';
 import { TournamentMoveNotification } from '@/components/poker/TournamentMoveNotification';
 import { TournamentEliminationModal } from '@/components/poker/TournamentEliminationModal';
 import { useTournamentReconnect } from '@/hooks/useTournamentReconnect';
-import { useTableSession } from '@/hooks/useTableSession';
 import { supabase } from '@/integrations/supabase/client';
-import { X, Eye, RefreshCw } from 'lucide-react';
+import { X, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
 
 export default function PokerTable() {
   const { tableId } = useParams<{ tableId: string }>();
@@ -67,41 +64,15 @@ export default function PokerTable() {
     };
   }, [urlPlayerId, playerId]);
 
-  // Universal table session persistence (works for both cash and tournament)
-  const tableSession = useTableSession(playerId);
-  const sessionInitialized = useRef(false);
-
-  // Tournament reconnect logic (legacy - keeping for compatibility)
+  // Tournament reconnect logic
   const {
     isReconnecting,
     wasDisconnected,
     recoveredSession,
     attemptReconnect,
     startHeartbeat,
-    clearSession: clearTournamentSession,
+    clearSession,
   } = useTournamentReconnect(playerId);
-
-  // Clear both sessions on leave
-  const clearAllSessions = useCallback(() => {
-    clearTournamentSession();
-    tableSession.clearSession();
-  }, [clearTournamentSession, tableSession]);
-
-  // On mount: check if we have a saved session and should restore to a different table
-  useEffect(() => {
-    if (!playerId || sessionInitialized.current) return;
-    
-    const savedSession = tableSession.loadSession();
-    if (savedSession && savedSession.tableId && savedSession.tableId !== currentTableId) {
-      // Player had a session on a different table (e.g. after table balancing)
-      console.log('[PokerTable] Restoring session to table:', savedSession.tableId);
-      setCurrentTableId(savedSession.tableId);
-      
-      if (savedSession.tournamentId) {
-        setTournamentId(savedSession.tournamentId);
-      }
-    }
-  }, [playerId, tableSession, currentTableId]);
 
   // Fetch table info and player balance
   useEffect(() => {
@@ -183,45 +154,19 @@ export default function PokerTable() {
   // Handle table move notification
   const handleJoinNewTable = useCallback((newTableId: string) => {
     setCurrentTableId(newTableId);
-    
-    // Update session with new table
-    tableSession.updateSession({ tableId: newTableId });
-    
     // Update URL without full reload
     const params = new URLSearchParams(searchParams);
     navigate(`/poker-table/${newTableId}?${params.toString()}`, { replace: true });
-    
-    toast.info('Перемещение на новый стол...');
-  }, [navigate, searchParams, tableSession]);
+  }, [navigate, searchParams]);
 
   const handleLeaveTable = () => {
-    clearAllSessions();
+    clearSession();
     window.close();
   };
 
   const activeTableId = currentTableId || tableId;
 
-  // Initialize table session for auto-reconnect
-  useEffect(() => {
-    if (activeTableId && playerId && !sessionInitialized.current && !loading) {
-      sessionInitialized.current = true;
-      
-      // Start session heartbeat for persistence across refreshes
-      tableSession.startHeartbeat({
-        tableId: activeTableId,
-        playerId,
-        seatNumber: 0,
-        stack: 0,
-        buyIn,
-        isTournament: isTournament || !!tournamentId,
-        tournamentId: tournamentId || undefined,
-      });
-      
-      console.log('[PokerTable] Session heartbeat started for:', activeTableId);
-    }
-  }, [activeTableId, playerId, loading, isTournament, tournamentId, buyIn, tableSession]);
-
-  // Start tournament reconnect heartbeat (legacy compatibility)
+  // Start reconnect heartbeat when table loads
   useEffect(() => {
     if (activeTableId && playerId && tournamentId) {
       startHeartbeat({
@@ -233,9 +178,6 @@ export default function PokerTable() {
       });
     }
   }, [activeTableId, playerId, tournamentId, startHeartbeat]);
-
-  // Show reconnecting indicator
-  const showReconnecting = tableSession.isReconnecting || isReconnecting;
 
   if (!activeTableId) {
     return (
@@ -254,16 +196,10 @@ export default function PokerTable() {
     );
   }
 
-  if (loading || showReconnecting) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center flex-col gap-3">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
-        {showReconnecting && (
-          <div className="flex items-center gap-2 text-amber-400 text-sm">
-            <RefreshCw className="h-4 w-4 animate-spin" />
-            <span>Восстановление подключения...</span>
-          </div>
-        )}
       </div>
     );
   }

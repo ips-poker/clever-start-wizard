@@ -96,11 +96,6 @@ export class PokerTable {
     
     // Initialize Professional Poker Engine v3.0
     const gameType = this.mapGameType(config.gameType);
-    
-    // POKERSTARS RULE: Detect if this is a tournament table
-    // Tournament tables force sitting out players to pay blinds/antes
-    const isTournament = config.tableType === 'tournament' || config.tableType === 'sitgo';
-    
     const engineConfig: GameConfig = {
       smallBlind: config.smallBlind,
       bigBlind: config.bigBlind,
@@ -112,8 +107,7 @@ export class PokerTable {
       timeBankSeconds: config.timeBankSeconds,
       runItTwiceEnabled: false,
       bombPotEnabled: false,
-      straddleEnabled: false,
-      isTournament  // POKERSTARS: Tournament mode forces sitting out to pay blinds
+      straddleEnabled: false
     };
     
     this.engine = new PokerEngineV3(gameType, engineConfig);

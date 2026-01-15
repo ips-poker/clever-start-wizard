@@ -197,37 +197,14 @@ let globalCalibrationCache: {
   positions: { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null;
   betOffsets: { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null;
   loaded: boolean;
-  version: number;
-} = { positions: null, betOffsets: null, loaded: false, version: 0 };
-
-// Слушатели для реактивного обновления позиций
-const calibrationListeners = new Set<() => void>();
-
-// Функция подписки на обновления калибровки
-export function subscribeToCalibration(callback: () => void): () => void {
-  calibrationListeners.add(callback);
-  return () => { calibrationListeners.delete(callback); };
-}
-
-// Функция для уведомления о загрузке калибровки
-export function triggerCalibrationUpdate() {
-  globalCalibrationCache.version++;
-  calibrationListeners.forEach(cb => cb());
-}
+} = { positions: null, betOffsets: null, loaded: false };
 
 // Экспортируем функцию для установки кеша из хука
 export function setGlobalCalibrationCache(
   positions: { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null,
   betOffsets: { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null
 ) {
-  globalCalibrationCache = { positions, betOffsets, loaded: true, version: globalCalibrationCache.version + 1 };
-  // Уведомляем все компоненты об обновлении
-  triggerCalibrationUpdate();
-}
-
-// Получить текущую версию калибровки (для dependency в useMemo)
-export function getCalibrationVersion(): number {
-  return globalCalibrationCache.version;
+  globalCalibrationCache = { positions, betOffsets, loaded: true };
 }
 
 function getCalibrationConfig(): { desktop: Record<number, Array<{ x: number; y: number }>>; telegram: Record<number, Array<{ x: number; y: number }>> } | null {
@@ -271,8 +248,8 @@ function getBetOffsetsConfig(): { desktop: Record<number, Array<{ x: number; y: 
   }
 }
 
-// Функция получения позиций с учётом калибровки (экспортируем для использования в других компонентах)
-export function getCalibratedPositions(mode: 'desktop' | 'telegram'): Record<number, Array<{ x: number; y: number }>> {
+// Функция получения позиций с учётом калибровки
+function getCalibratedPositions(mode: 'desktop' | 'telegram'): Record<number, Array<{ x: number; y: number }>> {
   const calibration = getCalibrationConfig();
   if (calibration && calibration[mode]) {
     // Мержим с defaults на случай если не все количества игроков откалиброваны
@@ -280,11 +257,6 @@ export function getCalibratedPositions(mode: 'desktop' | 'telegram'): Record<num
     return { ...defaults, ...calibration[mode] };
   }
   return mode === 'desktop' ? DEFAULT_SEAT_POSITIONS_BY_COUNT : DEFAULT_TELEGRAM_SEAT_POSITIONS_BY_COUNT;
-}
-
-// Проверить, загружена ли калибровка
-export function isCalibrationLoaded(): boolean {
-  return globalCalibrationCache.loaded;
 }
 
 // Функция получения смещений ставок
@@ -599,18 +571,20 @@ const PlayerSeat = memo(function PlayerSeat({
     return false;
   }, [player, showdownWinners]);
   
-  // Empty seat - без transition чтобы позиция применялась мгновенно
+  // Empty seat
   if (!player) {
     return (
-      <div
+      <motion.div
         className="absolute -translate-x-1/2 -translate-y-1/2 z-10"
         style={{ left: `${position.x}%`, top: `${position.y}%` }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
         onClick={() => canJoin && onSeatClick?.(seatNumber)}
       >
         <div 
           className={cn(
-            "rounded-full flex items-center justify-center",
-            canJoin ? "cursor-pointer hover:scale-110 active:scale-95" : "cursor-default"
+            "rounded-full flex items-center justify-center transition-all",
+            canJoin ? "cursor-pointer" : "cursor-default"
           )}
           style={{
             width: avatarSize,
@@ -619,7 +593,6 @@ const PlayerSeat = memo(function PlayerSeat({
               ? 'radial-gradient(circle, rgba(34,197,94,0.15) 0%, rgba(0,0,0,0.6) 100%)'
               : 'rgba(0,0,0,0.3)',
             border: canJoin ? '2px dashed rgba(34,197,94,0.5)' : '2px dashed rgba(255,255,255,0.15)',
-            transition: 'transform 0.15s ease-out' // только для hover/active, не для позиции
           }}
         >
           <span className={cn(
@@ -629,7 +602,7 @@ const PlayerSeat = memo(function PlayerSeat({
             {canJoin ? 'Сесть' : ''}
           </span>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
@@ -637,24 +610,22 @@ const PlayerSeat = memo(function PlayerSeat({
   const isReplaceableBot = canJoin && /bot/i.test(player.name ?? '');
 
   return (
-    <div
+    <motion.div
       className={cn(
         "absolute -translate-x-1/2 -translate-y-1/2",
         isHero ? "z-20" : "z-10",
         isReplaceableBot && "cursor-pointer"
       )}
       style={{ left: `${position.x}%`, top: `${position.y}%` }}
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
       onClick={() => {
         if (isReplaceableBot) onSeatClick?.(seatNumber);
       }}
     >
-      {/* Avatar with status border and opponent cards - entrance animation on content only */}
-      <motion.div 
-        className="relative"
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-      >
+
+      {/* Avatar with status border and opponent cards */}
+      <div className="relative">
         {/* Timer ring - UNDER cards and game elements, around avatar */}
         {isCurrentTurn && turnTimeRemaining !== undefined && !player.isFolded && (
           <div 
@@ -838,7 +809,7 @@ const PlayerSeat = memo(function PlayerSeat({
             )}>{isBB ? 'BB' : 'SB'}</span>
           </motion.div>
         )}
-      </motion.div>
+      </div>
       
       {/* Name and stack panel - anchored to avatar center (doesn't affect seat positioning) */}
       <div 
@@ -879,7 +850,7 @@ const PlayerSeat = memo(function PlayerSeat({
           <PPPokerActionBadge action={lastAction} amount={player.betAmount} />
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 });
 
@@ -1411,37 +1382,11 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   showdownReveals,
   winnerAnnouncement
 }: FullscreenPokerTableProps) {
-  // Реактивно отслеживаем обновления калибровки для пересчёта позиций
-  const [calibrationVersion, setCalibrationVersion] = useState(globalCalibrationCache.version);
-
-  useEffect(() => {
-    // Подписываемся на обновления калибровки
-    const unsubscribe = subscribeToCalibration(() => {
-      setCalibrationVersion(globalCalibrationCache.version);
-    });
-    return unsubscribe;
-  }, []);
-
   // Use dynamic positions based on max seats
   // wideMode prop explicitly indicates Telegram Mini App context
   const maxPlayers = maxSeats;
-
-  // Позиции пересчитываются при изменении calibrationVersion
-  const positions = useMemo(() => {
-    return getSeatPositions(maxPlayers, wideMode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [maxPlayers, wideMode, calibrationVersion]);
-
-  // DEBUG (temporary): helps verify what coordinates are used at first render
-  useEffect(() => {
-    try {
-      const mode = wideMode ? 'telegram' : 'desktop';
-      console.log('[SeatPositions] mode=', mode, 'maxPlayers=', maxPlayers, 'calVer=', calibrationVersion, 'p0=', positions?.[0]);
-    } catch {
-      // ignore
-    }
-  }, [positions, wideMode, maxPlayers, calibrationVersion]);
-
+  const positions = getSeatPositions(maxPlayers, wideMode);
+  
   // Get personalization preferences
   const { preferences, currentTableTheme, currentCardBack } = usePokerPreferences();
   
@@ -1456,113 +1401,110 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   // Win distribution animation state
   const [winDistribution, setWinDistribution] = useState<{ winnerSeat: number; amount: number } | null>(null);
   
-  // Когда heroSeat ещё неизвестен (зритель/до посадки), мы НЕ применяем preferredSeatRotation.
-  // Калибровка в админке задаёт «реальные» координаты мест (seatNumber -> (x,y)).
-  // Поэтому до посадки отображаем места строго по seatNumber, иначе пустые кружки “прыгают”.
-  const spectatorRotationOffset = 0;
-
   // Convert server betsBeingCollected to visual positions for animation
   const betCollectionData = useMemo(() => {
     if (!betsBeingCollected || betsBeingCollected.bets.length === 0) {
       return null;
     }
-
-    return betsBeingCollected.bets.map((bet) => {
+    
+    return betsBeingCollected.bets.map(bet => {
       // Calculate visual position for this player
       let visualPos = 0;
       if (heroSeat !== null) {
         visualPos = (bet.seatNumber - heroSeat + maxPlayers) % maxPlayers;
       } else {
-        visualPos = (bet.seatNumber + spectatorRotationOffset) % maxPlayers;
+        visualPos = (bet.seatNumber + preferences.preferredSeatRotation) % maxPlayers;
       }
-
       const pos = positions[visualPos] || { x: 50, y: 50 };
       return {
         playerId: bet.playerId,
         seatNumber: bet.seatNumber,
         amount: bet.amount,
-        position: pos,
+        position: pos
       };
     });
-  }, [betsBeingCollected, heroSeat, maxPlayers, positions]);
-
+  }, [betsBeingCollected, heroSeat, maxPlayers, positions, preferences.preferredSeatRotation]);
+  
   // Trigger win distribution animation when winners change
   useEffect(() => {
     if (winners && winners.length > 0 && phase === 'showdown') {
       const winner = winners[0];
       // Find winner's seat
-      const winnerPlayer = players.find((p) => p.playerId === winner.playerId);
+      const winnerPlayer = players.find(p => p.playerId === winner.playerId);
       if (winnerPlayer) {
         // Calculate visual position
         let visualPos = 0;
         if (heroSeat !== null) {
           visualPos = (winnerPlayer.seatNumber - heroSeat + maxPlayers) % maxPlayers;
         } else {
-          visualPos = (winnerPlayer.seatNumber + spectatorRotationOffset) % maxPlayers;
+          visualPos = (winnerPlayer.seatNumber + preferences.preferredSeatRotation) % maxPlayers;
         }
         setWinDistribution({ winnerSeat: visualPos, amount: winner.amount });
       }
     } else {
       setWinDistribution(null);
     }
-  }, [winners, phase, players, heroSeat, maxPlayers]);
-
+  }, [winners, phase, players, heroSeat, maxPlayers, preferences.preferredSeatRotation]);
+  
+  
   // Detect phase change and trigger collection animation
   useEffect(() => {
     const prevPhase = prevPhaseRef.current;
     const phasesOrder = ['preflop', 'flop', 'turn', 'river', 'showdown'];
     const prevIndex = phasesOrder.indexOf(prevPhase);
     const currIndex = phasesOrder.indexOf(phase);
-
+    
     // Phase advanced (not reset) - collect bets
     if (currIndex > prevIndex && prevIndex >= 0) {
       // Gather all player bets for animation
       const betsToCollect = players
-        .filter((p) => p.betAmount > 0)
-        .map((p) => {
+        .filter(p => p.betAmount > 0)
+        .map(p => {
           // Find visual position for this player
           let visualPos = 0;
           if (heroSeat !== null) {
             // Hero always at position 0 - no rotation offset when hero is seated
             visualPos = (p.seatNumber - heroSeat + maxPlayers) % maxPlayers;
           } else {
-            visualPos = (p.seatNumber + spectatorRotationOffset) % maxPlayers;
+            visualPos = (p.seatNumber + preferences.preferredSeatRotation) % maxPlayers;
           }
           return {
             seatPosition: positions[visualPos],
-            amount: p.betAmount,
+            amount: p.betAmount
           };
         });
-
+      
       if (betsToCollect.length > 0) {
         setCollectionBets(betsToCollect);
         setIsCollectingBets(true);
         onPotCollect?.();
       }
     }
-
+    
     prevPhaseRef.current = phase;
-  }, [phase, players, heroSeat, positions, maxPlayers, onPotCollect]);
-
-  // Build players array positioned relative to hero
+  }, [phase, players, heroSeat, preferences.preferredSeatRotation, positions, maxPlayers]);
+  
+  
+  // Build players array positioned relative to hero with rotation preference
   const positionedPlayers = useMemo(() => {
     const result: (PokerPlayer | null)[] = new Array(maxPlayers).fill(null);
-
-    players.forEach((player) => {
+    const rotationOffset = preferences.preferredSeatRotation;
+    
+    players.forEach(player => {
       let visualPosition: number;
       if (heroSeat !== null) {
         // Hero always at position 0 (bottom center) - no rotation offset when hero is seated
         visualPosition = (player.seatNumber - heroSeat + maxPlayers) % maxPlayers;
       } else {
-        // До посадки показываем «реальную» раскладку (seatNumber -> позиция)
-        visualPosition = (player.seatNumber + spectatorRotationOffset) % maxPlayers;
+        // No hero seated - apply rotation preference
+        visualPosition = (player.seatNumber + rotationOffset) % maxPlayers;
       }
       result[visualPosition] = player;
     });
-
+    
     return result;
-  }, [players, heroSeat, maxPlayers]);
-
+  }, [players, heroSeat, maxPlayers, preferences.preferredSeatRotation]);
+  
 
   return (
     <div className="relative w-full h-full">
@@ -1652,11 +1594,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       {/* Player seats */}
       {positions.map((pos, idx) => {
         const player = positionedPlayers[idx];
-
-        // IMPORTANT: seatNumber passed to PlayerSeat/empty-seat click MUST map to the real (server) seat number.
-        // Пока heroSeat неизвестен, визуальный индекс = реальный seatNumber (строго по калибровке).
-        const actualSeatNumber = heroSeat !== null
-          ? (idx + heroSeat) % maxPlayers
+        const actualSeatNumber = heroSeat !== null 
+          ? (idx + heroSeat) % maxPlayers 
           : idx;
 
         const isHeroSeat = idx === 0 && heroSeat !== null;

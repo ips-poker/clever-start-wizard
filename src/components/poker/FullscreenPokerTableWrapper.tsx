@@ -10,7 +10,6 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useNodePokerTable, PokerPlayer, TableState } from '@/hooks/useNodePokerTable';
 import { usePokerSounds } from '@/hooks/usePokerSounds';
-import { useTournamentSounds } from '@/hooks/useTournamentSounds';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
 import { useCalibrationSync } from '@/hooks/useCalibrationSync';
 import { PokerErrorBoundary } from './PokerErrorBoundary';
@@ -30,9 +29,6 @@ import { SeatRotationControl, getVisualPosition } from './SeatRotationControl';
 import { ProTournamentLobby } from './tournament-lobby';
 import { TimeBankIndicator } from './TimeBankIndicator';
 import { TournamentBreakBanner } from './TournamentBreakBanner';
-import { TournamentBreakOverlay } from './TournamentBreakOverlay';
-import { EliminationAnimation } from './EliminationAnimation';
-import { ActionTimeIndicator } from './ActionTimeIndicator';
 
 
 // Syndikate branding
@@ -87,10 +83,9 @@ export function FullscreenPokerTableWrapper({
   const { preferences, currentTableTheme, updatePreference } = usePokerPreferences();
   
   // Синхронизация калибровки позиций с Supabase (для Telegram mini-app)
-  const { isLoading: isCalibrationLoading } = useCalibrationSync();
+  useCalibrationSync();
   
   const sounds = usePokerSounds();
-  const tournamentSounds = useTournamentSounds({ enabled: soundEnabled && isTournament, volume: 0.5 });
   const hasConnectedRef = useRef(false);
 
   // Use Node.js WebSocket server
@@ -101,8 +96,6 @@ export function FullscreenPokerTableWrapper({
     connect, disconnect, joinTable, fold, check, call, raise, allIn, addChips, sitOut, sitIn,
     rebuyAvailable, clearRebuyAvailable,
     tournamentBreak, clearTournamentBreak,
-    // Elimination data for professional animation
-    eliminationData, clearEliminationData,
     // Professional timing data
     betsBeingCollected, phaseTimings,
     // Professional showdown and winner announcement
@@ -137,54 +130,6 @@ export function FullscreenPokerTableWrapper({
   }, [tableState?.players]);
 
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
-
-  // Tournament sounds effects
-  const prevBreakTypeRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!isTournament || !soundEnabled) return;
-    
-    // Play break sounds
-    if (tournamentBreak) {
-      if (tournamentBreak.type === 'break_started' && prevBreakTypeRef.current !== 'break_started') {
-        tournamentSounds.playSound('break_start');
-      }
-    } else if (prevBreakTypeRef.current === 'break_started') {
-      // Break just ended
-      tournamentSounds.playSound('break_end');
-    }
-    
-    prevBreakTypeRef.current = tournamentBreak?.type || null;
-  }, [tournamentBreak, isTournament, soundEnabled, tournamentSounds]);
-
-  // Play elimination sound
-  useEffect(() => {
-    if (!isTournament || !soundEnabled || !eliminationData) return;
-    tournamentSounds.playSound('player_eliminated');
-  }, [eliminationData, isTournament, soundEnabled, tournamentSounds]);
-
-  // Play "your turn" sound and time warning
-  const prevTimeRef = useRef<number | null>(null);
-  useEffect(() => {
-    if (!soundEnabled || !isMyTurn) return;
-    
-    // Your turn notification
-    if (isMyTurn && prevTimeRef.current === null && turnTimeRemaining !== null) {
-      if (isTournament) {
-        tournamentSounds.playSound('your_turn');
-      } else {
-        sounds.playTurn?.();
-      }
-    }
-    
-    // Time warning at 5 seconds
-    if (turnTimeRemaining === 5 && prevTimeRef.current !== 5) {
-      if (isTournament) {
-        tournamentSounds.playSound('time_warning');
-      }
-    }
-    
-    prevTimeRef.current = turnTimeRemaining;
-  }, [isMyTurn, turnTimeRemaining, soundEnabled, isTournament, sounds, tournamentSounds]);
 
   // Timer effect
   useEffect(() => {
@@ -572,16 +517,11 @@ export function FullscreenPokerTableWrapper({
   const currentPlayerSeat = tableState?.currentPlayerSeat ?? null;
 
   // Robust hero seat detection (Telegram Mini App sometimes gets wrong mySeat)
-  // IMPORTANT: пока игрок НЕ сидит за столом (myPlayer отсутствует), heroSeat должен быть null.
-  // Иначе произойдёт "поворот" мест относительно фантомного heroSeat, из-за чего пустые места/кнопки "Сесть"
-  // будут не совпадать с реальными координатами из калибровки.
   const heroSeatForUI = useMemo(() => {
-    if (!myPlayer) return null;
-
     const pid = String(playerId);
     const seatFromPlayers = tableState?.players?.find((p) => String(p.playerId) === pid)?.seatNumber;
     return typeof seatFromPlayers === 'number' ? seatFromPlayers : mySeat;
-  }, [tableState?.players, playerId, mySeat, myPlayer]);
+  }, [tableState?.players, playerId, mySeat]);
 
   // Betting info
   // Server sends minRaise as TOTAL bet amount (not delta)
@@ -623,35 +563,13 @@ export function FullscreenPokerTableWrapper({
           onReconnectNow={() => connect()}
         />
 
-        {/* Tournament Break Banner - floating notification */}
-        {isTournament && tournamentBreak && tournamentBreak.type === 'break_starting' && (
+        {/* Tournament Break Banner */}
+        {isTournament && tournamentBreak && (
           <TournamentBreakBanner 
             breakInfo={tournamentBreak}
             onDismiss={clearTournamentBreak}
           />
         )}
-        
-        {/* Tournament Break Overlay - full table overlay during active break */}
-        {isTournament && tournamentBreak && tournamentBreak.type === 'break_started' && (
-          <TournamentBreakOverlay 
-            breakInfo={tournamentBreak}
-          />
-        )}
-
-        {/* Elimination Animation - Professional PokerStars-style elimination display */}
-        {isTournament && eliminationData && (
-          <EliminationAnimation
-            elimination={eliminationData}
-            currentPlayerId={playerId}
-            onComplete={clearEliminationData}
-            onViewResults={() => {
-              clearEliminationData();
-              setShowTournamentLobby(true);
-            }}
-          />
-        )}
-
-        {/* Action Time Indicator removed - пульсирующее кольцо вокруг аватара в SmoothAvatarTimer */}
 
         {/* Header - with safe area inset for Telegram fullscreen */}
         <div 
@@ -811,42 +729,32 @@ export function FullscreenPokerTableWrapper({
             </div>
           )}
 
-          {/* Ожидаем загрузку калибровки позиций перед рендером стола */}
-          {isCalibrationLoading ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-10 h-10 border-4 border-white/20 border-t-amber-400 rounded-full animate-spin" />
-                <span className="text-white/60 text-sm">Загрузка стола...</span>
-              </div>
-            </div>
-          ) : (
-            <FullscreenPokerTable
-              tableState={tableState}
-              players={formattedPlayers}
-              heroSeat={heroSeatForUI}
-              heroCards={myCards}
-              communityCards={displayCommunityCards}
-              pot={potValue}
-              phase={displayPhase}
-              dealerSeat={dealerSeat}
-              smallBlindSeat={smallBlindSeat}
-              bigBlindSeat={bigBlindSeat}
-              currentPlayerSeat={currentPlayerSeat}
-              turnTimeRemaining={turnTimeRemaining || undefined}
-              smallBlind={tableState?.smallBlindAmount || 10}
-              bigBlind={tableState?.bigBlindAmount || 20}
-              canJoinTable={canJoinTable}
-              onSeatClick={handleSeatClick}
-              maxSeats={maxSeats}
-              wideMode={wideMode}
-              showdownPlayers={showdownResult?.showdownPlayers}
-              winners={showdownResult?.winners}
-              betsBeingCollected={betsBeingCollected}
-              phaseTimings={phaseTimings}
-              showdownReveals={showdownReveals}
-              winnerAnnouncement={winnerAnnouncement}
-            />
-          )}
+          <FullscreenPokerTable
+            tableState={tableState}
+            players={formattedPlayers}
+            heroSeat={heroSeatForUI}
+            heroCards={myCards}
+            communityCards={displayCommunityCards}
+            pot={potValue}
+            phase={displayPhase}
+            dealerSeat={dealerSeat}
+            smallBlindSeat={smallBlindSeat}
+            bigBlindSeat={bigBlindSeat}
+            currentPlayerSeat={currentPlayerSeat}
+            turnTimeRemaining={turnTimeRemaining || undefined}
+            smallBlind={tableState?.smallBlindAmount || 10}
+            bigBlind={tableState?.bigBlindAmount || 20}
+            canJoinTable={canJoinTable}
+            onSeatClick={handleSeatClick}
+            maxSeats={maxSeats}
+            wideMode={wideMode}
+            showdownPlayers={showdownResult?.showdownPlayers}
+            winners={showdownResult?.winners}
+            betsBeingCollected={betsBeingCollected}
+            phaseTimings={phaseTimings}
+            showdownReveals={showdownReveals}
+            winnerAnnouncement={winnerAnnouncement}
+          />
         </div>
 
         {/* Seat rotation control - when not playing */}
