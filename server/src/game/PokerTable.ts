@@ -1841,7 +1841,7 @@ export class PokerTable {
       }
 
       // Not a tournament or not on break - start hand
-      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-15-45sec-timer-fix';
+      const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-15-pokerstars-timer-sync';
       logger.info('checkStartHand: starting hand immediately', { build: BUILD_TAG });
 
       await this.startHand();
@@ -2697,10 +2697,16 @@ export class PokerTable {
       currentPlayerSeat: (this.currentHand?.phase === 'showdown') ? null : (this.currentHand?.currentPlayerSeat ?? null),
       minRaise: this.currentHand?.minRaise || this.config.bigBlind,
       handNumber: this.currentHand?.handNumber || 0,
+      handId: this.currentHand?.id || null,  // CRITICAL: Include hand ID for timer reset detection
       // Countdown info
       playersNeeded: this.getPlayersNeededToStart(),
       // CRITICAL: Explicitly indicate if hand is active for client
-      isHandActive: this.currentHand !== null
+      isHandActive: this.currentHand !== null,
+      // POKERSTARS-STYLE: Send time remaining for accurate client sync
+      // Client calculates: remaining = actionTime - (now - actionStartTime)
+      // But we also send computed timeRemaining for simpler client logic
+      actionStartTime: this.currentHand?.actionStartTime || null,
+      timeRemaining: this.calculateTimeRemaining()
     };
   }
   
@@ -2797,6 +2803,33 @@ export class PokerTable {
     };
   }
   
+  /**
+   * POKERSTARS-STYLE: Calculate remaining time for current player's action
+   * Returns null if no active timer, otherwise seconds remaining
+   */
+  private calculateTimeRemaining(): number | null {
+    // No hand or no current player = no timer
+    if (!this.currentHand || this.currentHand.currentPlayerSeat === null) {
+      return null;
+    }
+    
+    // Showdown = no timer
+    if (this.currentHand.phase === 'showdown') {
+      return null;
+    }
+    
+    // No action start time recorded = timer not started yet
+    if (!this.currentHand.actionStartTime) {
+      return this.config.actionTimeSeconds; // Full time
+    }
+    
+    const elapsedMs = Date.now() - this.currentHand.actionStartTime;
+    const elapsedSec = elapsedMs / 1000;
+    const remaining = Math.max(0, this.config.actionTimeSeconds - elapsedSec);
+    
+    return Math.round(remaining * 10) / 10; // Round to 1 decimal
+  }
+
   /**
    * Get number of players needed to start
    */
