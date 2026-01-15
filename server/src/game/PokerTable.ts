@@ -1426,7 +1426,7 @@ export class PokerTable {
   /**
    * Start action timer
    */
-  private startActionTimer(): void {
+  private startActionTimer(durationSeconds?: number): void {
     // CRITICAL FIX: Never start timer during showdown or when hand is complete
     // This prevents spurious auto-fold/check during animations
     if (this.currentHand?.phase === 'showdown') {
@@ -1464,7 +1464,7 @@ export class PokerTable {
         seat
       });
 
-      this.actionTimer = setTimeout(() => this.startActionTimer(), 500);
+      this.actionTimer = setTimeout(() => this.startActionTimer(durationSeconds), 500);
       return;
     }
 
@@ -1492,13 +1492,15 @@ export class PokerTable {
         }
       }, delayMs);
     } else {
-      delayMs = this.config.actionTimeSeconds * 1000;
+      const duration = Math.max(0, durationSeconds ?? this.config.actionTimeSeconds);
+      delayMs = duration * 1000;
       
       logger.info('Human turn timer started', {
         tableId: this.id,
         playerId: playerId.substring(0, 8),
         seat,
         name: player.name,
+        durationSeconds: duration,
         delayMs,
         phase: this.currentHand?.phase
       });
@@ -1531,6 +1533,7 @@ export class PokerTable {
         }
         this.handleTimeout();
       }, delayMs);
+    }
   }
   /**
    * Clear action timer
@@ -1607,38 +1610,37 @@ export class PokerTable {
       phase: this.currentHand?.phase
     });
 
-    // CRITICAL FIX: Time bank handling with proper bounds checking
-    // Only use time bank if it's positive and hand is still active
+    // CRITICAL FIX: Time bank handling
+    // Correct behavior: after main timer expires, we grant the remaining time bank (up to actionTimeSeconds)
+    // and start a NEW shorter timer for that amount. Only when that expires do we auto-check/fold.
+    if (player.timeBank < 0) {
+      logger.warn('CRITICAL: timeBank was negative at timeout start, clamping', {
+        playerId: playerId.substring(0, 8),
+        timeBank: player.timeBank
+      });
+      player.timeBank = 0;
+    }
+
     if (player.timeBank > 0 && this.currentHand?.phase !== 'showdown') {
-      // Calculate time to use - don't exceed available time bank
       const timeToUse = Math.min(player.timeBank, this.config.actionTimeSeconds);
-      player.timeBank -= timeToUse;
-      
-      // CRITICAL: Ensure time bank is never negative
-      if (player.timeBank < 0) {
-        logger.warn('Time bank went negative, clamping to 0', {
-          playerId: playerId.substring(0, 8),
-          wasTimeBank: player.timeBank + timeToUse,
-          usedTime: timeToUse
-        });
-        player.timeBank = 0;
-      }
-      
-      this.emit('time_bank_used', { 
-        playerId, 
+      player.timeBank = Math.max(0, player.timeBank - timeToUse);
+
+      this.emit('time_bank_used', {
+        playerId,
         remaining: player.timeBank,
         used: timeToUse
       });
-      
+
       logger.info('Time bank activated', {
         playerId: playerId.substring(0, 8),
-        timeUsed: timeToUse,
-        remaining: player.timeBank
+        timeUsedSeconds: timeToUse,
+        remainingSeconds: player.timeBank
       });
-      
-      // Only restart timer if time bank had enough for a full extension
-      if (timeToUse >= this.config.actionTimeSeconds) {
-        this.startActionTimer();
+
+      // Start a shorter timer for the granted time bank slice.
+      // IMPORTANT: Do not count this as a missed turn yet.
+      if (timeToUse > 0) {
+        this.startActionTimer(timeToUse);
         return;
       }
     }
@@ -2746,13 +2748,23 @@ export class PokerTable {
       return p;
     });
     
+    // Safety: time bank should never be negative (can happen after older buggy deployments)
+    if (player.timeBank < 0) {
+      logger.warn('Player timeBank negative in getPlayerState, clamping', {
+        playerId: playerId.substring(0, 8),
+        timeBank: player.timeBank
+      });
+      player.timeBank = 0;
+    }
+    const safeTimeBank = Math.max(0, player.timeBank);
+
     return {
       ...publicState,
       players,
       myCards: player.holeCards,
       mySeat: player.seatNumber,
       myStack: player.stack,
-      myTimeBank: player.timeBank,
+      myTimeBank: safeTimeBank,
       // CRITICAL: isMyTurn must be false during showdown - no actions allowed
       isMyTurn: this.currentHand?.phase !== 'showdown' && this.currentHand?.currentPlayerSeat === player.seatNumber
     };
