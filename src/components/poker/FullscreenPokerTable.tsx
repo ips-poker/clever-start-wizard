@@ -10,7 +10,7 @@ import { PokerPlayer } from '@/hooks/useNodePokerTable';
 import { resolveAvatarUrl } from '@/utils/avatarResolver';
 import { usePokerPreferences, TABLE_THEMES, CARD_BACKS } from '@/hooks/usePokerPreferences';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
-import { ServerSyncTimer } from './ServerSyncTimer';
+import { SmoothAvatarTimer } from './SmoothAvatarTimer';
 import { PPPokerChipStack } from './PPPokerChipStack';
 import { PotChips } from './RealisticPokerChip';
 import { SyndikateTableBackground } from './SyndikateTableBackground';
@@ -460,8 +460,8 @@ const PremiumCard = memo(function PremiumCard({
   );
 });
 
-// ============= TIMER RING (now uses ServerSyncTimer) =============
-// Timer ring uses timeRemaining from server for perfect sync
+// ============= TIMER RING (now uses SmoothAvatarTimer) =============
+// Timer ring is now imported from SmoothAvatarTimer component for 60fps smooth animation
 
 // ============= PLAYER SEAT with personalized cards =============
 interface PlayerSeatProps {
@@ -473,11 +473,8 @@ interface PlayerSeatProps {
   isSB: boolean;
   isBB: boolean;
   isCurrentTurn: boolean;
-  // Server-sync timer props (new approach - using timeRemaining from server)
-  timeRemaining?: number | null;      // Remaining time in seconds from server
-  totalTime?: number;                 // Total time for this phase (15s or 30s)
-  lastUpdateTime?: number;            // When we received this state update
-  isTimeBankPhase?: boolean;          // Whether we're in time bank phase (for timer color)
+  turnTimeRemaining?: number;
+  turnTimeTotal?: number;
   heroCards?: string[];
   communityCards?: string[];
   gamePhase?: string;
@@ -538,10 +535,8 @@ const PlayerSeat = memo(function PlayerSeat({
   isSB,
   isBB,
   isCurrentTurn,
-  timeRemaining,
-  totalTime = 15,
-  lastUpdateTime,
-  isTimeBankPhase = false,
+  turnTimeRemaining,
+  turnTimeTotal = 15,
   heroCards,
   communityCards = [],
   gamePhase = 'waiting',
@@ -633,7 +628,7 @@ const PlayerSeat = memo(function PlayerSeat({
       {/* Avatar with status border and opponent cards */}
       <div className="relative">
         {/* Timer ring - UNDER cards and game elements, around avatar */}
-        {isCurrentTurn && timeRemaining != null && timeRemaining > 0 && !player.isFolded && (
+        {isCurrentTurn && turnTimeRemaining !== undefined && !player.isFolded && (
           <div 
             className="absolute z-0 pointer-events-none"
             style={{
@@ -644,11 +639,9 @@ const PlayerSeat = memo(function PlayerSeat({
               height: avatarSize + 6
             }}
           >
-            <ServerSyncTimer 
-              timeRemaining={timeRemaining}
-              totalTime={totalTime}
-              lastUpdateTime={lastUpdateTime}
-              isTimeBankPhase={isTimeBankPhase}
+            <SmoothAvatarTimer 
+              remaining={turnTimeRemaining} 
+              total={turnTimeTotal}
               size={avatarSize + 6}
               strokeWidth={3}
             />
@@ -1288,11 +1281,8 @@ export interface FullscreenPokerTableProps {
   smallBlindSeat: number;
   bigBlindSeat: number;
   currentPlayerSeat: number | null;
-  // Server-sync timer (new approach - uses timeRemaining from server)
-  timeRemaining?: number | null;      // Remaining time in seconds from server
-  totalTime?: number;                 // Total time for current phase (15s or 30s)
-  lastUpdateTime?: number;            // When we received this state update
-  isTimeBankPhase?: boolean;          // Whether we're in time bank phase
+  turnTimeRemaining?: number;
+  turnTimeTotal?: number;
   smallBlind: number;
   bigBlind: number;
   canJoinTable: boolean;
@@ -1368,10 +1358,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   smallBlindSeat,
   bigBlindSeat,
   currentPlayerSeat,
-  timeRemaining,
-  totalTime,
-  lastUpdateTime,
-  isTimeBankPhase = false,
+  turnTimeRemaining,
+  turnTimeTotal,
   smallBlind,
   bigBlind,
   canJoinTable,
@@ -1608,10 +1596,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               isSB={player?.seatNumber === smallBlindSeat}
               isBB={player?.seatNumber === bigBlindSeat}
               isCurrentTurn={player?.seatNumber === currentPlayerSeat}
-              timeRemaining={player?.seatNumber === currentPlayerSeat ? timeRemaining : undefined}
-              totalTime={totalTime}
-              lastUpdateTime={lastUpdateTime}
-              isTimeBankPhase={player?.seatNumber === currentPlayerSeat ? isTimeBankPhase : false}
+              turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
+              turnTimeTotal={turnTimeTotal}
               heroCards={idx === 0 ? heroCards : undefined}
               communityCards={communityCards}
               gamePhase={phase}

@@ -133,38 +133,50 @@ export function FullscreenPokerTableWrapper({
 
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
 
-  // POKERSTARS-STYLE TIMER: Server manages TWO SEPARATE PHASES
-  // Phase 1: Base time (15s cash / 30s tournament) - green
-  // Phase 2: Time bank (30s cash / 60s tournament) - amber/red, STARTS FRESH
-  
-  // Total time for CURRENT phase ONLY (not summed!)
-  const turnTimeTotal = useMemo(() => {
-    const baseTimer = tableState?.actionTimer || 15;
-    const isTimeBankPhase = tableState?.isTimeBankPhase || false;
-    
-    if (isTimeBankPhase) {
-      // Time bank phase: use currentPlayerTimeBank as total
-      return tableState?.currentPlayerTimeBank ?? 30;
-    }
-    // Base phase: use base timer
-    return baseTimer;
-  }, [tableState?.actionTimer, tableState?.isTimeBankPhase, tableState?.currentPlayerTimeBank]);
+  // POKERSTARS-STYLE TIMER: Server-authoritative timing
+  // Server sends: timeRemaining, actionStartTime, isTimeBankPhase
+  // Client syncs from server and counts down locally
+  const timerResetKey = useMemo(() => {
+    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}`;
+  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase]);
 
-  // Time bank active indicator (for visual effects)
   useEffect(() => {
+    // POKERSTARS-STYLE: Cash = 15s, Tournament = 30s (server provides actual value)
+    const actionTimer = tableState?.actionTimer || 15;
+    
+    // No active player = no timer
     if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
       setTurnTimeRemaining(null);
       setIsTimeBankActive(false);
       return;
     }
+
+    // Update time bank phase indicator
     setIsTimeBankActive(tableState?.isTimeBankPhase || false);
-    
-    // Calculate remaining for sounds (not for display - that's in ServerSyncTimer)
-    if (tableState?.actionStartTime) {
+
+    // POKERSTARS-STYLE: Use server's timeRemaining if provided
+    if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
+      setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
+    } else if (tableState?.actionStartTime) {
+      // Calculate from actionStartTime for precise sync
       const elapsed = (Date.now() - tableState.actionStartTime) / 1000;
-      setTurnTimeRemaining(Math.max(0, Math.ceil(turnTimeTotal - elapsed)));
+      const remaining = Math.max(0, actionTimer - elapsed);
+      setTurnTimeRemaining(Math.ceil(remaining));
+    } else {
+      // Fallback: full timer
+      setTurnTimeRemaining(actionTimer);
     }
-  }, [tableState?.actionStartTime, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase, turnTimeTotal]);
+
+    // Local countdown interval (server is authoritative, this is just for smooth display)
+    const interval = setInterval(() => {
+      setTurnTimeRemaining(prev => {
+        if (prev === null || prev <= 0) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timerResetKey, tableState?.actionTimer, tableState?.timeRemaining, tableState?.actionStartTime, tableState?.isTimeBankPhase]);
 
   // Auto-connect handled inside useNodePokerTable
 
@@ -744,10 +756,8 @@ export function FullscreenPokerTableWrapper({
             smallBlindSeat={smallBlindSeat}
             bigBlindSeat={bigBlindSeat}
             currentPlayerSeat={currentPlayerSeat}
-            timeRemaining={tableState?.timeRemaining ?? null}
-            totalTime={turnTimeTotal}
-            lastUpdateTime={Date.now()}
-            isTimeBankPhase={tableState?.isTimeBankPhase || false}
+            turnTimeRemaining={turnTimeRemaining ?? undefined}
+            turnTimeTotal={tableState?.actionTimer ?? 15}
             smallBlind={tableState?.smallBlindAmount || 10}
             bigBlind={tableState?.bigBlindAmount || 20}
             canJoinTable={canJoinTable}
