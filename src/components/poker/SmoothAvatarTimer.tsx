@@ -1,16 +1,8 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Style
-// UNIFIED TIMER LOGIC:
-// - Green: > 10 seconds remaining
-// - Yellow (warning): 5-10 seconds remaining  
-// - Red (critical + pulsing glow): ≤ 5 seconds remaining
+// Uses centralized timer configuration for consistency
 import React, { memo, useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-
-// PokerStars-style timer thresholds (in seconds)
-const POKERSTARS_TIMER = {
-  WARNING_SECONDS: 10,   // Yellow warning starts at 10 seconds
-  CRITICAL_SECONDS: 5,   // Red pulsing starts at 5 seconds
-};
+import { POKERSTARS_TIMER, isTimerCritical, isTimerWarning, getTimerColorHex, getTimerGlowColor } from '@/constants/pokerTimerConfig';
 
 interface SmoothAvatarTimerProps {
   remaining: number;
@@ -62,22 +54,13 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
 
-  // PokerStars-style: use SECONDS-based thresholds, not percentages
-  const isCritical = currentRemaining <= POKERSTARS_TIMER.CRITICAL_SECONDS;
-  const isWarning = currentRemaining <= POKERSTARS_TIMER.WARNING_SECONDS && !isCritical;
+  // Use centralized timer configuration
+  const isCritical = isTimerCritical(currentRemaining);
+  const isWarning = isTimerWarning(currentRemaining);
   
-  // Colors: Green → Yellow (10s) → Red (5s)
-  const strokeColor = isCritical 
-    ? '#ef4444'  // Red - critical (last 5 seconds)
-    : isWarning 
-      ? '#f59e0b' // Amber/Yellow - warning (5-10 seconds)
-      : '#22c55e'; // Green - normal (> 10 seconds)
-
-  const glowColor = isCritical
-    ? 'rgba(239, 68, 68, 0.8)'
-    : isWarning
-      ? 'rgba(245, 158, 11, 0.6)'
-      : 'rgba(34, 197, 94, 0.4)';
+  // Colors from centralized config
+  const strokeColor = getTimerColorHex(currentRemaining);
+  const glowColor = getTimerGlowColor(currentRemaining);
 
   // Enhanced glow filter for critical state
   const glowFilter = isCritical 

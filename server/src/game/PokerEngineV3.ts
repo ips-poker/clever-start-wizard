@@ -81,8 +81,16 @@ const SHORT_DECK_STRAIGHT_PATTERNS = [
 export const PHASES = ['preflop', 'flop', 'turn', 'river', 'showdown'] as const;
 export type GamePhase = typeof PHASES[number];
 
-export const DEFAULT_ACTION_TIME_SECONDS = 30;
-export const DEFAULT_TIME_BANK_SECONDS = 60;
+// POKERSTARS-STYLE DEFAULTS:
+// Cash Game: 15s base, 30s time bank
+// Tournament: 30s base, 60s time bank
+// These are FALLBACK values - actual values come from table/tournament config
+export const DEFAULT_ACTION_TIME_SECONDS = 15; // PokerStars Cash Game standard
+export const DEFAULT_TIME_BANK_SECONDS = 30;   // PokerStars Cash Game standard
+export const TOURNAMENT_ACTION_TIME_SECONDS = 30; // PokerStars Tournament standard
+export const TOURNAMENT_TIME_BANK_SECONDS = 60;   // PokerStars Tournament standard
+export const TIME_BANK_REPLENISH_AMOUNT = 5;      // +5 seconds
+export const TIME_BANK_REPLENISH_HANDS = 10;      // Every 10 hands
 
 // ==========================================
 // TYPES

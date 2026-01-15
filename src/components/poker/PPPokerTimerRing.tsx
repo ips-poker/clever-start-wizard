@@ -1,19 +1,11 @@
 // =====================================================
 // POKERSTARS-STYLE ANIMATED TIMER RING
 // =====================================================
-// UNIFIED TIMER LOGIC:
-// - Green: > 10 seconds remaining
-// - Yellow (warning): 5-10 seconds remaining  
-// - Red (critical + pulsing glow): ≤ 5 seconds remaining
+// Uses centralized timer configuration for consistency
 
 import React, { memo, useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
-
-// PokerStars-style timer thresholds (in seconds) - MUST MATCH ALL TIMER COMPONENTS
-const POKERSTARS_TIMER = {
-  WARNING_SECONDS: 10,   // Yellow warning starts at 10 seconds
-  CRITICAL_SECONDS: 5,   // Red pulsing starts at 5 seconds
-};
+import { POKERSTARS_TIMER, isTimerCritical, isTimerWarning, getTimerColorHex, getTimerGlowColor } from '@/constants/pokerTimerConfig';
 
 interface PPPokerTimerRingProps {
   /** Remaining time in seconds */
@@ -87,22 +79,13 @@ export const PPPokerTimerRing = memo(function PPPokerTimerRing({
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
   
-  // PokerStars-style: use SECONDS-based thresholds
-  const isCritical = localRemaining <= POKERSTARS_TIMER.CRITICAL_SECONDS;
-  const isWarning = localRemaining <= POKERSTARS_TIMER.WARNING_SECONDS && !isCritical;
+  // Use centralized timer configuration
+  const isCritical = isTimerCritical(localRemaining);
+  const isWarning = isTimerWarning(localRemaining);
   
-  // Colors: Green → Yellow (10s) → Red (5s)
-  const strokeColor = isCritical 
-    ? '#ef4444'  // Red - critical (last 5 seconds)
-    : isWarning 
-      ? '#f59e0b' // Amber/Yellow - warning (5-10 seconds)
-      : '#22c55e'; // Green - normal (> 10 seconds)
-
-  const glowColor = isCritical
-    ? 'rgba(239, 68, 68, 0.8)'
-    : isWarning
-      ? 'rgba(245, 158, 11, 0.6)'
-      : 'rgba(34, 197, 94, 0.6)';
+  // Colors from centralized config
+  const strokeColor = getTimerColorHex(localRemaining);
+  const glowColor = getTimerGlowColor(localRemaining);
 
   // Enhanced triple glow for critical state - PokerStars pulsing effect
   const glowFilter = enableGlow 
@@ -222,9 +205,9 @@ export const PPPokerTimerBadge = memo(function PPPokerTimerBadge({
   position = 'left',
   isMobile = false
 }: PPPokerTimerBadgeProps) {
-  // PokerStars-style: use SECONDS-based thresholds
-  const isCritical = remaining <= POKERSTARS_TIMER.CRITICAL_SECONDS;
-  const isWarning = remaining <= POKERSTARS_TIMER.WARNING_SECONDS && !isCritical;
+  // Use centralized timer configuration
+  const isCritical = isTimerCritical(remaining);
+  const isWarning = isTimerWarning(remaining);
 
   const minutes = Math.floor(remaining / 60);
   const seconds = Math.floor(remaining % 60);
