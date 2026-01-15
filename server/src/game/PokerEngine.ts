@@ -164,7 +164,8 @@ export class PokerEngine {
       sidePots: [],
       deck,
       actionStartTime: null,
-      playersActedThisRound: new Set<string>() // Track actions per round
+      playersActedThisRound: new Set<string>(), // Track actions per round
+      isTimeBankPhase: false // PokerStars-style: starts with main timer, not time bank
     };
   }
   
