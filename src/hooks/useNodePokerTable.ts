@@ -104,9 +104,10 @@ const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
 
-// Debug logging
-const DEBUG = true;
+// Debug logging: enable in dev or via localStorage.setItem('POKER_DEBUG','1')
+const DEBUG = import.meta.env.DEV || localStorage.getItem('POKER_DEBUG') === '1';
 const log = (...args: unknown[]) => DEBUG && console.log('[NodePoker]', ...args);
+
 
 export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const { tableId, playerId, playerName = 'Player', buyIn = 10000, seatNumber } = options || {};
@@ -441,10 +442,16 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       const data = JSON.parse(event.data) as Record<string, unknown>;
       log('📥 Recv:', data.type, data);
       
-      // Enhanced logging for debugging showdown
-      if (data.type?.toString().includes('hand') || data.type?.toString().includes('showdown') || data.type?.toString().includes('winner')) {
+      // Extra verbose showdown logs only when debug is enabled
+      if (
+        DEBUG &&
+        (data.type?.toString().includes('hand') ||
+          data.type?.toString().includes('showdown') ||
+          data.type?.toString().includes('winner'))
+      ) {
         console.log('[SHOWDOWN DEBUG] Event received:', data.type, JSON.stringify(data, null, 2));
       }
+
 
       switch (data.type) {
         case 'connected':

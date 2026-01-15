@@ -86,7 +86,8 @@ export function FullscreenPokerTableWrapper({
   useCalibrationSync();
   
   const sounds = usePokerSounds();
-  const hasConnectedRef = useRef(false);
+
+  // Connection is auto-managed by useNodePokerTable (connects when tableId/playerId present)
 
   // Use Node.js WebSocket server
   const pokerTable = useNodePokerTable({ tableId, playerId, buyIn: actualBuyIn });
@@ -153,17 +154,7 @@ export function FullscreenPokerTableWrapper({
     return () => clearInterval(interval);
   }, [tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.timeRemaining]);
 
-  // Auto-connect on mount
-  useEffect(() => {
-    if (!hasConnectedRef.current) {
-      hasConnectedRef.current = true;
-      console.log('[FullscreenPokerTableWrapper] Props - isTournament:', isTournament, 'tournamentId:', tournamentId);
-      connect();
-    }
-    return () => { 
-      // Don't disconnect here - let handleLeave handle it
-    };
-  }, []);
+  // Auto-connect handled inside useNodePokerTable
 
   // Auto-join for tournament players - they already have assigned seats
   // Skip for spectators - they just watch
