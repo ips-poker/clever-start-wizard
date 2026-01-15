@@ -34,8 +34,7 @@ import { PPPokerLevelBadge } from './PPPokerLevelBadge';
 // PotCollectionAnimation removed - using BetCollectionAnimation only for performance
 import { WinnerChipCascade } from './WinnerChipCascade';
 import { BetCollectionAnimation } from './EnhancedBetCollectionAnimation';
-import { ProfessionalShowdown } from './ProfessionalShowdown';
-import { WinnerAnnouncement } from './WinnerAnnouncement';
+// ProfessionalShowdown and WinnerAnnouncement removed - using PlayerSeat showdown highlighting
 import { usePhaseAnimation } from '@/hooks/usePhaseAnimation';
 import { getHandStrengthName } from '@/utils/handEvaluator';
 
@@ -1538,25 +1537,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         />
       )}
       
-      {/* Winner announcement - compact in-table display */}
-      {phase === 'showdown' && winners && winners.length > 0 && (
-        <WinnerAnnouncement
-          winners={winners.map(w => {
-            const player = players.find(p => p.playerId === w.playerId);
-            return {
-              playerId: w.playerId,
-              name: player?.name || 'Победитель',
-              seatNumber: player?.seatNumber || 0,
-              amount: w.amount,
-              handName: w.handName || (player as any)?.handName,
-              holeCards: player?.holeCards
-            };
-          })}
-          pot={pot}
-          isVisible={true}
-          position={{ x: 50, y: 35 }}
-        />
-      )}
+      {/* Winner display handled directly in PlayerSeat component with handName badge */}
       
       {(() => {
         const winnerPlayer = players.find(p => (p as any).isWinner);
@@ -1659,38 +1640,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         );
       })}
       
-      {/* Professional Showdown with combinations display */}
-      {showdownReveals && showdownReveals.length > 0 && phase === 'showdown' && (
-        <ProfessionalShowdown
-          players={showdownReveals
-            .filter(r => r.holeCards && r.holeCards.length >= 2)
-            .map(r => ({
-              playerId: r.playerId,
-              name: r.playerName,
-              seatNumber: r.seatNumber,
-              holeCards: r.holeCards || [],
-              handName: r.handName,
-              bestCards: r.bestCards,
-              isWinner: r.isWinner,
-              wonAmount: winnerAnnouncement?.winners.find(w => w.playerId === r.playerId)?.amount
-            }))}
-          communityCards={communityCards || []}
-          pot={pot}
-          revealDelay={500}
-        />
-      )}
-      
-      {/* Professional Winner Announcement with pot slide animation */}
-      {winnerAnnouncement && phase !== 'showdown' && (
-        <WinnerAnnouncement
-          winners={winnerAnnouncement.winners}
-          pot={winnerAnnouncement.pot}
-          isSplitPot={winnerAnnouncement.isSplitPot}
-          potSlideDelay={winnerAnnouncement.potSlideDelay}
-          highlightDuration={winnerAnnouncement.highlightDuration}
-          celebrationDuration={winnerAnnouncement.celebrationDuration}
-        />
-      )}
+      {/* Showdown highlighting is handled directly in PlayerSeat component */}
     </div>
   );
 });
