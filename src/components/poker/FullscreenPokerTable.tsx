@@ -639,7 +639,7 @@ const PlayerSeat = memo(function PlayerSeat({
           >
             <SmoothAvatarTimer 
               remaining={turnTimeRemaining} 
-              total={30} 
+              total={turnTimeRemaining > 15 ? 30 : 15}  // POKERSTARS: Cash=15s, Tournament=30s
               size={avatarSize + 6}
               strokeWidth={3}
             />

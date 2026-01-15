@@ -38,6 +38,7 @@ interface OptimizedPlayerSeatProps {
 // ==========================================
 // TIMER RING - Separate component for time updates
 // ==========================================
+// POKERSTARS-STYLE: Uses absolute seconds thresholds (green > 10s, yellow 5-10s, red < 5s)
 const TimerRing = memo(function TimerRing({ 
   remaining, 
   duration, 
@@ -51,11 +52,10 @@ const TimerRing = memo(function TimerRing({
   const circumference = (size - 4) * Math.PI;
   const offset = circumference * (1 - progress);
   
-  const color = progress > 0.5 
-    ? '#22c55e' 
-    : progress > 0.25 
-      ? '#f59e0b' 
-      : '#ef4444';
+  // POKERSTARS-STYLE: Green > 10s, Yellow 5-10s, Red < 5s
+  const isCritical = remaining <= 5;
+  const isWarning = remaining <= 10 && !isCritical;
+  const color = isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#22c55e';
 
   return (
     <svg 
@@ -270,7 +270,7 @@ export const OptimizedPlayerSeat = memo(function OptimizedPlayerSeat({
   isHero = false,
   showCards = false,
   timeRemaining,
-  timeDuration = 30,
+  timeDuration = 15,  // POKERSTARS: Cash = 15s default
   seatIndex
 }: OptimizedPlayerSeatProps) {
   // Track previous player for comparison

@@ -921,7 +921,7 @@ export function FullscreenPokerTableWrapper({
           settings={{
             smallBlind: tableState?.smallBlindAmount || 10,
             bigBlind: tableState?.bigBlindAmount || 20,
-            actionTimeSeconds: tableState?.actionTimer || 45,  // PokerStars-style: 45 seconds
+            actionTimeSeconds: tableState?.actionTimer || 15,  // POKERSTARS: Cash = 15s
           }}
           onSave={handleSettingsSave}
           onClose={() => setShowSettings(false)}

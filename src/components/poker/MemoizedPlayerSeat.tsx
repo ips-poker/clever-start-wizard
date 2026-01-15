@@ -69,9 +69,10 @@ export const MemoizedPlayerSeat = memo(function MemoizedPlayerSeat({
     );
   }
 
-  // Timer progress (0 to 1)
-  const timerProgress = timeRemaining / actionTime;
-  const timerColor = timerProgress > 0.5 ? '#22c55e' : timerProgress > 0.25 ? '#fbbf24' : '#ef4444';
+  // POKERSTARS-STYLE: Green > 10s, Yellow 5-10s, Red < 5s
+  const isCritical = timeRemaining <= 5;
+  const isWarning = timeRemaining <= 10 && !isCritical;
+  const timerColor = isCritical ? '#ef4444' : isWarning ? '#fbbf24' : '#22c55e';
 
   return (
     <div

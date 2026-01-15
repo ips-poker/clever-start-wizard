@@ -31,6 +31,7 @@ interface StablePlayerSeatProps {
 }
 
 // Stable timer ring - PPPoker style with pulse animation
+// POKERSTARS-STYLE: Uses absolute seconds thresholds (green > 10s, yellow 5-10s, red < 5s)
 const TimerRing = memo(function TimerRing({ 
   remaining, 
   duration, 
@@ -45,8 +46,9 @@ const TimerRing = memo(function TimerRing({
   const circumference = 2 * Math.PI * r;
   const offset = circumference * (1 - Math.max(0, Math.min(1, progress)));
   
-  const isWarning = progress < 0.25;
-  const isCritical = progress < 0.1;
+  // POKERSTARS-STYLE: Green > 10s, Yellow 5-10s, Red < 5s
+  const isCritical = remaining <= 5;
+  const isWarning = remaining <= 10 && !isCritical;
   
   const color = isCritical 
     ? '#ef4444' 
@@ -259,7 +261,7 @@ export const StablePlayerSeat = memo(function StablePlayerSeat({
   isHero = false,
   showCards = false,
   timeRemaining,
-  timeDuration = 30,
+  timeDuration = 15,  // POKERSTARS: Cash = 15s default
   seatIndex
 }: StablePlayerSeatProps) {
   if (!player) {
