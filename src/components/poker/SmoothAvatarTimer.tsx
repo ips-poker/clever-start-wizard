@@ -1,8 +1,9 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Style
 // Uses centralized timer configuration for consistency
+// Single continuous ring - no reset when time bank activates
 import React, { memo, useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { POKERSTARS_TIMER, isTimerCritical, isTimerWarning, getTimerColorHex, getTimerGlowColor } from '@/constants/pokerTimerConfig';
+import { isTimerCritical, getTimerColorHex, getTimerGlowColor } from '@/constants/pokerTimerConfig';
 
 interface SmoothAvatarTimerProps {
   remaining: number;
@@ -23,12 +24,31 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const animationRef = useRef<number>();
   const startTimeRef = useRef<number>(Date.now());
   const startRemainingRef = useRef<number>(remaining);
+  const lastRemainingRef = useRef<number>(remaining);
+  const totalRef = useRef<number>(total);
+
+  // Update total ref without resetting animation
+  useEffect(() => {
+    totalRef.current = total;
+  }, [total]);
 
   useEffect(() => {
-    // Reset animation when remaining time changes significantly
-    startTimeRef.current = Date.now();
-    startRemainingRef.current = remaining;
-    setCurrentRemaining(remaining);
+    // Only reset animation when remaining changes significantly (new turn)
+    // Small decrements from server updates should not reset
+    const diff = Math.abs(remaining - lastRemainingRef.current);
+    const isNewTurn = remaining > lastRemainingRef.current + 2; // Timer went up = new turn
+    const isServerResync = diff < 2; // Small adjustment = just sync, don't reset
+    
+    lastRemainingRef.current = remaining;
+    
+    if (isNewTurn || !isServerResync) {
+      // New turn started or significant change - reset animation
+      startTimeRef.current = Date.now();
+      startRemainingRef.current = remaining;
+      setCurrentRemaining(remaining);
+    }
+    // If it's a small server resync, just update the reference without visual reset
+    // The animation will smoothly continue
 
     const animate = () => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
@@ -40,6 +60,11 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
       }
     };
 
+    // Cancel any existing animation before starting new one
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+    
     animationRef.current = requestAnimationFrame(animate);
 
     return () => {
@@ -47,16 +72,17 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [remaining, total]);
+  }, [remaining]); // Only depend on remaining, not total
 
-  const progress = total > 0 ? Math.max(0, currentRemaining / total) : 0;
+  // Use current total from ref for smooth transitions
+  const currentTotal = totalRef.current;
+  const progress = currentTotal > 0 ? Math.max(0, currentRemaining / currentTotal) : 0;
   const radius = (size / 2) - (strokeWidth / 2);
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
 
   // Use centralized timer configuration
   const isCritical = isTimerCritical(currentRemaining);
-  const isWarning = isTimerWarning(currentRemaining);
   
   // Colors from centralized config
   const strokeColor = getTimerColorHex(currentRemaining);
