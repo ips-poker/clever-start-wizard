@@ -1621,7 +1621,8 @@ export class PokerTable {
       player.timeBank = 0;
     }
 
-    if (player.timeBank > 0 && this.currentHand?.phase !== 'showdown') {
+    // We already early-return during showdown above, so no need to check for it here.
+    if (player.timeBank > 0) {
       const timeToUse = Math.min(player.timeBank, this.config.actionTimeSeconds);
       player.timeBank = Math.max(0, player.timeBank - timeToUse);
 
