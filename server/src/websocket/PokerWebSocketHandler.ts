@@ -191,9 +191,10 @@ export class PokerWebSocketHandler {
     
     // Send welcome message
     // IMPORTANT: serverVersion MUST be dynamic so we can verify deployments from browser logs
-    const baseVersion = process.env.SERVER_VERSION || '3.1.0';
+    const baseVersion = process.env.SERVER_VERSION || '3.5.0';
+    const buildTag = process.env.BUILD_TAG || 'lovable-build-2026-01-15-fix-health-endpoint';
     const buildId = process.env.BUILD_ID || process.env.GIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || '';
-    const serverVersion = buildId ? `${baseVersion}+${buildId.substring(0, 8)}` : baseVersion;
+    const serverVersion = buildId ? `${baseVersion}+${buildId.substring(0, 8)}` : `${baseVersion}+${buildTag}`;
 
     this.send(ws, {
       type: 'connected',
@@ -201,8 +202,9 @@ export class PokerWebSocketHandler {
       tableId,
       playerId,
       serverVersion,
+      buildTag,
       buildId: buildId || null,
-      engine: 'Professional Poker Engine v3.1 (Tournament-Grade)',
+      engine: 'Professional Poker Engine v3.5 (Tournament-Grade)',
       loadLevel: loadManager.getLevel()
     });
     

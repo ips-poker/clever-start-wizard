@@ -455,7 +455,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
       switch (data.type) {
         case 'connected':
-          log('✅ Server connected, timestamp:', data.timestamp);
+          // Log server version for deployment verification
+          console.log('✅ Server connected:', {
+            serverVersion: data.serverVersion,
+            buildTag: data.buildTag,
+            engine: data.engine,
+            timestamp: data.timestamp
+          });
           // Server may auto-subscribe based on URL params
           break;
 

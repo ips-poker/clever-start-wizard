@@ -189,8 +189,7 @@ export function setupRoutes(app: Express, gameManager: PokerGameManager, supabas
   // Setup analytics routes
   setupAnalyticsRoutes(app, supabase);
   
-  // 404 handler
-  app.use((req: Request, res: Response) => {
-    res.status(404).json({ success: false, error: 'Not found' });
-  });
+  // NOTE: 404 handler REMOVED from here!
+  // It was catching /health, /metrics, and other routes defined AFTER setupRoutes() in index.ts.
+  // If you need a 404 handler, add it at the VERY END of index.ts after ALL routes are defined.
 }

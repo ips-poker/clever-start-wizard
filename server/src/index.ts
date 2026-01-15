@@ -368,13 +368,20 @@ if (!validation.passed) {
   logger.info('✅ Poker engine validation passed - all hand rankings correct');
 }
 
+// 404 handler - MUST be LAST middleware after all routes are defined
+// This was previously in routes/index.ts but it was catching /health, /metrics, etc.
+app.use((req, res) => {
+  res.status(404).json({ success: false, error: 'Not found' });
+});
+
 // Start server
 server.listen(config.port, () => {
   // Initialize hand history service with supabase
   handHistoryService.initialize(supabase);
 
   // Build marker (helps verify PM2 is running the latest compiled dist)
-  const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2025-12-29-fast-hands';
+  // CRITICAL: Update this on every deploy to verify new code is running!
+  const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-15-fix-health-endpoint';
   logger.info(`🧩 Build tag: ${BUILD_TAG}`);
   
   logger.info(`🚀 Poker Server v3.5 running on port ${config.port}`);
