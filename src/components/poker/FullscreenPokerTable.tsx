@@ -1731,7 +1731,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
             handName: r.handName,
             bestCards: r.bestCards,
             isWinner: r.isWinner,
-            wonAmount: winnerAnnouncement?.winners?.find(w => w.playerId === r.playerId)?.amount
+            wonAmount: winnerAnnouncement?.winners.find(w => w.playerId === r.playerId)?.amount
           }))}
           communityCards={communityCards}
           pot={pot}
@@ -1740,7 +1740,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
       )}
       
       {/* Professional Winner Announcement with pot slide animation */}
-      {winnerAnnouncement && winnerAnnouncement.winners && phase !== 'showdown' && (
+      {winnerAnnouncement && phase !== 'showdown' && (
         <WinnerAnnouncement
           winners={winnerAnnouncement.winners}
           pot={winnerAnnouncement.pot}

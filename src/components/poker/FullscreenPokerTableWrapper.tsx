@@ -325,7 +325,7 @@ export function FullscreenPokerTableWrapper({
   // Winner sounds - only one chip slide sound per showdown
   const lastShowdownIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (showdownResult && showdownResult.winners && showdownResult.winners.length > 0) {
+    if (showdownResult && showdownResult.winners.length > 0) {
       // Use handId or pot+winners as unique key to prevent duplicate sounds
       const showdownKey = `${tableState?.handId || ''}_${showdownResult.pot}_${showdownResult.winners.map(w => w.playerId).join(',')}`;
       if (lastShowdownIdRef.current !== showdownKey) {
