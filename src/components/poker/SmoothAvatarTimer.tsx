@@ -1,13 +1,14 @@
-// Smooth 60fps Timer Ring Around Avatar - SINGLE RING style
-// Shows COMBINED time (base + time bank) as one continuous countdown
+// Smooth 60fps Timer Ring Around Avatar - PokerStars Two-Phase Style
+// Shows CURRENT phase timer (base OR time bank) - server authoritative
+// Ring resets to full when entering time bank phase
 // Colors change based on remaining time: green > yellow > red
 import React, { memo, useState, useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { POKERSTARS_TIMER } from '@/constants/pokerTimerConfig';
 
 interface SmoothAvatarTimerProps {
-  remaining: number;  // Combined remaining time (base + time bank)
-  total: number;      // Combined total time (set once at turn start)
+  remaining: number;  // Remaining time for CURRENT phase (from server)
+  total: number;      // Total time for CURRENT phase (base OR time bank)
   size: number;
   strokeWidth?: number;
   className?: string;
@@ -28,26 +29,27 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const currentTotalRef = useRef<number>(total);
 
   useEffect(() => {
-    // Detect NEW TURN: remaining went way up (new turn started)
-    const isNewTurn = remaining > lastRemainingRef.current + 5;
+    // Detect new phase or turn: remaining jumped up OR total changed significantly
+    const isNewPhase = remaining > lastRemainingRef.current + 2 || 
+                       Math.abs(total - currentTotalRef.current) > 2;
     const diff = Math.abs(remaining - lastRemainingRef.current);
-    const isSmallResync = diff < 3;
+    const isSmallResync = diff < 2;
     
     lastRemainingRef.current = remaining;
     
-    if (isNewTurn) {
-      // New turn - full reset with new total
+    if (isNewPhase) {
+      // New turn OR entered time bank - full reset with new total
       startTimeRef.current = Date.now();
       startRemainingRef.current = remaining;
       currentTotalRef.current = total;
       setCurrentRemaining(remaining);
-    } else if (!isSmallResync && diff >= 3) {
-      // Significant server update - resync but keep same total
+    } else if (!isSmallResync && diff >= 2) {
+      // Significant server resync - update remaining but keep total
       startTimeRef.current = Date.now();
       startRemainingRef.current = remaining;
       setCurrentRemaining(remaining);
     }
-    // Small resync (<3s diff) = continue smooth animation without jumps
+    // Small resync (<2s) = continue smooth animation without visual jumps
 
     const animate = () => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
