@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    exclude: ['@radix-ui/react-tooltip'],
+    // All dependencies now bundled together to avoid React duplication
     force: true,
   },
 }));
