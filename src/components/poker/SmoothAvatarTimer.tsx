@@ -1,8 +1,8 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Style
-// Uses centralized timer configuration for consistency
-import React, { memo, useState, useEffect, useRef } from 'react';
+// Designed to stay visually smooth even when parent updates `remaining` every second.
+import React, { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { POKERSTARS_TIMER, isTimerCritical, isTimerWarning, getTimerColorHex, getTimerGlowColor } from '@/constants/pokerTimerConfig';
+import { isTimerCritical, getTimerColorHex, getTimerGlowColor } from '@/constants/pokerTimerConfig';
 
 interface SmoothAvatarTimerProps {
   remaining: number;
@@ -20,50 +20,84 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   className
 }: SmoothAvatarTimerProps) {
   const [currentRemaining, setCurrentRemaining] = useState(remaining);
-  const animationRef = useRef<number>();
+
+  const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const startRemainingRef = useRef<number>(remaining);
 
-  useEffect(() => {
-    // Reset animation when remaining time changes significantly
+  // Keep a ref in sync so we can measure drift vs. incoming props.
+  const currentRemainingRef = useRef<number>(remaining);
+  const lastTotalRef = useRef<number>(total);
+
+  const startAnimation = (startRemaining: number) => {
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current);
+    }
+
     startTimeRef.current = Date.now();
-    startRemainingRef.current = remaining;
-    setCurrentRemaining(remaining);
+    startRemainingRef.current = startRemaining;
+    currentRemainingRef.current = startRemaining;
+    setCurrentRemaining(startRemaining);
 
     const animate = () => {
       const elapsed = (Date.now() - startTimeRef.current) / 1000;
       const newRemaining = Math.max(0, startRemainingRef.current - elapsed);
+
+      currentRemainingRef.current = newRemaining;
       setCurrentRemaining(newRemaining);
 
       if (newRemaining > 0) {
         animationRef.current = requestAnimationFrame(animate);
+      } else {
+        animationRef.current = null;
       }
     };
 
     animationRef.current = requestAnimationFrame(animate);
+  };
+
+  // Start once on mount.
+  useEffect(() => {
+    startAnimation(remaining);
+    lastTotalRef.current = total;
 
     return () => {
-      if (animationRef.current) {
+      if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Re-sync only on *meaningful* changes.
+  // This avoids restarting the animation every second (which causes “спешит/опаздывает”).
+  useEffect(() => {
+    const totalChanged = total !== lastTotalRef.current;
+    const drift = Math.abs(remaining - currentRemainingRef.current);
+    const jumpedUp = remaining > currentRemainingRef.current + 0.75; // new turn / time bank
+
+    // If server corrects the remaining time by more than ~1.25s, re-sync.
+    const needsResync = totalChanged || jumpedUp || drift > 1.25;
+
+    if (needsResync) {
+      lastTotalRef.current = total;
+      startAnimation(remaining);
+    }
   }, [remaining, total]);
 
-  const progress = total > 0 ? Math.max(0, currentRemaining / total) : 0;
-  const radius = (size / 2) - (strokeWidth / 2);
+  const progress =
+    total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;
+
+  const radius = size / 2 - strokeWidth / 2;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
 
-  // Use centralized timer configuration
   const isCritical = isTimerCritical(currentRemaining);
-  const isWarning = isTimerWarning(currentRemaining);
-  
-  // Colors from centralized config
+
   const strokeColor = getTimerColorHex(currentRemaining);
   const glowColor = getTimerGlowColor(currentRemaining);
 
-  // Enhanced glow filter for critical state
-  const glowFilter = isCritical 
+  const glowFilter = isCritical
     ? `drop-shadow(0 0 12px ${glowColor}) drop-shadow(0 0 24px ${glowColor})`
     : `drop-shadow(0 0 8px ${glowColor})`;
 
@@ -71,7 +105,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     <svg
       width={size}
       height={size}
-      className={cn("pointer-events-none", className)}
+      className={cn('pointer-events-none', className)}
       style={{
         transform: 'rotate(-90deg)',
         filter: glowFilter
@@ -86,7 +120,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
         stroke="rgba(0,0,0,0.5)"
         strokeWidth={strokeWidth}
       />
-      
+
       {/* Progress arc */}
       <circle
         cx={size / 2}
@@ -98,10 +132,8 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={strokeDashoffset}
-        className={cn(isCritical && "animate-[pulse_0.4s_ease-in-out_infinite]")}
-        style={{
-          transition: 'stroke 0.3s ease'
-        }}
+        className={cn(isCritical && 'animate-[pulse_0.4s_ease-in-out_infinite]')}
+        style={{ transition: 'stroke 0.3s ease' }}
       />
 
       {/* Outer glow ring when critical - PokerStars pulsing effect */}
@@ -109,6 +141,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
         const outerRadius = radius + 2;
         const outerCircumference = 2 * Math.PI * outerRadius;
         const outerOffset = outerCircumference * (1 - progress);
+
         return (
           <circle
             cx={size / 2}
@@ -130,3 +163,4 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
 });
 
 export default SmoothAvatarTimer;
+

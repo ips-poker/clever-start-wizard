@@ -143,7 +143,7 @@ export function FullscreenPokerTableWrapper({
   useEffect(() => {
     // POKERSTARS-STYLE: Cash = 15s, Tournament = 30s (server provides actual value)
     const actionTimer = tableState?.actionTimer || 15;
-    
+
     // No active player = no timer
     if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
       setTurnTimeRemaining(null);
@@ -152,31 +152,41 @@ export function FullscreenPokerTableWrapper({
     }
 
     // Update time bank phase indicator
-    setIsTimeBankActive(tableState?.isTimeBankPhase || false);
+    setIsTimeBankActive(Boolean(tableState?.isTimeBankPhase));
 
-    // POKERSTARS-STYLE: Use server's timeRemaining if provided
-    if (tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined) {
-      setTurnTimeRemaining(Math.ceil(tableState.timeRemaining));
-    } else if (tableState?.actionStartTime) {
-      // Calculate from actionStartTime for precise sync
-      const elapsed = (Date.now() - tableState.actionStartTime) / 1000;
-      const remaining = Math.max(0, actionTimer - elapsed);
-      setTurnTimeRemaining(Math.ceil(remaining));
-    } else {
-      // Fallback: full timer
-      setTurnTimeRemaining(actionTimer);
-    }
+    // IMPORTANT:
+    // We do NOT "prev - 1" the timer anymore because that drifts and causes the ring to
+    // sometimes look like it “спешит/опаздывает”. Instead we compute from a fixed deadline.
+    const now = Date.now();
+    const serverRemaining = tableState?.timeRemaining;
+    const actionStartTime = tableState?.actionStartTime;
 
-    // Local countdown interval (server is authoritative, this is just for smooth display)
+    // If server provides timeRemaining, treat it as remaining-at-receive-time.
+    // Otherwise derive from actionStartTime.
+    const deadlineMs =
+      serverRemaining !== null && serverRemaining !== undefined
+        ? now + serverRemaining * 1000
+        : actionStartTime
+          ? actionStartTime + actionTimer * 1000
+          : now + actionTimer * 1000;
+
+    const getRemaining = () => Math.max(0, (deadlineMs - Date.now()) / 1000);
+
+    // Store as integer seconds for UI/sounds; SmoothAvatarTimer keeps sub-second smoothness internally.
+    setTurnTimeRemaining(Math.ceil(getRemaining()));
+
     const interval = setInterval(() => {
-      setTurnTimeRemaining(prev => {
-        if (prev === null || prev <= 0) return 0;
-        return prev - 1;
-      });
-    }, 1000);
+      setTurnTimeRemaining(Math.ceil(getRemaining()));
+    }, 500);
 
     return () => clearInterval(interval);
-  }, [timerResetKey, tableState?.actionTimer, tableState?.timeRemaining, tableState?.actionStartTime, tableState?.isTimeBankPhase]);
+  }, [
+    timerResetKey,
+    tableState?.actionTimer,
+    tableState?.timeRemaining,
+    tableState?.actionStartTime,
+    tableState?.isTimeBankPhase
+  ]);
 
   // Auto-connect handled inside useNodePokerTable
 
