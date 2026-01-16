@@ -105,21 +105,26 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
       />
 
       {/* Outer glow ring when critical - PokerStars pulsing effect */}
-      {isCritical && (
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius + 2}
-          fill="none"
-          stroke={strokeColor}
-          strokeWidth={strokeWidth + 4}
-          strokeLinecap="round"
-          strokeDasharray={circumference * 1.1}
-          strokeDashoffset={strokeDashoffset * 1.1}
-          opacity={0.4}
-          className="animate-[pulse_0.4s_ease-in-out_infinite]"
-        />
-      )}
+      {isCritical && (() => {
+        const outerRadius = radius + 2;
+        const outerCircumference = 2 * Math.PI * outerRadius;
+        const outerOffset = outerCircumference * (1 - progress);
+        return (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={outerRadius}
+            fill="none"
+            stroke={strokeColor}
+            strokeWidth={strokeWidth + 4}
+            strokeLinecap="round"
+            strokeDasharray={outerCircumference}
+            strokeDashoffset={outerOffset}
+            opacity={0.4}
+            className="animate-[pulse_0.4s_ease-in-out_infinite]"
+          />
+        );
+      })()}
     </svg>
   );
 });
