@@ -166,15 +166,22 @@ export function FullscreenPokerTableWrapper({
     const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current;
     prevTimerResetKeyRef.current = timerResetKey;
 
-    // CRITICAL FIX: When a new turn starts, set turnTimeTotal to the ACTUAL slice duration
-    // This ensures the ring starts at 100% and matches server's timer slice
+    // CRITICAL FIX: When a new turn starts, set turnTimeTotal correctly
+    // - For MAIN timer: use actionTimer (the full allocated time)
+    // - For TIME BANK phase: use serverRemaining (the slice server allocated from time bank)
     if (isNewTurn) {
-      // For a new turn, the server's timeRemaining IS the total for this slice
-      // (e.g., 15s for main timer, or whatever time bank slice the server allocated)
-      const sliceTotal = serverRemaining !== null && serverRemaining !== undefined
-        ? serverRemaining
-        : actionTimer;
-      setTurnTimeTotal(sliceTotal);
+      const isTimeBankPhase = Boolean(tableState?.isTimeBankPhase);
+      
+      if (isTimeBankPhase) {
+        // Time bank phase: server gives a specific slice, use it as total
+        const sliceTotal = serverRemaining !== null && serverRemaining !== undefined
+          ? serverRemaining
+          : actionTimer;
+        setTurnTimeTotal(sliceTotal);
+      } else {
+        // Main timer: always use full actionTimer as total
+        setTurnTimeTotal(actionTimer);
+      }
     }
 
     // Calculate deadline from server data
