@@ -68,6 +68,7 @@ export function FullscreenPokerTableWrapper({
 }: FullscreenPokerTableWrapperProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [turnTimeRemaining, setTurnTimeRemaining] = useState<number | null>(null);
+  const [turnTimeTotal, setTurnTimeTotal] = useState<number>(15); // Total for current timer slice
   const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPersonalSettings, setShowPersonalSettings] = useState(false);
@@ -140,6 +141,9 @@ export function FullscreenPokerTableWrapper({
     return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}`;
   }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase]);
 
+  // Track previous timerResetKey to detect new turn/phase
+  const prevTimerResetKeyRef = useRef<string>('');
+
   useEffect(() => {
     // POKERSTARS-STYLE: Cash = 15s, Tournament = 30s (server provides actual value)
     const actionTimer = tableState?.actionTimer || 15;
@@ -154,13 +158,26 @@ export function FullscreenPokerTableWrapper({
     // Update time bank phase indicator
     setIsTimeBankActive(Boolean(tableState?.isTimeBankPhase));
 
-    // IMPORTANT:
-    // We do NOT "prev - 1" the timer anymore because that drifts and causes the ring to
-    // sometimes look like it “спешит/опаздывает”. Instead we compute from a fixed deadline.
     const now = Date.now();
     const serverRemaining = tableState?.timeRemaining;
     const actionStartTime = tableState?.actionStartTime;
 
+    // Detect if this is a NEW turn/phase (timerResetKey changed)
+    const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current;
+    prevTimerResetKeyRef.current = timerResetKey;
+
+    // CRITICAL FIX: When a new turn starts, set turnTimeTotal to the ACTUAL slice duration
+    // This ensures the ring starts at 100% and matches server's timer slice
+    if (isNewTurn) {
+      // For a new turn, the server's timeRemaining IS the total for this slice
+      // (e.g., 15s for main timer, or whatever time bank slice the server allocated)
+      const sliceTotal = serverRemaining !== null && serverRemaining !== undefined
+        ? serverRemaining
+        : actionTimer;
+      setTurnTimeTotal(sliceTotal);
+    }
+
+    // Calculate deadline from server data
     // If server provides timeRemaining, treat it as remaining-at-receive-time.
     // Otherwise derive from actionStartTime.
     const deadlineMs =
@@ -767,7 +784,7 @@ export function FullscreenPokerTableWrapper({
             bigBlindSeat={bigBlindSeat}
             currentPlayerSeat={currentPlayerSeat}
             turnTimeRemaining={turnTimeRemaining ?? undefined}
-            turnTimeTotal={tableState?.actionTimer ?? 15}
+            turnTimeTotal={turnTimeTotal}
             smallBlind={tableState?.smallBlindAmount || 10}
             bigBlind={tableState?.bigBlindAmount || 20}
             canJoinTable={canJoinTable}
