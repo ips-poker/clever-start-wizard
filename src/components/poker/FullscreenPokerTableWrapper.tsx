@@ -69,9 +69,9 @@ export function FullscreenPokerTableWrapper({
   wideMode = false
 }: FullscreenPokerTableWrapperProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
-  // Keep integer seconds for UI/sounds + exact float for smooth ring
+  // Integer seconds for sounds, deadlineMs for smooth ring
   const [turnTimeRemaining, setTurnTimeRemaining] = useState<number | null>(null);
-  const [turnTimeRemainingExact, setTurnTimeRemainingExact] = useState<number | null>(null);
+  const [timerDeadlineMs, setTimerDeadlineMs] = useState<number>(0);
   const [turnTimeTotal, setTurnTimeTotal] = useState<number>(15); // Total for current timer slice
   const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -160,7 +160,7 @@ export function FullscreenPokerTableWrapper({
     // No active player = no timer
     if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
       setTurnTimeRemaining(null);
-      setTurnTimeRemainingExact(null);
+      setTimerDeadlineMs(0);
       setIsTimeBankActive(false);
       return;
     }
@@ -177,7 +177,8 @@ export function FullscreenPokerTableWrapper({
     const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current;
     prevTimerResetKeyRef.current = timerResetKey;
 
-    // Anchor deadline to server actionStartTime to keep all clients in sync.
+    // POKERSTARS-STYLE: Anchor deadline to server actionStartTime
+    // This ensures all clients see the exact same timer regardless of network latency
     if (isNewTurn) {
       if (isTimeBankPhase) {
         const tbSlice = serverRemaining ?? actionTimer;
@@ -197,29 +198,29 @@ export function FullscreenPokerTableWrapper({
           deadlineMsRef.current = now + actionTimer * 1000;
         }
       }
+      // Update deadline state for smooth ring
+      setTimerDeadlineMs(deadlineMsRef.current);
     } else {
-      // SAME TURN: drift correction only when it is significant, to avoid jumps.
+      // SAME TURN: drift correction only when significant (>2s) to avoid visual jumps
       if (serverRemaining !== null && serverRemaining !== undefined) {
         const localRemaining = Math.max(0, (deadlineMsRef.current - now) / 1000);
         const drift = Math.abs(serverRemaining - localRemaining);
         if (drift > 2) {
           deadlineMsRef.current = now + serverRemaining * 1000;
+          setTimerDeadlineMs(deadlineMsRef.current);
         }
       }
     }
 
-    const getRemainingExact = () => Math.max(0, (deadlineMsRef.current - Date.now()) / 1000);
+    // Calculate remaining for sounds (integer seconds)
+    const getRemainingInt = () => Math.ceil(Math.max(0, (deadlineMsRef.current - Date.now()) / 1000));
+    setTurnTimeRemaining(getRemainingInt());
 
-    // Exact (float) for SmoothAvatarTimer, integer for sounds/UI.
-    const syncOnce = () => {
-      const exact = getRemainingExact();
-      setTurnTimeRemainingExact(exact);
-      setTurnTimeRemaining(Math.ceil(exact));
-    };
+    // Update integer remaining for sounds every 500ms (less frequent, sounds don't need 100ms)
+    const interval = setInterval(() => {
+      setTurnTimeRemaining(getRemainingInt());
+    }, 500);
 
-    syncOnce();
-
-    const interval = setInterval(syncOnce, 100);
     return () => clearInterval(interval);
   }, [
     timerResetKey,
@@ -807,8 +808,7 @@ export function FullscreenPokerTableWrapper({
             smallBlindSeat={smallBlindSeat}
             bigBlindSeat={bigBlindSeat}
             currentPlayerSeat={currentPlayerSeat}
-            turnTimeRemaining={turnTimeRemaining ?? undefined}
-            turnTimeRemainingExact={turnTimeRemainingExact ?? undefined}
+            timerDeadlineMs={timerDeadlineMs}
             turnTimeTotal={turnTimeTotal}
             smallBlind={tableState?.smallBlindAmount || 10}
             bigBlind={tableState?.bigBlindAmount || 20}
