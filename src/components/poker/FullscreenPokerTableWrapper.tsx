@@ -163,8 +163,10 @@ export function FullscreenPokerTableWrapper({
   // Some servers re-broadcast these values frequently; using them in the key can cause
   // constant “new turn” resets → timer restarts → UI jank → broken street animations.
   const timerResetKey = useMemo(() => {
-    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}`;
-  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase]);
+    // POKERSTARS v3.5: UNIFIED RING - does NOT include isTimeBankPhase
+    // Ring continues seamlessly when transitioning main→timebank (no reset)
+    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}`;
+  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat]);
 
   // Track previous key to detect new turn
   const prevTimerResetKeyRef = useRef<string>('');
@@ -189,35 +191,37 @@ export function FullscreenPokerTableWrapper({
     return ts;
   }, []);
 
-  // Get timebank total for progress ring calculation (stable fn, reads latest ref)
-  const resolveTimeBankTotal = useCallback((): number => {
+  // Get player's timebank for unified ring calculation
+  const resolvePlayerTimeBank = useCallback((): number => {
     const s = latestTableStateRef.current;
+    if (!s) return POKERSTARS_TIMER.CASH_GAME.TIME_BANK_INITIAL;
 
-    const fromState = Number(s?.currentPlayerTimeBank ?? 0);
+    const fromState = Number(s.currentPlayerTimeBank ?? 0);
     const fromPlayer = Number(
-      s?.players?.find((p) => p.seatNumber === s?.currentPlayerSeat)?.timeBankRemaining ?? 0
+      s.players?.find((p) => p.seatNumber === s.currentPlayerSeat)?.timeBankRemaining ?? 0
     );
     const candidate = Math.max(fromState, fromPlayer);
+    
+    // Return candidate or fallback to config defaults
     if (candidate > 0) return candidate;
-
-    // Fallback to timeRemaining (at timebank start, often equals full TB)
-    const serverRemaining = s?.timeRemaining;
-    if (serverRemaining !== null && serverRemaining !== undefined && serverRemaining > 0) return serverRemaining;
-
-    return Number(s?.actionTimer ?? 15);
+    return POKERSTARS_TIMER.CASH_GAME.TIME_BANK_INITIAL; // 30s fallback
   }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // MAIN TIMER EFFECT: Only runs on NEW TURN
+  // MAIN TIMER EFFECT: UNIFIED RING (base + timebank as one continuous timer)
   // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
     // POKERSTARS v3.5: Get actionTimer from server (15s cash / 30s tournament)
     const actionTimer = Number(tableState?.actionTimer ?? 15);
+    const playerTimeBank = resolvePlayerTimeBank();
+    
+    // UNIFIED TOTAL: base time + time bank = one continuous ring
+    const unifiedTotal = actionTimer + playerTimeBank;
 
     // No active player = no timer
     if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
       deadlineMsRef.current = 0;
-      sliceTotalRef.current = actionTimer;
+      sliceTotalRef.current = unifiedTotal;
       anchorSourceRef.current = 'assumed';
       setTimerDeadlineMs(0);
       setTurnTimeRemaining(null);
@@ -226,26 +230,26 @@ export function FullscreenPokerTableWrapper({
       return;
     }
 
-    // Check if this is a NEW turn
+    // Check if this is a NEW turn (timerResetKey changed)
     const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current;
     
-    // If NOT a new turn, do nothing - let the current timer continue
+    // If NOT a new turn, only update timebank phase indicator (no ring reset)
     if (!isNewTurn) {
+      // Update visual indicator without resetting the ring
+      setIsTimeBankActive(Boolean(tableState?.isTimeBankPhase));
       return;
     }
 
-    // === NEW TURN: Compute deadline from server data ===
+    // === NEW TURN: Compute deadline for FULL duration (base + timebank) ===
     prevTimerResetKeyRef.current = timerResetKey;
     
     const now = Date.now();
     const isTimeBankPhase = Boolean(tableState?.isTimeBankPhase);
     setIsTimeBankActive(isTimeBankPhase);
 
-    // Total duration for this timer slice
-    // POKERSTARS v3.5: Use server's actionTimer (not hardcoded)
-    const sliceTotal = isTimeBankPhase ? resolveTimeBankTotal() : actionTimer;
-    sliceTotalRef.current = sliceTotal;
-    setTurnTimeTotal(sliceTotal);
+    // UNIFIED: Ring always shows full time (base + timebank)
+    sliceTotalRef.current = unifiedTotal;
+    setTurnTimeTotal(unifiedTotal);
 
     // Calculate deadline from actionStartTime (preferred) or timeRemaining (fallback)
     const rawServerActionStart = tableState?.actionStartTime;
@@ -263,20 +267,20 @@ export function FullscreenPokerTableWrapper({
     let source: 'actionStartTime' | 'timeRemaining' | 'assumed' = 'assumed';
 
     if (clientActionStartMs && clientActionStartMs > 0) {
-      // PREFERRED: anchor to actionStartTime
-      newDeadline = clientActionStartMs + sliceTotal * 1000;
+      // PREFERRED: anchor to actionStartTime with UNIFIED total
+      newDeadline = clientActionStartMs + unifiedTotal * 1000;
       source = 'actionStartTime';
 
       // Sanity check: deadline should be in the future (within reason)
       const impliedRemaining = (newDeadline - now) / 1000;
-      if (impliedRemaining < -5 || impliedRemaining > sliceTotal + 10) {
+      if (impliedRemaining < -5 || impliedRemaining > unifiedTotal + 10) {
         // actionStartTime seems broken, fall back to timeRemaining
         const serverRemaining = tableState?.timeRemaining;
         if (serverRemaining !== null && serverRemaining !== undefined && serverRemaining >= 0) {
           newDeadline = now + serverRemaining * 1000;
           source = 'timeRemaining';
         } else {
-          newDeadline = now + sliceTotal * 1000;
+          newDeadline = now + unifiedTotal * 1000;
           source = 'assumed';
         }
       }
@@ -288,7 +292,7 @@ export function FullscreenPokerTableWrapper({
         source = 'timeRemaining';
       } else {
         // Last resort: assume timer just started
-        newDeadline = now + sliceTotal * 1000;
+        newDeadline = now + unifiedTotal * 1000;
         source = 'assumed';
       }
     }
@@ -299,11 +303,12 @@ export function FullscreenPokerTableWrapper({
     setTimerDeadlineMs(newDeadline);
     
     // POKERSTARS v3.5: Детальное логирование для диагностики
-    console.log('[TIMER] ⏱️ New turn:', {
+    console.log('[TIMER] ⏱️ New turn (UNIFIED RING):', {
       timerResetKey,
-      sliceTotal: sliceTotal + 's',
+      unifiedTotal: unifiedTotal + 's',
+      baseTime: actionTimer + 's',
+      timeBank: playerTimeBank + 's',
       source,
-      serverActionTimer: tableState?.actionTimer + 's',
       deadline: new Date(newDeadline).toISOString(),
       remaining: Math.round((newDeadline - now) / 1000) + 's',
       clientNow: new Date(now).toISOString(),
@@ -317,7 +322,7 @@ export function FullscreenPokerTableWrapper({
     });
 
   // Dependencies: only re-anchor on NEW TURN (timerResetKey) or when clock offset changes.
-  }, [timerResetKey, tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.isTimeBankPhase, serverTimeOffsetMs, normalizeEpochMs, resolveTimeBankTotal]);
+  }, [timerResetKey, tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.isTimeBankPhase, serverTimeOffsetMs, normalizeEpochMs, resolvePlayerTimeBank]);
 
   // 2) Update integer remaining (for sounds / simple UI). This must NOT restart on every server tick.
   useEffect(() => {
