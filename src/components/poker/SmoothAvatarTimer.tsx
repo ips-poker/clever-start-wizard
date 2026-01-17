@@ -32,14 +32,9 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
 
   // Main animation loop - runs at 60fps
   useEffect(() => {
-    // Check if deadline changed significantly (new turn or server correction)
-    const deadlineChanged = Math.abs(deadlineMs - lastDeadlineRef.current) > 100; // 100ms threshold
-    const totalChanged = total !== lastTotalRef.current;
-    
-    if (deadlineChanged || totalChanged) {
-      lastDeadlineRef.current = deadlineMs;
-      lastTotalRef.current = total;
-    }
+    // Always accept new anchors from parent (new turn or micro-resync)
+    lastDeadlineRef.current = deadlineMs;
+    lastTotalRef.current = total;
 
     const animate = () => {
       const now = Date.now();
