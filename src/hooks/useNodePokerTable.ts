@@ -479,6 +479,19 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             engine: data.engine,
             timestamp: data.timestamp
           });
+          
+          // POKERSTARS-STYLE TIME SYNC:
+          // Calculate offset between server clock and client clock
+          // offset = serverTime - clientTime
+          // To convert server timestamp to client: clientTs = serverTs - offset
+          if (data.timestamp && typeof data.timestamp === 'number') {
+            const clientNow = Date.now();
+            const serverNow = data.timestamp as number;
+            const offset = serverNow - clientNow;
+            serverTimeOffsetRef.current = offset;
+            setServerTimeOffsetMs(offset);
+            console.log(`[TimeSync] Server-client offset: ${offset}ms (${Math.round(offset / 1000)}s)`);
+          }
           // Server may auto-subscribe based on URL params
           break;
 
@@ -2169,6 +2182,11 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     sitOut,
     sitIn,
     addChips,
-    sendChatMessage
+    sendChatMessage,
+    
+    // POKERSTARS-STYLE TIME SYNC:
+    // Offset to convert server timestamps to client time
+    // Usage: clientTime = serverActionStartTime - serverTimeOffsetMs
+    serverTimeOffsetMs
   };
 }

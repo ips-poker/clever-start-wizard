@@ -107,7 +107,9 @@ export function FullscreenPokerTableWrapper({
     // Professional timing data
     betsBeingCollected, phaseTimings,
     // Professional showdown and winner announcement
-    showdownReveals, winnerAnnouncement, clearWinnerAnnouncement
+    showdownReveals, winnerAnnouncement, clearWinnerAnnouncement,
+    // POKERSTARS-STYLE TIME SYNC: offset to convert server timestamps to client time
+    serverTimeOffsetMs
   } = pokerTable;
 
   // Check if player can join (not yet seated) - only for cash games
@@ -171,14 +173,22 @@ export function FullscreenPokerTableWrapper({
 
     const now = Date.now();
     const serverRemaining = tableState?.timeRemaining;
-    const actionStartTime = tableState?.actionStartTime;
+    const serverActionStartTime = tableState?.actionStartTime;
+    
+    // POKERSTARS-STYLE TIME SYNC:
+    // Convert server timestamp to client clock using offset calculated on connect.
+    // clientActionStartTime = serverActionStartTime - serverTimeOffsetMs
+    // This corrects for any clock skew between client device and server.
+    const actionStartTime = serverActionStartTime && serverActionStartTime > 0
+      ? serverActionStartTime - (serverTimeOffsetMs || 0)
+      : null;
 
     // Detect if this is a NEW turn/phase (timerResetKey changed)
     const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current;
     prevTimerResetKeyRef.current = timerResetKey;
 
-    // POKERSTARS-STYLE: Anchor deadline to server actionStartTime
-    // This ensures all clients see the exact same timer regardless of network latency
+    // POKERSTARS-STYLE: Anchor deadline to server actionStartTime (converted to client clock)
+    // This ensures all clients see the exact same timer regardless of network latency or clock skew
     if (isNewTurn) {
       if (isTimeBankPhase) {
         const tbSlice = serverRemaining ?? actionTimer;
@@ -202,11 +212,18 @@ export function FullscreenPokerTableWrapper({
       setTimerDeadlineMs(deadlineMsRef.current);
     } else {
       // SAME TURN: drift correction only when significant (>2s) to avoid visual jumps
+      // Use serverRemaining for drift check since it's already computed by server
       if (serverRemaining !== null && serverRemaining !== undefined) {
         const localRemaining = Math.max(0, (deadlineMsRef.current - now) / 1000);
         const drift = Math.abs(serverRemaining - localRemaining);
         if (drift > 2) {
-          deadlineMsRef.current = now + serverRemaining * 1000;
+          // Re-sync using converted actionStartTime if available, else use serverRemaining
+          if (actionStartTime && actionStartTime > 0) {
+            const totalTime = isTimeBankPhase ? (serverRemaining ?? actionTimer) : actionTimer;
+            deadlineMsRef.current = actionStartTime + totalTime * 1000;
+          } else {
+            deadlineMsRef.current = now + serverRemaining * 1000;
+          }
           setTimerDeadlineMs(deadlineMsRef.current);
         }
       }
@@ -227,7 +244,8 @@ export function FullscreenPokerTableWrapper({
     tableState?.actionTimer,
     tableState?.timeRemaining,
     tableState?.actionStartTime,
-    tableState?.isTimeBankPhase
+    tableState?.isTimeBankPhase,
+    serverTimeOffsetMs
   ]);
 
   // Auto-connect handled inside useNodePokerTable
