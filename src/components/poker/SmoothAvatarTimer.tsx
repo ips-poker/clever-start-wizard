@@ -89,12 +89,6 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     }
   }, [remaining, total]);
 
-    if (needsResync) {
-      lastTotalRef.current = total;
-      startAnimation(remaining);
-    }
-  }, [remaining, total]);
-
   const progress =
     total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;
 
