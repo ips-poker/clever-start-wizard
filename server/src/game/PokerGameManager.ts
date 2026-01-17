@@ -327,12 +327,14 @@ export class PokerGameManager {
     try {
       const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
       
-      // Find hands that are stuck (action_started_at > 2 minutes and not completed)
+      // Find hands that are TRULY stuck (not completed AND not in a finished phase)
+      // Exclude 'complete', 'showdown', and 'aborted' phases - these should have completed_at set
       const { data: stuckHands, error } = await this.supabase
         .from('poker_hands')
         .select('id, table_id, action_started_at, phase')
         .lt('action_started_at', twoMinutesAgo)
-        .is('completed_at', null);
+        .is('completed_at', null)
+        .not('phase', 'in', '("complete","showdown","aborted")');
       
       if (error || !stuckHands || stuckHands.length === 0) {
         return;

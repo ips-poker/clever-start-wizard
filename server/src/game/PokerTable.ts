@@ -3167,10 +3167,21 @@ export class PokerTable {
    * Called by PokerGameManager when table is detected as stuck
    */
   forceRecovery(): void {
+    // Skip if hand is already completed or in showdown
+    const phase = this.currentHand?.phase;
+    if (phase === 'complete' || phase === 'showdown') {
+      logger.info('forceRecovery: Skipping - hand is in completed phase', {
+        tableId: this.id,
+        phase
+      });
+      return;
+    }
+    
     logger.warn('Force recovery initiated for stuck table', {
       tableId: this.id,
       hasCurrentHand: !!this.currentHand,
-      currentPlayerSeat: this.currentHand?.currentPlayerSeat
+      currentPlayerSeat: this.currentHand?.currentPlayerSeat,
+      phase
     });
     
     // Clear any existing timer
