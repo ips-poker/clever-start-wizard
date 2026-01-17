@@ -215,6 +215,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const myCardsRef = useRef<string[]>([]);
   const mySeatRef = useRef<number | null>(null);
 
+
   useEffect(() => {
     tableStateRef.current = tableState;
   }, [tableState]);
@@ -569,9 +570,6 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 });
               }
 
-              if (prev && JSON.stringify(prev) === JSON.stringify(newState)) {
-                return prev;
-              }
               return newState;
             });
 
