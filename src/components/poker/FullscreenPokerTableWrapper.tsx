@@ -158,10 +158,21 @@ export function FullscreenPokerTableWrapper({
   // by variable network latency on each timeRemaining update.
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // Unique key for detecting NEW turn (hand+phase+seat+timebank change = new turn)
+  // Unique key for detecting NEW turn
+  // Includes: handId, phase, seat, timebank phase, AND actionStartTime
+  // This ensures timer resets when:
+  // - New hand starts (handId changes)
+  // - Phase changes (preflop -> flop -> etc)
+  // - Turn moves to different player (currentPlayerSeat changes)
+  // - Time bank activates (isTimeBankPhase changes)
+  // - Server explicitly resets timer (actionStartTime changes)
   const timerResetKey = useMemo(() => {
-    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}`;
-  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase]);
+    // Round actionStartTime to nearest second to avoid micro-changes
+    const actionStartRounded = tableState?.actionStartTime 
+      ? Math.floor(tableState.actionStartTime / 1000) 
+      : 0;
+    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}-${actionStartRounded}`;
+  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase, tableState?.actionStartTime]);
 
   // Track previous key to detect new turn
   const prevTimerResetKeyRef = useRef<string>('');
@@ -282,7 +293,9 @@ export function FullscreenPokerTableWrapper({
       timeRemaining: tableState?.timeRemaining
     });
 
-  }, [timerResetKey, tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.actionStartTime, tableState?.timeRemaining, tableState?.isTimeBankPhase, serverTimeOffsetMs, normalizeEpochMs, resolveTimeBankTotal]);
+  // Dependencies: timerResetKey already includes actionStartTime, so no need to duplicate
+  // tableState?.timeRemaining is used as fallback inside, but doesn't trigger re-runs itself
+  }, [timerResetKey, tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.timeRemaining, tableState?.isTimeBankPhase, tableState?.currentPlayerTimeBank, serverTimeOffsetMs, normalizeEpochMs, resolveTimeBankTotal]);
 
   // 2) Update integer remaining (for sounds / simple UI). This must NOT restart on every server tick.
   useEffect(() => {
