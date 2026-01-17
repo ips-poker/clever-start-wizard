@@ -1,12 +1,14 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Style
-// Designed to stay visually smooth with server-synced remaining time.
-// Parent now passes exact remaining time (float) instead of Math.ceil().
+// Uses deadlineMs from server as absolute anchor for perfect sync across all clients.
+// The component calculates remaining time locally at 60fps without external updates.
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { isTimerCritical, getTimerColorHex, getTimerGlowColor } from '@/constants/pokerTimerConfig';
 
 interface SmoothAvatarTimerProps {
-  remaining: number;  // Exact remaining time in seconds (float, not integer)
+  /** Absolute deadline timestamp (ms) - when timer expires */
+  deadlineMs: number;
+  /** Total time for this timer slice (seconds) - for progress calculation */
   total: number;
   size: number;
   strokeWidth?: number;
@@ -14,86 +16,58 @@ interface SmoothAvatarTimerProps {
 }
 
 export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
-  remaining,
+  deadlineMs,
   total,
   size,
   strokeWidth = 4,
   className
 }: SmoothAvatarTimerProps) {
-  const [currentRemaining, setCurrentRemaining] = useState(remaining);
+  const [currentRemaining, setCurrentRemaining] = useState(() => 
+    Math.max(0, (deadlineMs - Date.now()) / 1000)
+  );
 
   const animationRef = useRef<number | null>(null);
-  const startTimeRef = useRef<number>(Date.now());
-  const startRemainingRef = useRef<number>(remaining);
-
-  // Keep a ref in sync so we can measure drift vs. incoming props.
-  const currentRemainingRef = useRef<number>(remaining);
+  const lastDeadlineRef = useRef<number>(deadlineMs);
   const lastTotalRef = useRef<number>(total);
 
-  const startAnimation = (startRemaining: number) => {
-    if (animationRef.current !== null) {
-      cancelAnimationFrame(animationRef.current);
+  // Main animation loop - runs at 60fps
+  useEffect(() => {
+    // Check if deadline changed significantly (new turn or server correction)
+    const deadlineChanged = Math.abs(deadlineMs - lastDeadlineRef.current) > 100; // 100ms threshold
+    const totalChanged = total !== lastTotalRef.current;
+    
+    if (deadlineChanged || totalChanged) {
+      lastDeadlineRef.current = deadlineMs;
+      lastTotalRef.current = total;
     }
 
-    startTimeRef.current = Date.now();
-    startRemainingRef.current = startRemaining;
-    currentRemainingRef.current = startRemaining;
-    setCurrentRemaining(startRemaining);
-
     const animate = () => {
-      const elapsed = (Date.now() - startTimeRef.current) / 1000;
-      const newRemaining = Math.max(0, startRemainingRef.current - elapsed);
+      const now = Date.now();
+      const remaining = Math.max(0, (lastDeadlineRef.current - now) / 1000);
+      setCurrentRemaining(remaining);
 
-      currentRemainingRef.current = newRemaining;
-      setCurrentRemaining(newRemaining);
-
-      if (newRemaining > 0) {
+      if (remaining > 0) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
         animationRef.current = null;
       }
     };
 
+    // Start animation
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current);
+    }
     animationRef.current = requestAnimationFrame(animate);
-  };
-
-  // Start once on mount.
-  useEffect(() => {
-    startAnimation(remaining);
-    lastTotalRef.current = total;
 
     return () => {
       if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [deadlineMs, total]);
 
-  // Re-sync only on *meaningful* changes.
-  // Now that parent passes exact time (float), we use tighter thresholds.
-  useEffect(() => {
-    const totalChanged = total !== lastTotalRef.current;
-    const drift = remaining - currentRemainingRef.current;
-
-    // If remaining INCREASED by more than 0.3s = new turn / time bank added
-    // (With float values we can use tighter threshold)
-    const jumpedUp = drift > 0.3;
-    
-    // If remaining differs by more than 1s = resync needed
-    // (This handles server corrections and network delays)
-    const significantDrift = Math.abs(drift) > 1.0;
-
-    const needsResync = totalChanged || jumpedUp || significantDrift;
-
-    if (needsResync) {
-      lastTotalRef.current = total;
-      startAnimation(remaining);
-    }
-  }, [remaining, total]);
-
-  const progress =
-    total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;
+  const progress = total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;
 
   const radius = size / 2 - strokeWidth / 2;
   const circumference = 2 * Math.PI * radius;
