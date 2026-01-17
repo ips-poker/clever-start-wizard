@@ -194,18 +194,22 @@ export function FullscreenPokerTableWrapper({
   // Get player's timebank for unified ring calculation
   const resolvePlayerTimeBank = useCallback((): number => {
     const s = latestTableStateRef.current;
-    if (!s) return POKERSTARS_TIMER.CASH_GAME.TIME_BANK_INITIAL;
 
-    const fromState = Number(s.currentPlayerTimeBank ?? 0);
+    // Prefer server-provided values
+    const fromState = Number(s?.currentPlayerTimeBank ?? 0);
     const fromPlayer = Number(
-      s.players?.find((p) => p.seatNumber === s.currentPlayerSeat)?.timeBankRemaining ?? 0
+      s?.players?.find((p) => p.seatNumber === s?.currentPlayerSeat)?.timeBankRemaining ?? 0
     );
     const candidate = Math.max(fromState, fromPlayer);
-    
-    // Return candidate or fallback to config defaults
     if (candidate > 0) return candidate;
-    return POKERSTARS_TIMER.CASH_GAME.TIME_BANK_INITIAL; // 30s fallback
-  }, []);
+
+    // Fallback (when server doesn't send TB): use mode default
+    const defaultBank = isTournament
+      ? POKERSTARS_TIMER.TOURNAMENT.TIME_BANK_INITIAL
+      : POKERSTARS_TIMER.CASH_GAME.TIME_BANK_INITIAL;
+
+    return defaultBank;
+  }, [isTournament]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // MAIN TIMER EFFECT: UNIFIED RING (base + timebank as one continuous timer)
@@ -275,9 +279,15 @@ export function FullscreenPokerTableWrapper({
       const impliedRemaining = (newDeadline - now) / 1000;
       if (impliedRemaining < -5 || impliedRemaining > unifiedTotal + 10) {
         // actionStartTime seems broken, fall back to timeRemaining
-        const serverRemaining = tableState?.timeRemaining;
-        if (serverRemaining !== null && serverRemaining !== undefined && serverRemaining >= 0) {
-          newDeadline = now + serverRemaining * 1000;
+        const serverRemainingRaw = tableState?.timeRemaining;
+        if (serverRemainingRaw !== null && serverRemainingRaw !== undefined && serverRemainingRaw >= 0) {
+          // IMPORTANT: serverRemaining is usually per-slice.
+          // For UNIFIED ring, if we're still in main timer, add player's timebank.
+          const unifiedRemaining = isTimeBankPhase
+            ? Number(serverRemainingRaw)
+            : Math.min(unifiedTotal, Number(serverRemainingRaw) + playerTimeBank);
+
+          newDeadline = now + unifiedRemaining * 1000;
           source = 'timeRemaining';
         } else {
           newDeadline = now + unifiedTotal * 1000;
@@ -286,9 +296,13 @@ export function FullscreenPokerTableWrapper({
       }
     } else {
       // FALLBACK: use timeRemaining if no actionStartTime
-      const serverRemaining = tableState?.timeRemaining;
-      if (serverRemaining !== null && serverRemaining !== undefined && serverRemaining >= 0) {
-        newDeadline = now + serverRemaining * 1000;
+      const serverRemainingRaw = tableState?.timeRemaining;
+      if (serverRemainingRaw !== null && serverRemainingRaw !== undefined && serverRemainingRaw >= 0) {
+        const unifiedRemaining = isTimeBankPhase
+          ? Number(serverRemainingRaw)
+          : Math.min(unifiedTotal, Number(serverRemainingRaw) + playerTimeBank);
+
+        newDeadline = now + unifiedRemaining * 1000;
         source = 'timeRemaining';
       } else {
         // Last resort: assume timer just started
