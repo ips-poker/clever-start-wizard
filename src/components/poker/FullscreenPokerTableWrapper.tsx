@@ -263,31 +263,16 @@ export function FullscreenPokerTableWrapper({
       return;
     }
 
-    // SAME TURN: drift correction (smoothed) to avoid visual jumps but keep tight sync.
+    // SAME TURN: drift correction only when significant (>2 sec) to avoid visual jumps
+    // PokerStars-style: anchor to actionStartTime, minimal resync
     if (serverRemaining !== null && serverRemaining !== undefined && deadlineMsRef.current > 0) {
       const localRemaining = Math.max(0, (deadlineMsRef.current - now) / 1000);
       const driftSec = Math.abs(serverRemaining - localRemaining);
 
-      // Target deadline based on best available server info
-      const targetDeadline = pickBestDeadline();
-
-      // Large drift: hard resync
+      // Only resync if drift is significant (>2 seconds)
       if (driftSec > 2) {
-        deadlineMsRef.current = targetDeadline;
-        setTimerDeadlineMs(deadlineMsRef.current);
-        return;
-      }
-
-      // Small/medium drift: nudge deadline gradually (PPPoker/PokerStars-style “micro-corrections”)
-      if (driftSec > 0.25) {
-        const deltaMs = targetDeadline - deadlineMsRef.current;
-        const absDeltaMs = Math.abs(deltaMs);
-
-        // Cap correction speed so ring doesn't "jump"
-        const maxStepMs = 250; // per server update
-        const stepMs = Math.sign(deltaMs) * Math.min(maxStepMs, absDeltaMs * 0.35);
-
-        deadlineMsRef.current = deadlineMsRef.current + stepMs;
+        const corrected = pickBestDeadline();
+        deadlineMsRef.current = corrected;
         setTimerDeadlineMs(deadlineMsRef.current);
       }
     }
