@@ -158,28 +158,30 @@ export function FullscreenPokerTableWrapper({
   // by variable network latency on each timeRemaining update.
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // Unique key for detecting NEW turn
-  // Includes: handId, phase, seat, timebank phase, AND actionStartTime
-  // This ensures timer resets when:
-  // - New hand starts (handId changes)
-  // - Phase changes (preflop -> flop -> etc)
-  // - Turn moves to different player (currentPlayerSeat changes)
-  // - Time bank activates (isTimeBankPhase changes)
-  // - Server explicitly resets timer (actionStartTime changes)
+  // Unique key for detecting NEW turn.
+  // IMPORTANT: do NOT include actionStartTime/timeRemaining here.
+  // Some servers re-broadcast these values frequently; using them in the key can cause
+  // constant “new turn” resets → timer restarts → UI jank → broken street animations.
   const timerResetKey = useMemo(() => {
-    // Round actionStartTime to nearest second to avoid micro-changes
-    const actionStartRounded = tableState?.actionStartTime 
-      ? Math.floor(tableState.actionStartTime / 1000) 
-      : 0;
-    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}-${actionStartRounded}`;
-  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase, tableState?.actionStartTime]);
+    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}`;
+  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase]);
 
   // Track previous key to detect new turn
   const prevTimerResetKeyRef = useRef<string>('');
 
+  // Keep latest tableState in a ref so helper functions stay stable and we don't
+  // accidentally re-run effects on every server tick.
+  const latestTableStateRef = useRef<TableState | null>(null);
+  useEffect(() => {
+    latestTableStateRef.current = tableState;
+  }, [tableState]);
+
   // Store deadline in ref (stable across renders)
   const deadlineMsRef = useRef<number>(0);
   const sliceTotalRef = useRef<number>(15);
+
+  // Track which source we anchored the current turn to (for debugging/guardrails)
+  const anchorSourceRef = useRef<'actionStartTime' | 'timeRemaining' | 'assumed'>('assumed');
 
   // Normalize epoch (server might send seconds instead of ms)
   const normalizeEpochMs = useCallback((ts: number): number => {
@@ -187,21 +189,23 @@ export function FullscreenPokerTableWrapper({
     return ts;
   }, []);
 
-  // Get timebank total for progress ring calculation
+  // Get timebank total for progress ring calculation (stable fn, reads latest ref)
   const resolveTimeBankTotal = useCallback((): number => {
-    const fromState = Number(tableState?.currentPlayerTimeBank ?? 0);
+    const s = latestTableStateRef.current;
+
+    const fromState = Number(s?.currentPlayerTimeBank ?? 0);
     const fromPlayer = Number(
-      tableState?.players?.find((p) => p.seatNumber === tableState?.currentPlayerSeat)?.timeBankRemaining ?? 0
+      s?.players?.find((p) => p.seatNumber === s?.currentPlayerSeat)?.timeBankRemaining ?? 0
     );
     const candidate = Math.max(fromState, fromPlayer);
     if (candidate > 0) return candidate;
-    
+
     // Fallback to timeRemaining (at timebank start, often equals full TB)
-    const serverRemaining = tableState?.timeRemaining;
+    const serverRemaining = s?.timeRemaining;
     if (serverRemaining !== null && serverRemaining !== undefined && serverRemaining > 0) return serverRemaining;
-    
-    return Number(tableState?.actionTimer ?? 15);
-  }, [tableState?.currentPlayerTimeBank, tableState?.players, tableState?.currentPlayerSeat, tableState?.timeRemaining, tableState?.actionTimer]);
+
+    return Number(s?.actionTimer ?? 15);
+  }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // MAIN TIMER EFFECT: Only runs on NEW TURN
@@ -213,6 +217,7 @@ export function FullscreenPokerTableWrapper({
     if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
       deadlineMsRef.current = 0;
       sliceTotalRef.current = actionTimer;
+      anchorSourceRef.current = 'assumed';
       setTimerDeadlineMs(0);
       setTurnTimeRemaining(null);
       setIsTimeBankActive(false);
@@ -253,11 +258,13 @@ export function FullscreenPokerTableWrapper({
       : null;
 
     let newDeadline: number;
+    let source: 'actionStartTime' | 'timeRemaining' | 'assumed' = 'assumed';
 
     if (clientActionStartMs && clientActionStartMs > 0) {
       // PREFERRED: anchor to actionStartTime
       newDeadline = clientActionStartMs + sliceTotal * 1000;
-      
+      source = 'actionStartTime';
+
       // Sanity check: deadline should be in the future (within reason)
       const impliedRemaining = (newDeadline - now) / 1000;
       if (impliedRemaining < -5 || impliedRemaining > sliceTotal + 10) {
@@ -265,8 +272,10 @@ export function FullscreenPokerTableWrapper({
         const serverRemaining = tableState?.timeRemaining;
         if (serverRemaining !== null && serverRemaining !== undefined && serverRemaining >= 0) {
           newDeadline = now + serverRemaining * 1000;
+          source = 'timeRemaining';
         } else {
           newDeadline = now + sliceTotal * 1000;
+          source = 'assumed';
         }
       }
     } else {
@@ -274,11 +283,15 @@ export function FullscreenPokerTableWrapper({
       const serverRemaining = tableState?.timeRemaining;
       if (serverRemaining !== null && serverRemaining !== undefined && serverRemaining >= 0) {
         newDeadline = now + serverRemaining * 1000;
+        source = 'timeRemaining';
       } else {
         // Last resort: assume timer just started
         newDeadline = now + sliceTotal * 1000;
+        source = 'assumed';
       }
     }
+
+    anchorSourceRef.current = source;
 
     deadlineMsRef.current = newDeadline;
     setTimerDeadlineMs(newDeadline);
@@ -293,9 +306,8 @@ export function FullscreenPokerTableWrapper({
       timeRemaining: tableState?.timeRemaining
     });
 
-  // Dependencies: timerResetKey already includes actionStartTime, so no need to duplicate
-  // tableState?.timeRemaining is used as fallback inside, but doesn't trigger re-runs itself
-  }, [timerResetKey, tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.timeRemaining, tableState?.isTimeBankPhase, tableState?.currentPlayerTimeBank, serverTimeOffsetMs, normalizeEpochMs, resolveTimeBankTotal]);
+  // Dependencies: only re-anchor on NEW TURN (timerResetKey) or when clock offset changes.
+  }, [timerResetKey, tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.isTimeBankPhase, serverTimeOffsetMs, normalizeEpochMs, resolveTimeBankTotal]);
 
   // 2) Update integer remaining (for sounds / simple UI). This must NOT restart on every server tick.
   useEffect(() => {
