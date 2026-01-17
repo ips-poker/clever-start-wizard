@@ -3,7 +3,9 @@
 // ============================================
 import React, { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Volume2, VolumeX, Settings2, Menu, X, LogOut, Palette, RotateCcw, RotateCw, Eye, Plus, Diamond } from 'lucide-react';
+import { ArrowLeft, Volume2, VolumeX, Settings2, Menu, X, LogOut, Palette, RotateCcw, RotateCw, Eye, Plus, Diamond, History } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { FullHandHistory } from './FullHandHistory';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -76,6 +78,7 @@ export function FullscreenPokerTableWrapper({
   const [showRebuyDialog, setShowRebuyDialog] = useState(false);
   const [showTournamentLobby, setShowTournamentLobby] = useState(false);
   const [showBountyLeaderboard, setShowBountyLeaderboard] = useState(false);
+  const [showHandHistory, setShowHandHistory] = useState(false);
   const [knockoutEvent, setKnockoutEvent] = useState<KnockoutEvent | null>(null);
   const [selectedSeatForJoin, setSelectedSeatForJoin] = useState<number | null>(null);
   const [isProcessingCashout, setIsProcessingCashout] = useState(false);
@@ -951,6 +954,15 @@ export function FullscreenPokerTableWrapper({
                   Настройки стола
                 </Button>
                 
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-3 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                  onClick={() => { setShowMenu(false); setShowHandHistory(true); }}
+                >
+                  <History className="h-5 w-5" />
+                  История рук
+                </Button>
+                
                 <div className="h-px bg-white/10 my-4" />
                 
                 <Button
@@ -1002,6 +1014,17 @@ export function FullscreenPokerTableWrapper({
         )}
 
         {/* Winner info shown directly on player cards during showdown - no popup */}
+        
+        {/* Hand History Modal */}
+        <Dialog open={showHandHistory} onOpenChange={setShowHandHistory}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0 bg-background/95 backdrop-blur-xl border-border/50">
+            <FullHandHistory 
+              tableId={tableId} 
+              playerId={playerId}
+              className="h-[85vh]"
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </PokerErrorBoundary>
   );
