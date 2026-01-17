@@ -476,6 +476,7 @@ interface PlayerSeatProps {
   turnTimeRemaining?: number;
   turnTimeRemainingExact?: number;
   turnTimeTotal?: number;
+  heroCards?: string[];
   communityCards?: string[];
   gamePhase?: string;
   canJoin?: boolean;
@@ -536,6 +537,7 @@ const PlayerSeat = memo(function PlayerSeat({
   isBB,
   isCurrentTurn,
   turnTimeRemaining,
+  turnTimeRemainingExact,
   turnTimeTotal = 15,
   heroCards,
   communityCards = [],
@@ -1284,6 +1286,7 @@ export interface FullscreenPokerTableProps {
   turnTimeRemaining?: number;
   turnTimeRemainingExact?: number;
   turnTimeTotal?: number;
+  smallBlind: number;
   bigBlind: number;
   canJoinTable: boolean;
   onSeatClick: (seatNumber: number) => void;
@@ -1362,6 +1365,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   turnTimeRemainingExact,
   turnTimeTotal,
   smallBlind,
+  bigBlind,
   canJoinTable,
   onSeatClick,
   onPotCollect,
