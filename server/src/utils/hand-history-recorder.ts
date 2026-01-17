@@ -203,7 +203,7 @@ class HandHistoryRecorder {
   recordAction(
     handId: string,
     playerId: string,
-    phase: 'preflop' | 'flop' | 'turn' | 'river',
+    phase: 'preflop' | 'flop' | 'turn' | 'river' | 'showdown',
     actionType: string,
     amount: number,
     potAfter: number
