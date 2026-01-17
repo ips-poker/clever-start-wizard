@@ -13,6 +13,7 @@ export { PokerTableLobby } from './PokerTableLobby';
 export { OnlinePokerManagement } from './OnlinePokerManagement';
 
 // Professional timing components
-export { BetCollectionAnimation } from './BetCollectionAnimation';
+export { BetCollectionAnimation, EnhancedBetCollectionAnimation } from './EnhancedBetCollectionAnimation';
+export { WinnerChipCascade } from './WinnerChipCascade';
 export { ProfessionalShowdown } from './ProfessionalShowdown';
 export { TournamentBreakBanner } from './TournamentBreakBanner';

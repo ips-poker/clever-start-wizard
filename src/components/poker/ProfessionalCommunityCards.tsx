@@ -2,9 +2,12 @@
  * Professional Community Cards with PokerStars-style delayed animations
  * Uses phaseTimings from server for synchronized card reveals
  * Matches PPPokerHeroCards style with semi-transparent center suits
+ * 
+ * FIX: Cards now animate properly by using stable keys and tracking
+ * which cards are "new" based on phase transitions, not card values.
  */
-import React, { memo, useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React, { memo, useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
 
 // 4-color deck suits
@@ -135,7 +138,7 @@ const ProfessionalCard = memo(function ProfessionalCard({
   useFourColor = true,
   preDealDelay = 0,
   dealDelay = 150,
-  isNewCard = false
+  animateIn = false
 }: {
   card: string;
   index: number;
@@ -145,10 +148,11 @@ const ProfessionalCard = memo(function ProfessionalCard({
   useFourColor?: boolean;
   preDealDelay?: number;
   dealDelay?: number;
-  isNewCard?: boolean;
+  animateIn?: boolean;
 }) {
-  const [isFlipped, setIsFlipped] = useState(!isNewCard);
-  const [isDealt, setIsDealt] = useState(!isNewCard);
+  // Animation states - start hidden if animateIn is true
+  const [isDealt, setIsDealt] = useState(!animateIn);
+  const [isFlipped, setIsFlipped] = useState(!animateIn);
   
   const rank = card?.[0] === 'T' ? '10' : card?.[0] || '?';
   const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS_FOURCOLOR;
@@ -157,32 +161,35 @@ const ProfessionalCard = memo(function ProfessionalCard({
   const GOLD_BORDER = '#f59e0b';
   const GOLD_GLOW = 'rgba(245,158,11,0.5)';
 
-  // Calculate individual card delay based on phase
-  const getCardDelay = () => {
-    if (!isNewCard) return 0;
-    
-    const baseDelay = preDealDelay;
+  // Calculate individual card delay based on phase and index within phase
+  const cardDelay = useMemo(() => {
+    if (!animateIn) return 0;
     
     if (phase === 'flop') {
-      return baseDelay + (index * dealDelay);
+      // Flop: cards 0,1,2 - stagger by index
+      return preDealDelay + (index * dealDelay);
     } else if (phase === 'turn') {
-      return baseDelay;
+      // Turn: card 3
+      return preDealDelay;
     } else if (phase === 'river') {
-      return baseDelay;
+      // River: card 4
+      return preDealDelay;
     }
     
     return 0;
-  };
+  }, [animateIn, preDealDelay, dealDelay, index, phase]);
 
-  // Animate new cards
+  // Animate new cards - trigger once when animateIn is true
   useEffect(() => {
-    if (!isNewCard) {
-      setIsFlipped(true);
+    if (!animateIn) {
       setIsDealt(true);
+      setIsFlipped(true);
       return;
     }
 
-    const cardDelay = getCardDelay();
+    // Start with hidden state
+    setIsDealt(false);
+    setIsFlipped(false);
     
     const slideTimer = setTimeout(() => {
       setIsDealt(true);
@@ -190,13 +197,13 @@ const ProfessionalCard = memo(function ProfessionalCard({
 
     const flipTimer = setTimeout(() => {
       setIsFlipped(true);
-    }, cardDelay + 180);
+    }, cardDelay + 200);
 
     return () => {
       clearTimeout(slideTimer);
       clearTimeout(flipTimer);
     };
-  }, [isNewCard, preDealDelay, dealDelay, index, phase]);
+  }, [animateIn, cardDelay]);
 
   const bgStyle = isDimmed 
     ? 'linear-gradient(145deg, #4b5563 0%, #374151 50%, #4b5563 100%)'
@@ -230,8 +237,8 @@ const ProfessionalCard = memo(function ProfessionalCard({
     boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
   };
 
-  // Static card (already dealt)
-  if (!isNewCard || phase === 'showdown') {
+  // Static card - no animation (already dealt or showdown)
+  if (!animateIn || phase === 'showdown') {
     return (
       <div className="relative rounded-lg overflow-hidden" style={cardStyle}>
         <CardFace rank={rank} suitInfo={suitInfo} suitColor={suitColor} isDimmed={isDimmed} isWinning={isWinning} />
@@ -239,16 +246,15 @@ const ProfessionalCard = memo(function ProfessionalCard({
     );
   }
 
-  // Animated new card
-  const cardDelay = getCardDelay();
-
+  // Animated card - slide in and flip
   return (
     <motion.div
       className="relative"
       style={{ 
         width: 52, 
         height: 72,
-        perspective: 800 
+        perspective: 800,
+        visibility: isDealt ? 'visible' : 'hidden'
       }}
       initial={{ 
         x: phase === 'flop' ? -150 - (index * 20) : 100, 
@@ -257,16 +263,15 @@ const ProfessionalCard = memo(function ProfessionalCard({
         scale: 0.6,
         opacity: 0 
       }}
-      animate={{
+      animate={isDealt ? {
         x: 0,
         y: 0,
         rotateZ: 0,
         scale: 1,
         opacity: isDimmed ? 0.6 : 1,
-      }}
+      } : undefined}
       transition={{
         duration: 0.35,
-        delay: cardDelay / 1000,
         ease: [0.25, 0.46, 0.45, 0.94]
       }}
     >
@@ -317,6 +322,17 @@ const ProfessionalCard = memo(function ProfessionalCard({
       </motion.div>
     </motion.div>
   );
+}, (prev, next) => {
+  // Custom comparison - only re-render when necessary
+  return prev.card === next.card &&
+    prev.index === next.index &&
+    prev.phase === next.phase &&
+    prev.isWinning === next.isWinning &&
+    prev.isDimmed === next.isDimmed &&
+    prev.useFourColor === next.useFourColor &&
+    prev.animateIn === next.animateIn &&
+    prev.preDealDelay === next.preDealDelay &&
+    prev.dealDelay === next.dealDelay;
 });
 
 export const ProfessionalCommunityCards = memo(function ProfessionalCommunityCards({ 
@@ -329,9 +345,11 @@ export const ProfessionalCommunityCards = memo(function ProfessionalCommunityCar
   const useFourColor = preferences.cardStyle === 'fourcolor';
   
   // Track phase transitions to detect new cards
-  const prevPhaseRef = useRef(phase);
-  const prevCardCountRef = useRef(0);
-  const [newCardIndices, setNewCardIndices] = useState<Set<number>>(new Set());
+  const prevPhaseRef = useRef<string>('preflop');
+  const animationIdRef = useRef<number>(0);
+  
+  // Track which cards should animate based on phase transition
+  const [animatingCards, setAnimatingCards] = useState<Set<number>>(new Set());
   
   // Determine visible card count based on phase
   const visibleCount = phase === 'flop' ? 3 : phase === 'turn' ? 4 : (phase === 'river' || phase === 'showdown') ? 5 : 0;
@@ -342,47 +360,55 @@ export const ProfessionalCommunityCards = memo(function ProfessionalCommunityCar
   const dealDelay = phaseTimings?.dealDelay ?? 
     (phase === 'flop' ? 120 : 0);
 
-  // Detect phase changes and mark new cards
+  // Detect phase changes and trigger animation for new cards
   useEffect(() => {
     const prevPhase = prevPhaseRef.current;
     
+    // Only trigger animation on actual phase change
     if (phase !== prevPhase) {
       prevPhaseRef.current = phase;
+      animationIdRef.current += 1;
       
-      if (phase === 'flop' && prevPhase !== 'flop') {
-        setNewCardIndices(new Set([0, 1, 2]));
+      let newIndices: number[] = [];
+      
+      if (phase === 'flop' && prevPhase === 'preflop') {
+        newIndices = [0, 1, 2];
       } else if (phase === 'turn' && prevPhase === 'flop') {
-        setNewCardIndices(new Set([3]));
+        newIndices = [3];
       } else if (phase === 'river' && prevPhase === 'turn') {
-        setNewCardIndices(new Set([4]));
-      } else {
-        setNewCardIndices(new Set());
+        newIndices = [4];
+      }
+      
+      if (newIndices.length > 0) {
+        setAnimatingCards(new Set(newIndices));
+        
+        // Clear animation flag after animation completes
+        const animDuration = preDealDelay + (dealDelay * 3) + 600;
+        const timerId = setTimeout(() => {
+          setAnimatingCards(new Set());
+        }, animDuration);
+        
+        return () => clearTimeout(timerId);
       }
     }
-    
-    // Clear new card flags after animation completes
-    if (newCardIndices.size > 0) {
-      const totalAnimTime = preDealDelay + (dealDelay * 3) + 400;
-      const timer = setTimeout(() => {
-        setNewCardIndices(new Set());
-      }, totalAnimTime);
-      return () => clearTimeout(timer);
-    }
-    
-    prevCardCountRef.current = visibleCount;
-  }, [phase, visibleCount, preDealDelay, dealDelay, newCardIndices.size]);
+  }, [phase, preDealDelay, dealDelay]);
 
   const isShowdown = phase === 'showdown';
   const hasWinningInfo = winningCardIndices.length > 0;
+
+  // Memoize visible cards to prevent unnecessary re-renders
+  const visibleCards = useMemo(() => {
+    return cards.slice(0, visibleCount);
+  }, [cards, visibleCount]);
 
   return (
     <div className="flex items-center justify-center gap-1.5">
       {[0, 1, 2, 3, 4].map((idx) => {
         const isVisible = idx < visibleCount;
-        const card = cards[idx];
+        const card = visibleCards[idx];
         const isWinning = winningCardIndices.includes(idx);
         const isDimmed = isShowdown && hasWinningInfo && !isWinning;
-        const isNewCard = newCardIndices.has(idx);
+        const shouldAnimate = animatingCards.has(idx);
 
         if (!isVisible || !card) {
           return (
@@ -401,7 +427,7 @@ export const ProfessionalCommunityCards = memo(function ProfessionalCommunityCar
 
         return (
           <ProfessionalCard
-            key={`card-${idx}-${card}`}
+            key={`card-slot-${idx}`}
             card={card}
             index={idx}
             phase={phase}
@@ -410,7 +436,7 @@ export const ProfessionalCommunityCards = memo(function ProfessionalCommunityCar
             useFourColor={useFourColor}
             preDealDelay={preDealDelay}
             dealDelay={dealDelay}
-            isNewCard={isNewCard}
+            animateIn={shouldAnimate}
           />
         );
       })}
