@@ -474,8 +474,8 @@ interface PlayerSeatProps {
   isBB: boolean;
   isCurrentTurn: boolean;
   turnTimeRemaining?: number;
+  turnTimeRemainingExact?: number;
   turnTimeTotal?: number;
-  heroCards?: string[];
   communityCards?: string[];
   gamePhase?: string;
   canJoin?: boolean;
@@ -640,7 +640,7 @@ const PlayerSeat = memo(function PlayerSeat({
             }}
           >
             <SmoothAvatarTimer 
-              remaining={turnTimeRemaining} 
+              remaining={turnTimeRemainingExact ?? turnTimeRemaining}
               total={turnTimeTotal}
               size={avatarSize + 6}
               strokeWidth={3}
@@ -1282,8 +1282,8 @@ export interface FullscreenPokerTableProps {
   bigBlindSeat: number;
   currentPlayerSeat: number | null;
   turnTimeRemaining?: number;
+  turnTimeRemainingExact?: number;
   turnTimeTotal?: number;
-  smallBlind: number;
   bigBlind: number;
   canJoinTable: boolean;
   onSeatClick: (seatNumber: number) => void;
@@ -1359,9 +1359,9 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   bigBlindSeat,
   currentPlayerSeat,
   turnTimeRemaining,
+  turnTimeRemainingExact,
   turnTimeTotal,
   smallBlind,
-  bigBlind,
   canJoinTable,
   onSeatClick,
   onPotCollect,
@@ -1597,10 +1597,10 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               isBB={player?.seatNumber === bigBlindSeat}
               isCurrentTurn={player?.seatNumber === currentPlayerSeat}
               turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
+              turnTimeRemainingExact={player?.seatNumber === currentPlayerSeat ? turnTimeRemainingExact : undefined}
               turnTimeTotal={turnTimeTotal}
               heroCards={idx === 0 ? heroCards : undefined}
               communityCards={communityCards}
-              gamePhase={phase}
               canJoin={canJoinTable && (!player || /bot/i.test(player.name ?? ''))}
               onSeatClick={onSeatClick}
               lastAction={(player as any)?.lastAction}
