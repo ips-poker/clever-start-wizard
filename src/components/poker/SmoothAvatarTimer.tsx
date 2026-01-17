@@ -1,11 +1,12 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Style
-// Designed to stay visually smooth even when parent updates `remaining` every second.
+// Designed to stay visually smooth with server-synced remaining time.
+// Parent now passes exact remaining time (float) instead of Math.ceil().
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { isTimerCritical, getTimerColorHex, getTimerGlowColor } from '@/constants/pokerTimerConfig';
 
 interface SmoothAvatarTimerProps {
-  remaining: number;
+  remaining: number;  // Exact remaining time in seconds (float, not integer)
   total: number;
   size: number;
   strokeWidth?: number;
@@ -70,18 +71,20 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   }, []);
 
   // Re-sync only on *meaningful* changes.
-  // This avoids restarting the animation every second (which causes “спешит/опаздывает”).
+  // Now that parent passes exact time (float), we use tighter thresholds.
   useEffect(() => {
     const totalChanged = total !== lastTotalRef.current;
-    const drift = Math.abs(remaining - currentRemainingRef.current);
+    const drift = remaining - currentRemainingRef.current;
 
-    // IMPORTANT: parent often passes integer seconds (Math.ceil). That can be up to ~0.99s higher than
-    // our smooth internal value and would look like a “jump up” even though time is decreasing.
-    // So treat “jumped up” only when the prop increases by more than ~1.25s (new turn / time bank).
-    const jumpedUp = remaining > currentRemainingRef.current + 1.25;
+    // If remaining INCREASED by more than 0.3s = new turn / time bank added
+    // (With float values we can use tighter threshold)
+    const jumpedUp = drift > 0.3;
+    
+    // If remaining differs by more than 1s = resync needed
+    // (This handles server corrections and network delays)
+    const significantDrift = Math.abs(drift) > 1.0;
 
-    // If server corrects the remaining time by more than ~1.25s, re-sync.
-    const needsResync = totalChanged || jumpedUp || drift > 1.25;
+    const needsResync = totalChanged || jumpedUp || significantDrift;
 
     if (needsResync) {
       lastTotalRef.current = total;
@@ -167,4 +170,3 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
 });
 
 export default SmoothAvatarTimer;
-

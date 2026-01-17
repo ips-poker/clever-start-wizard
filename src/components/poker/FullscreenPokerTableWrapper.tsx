@@ -174,52 +174,66 @@ export function FullscreenPokerTableWrapper({
     const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current;
     prevTimerResetKeyRef.current = timerResetKey;
 
-    // POKERSTARS-STYLE SYNC:
-    // 1. On NEW turn: calculate deadline from actionStartTime (server's authoritative start)
-    // 2. During turn: only adjust if server's remaining differs significantly (drift correction)
+    // POKERSTARS-STYLE SYNC using actionStartTime as anchor:
+    // Server sends actionStartTime = when turn started (ms timestamp)
+    // Deadline = actionStartTime + actionTimer * 1000
+    // This way all clients sync to the same absolute deadline
     
     if (isNewTurn) {
-      // NEW TURN: Set up fresh timer
+      // NEW TURN: Set up fresh timer from server's authoritative start time
       if (isTimeBankPhase) {
         // Time bank: server gives a specific slice as the new "total"
         const tbSlice = serverRemaining ?? actionTimer;
         setTurnTimeTotal(tbSlice);
-        // Deadline: now + time bank slice
-        deadlineMsRef.current = now + tbSlice * 1000;
+        // Use actionStartTime if available, else use serverRemaining
+        if (actionStartTime && actionStartTime > 0) {
+          deadlineMsRef.current = actionStartTime + tbSlice * 1000;
+        } else {
+          deadlineMsRef.current = now + tbSlice * 1000;
+        }
       } else {
         // Main timer: always starts at full actionTimer
         setTurnTimeTotal(actionTimer);
-        // Prefer actionStartTime from server for precise sync
+        // USE actionStartTime from server as the anchor point
         if (actionStartTime && actionStartTime > 0) {
           deadlineMsRef.current = actionStartTime + actionTimer * 1000;
         } else if (serverRemaining !== null && serverRemaining !== undefined) {
+          // Fallback: use server's remaining time
           deadlineMsRef.current = now + serverRemaining * 1000;
         } else {
           deadlineMsRef.current = now + actionTimer * 1000;
         }
       }
     } else {
-      // SAME TURN: Check for drift from server
-      // Only resync if server's remaining differs by more than 2 seconds
-      if (serverRemaining !== null && serverRemaining !== undefined) {
-        const localRemaining = Math.max(0, (deadlineMsRef.current - now) / 1000);
-        const drift = Math.abs(serverRemaining - localRemaining);
+      // SAME TURN: Only resync if drift is significant (> 1.5 seconds)
+      // This prevents "jumping" when server sends minor updates
+      if (serverRemaining !== null && serverRemaining !== undefined && actionStartTime && actionStartTime > 0) {
+        // Recalculate expected deadline from actionStartTime
+        const expectedDeadline = isTimeBankPhase 
+          ? actionStartTime + (turnTimeTotal * 1000)
+          : actionStartTime + (actionTimer * 1000);
         
-        if (drift > 2) {
-          // Significant drift - resync to server
-          deadlineMsRef.current = now + serverRemaining * 1000;
+        const currentDeadline = deadlineMsRef.current;
+        const deadlineDrift = Math.abs(expectedDeadline - currentDeadline);
+        
+        // Only resync if deadline drifted by more than 1.5 seconds
+        if (deadlineDrift > 1500) {
+          deadlineMsRef.current = expectedDeadline;
         }
       }
     }
 
+    // Calculate remaining time as precise float (not rounded!)
     const getRemaining = () => Math.max(0, (deadlineMsRef.current - Date.now()) / 1000);
 
-    // Store as integer seconds for UI/sounds; SmoothAvatarTimer keeps sub-second smoothness internally.
-    setTurnTimeRemaining(Math.ceil(getRemaining()));
+    // CRITICAL FIX: Pass EXACT remaining time (with decimals) to SmoothAvatarTimer
+    // Don't use Math.ceil() here - that causes the "jumping" issue
+    setTurnTimeRemaining(getRemaining());
 
+    // Update every 100ms for smoother sync (not 500ms)
     const interval = setInterval(() => {
-      setTurnTimeRemaining(Math.ceil(getRemaining()));
-    }, 500);
+      setTurnTimeRemaining(getRemaining());
+    }, 100);
 
     return () => clearInterval(interval);
   }, [
@@ -227,7 +241,8 @@ export function FullscreenPokerTableWrapper({
     tableState?.actionTimer,
     tableState?.timeRemaining,
     tableState?.actionStartTime,
-    tableState?.isTimeBankPhase
+    tableState?.isTimeBankPhase,
+    turnTimeTotal
   ]);
 
   // Auto-connect handled inside useNodePokerTable
