@@ -230,19 +230,23 @@ export function FullscreenPokerTableWrapper({
         return now + sliceTotal * 1000;
       }
 
-      // If we have both candidates, ensure actionStart-based deadline matches serverRemaining reasonably.
-      if (deadlineFromActionStart !== null && deadlineFromRemaining !== null) {
-        const impliedRemaining = Math.max(0, (deadlineFromActionStart - now) / 1000);
-        const mismatch = Math.abs(impliedRemaining - serverRemaining);
+       // If we have both candidates, ensure actionStart-based deadline is not obviously broken.
+       // IMPORTANT: serverRemaining can arrive with network delay, so allow a generous mismatch.
+       if (deadlineFromActionStart !== null && deadlineFromRemaining !== null) {
+         const impliedRemaining = Math.max(0, (deadlineFromActionStart - now) / 1000);
+         const mismatch = Math.abs(impliedRemaining - serverRemaining);
 
-        // If mismatch is big, actionStartTime is likely in wrong units or unsynced -> trust remaining.
-        if (mismatch > 1.5) return deadlineFromRemaining;
+         // Allow mismatch caused by latency / tick rate. Scale threshold with slice length.
+         const mismatchThresholdSec = Math.min(8, Math.max(2.5, sliceTotal * 0.25));
 
-        // Also guard against insane timestamps (e.g., 1970/3000)
-        if (Math.abs(deadlineFromActionStart - now) > 5 * 60 * 1000) return deadlineFromRemaining;
+         // If mismatch is very big, actionStartTime is likely wrong units/unsynced -> trust remaining.
+         if (mismatch > mismatchThresholdSec) return deadlineFromRemaining;
 
-        return deadlineFromActionStart;
-      }
+         // Also guard against insane timestamps (e.g., 1970/3000)
+         if (Math.abs(deadlineFromActionStart - now) > 5 * 60 * 1000) return deadlineFromRemaining;
+
+         return deadlineFromActionStart;
+       }
 
       // Only remaining is available
       if (deadlineFromRemaining !== null) return deadlineFromRemaining;
