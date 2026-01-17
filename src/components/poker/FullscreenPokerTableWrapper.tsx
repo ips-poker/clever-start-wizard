@@ -69,9 +69,10 @@ export function FullscreenPokerTableWrapper({
   wideMode = false
 }: FullscreenPokerTableWrapperProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
+  // Keep integer seconds for UI/sounds + exact float for smooth ring
   const [turnTimeRemaining, setTurnTimeRemaining] = useState<number | null>(null);
+  const [turnTimeRemainingExact, setTurnTimeRemainingExact] = useState<number | null>(null);
   const [turnTimeTotal, setTurnTimeTotal] = useState<number>(15); // Total for current timer slice
-  const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPersonalSettings, setShowPersonalSettings] = useState(false);
   const [showBuyInDialog, setShowBuyInDialog] = useState(false);
@@ -158,6 +159,7 @@ export function FullscreenPokerTableWrapper({
     // No active player = no timer
     if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
       setTurnTimeRemaining(null);
+      setTurnTimeRemainingExact(null);
       setIsTimeBankActive(false);
       return;
     }
@@ -174,75 +176,56 @@ export function FullscreenPokerTableWrapper({
     const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current;
     prevTimerResetKeyRef.current = timerResetKey;
 
-    // POKERSTARS-STYLE SYNC using actionStartTime as anchor:
-    // Server sends actionStartTime = when turn started (ms timestamp)
-    // Deadline = actionStartTime + actionTimer * 1000
-    // This way all clients sync to the same absolute deadline
-    
+    // Anchor deadline to server actionStartTime to keep all clients in sync.
     if (isNewTurn) {
-      // NEW TURN: Set up fresh timer from server's authoritative start time
       if (isTimeBankPhase) {
-        // Time bank: server gives a specific slice as the new "total"
         const tbSlice = serverRemaining ?? actionTimer;
         setTurnTimeTotal(tbSlice);
-        // Use actionStartTime if available, else use serverRemaining
         if (actionStartTime && actionStartTime > 0) {
           deadlineMsRef.current = actionStartTime + tbSlice * 1000;
         } else {
           deadlineMsRef.current = now + tbSlice * 1000;
         }
       } else {
-        // Main timer: always starts at full actionTimer
         setTurnTimeTotal(actionTimer);
-        // USE actionStartTime from server as the anchor point
         if (actionStartTime && actionStartTime > 0) {
           deadlineMsRef.current = actionStartTime + actionTimer * 1000;
         } else if (serverRemaining !== null && serverRemaining !== undefined) {
-          // Fallback: use server's remaining time
           deadlineMsRef.current = now + serverRemaining * 1000;
         } else {
           deadlineMsRef.current = now + actionTimer * 1000;
         }
       }
     } else {
-      // SAME TURN: Only resync if drift is significant (> 1.5 seconds)
-      // This prevents "jumping" when server sends minor updates
-      if (serverRemaining !== null && serverRemaining !== undefined && actionStartTime && actionStartTime > 0) {
-        // Recalculate expected deadline from actionStartTime
-        const expectedDeadline = isTimeBankPhase 
-          ? actionStartTime + (turnTimeTotal * 1000)
-          : actionStartTime + (actionTimer * 1000);
-        
-        const currentDeadline = deadlineMsRef.current;
-        const deadlineDrift = Math.abs(expectedDeadline - currentDeadline);
-        
-        // Only resync if deadline drifted by more than 1.5 seconds
-        if (deadlineDrift > 1500) {
-          deadlineMsRef.current = expectedDeadline;
+      // SAME TURN: drift correction only when it is significant, to avoid jumps.
+      if (serverRemaining !== null && serverRemaining !== undefined) {
+        const localRemaining = Math.max(0, (deadlineMsRef.current - now) / 1000);
+        const drift = Math.abs(serverRemaining - localRemaining);
+        if (drift > 2) {
+          deadlineMsRef.current = now + serverRemaining * 1000;
         }
       }
     }
 
-    // Calculate remaining time as precise float (not rounded!)
-    const getRemaining = () => Math.max(0, (deadlineMsRef.current - Date.now()) / 1000);
+    const getRemainingExact = () => Math.max(0, (deadlineMsRef.current - Date.now()) / 1000);
 
-    // CRITICAL FIX: Pass EXACT remaining time (with decimals) to SmoothAvatarTimer
-    // Don't use Math.ceil() here - that causes the "jumping" issue
-    setTurnTimeRemaining(getRemaining());
+    // Exact (float) for SmoothAvatarTimer, integer for sounds/UI.
+    const syncOnce = () => {
+      const exact = getRemainingExact();
+      setTurnTimeRemainingExact(exact);
+      setTurnTimeRemaining(Math.ceil(exact));
+    };
 
-    // Update every 100ms for smoother sync (not 500ms)
-    const interval = setInterval(() => {
-      setTurnTimeRemaining(getRemaining());
-    }, 100);
+    syncOnce();
 
+    const interval = setInterval(syncOnce, 100);
     return () => clearInterval(interval);
   }, [
     timerResetKey,
     tableState?.actionTimer,
     tableState?.timeRemaining,
     tableState?.actionStartTime,
-    tableState?.isTimeBankPhase,
-    turnTimeTotal
+    tableState?.isTimeBankPhase
   ]);
 
   // Auto-connect handled inside useNodePokerTable
@@ -824,9 +807,9 @@ export function FullscreenPokerTableWrapper({
             bigBlindSeat={bigBlindSeat}
             currentPlayerSeat={currentPlayerSeat}
             turnTimeRemaining={turnTimeRemaining ?? undefined}
+            turnTimeRemainingExact={turnTimeRemainingExact ?? undefined}
             turnTimeTotal={turnTimeTotal}
             smallBlind={tableState?.smallBlindAmount || 10}
-            bigBlind={tableState?.bigBlindAmount || 20}
             canJoinTable={canJoinTable}
             onSeatClick={handleSeatClick}
             maxSeats={maxSeats}
