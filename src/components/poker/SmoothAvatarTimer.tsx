@@ -22,30 +22,33 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   strokeWidth = 4,
   className
 }: SmoothAvatarTimerProps) {
-  const [currentRemaining, setCurrentRemaining] = useState(() => 
-    Math.max(0, (deadlineMs - Date.now()) / 1000)
-  );
+  // Current remaining time in seconds (updated at 60fps)
+  const [currentRemaining, setCurrentRemaining] = useState<number>(() => {
+    const now = Date.now();
+    return Math.max(0, (deadlineMs - now) / 1000);
+  });
 
+  // Refs for animation loop
   const animationRef = useRef<number | null>(null);
-  const lastDeadlineRef = useRef<number>(deadlineMs);
-  const lastTotalRef = useRef<number>(total);
+  
+  // Store current props in refs for stable animation closure
+  const deadlineRef = useRef<number>(deadlineMs);
+  const totalRef = useRef<number>(total);
 
-  // Main animation loop - runs at 60fps
-  // Only restart animation when deadline changes significantly (new turn or hard resync)
+  // Update refs when props change
   useEffect(() => {
-    const deadlineChanged = Math.abs(deadlineMs - lastDeadlineRef.current) > 100; // 100ms threshold
-    const totalChanged = total !== lastTotalRef.current;
-    
-    if (deadlineChanged || totalChanged) {
-      lastDeadlineRef.current = deadlineMs;
-      lastTotalRef.current = total;
-    }
+    deadlineRef.current = deadlineMs;
+    totalRef.current = total;
+  }, [deadlineMs, total]);
 
+  // Main 60fps animation loop
+  useEffect(() => {
     const animate = () => {
       const now = Date.now();
-      const remaining = Math.max(0, (lastDeadlineRef.current - now) / 1000);
+      const remaining = Math.max(0, (deadlineRef.current - now) / 1000);
       setCurrentRemaining(remaining);
 
+      // Continue animation while time remains
       if (remaining > 0) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
@@ -53,11 +56,20 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
       }
     };
 
-    // Start animation
+    // Always restart animation when deadline changes
     if (animationRef.current !== null) {
       cancelAnimationFrame(animationRef.current);
     }
-    animationRef.current = requestAnimationFrame(animate);
+    
+    // Immediately set current state to match new deadline
+    const now = Date.now();
+    const initialRemaining = Math.max(0, (deadlineMs - now) / 1000);
+    setCurrentRemaining(initialRemaining);
+    
+    // Start animation loop
+    if (initialRemaining > 0) {
+      animationRef.current = requestAnimationFrame(animate);
+    }
 
     return () => {
       if (animationRef.current !== null) {
@@ -65,16 +77,25 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
         animationRef.current = null;
       }
     };
-  }, [deadlineMs, total]);
+  }, [deadlineMs]); // Only restart on deadline change
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PROGRESS CALCULATION - PokerStars Style
+  // ═══════════════════════════════════════════════════════════════════════════
+  // progress = 1.0 means full ring (timer just started)
+  // progress = 0.0 means empty ring (timer expired)
+  // We clamp to [0, 1] to handle edge cases
   const progress = total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;
 
+  // SVG calculations
   const radius = size / 2 - strokeWidth / 2;
   const circumference = 2 * Math.PI * radius;
+  // strokeDashoffset = 0 means full circle, = circumference means empty circle
+  // We want: progress=1 -> full circle, progress=0 -> empty
   const strokeDashoffset = circumference * (1 - progress);
 
+  // Color thresholds from pokerTimerConfig
   const isCritical = isTimerCritical(currentRemaining);
-
   const strokeColor = getTimerColorHex(currentRemaining);
   const glowColor = getTimerGlowColor(currentRemaining);
 
@@ -88,11 +109,11 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
       height={size}
       className={cn('pointer-events-none', className)}
       style={{
-        transform: 'rotate(-90deg)',
+        transform: 'rotate(-90deg)', // Start from top
         filter: glowFilter
       }}
     >
-      {/* Background track */}
+      {/* Background track (always visible) */}
       <circle
         cx={size / 2}
         cy={size / 2}
@@ -102,7 +123,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
         strokeWidth={strokeWidth}
       />
 
-      {/* Progress arc */}
+      {/* Progress arc (animated) */}
       <circle
         cx={size / 2}
         cy={size / 2}
