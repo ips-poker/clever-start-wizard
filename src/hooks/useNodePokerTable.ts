@@ -397,8 +397,15 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     );
     const ante = Number((state as any).ante ?? (state as any).ante_amount ?? config?.ante ?? 0);
     // POKERSTARS-STYLE: Cash Game = 15s, Tournament = 30s (server provides actual value)
-    const actionTimer = Number((state as any).actionTimer ?? (state as any).action_timer ?? config?.actionTimeSeconds ?? 15);
-
+    const actionTimer = Number(
+      (state as any).actionTimer ??
+        (state as any).action_timer ??
+        (state as any).actionTimeSeconds ??
+        (state as any).action_time_seconds ??
+        config?.actionTimeSeconds ??
+        (config as any)?.action_time_seconds ??
+        15
+    );
     // If server doesn't include blinds as per-player bets, show them client-side on preflop
     const isPreflopLike =
       normalizedPhase === 'preflop' ||
@@ -429,6 +436,29 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     // Get handId from server state (may be handId, hand_id, currentHandId, etc.)
     const handId = (state.handId || (state as any).hand_id || (state as any).currentHandId || (state as any).current_hand_id) as string | undefined;
 
+    // POKERSTARS-STYLE: robust timing fields (server may send camelCase or snake_case)
+    const timeRemainingRaw = (state as any).timeRemaining ?? (state as any).time_remaining;
+    const actionStartTimeRaw = (state as any).actionStartTime ?? (state as any).action_start_time;
+    const isTimeBankPhaseRaw = (state as any).isTimeBankPhase ?? (state as any).is_time_bank_phase;
+    const currentPlayerTimeBankRaw =
+      (state as any).currentPlayerTimeBank ??
+      (state as any).current_player_time_bank ??
+      (state as any).currentPlayerTimebank ??
+      (state as any).current_player_timebank;
+
+    const timeRemaining =
+      timeRemainingRaw === null || timeRemainingRaw === undefined ? undefined : Number(timeRemainingRaw);
+
+    const actionStartTime =
+      actionStartTimeRaw === null || actionStartTimeRaw === undefined ? undefined : Number(actionStartTimeRaw);
+
+    const isTimeBankPhase = Boolean(isTimeBankPhaseRaw);
+
+    const currentPlayerTimeBank =
+      currentPlayerTimeBankRaw === null || currentPlayerTimeBankRaw === undefined
+        ? 0
+        : Number(currentPlayerTimeBankRaw);
+
     return {
       tableId: tblId,
       handId,
@@ -447,10 +477,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       anteAmount: ante,
       actionTimer,
       // POKERSTARS-STYLE: Server-authoritative timing
-      timeRemaining: (state as any).timeRemaining as number | null | undefined,
-      actionStartTime: (state as any).actionStartTime as number | null | undefined,
-      isTimeBankPhase: Boolean((state as any).isTimeBankPhase),
-      currentPlayerTimeBank: Number((state as any).currentPlayerTimeBank ?? 0),
+      timeRemaining,
+      actionStartTime,
+      isTimeBankPhase,
+      currentPlayerTimeBank,
       playersNeeded: ((state as any).playersNeeded || 0) as number
     };
   }, []);
