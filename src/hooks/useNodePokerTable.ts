@@ -1908,6 +1908,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   // Game actions - use actionType format for Node.js server
   const fold = useCallback(() => {
     if (!tableId || !playerId) return;
+    console.log('[NodePoker] 🃏 FOLD action:', { tableId, playerId });
     sendMessage({
       type: 'action',
       tableId,
@@ -1918,6 +1919,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
   const check = useCallback(() => {
     if (!tableId || !playerId) return;
+    console.log('[NodePoker] ✅ CHECK action:', { tableId, playerId });
     sendMessage({
       type: 'action',
       tableId,
@@ -1928,6 +1930,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
   const call = useCallback(() => {
     if (!tableId || !playerId) return;
+    console.log('[NodePoker] 📞 CALL action:', { tableId, playerId });
     sendMessage({
       type: 'action',
       tableId,
