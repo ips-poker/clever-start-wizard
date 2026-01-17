@@ -144,10 +144,6 @@ export function FullscreenPokerTableWrapper({
   // Track previous timerResetKey to detect new turn/phase
   const prevTimerResetKeyRef = useRef<string>('');
 
-  // Store the deadline in a ref so it persists across re-renders
-  // Only recalculate when turn/phase actually changes
-  const deadlineMsRef = useRef<number>(0);
-  
   useEffect(() => {
     // POKERSTARS-STYLE: Cash = 15s, Tournament = 30s (server provides actual value)
     const actionTimer = tableState?.actionTimer || 15;
@@ -160,8 +156,7 @@ export function FullscreenPokerTableWrapper({
     }
 
     // Update time bank phase indicator
-    const isTimeBankPhase = Boolean(tableState?.isTimeBankPhase);
-    setIsTimeBankActive(isTimeBankPhase);
+    setIsTimeBankActive(Boolean(tableState?.isTimeBankPhase));
 
     const now = Date.now();
     const serverRemaining = tableState?.timeRemaining;
@@ -171,45 +166,35 @@ export function FullscreenPokerTableWrapper({
     const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current;
     prevTimerResetKeyRef.current = timerResetKey;
 
-    // POKERSTARS-STYLE SYNC:
-    // 1. On NEW turn: calculate deadline from actionStartTime (server's authoritative start)
-    // 2. During turn: only adjust if server's remaining differs significantly (drift correction)
-    
+    // CRITICAL FIX: When a new turn starts, set turnTimeTotal correctly
+    // - For MAIN timer: use actionTimer (the full allocated time)
+    // - For TIME BANK phase: use serverRemaining (the slice server allocated from time bank)
     if (isNewTurn) {
-      // NEW TURN: Set up fresh timer
+      const isTimeBankPhase = Boolean(tableState?.isTimeBankPhase);
+      
       if (isTimeBankPhase) {
-        // Time bank: server gives a specific slice as the new "total"
-        const tbSlice = serverRemaining ?? actionTimer;
-        setTurnTimeTotal(tbSlice);
-        // Deadline: now + time bank slice
-        deadlineMsRef.current = now + tbSlice * 1000;
+        // Time bank phase: server gives a specific slice, use it as total
+        const sliceTotal = serverRemaining !== null && serverRemaining !== undefined
+          ? serverRemaining
+          : actionTimer;
+        setTurnTimeTotal(sliceTotal);
       } else {
-        // Main timer: always starts at full actionTimer
+        // Main timer: always use full actionTimer as total
         setTurnTimeTotal(actionTimer);
-        // Prefer actionStartTime from server for precise sync
-        if (actionStartTime && actionStartTime > 0) {
-          deadlineMsRef.current = actionStartTime + actionTimer * 1000;
-        } else if (serverRemaining !== null && serverRemaining !== undefined) {
-          deadlineMsRef.current = now + serverRemaining * 1000;
-        } else {
-          deadlineMsRef.current = now + actionTimer * 1000;
-        }
-      }
-    } else {
-      // SAME TURN: Check for drift from server
-      // Only resync if server's remaining differs by more than 2 seconds
-      if (serverRemaining !== null && serverRemaining !== undefined) {
-        const localRemaining = Math.max(0, (deadlineMsRef.current - now) / 1000);
-        const drift = Math.abs(serverRemaining - localRemaining);
-        
-        if (drift > 2) {
-          // Significant drift - resync to server
-          deadlineMsRef.current = now + serverRemaining * 1000;
-        }
       }
     }
 
-    const getRemaining = () => Math.max(0, (deadlineMsRef.current - Date.now()) / 1000);
+    // Calculate deadline from server data
+    // If server provides timeRemaining, treat it as remaining-at-receive-time.
+    // Otherwise derive from actionStartTime.
+    const deadlineMs =
+      serverRemaining !== null && serverRemaining !== undefined
+        ? now + serverRemaining * 1000
+        : actionStartTime
+          ? actionStartTime + actionTimer * 1000
+          : now + actionTimer * 1000;
+
+    const getRemaining = () => Math.max(0, (deadlineMs - Date.now()) / 1000);
 
     // Store as integer seconds for UI/sounds; SmoothAvatarTimer keeps sub-second smoothness internally.
     setTurnTimeRemaining(Math.ceil(getRemaining()));
