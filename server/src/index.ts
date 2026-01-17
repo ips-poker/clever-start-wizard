@@ -37,7 +37,6 @@ import { handForHandManager } from './utils/hand-for-hand.js';
 import { spectatorManager } from './utils/spectator-manager.js';
 import { actionTimeoutGuard } from './utils/action-timeout-guard.js';
 import { handHistoryService } from './utils/hand-history-service.js';
-import { handHistoryRecorder } from './utils/hand-history-recorder.js';
 import { realtimeEventBroadcaster } from './utils/realtime-events.js';
 import { tournamentLevelService } from './utils/tournament-level-service.js';
 import { tournamentAutoStartService } from './utils/tournament-auto-start-service.js';
@@ -379,9 +378,6 @@ app.use((req, res) => {
 server.listen(config.port, () => {
   // Initialize hand history service with supabase
   handHistoryService.initialize(supabase);
-  
-  // Initialize professional hand history recorder with supabase
-  handHistoryRecorder.initialize(supabase);
 
   // Build marker (helps verify PM2 is running the latest compiled dist)
   // CRITICAL: Update this on every deploy to verify new code is running!

@@ -1,14 +1,11 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Style
-// Uses deadlineMs from server as absolute anchor for perfect sync across all clients.
-// The component calculates remaining time locally at 60fps without external updates.
+// Designed to stay visually smooth even when parent updates `remaining` every second.
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { isTimerCritical, getTimerColorHex, getTimerGlowColor } from '@/constants/pokerTimerConfig';
 
 interface SmoothAvatarTimerProps {
-  /** Absolute deadline timestamp (ms) - when timer expires */
-  deadlineMs: number;
-  /** Total time for this timer slice (seconds) - for progress calculation */
+  remaining: number;
   total: number;
   size: number;
   strokeWidth?: number;
@@ -16,86 +13,87 @@ interface SmoothAvatarTimerProps {
 }
 
 export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
-  deadlineMs,
+  remaining,
   total,
   size,
   strokeWidth = 4,
   className
 }: SmoothAvatarTimerProps) {
-  // Current remaining time in seconds (updated at 60fps)
-  const [currentRemaining, setCurrentRemaining] = useState<number>(() => {
-    const now = Date.now();
-    return Math.max(0, (deadlineMs - now) / 1000);
-  });
+  const [currentRemaining, setCurrentRemaining] = useState(remaining);
 
-  // Refs for animation loop
   const animationRef = useRef<number | null>(null);
-  
-  // Store current props in refs for stable animation closure
-  const deadlineRef = useRef<number>(deadlineMs);
-  const totalRef = useRef<number>(total);
+  const startTimeRef = useRef<number>(Date.now());
+  const startRemainingRef = useRef<number>(remaining);
 
-  // Update refs when props change
-  useEffect(() => {
-    deadlineRef.current = deadlineMs;
-    totalRef.current = total;
-  }, [deadlineMs, total]);
+  // Keep a ref in sync so we can measure drift vs. incoming props.
+  const currentRemainingRef = useRef<number>(remaining);
+  const lastTotalRef = useRef<number>(total);
 
-  // Main 60fps animation loop
-  useEffect(() => {
+  const startAnimation = (startRemaining: number) => {
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current);
+    }
+
+    startTimeRef.current = Date.now();
+    startRemainingRef.current = startRemaining;
+    currentRemainingRef.current = startRemaining;
+    setCurrentRemaining(startRemaining);
+
     const animate = () => {
-      const now = Date.now();
-      const remaining = Math.max(0, (deadlineRef.current - now) / 1000);
-      setCurrentRemaining(remaining);
+      const elapsed = (Date.now() - startTimeRef.current) / 1000;
+      const newRemaining = Math.max(0, startRemainingRef.current - elapsed);
 
-      // Continue animation while time remains
-      if (remaining > 0) {
+      currentRemainingRef.current = newRemaining;
+      setCurrentRemaining(newRemaining);
+
+      if (newRemaining > 0) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
         animationRef.current = null;
       }
     };
 
-    // Always restart animation when deadline changes
-    if (animationRef.current !== null) {
-      cancelAnimationFrame(animationRef.current);
-    }
-    
-    // Immediately set current state to match new deadline
-    const now = Date.now();
-    const initialRemaining = Math.max(0, (deadlineMs - now) / 1000);
-    setCurrentRemaining(initialRemaining);
-    
-    // Start animation loop
-    if (initialRemaining > 0) {
-      animationRef.current = requestAnimationFrame(animate);
-    }
+    animationRef.current = requestAnimationFrame(animate);
+  };
+
+  // Start once on mount.
+  useEffect(() => {
+    startAnimation(remaining);
+    lastTotalRef.current = total;
 
     return () => {
       if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current);
-        animationRef.current = null;
       }
     };
-  }, [deadlineMs]); // Only restart on deadline change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // PROGRESS CALCULATION - PokerStars Style
-  // ═══════════════════════════════════════════════════════════════════════════
-  // progress = 1.0 means full ring (timer just started)
-  // progress = 0.0 means empty ring (timer expired)
-  // We clamp to [0, 1] to handle edge cases
-  const progress = total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;
+  // Re-sync only on *meaningful* changes.
+  // This avoids restarting the animation every second (which causes “спешит/опаздывает”).
+  useEffect(() => {
+    const totalChanged = total !== lastTotalRef.current;
+    const drift = Math.abs(remaining - currentRemainingRef.current);
+    const jumpedUp = remaining > currentRemainingRef.current + 0.75; // new turn / time bank
 
-  // SVG calculations
+    // If server corrects the remaining time by more than ~1.25s, re-sync.
+    const needsResync = totalChanged || jumpedUp || drift > 1.25;
+
+    if (needsResync) {
+      lastTotalRef.current = total;
+      startAnimation(remaining);
+    }
+  }, [remaining, total]);
+
+  const progress =
+    total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;
+
   const radius = size / 2 - strokeWidth / 2;
   const circumference = 2 * Math.PI * radius;
-  // strokeDashoffset = 0 means full circle, = circumference means empty circle
-  // We want: progress=1 -> full circle, progress=0 -> empty
   const strokeDashoffset = circumference * (1 - progress);
 
-  // Color thresholds from pokerTimerConfig
   const isCritical = isTimerCritical(currentRemaining);
+
   const strokeColor = getTimerColorHex(currentRemaining);
   const glowColor = getTimerGlowColor(currentRemaining);
 
@@ -109,11 +107,11 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
       height={size}
       className={cn('pointer-events-none', className)}
       style={{
-        transform: 'rotate(-90deg)', // Start from top
+        transform: 'rotate(-90deg)',
         filter: glowFilter
       }}
     >
-      {/* Background track (always visible) */}
+      {/* Background track */}
       <circle
         cx={size / 2}
         cy={size / 2}
@@ -123,7 +121,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
         strokeWidth={strokeWidth}
       />
 
-      {/* Progress arc (animated) */}
+      {/* Progress arc */}
       <circle
         cx={size / 2}
         cy={size / 2}
@@ -165,3 +163,4 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
 });
 
 export default SmoothAvatarTimer;
+

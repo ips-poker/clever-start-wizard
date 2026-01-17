@@ -2,7 +2,6 @@
  * Poker Table - Single table game logic
  * Uses Professional Poker Engine v3.0
  * With Professional Timings (PokerStars/PPPoker style)
- * With Professional Hand History Recording (PokerStars-level)
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -18,7 +17,6 @@ import {
   calculateShowdownDelay,
   getTimingsForTableType
 } from '../config/pokerTimings.js';
-import { handHistoryRecorder } from '../utils/hand-history-recorder.js';
 
 export interface Player {
   id: string;
@@ -1164,22 +1162,6 @@ export class PokerTable {
       playerBet: player.currentBet
     });
     
-    // PROFESSIONAL HAND HISTORY: Record action
-    if (this.currentHand) {
-      try {
-        handHistoryRecorder.recordAction(
-          this.currentHand.id,
-          playerId,
-          this.currentHand.phase,
-          actionType,
-          result.amount || 0,
-          this.currentHand.pot
-        );
-      } catch (recordErr) {
-        logger.warn('Failed to record action', { error: String(recordErr) });
-      }
-    }
-    
     // PROFESSIONAL TIMING: Add delay after action for visual feedback (pot/bet animation)
     const afterActionDelay = PROFESSIONAL_TIMINGS.afterAction;
     
@@ -2131,79 +2113,6 @@ export class PokerTable {
         logger.warn('Failed to save hand at start (continuing anyway)', { error: String(dbErr) });
       }
       
-      // PROFESSIONAL HAND HISTORY: Start recording
-      try {
-        handHistoryRecorder.startRecording(
-          this.currentHand.id,
-          this.id,
-          this.config.name || `Table ${this.id.substring(0, 8)}`,
-          this.handNumber,
-          {
-            smallBlind: this.config.smallBlind,
-            bigBlind: this.config.bigBlind,
-            ante: this.config.ante || 0
-          },
-          {
-            dealerSeat: this.currentHand.dealerSeat,
-            smallBlindSeat: this.currentHand.smallBlindSeat,
-            bigBlindSeat: this.currentHand.bigBlindSeat
-          },
-          activePlayers.map(p => ({
-            playerId: p.id,
-            playerName: p.name,
-            seatNumber: p.seatNumber,
-            stack: p.stack,
-            holeCards: p.holeCards
-          }))
-        );
-        
-        // Record blind postings
-        const sbPlayer = activePlayers.find(p => p.seatNumber === this.currentHand!.smallBlindSeat);
-        const bbPlayer = activePlayers.find(p => p.seatNumber === this.currentHand!.bigBlindSeat);
-        
-        if (sbPlayer) {
-          handHistoryRecorder.recordBlind(
-            this.currentHand.id,
-            sbPlayer.id,
-            'sb',
-            this.config.smallBlind,
-            this.config.smallBlind
-          );
-        }
-        
-        if (bbPlayer) {
-          handHistoryRecorder.recordBlind(
-            this.currentHand.id,
-            bbPlayer.id,
-            'bb',
-            this.config.bigBlind,
-            this.config.smallBlind + this.config.bigBlind
-          );
-        }
-        
-        // Record antes if applicable
-        if (this.config.ante && this.config.ante > 0) {
-          let antePot = this.config.smallBlind + this.config.bigBlind;
-          for (const p of activePlayers) {
-            antePot += this.config.ante;
-            handHistoryRecorder.recordBlind(
-              this.currentHand.id,
-              p.id,
-              'ante',
-              this.config.ante,
-              antePot
-            );
-          }
-        }
-        
-        logger.info('Hand history recording started', {
-          handId: this.currentHand.id,
-          handNumber: this.handNumber
-        });
-      } catch (recordErr) {
-        logger.warn('Failed to start hand history recording', { error: String(recordErr) });
-      }
-      
       // Start action timer
       this.startActionTimer();
       
@@ -2581,33 +2490,6 @@ export class PokerTable {
     if (!this.currentHand) return;
     
     try {
-      // PROFESSIONAL HAND HISTORY: Complete recording and save to DB
-      const finalStacks = new Map<string, number>();
-      for (const player of this.players.values()) {
-        finalStacks.set(player.id, player.stack);
-      }
-      
-      // Get showdown hands if available
-      const showdownHands: { playerId: string; holeCards: string[]; handRank: string }[] = [];
-      for (const player of this.players.values()) {
-        if (player.holeCards.length > 0 && !player.isFolded) {
-          const handResult = evaluateHand(player.holeCards, this.currentHand.communityCards);
-          showdownHands.push({
-            playerId: player.id,
-            holeCards: player.holeCards,
-            handRank: handResult?.handName || 'Unknown'
-          });
-        }
-      }
-      
-      // Complete the recording (saves poker_hand_players and poker_actions)
-      await handHistoryRecorder.completeRecording(
-        this.currentHand.id,
-        [], // Winners already recorded in completeHand
-        finalStacks,
-        showdownHands
-      );
-      
       // Use upsert since hand was already created at start
       await this.supabase.from('poker_hands').upsert({
         id: this.currentHand.id,

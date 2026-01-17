@@ -473,7 +473,7 @@ interface PlayerSeatProps {
   isSB: boolean;
   isBB: boolean;
   isCurrentTurn: boolean;
-  timerDeadlineMs?: number;
+  turnTimeRemaining?: number;
   turnTimeTotal?: number;
   heroCards?: string[];
   communityCards?: string[];
@@ -535,7 +535,7 @@ const PlayerSeat = memo(function PlayerSeat({
   isSB,
   isBB,
   isCurrentTurn,
-  timerDeadlineMs,
+  turnTimeRemaining,
   turnTimeTotal = 15,
   heroCards,
   communityCards = [],
@@ -628,7 +628,7 @@ const PlayerSeat = memo(function PlayerSeat({
       {/* Avatar with status border and opponent cards */}
       <div className="relative">
         {/* Timer ring - UNDER cards and game elements, around avatar */}
-        {isCurrentTurn && timerDeadlineMs && timerDeadlineMs > Date.now() && !player.isFolded && (
+        {isCurrentTurn && turnTimeRemaining !== undefined && !player.isFolded && (
           <div 
             className="absolute z-0 pointer-events-none"
             style={{
@@ -640,7 +640,7 @@ const PlayerSeat = memo(function PlayerSeat({
             }}
           >
             <SmoothAvatarTimer 
-              deadlineMs={timerDeadlineMs}
+              remaining={turnTimeRemaining} 
               total={turnTimeTotal}
               size={avatarSize + 6}
               strokeWidth={3}
@@ -1281,7 +1281,7 @@ export interface FullscreenPokerTableProps {
   smallBlindSeat: number;
   bigBlindSeat: number;
   currentPlayerSeat: number | null;
-  timerDeadlineMs?: number;
+  turnTimeRemaining?: number;
   turnTimeTotal?: number;
   smallBlind: number;
   bigBlind: number;
@@ -1358,7 +1358,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   smallBlindSeat,
   bigBlindSeat,
   currentPlayerSeat,
-  timerDeadlineMs,
+  turnTimeRemaining,
   turnTimeTotal,
   smallBlind,
   bigBlind,
@@ -1596,10 +1596,11 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               isSB={player?.seatNumber === smallBlindSeat}
               isBB={player?.seatNumber === bigBlindSeat}
               isCurrentTurn={player?.seatNumber === currentPlayerSeat}
-              timerDeadlineMs={player?.seatNumber === currentPlayerSeat ? timerDeadlineMs : undefined}
+              turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
               turnTimeTotal={turnTimeTotal}
               heroCards={idx === 0 ? heroCards : undefined}
               communityCards={communityCards}
+              gamePhase={phase}
               canJoin={canJoinTable && (!player || /bot/i.test(player.name ?? ''))}
               onSeatClick={onSeatClick}
               lastAction={(player as any)?.lastAction}
