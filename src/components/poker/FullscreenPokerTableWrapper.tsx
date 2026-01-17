@@ -143,7 +143,7 @@ export function FullscreenPokerTableWrapper({
 
   // POKERSTARS-STYLE TIMER: Server-authoritative timing
   // Server sends: timeRemaining, actionStartTime, isTimeBankPhase
-  // Client syncs from server and counts down locally
+  // Client anchors deadline to server timing data and counts down locally
   const timerResetKey = useMemo(() => {
     return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}`;
   }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase]);
@@ -152,101 +152,157 @@ export function FullscreenPokerTableWrapper({
   const prevTimerResetKeyRef = useRef<string>('');
 
   // Store the deadline in a ref so it persists across re-renders
-  // Only recalculate when turn/phase actually changes
   const deadlineMsRef = useRef<number>(0);
-  
+
+  // Store slice total in ref (important for timebank drift-corrections)
+  const sliceTotalRef = useRef<number>(15);
+
+  // Normalize server timestamps (server might send seconds instead of ms)
+  const normalizeEpochMs = (ts: number) => {
+    // Epoch ms in 2026 is ~1.7e12; anything significantly smaller is likely seconds.
+    if (ts > 0 && ts < 1e11) return ts * 1000;
+    return ts;
+  };
+
+  // Decide the timebank total for ring progress (best-effort: take the biggest available value)
+  const resolveTimeBankTotal = () => {
+    const fromState = Number(tableState?.currentPlayerTimeBank ?? 0);
+    const fromPlayer = Number(
+      tableState?.players?.find((p) => p.seatNumber === tableState?.currentPlayerSeat)?.timeBankRemaining ?? 0
+    );
+
+    const candidate = Math.max(fromState, fromPlayer);
+
+    // If we couldn't get a meaningful total, fall back to serverRemaining (at TB start often equals full TB)
+    const serverRemaining = tableState?.timeRemaining;
+    if (candidate > 0) return candidate;
+    if (serverRemaining !== null && serverRemaining !== undefined && serverRemaining > 0) return serverRemaining;
+
+    // Last fallback
+    return Number(tableState?.actionTimer ?? 15);
+  };
+
+  // 1) Compute/refresh the absolute deadline when the turn changes (and only drift-correct occasionally)
   useEffect(() => {
-    // POKERSTARS-STYLE: Cash = 15s, Tournament = 30s (server provides actual value)
-    const actionTimer = tableState?.actionTimer || 15;
+    const actionTimer = Number(tableState?.actionTimer ?? 15);
 
     // No active player = no timer
     if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
-      setTurnTimeRemaining(null);
+      deadlineMsRef.current = 0;
+      sliceTotalRef.current = actionTimer;
       setTimerDeadlineMs(0);
+      setTurnTimeRemaining(null);
       setIsTimeBankActive(false);
       return;
     }
 
-    // Update time bank phase indicator
+    const now = Date.now();
+    const serverRemaining = tableState?.timeRemaining;
     const isTimeBankPhase = Boolean(tableState?.isTimeBankPhase);
     setIsTimeBankActive(isTimeBankPhase);
 
-    const now = Date.now();
-    const serverRemaining = tableState?.timeRemaining;
-    const serverActionStartTime = tableState?.actionStartTime;
-    
-    // POKERSTARS-STYLE TIME SYNC:
-    // Convert server timestamp to client clock using offset calculated on connect.
-    // clientActionStartTime = serverActionStartTime - serverTimeOffsetMs
-    // This corrects for any clock skew between client device and server.
-    const actionStartTime = serverActionStartTime && serverActionStartTime > 0
-      ? serverActionStartTime - (serverTimeOffsetMs || 0)
-      : null;
+    // Total for current slice (main timer or timebank timer)
+    const sliceTotal = isTimeBankPhase ? resolveTimeBankTotal() : actionTimer;
 
-    // Detect if this is a NEW turn/phase (timerResetKey changed)
+    // Parse + convert server actionStartTime into client clock (if usable)
+    const rawServerActionStart = tableState?.actionStartTime;
+    const serverActionStartMs =
+      rawServerActionStart && typeof rawServerActionStart === 'number' && rawServerActionStart > 0
+        ? normalizeEpochMs(rawServerActionStart)
+        : null;
+
+    const clientActionStartMs = serverActionStartMs !== null ? serverActionStartMs - (serverTimeOffsetMs || 0) : null;
+
+    const deadlineFromActionStart =
+      clientActionStartMs && clientActionStartMs > 0 ? clientActionStartMs + sliceTotal * 1000 : null;
+
+    const deadlineFromRemaining =
+      serverRemaining !== null && serverRemaining !== undefined ? now + serverRemaining * 1000 : null;
+
+    // Detect if this is a NEW turn/phase
     const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current;
     prevTimerResetKeyRef.current = timerResetKey;
 
-    // POKERSTARS-STYLE: Anchor deadline to server actionStartTime (converted to client clock)
-    // This ensures all clients see the exact same timer regardless of network latency or clock skew
+    const pickBestDeadline = () => {
+      // If we don't have serverRemaining, the only reliable option is actionStart (if any) or local.
+      if (serverRemaining === null || serverRemaining === undefined) {
+        if (deadlineFromActionStart !== null) return deadlineFromActionStart;
+        return now + sliceTotal * 1000;
+      }
+
+      // If we have both candidates, ensure actionStart-based deadline matches serverRemaining reasonably.
+      if (deadlineFromActionStart !== null && deadlineFromRemaining !== null) {
+        const impliedRemaining = Math.max(0, (deadlineFromActionStart - now) / 1000);
+        const mismatch = Math.abs(impliedRemaining - serverRemaining);
+
+        // If mismatch is big, actionStartTime is likely in wrong units or unsynced -> trust remaining.
+        if (mismatch > 1.5) return deadlineFromRemaining;
+
+        // Also guard against insane timestamps (e.g., 1970/3000)
+        if (Math.abs(deadlineFromActionStart - now) > 5 * 60 * 1000) return deadlineFromRemaining;
+
+        return deadlineFromActionStart;
+      }
+
+      // Only remaining is available
+      if (deadlineFromRemaining !== null) return deadlineFromRemaining;
+
+      // Only actionStart is available
+      if (deadlineFromActionStart !== null) return deadlineFromActionStart;
+
+      // Last fallback
+      return now + sliceTotal * 1000;
+    };
+
     if (isNewTurn) {
-      if (isTimeBankPhase) {
-        const tbSlice = serverRemaining ?? actionTimer;
-        setTurnTimeTotal(tbSlice);
-        if (actionStartTime && actionStartTime > 0) {
-          deadlineMsRef.current = actionStartTime + tbSlice * 1000;
-        } else {
-          deadlineMsRef.current = now + tbSlice * 1000;
-        }
-      } else {
-        setTurnTimeTotal(actionTimer);
-        if (actionStartTime && actionStartTime > 0) {
-          deadlineMsRef.current = actionStartTime + actionTimer * 1000;
-        } else if (serverRemaining !== null && serverRemaining !== undefined) {
-          deadlineMsRef.current = now + serverRemaining * 1000;
-        } else {
-          deadlineMsRef.current = now + actionTimer * 1000;
-        }
-      }
-      // Update deadline state for smooth ring
+      sliceTotalRef.current = sliceTotal;
+      setTurnTimeTotal(sliceTotal);
+
+      deadlineMsRef.current = pickBestDeadline();
       setTimerDeadlineMs(deadlineMsRef.current);
-    } else {
-      // SAME TURN: drift correction only when significant (>2s) to avoid visual jumps
-      // Use serverRemaining for drift check since it's already computed by server
-      if (serverRemaining !== null && serverRemaining !== undefined) {
-        const localRemaining = Math.max(0, (deadlineMsRef.current - now) / 1000);
-        const drift = Math.abs(serverRemaining - localRemaining);
-        if (drift > 2) {
-          // Re-sync using converted actionStartTime if available, else use serverRemaining
-          if (actionStartTime && actionStartTime > 0) {
-            const totalTime = isTimeBankPhase ? (serverRemaining ?? actionTimer) : actionTimer;
-            deadlineMsRef.current = actionStartTime + totalTime * 1000;
-          } else {
-            deadlineMsRef.current = now + serverRemaining * 1000;
-          }
-          setTimerDeadlineMs(deadlineMsRef.current);
-        }
-      }
+      return;
     }
 
-    // Calculate remaining for sounds (integer seconds)
-    const getRemainingInt = () => Math.ceil(Math.max(0, (deadlineMsRef.current - Date.now()) / 1000));
+    // SAME TURN: drift correction only when significant to avoid visual jumps
+    if (serverRemaining !== null && serverRemaining !== undefined && deadlineMsRef.current > 0) {
+      const localRemaining = Math.max(0, (deadlineMsRef.current - now) / 1000);
+      const drift = Math.abs(serverRemaining - localRemaining);
+
+      if (drift > 2) {
+        // Prefer actionStart anchor if it looks valid, else fall back to remaining
+        const corrected = pickBestDeadline();
+        deadlineMsRef.current = corrected;
+        setTimerDeadlineMs(deadlineMsRef.current);
+      }
+    }
+  }, [
+    timerResetKey,
+    tableState?.currentPlayerSeat,
+    tableState?.players,
+    tableState?.actionTimer,
+    tableState?.timeRemaining,
+    tableState?.actionStartTime,
+    tableState?.isTimeBankPhase,
+    tableState?.currentPlayerTimeBank,
+    serverTimeOffsetMs
+  ]);
+
+  // 2) Update integer remaining (for sounds / simple UI). This must NOT restart on every server tick.
+  useEffect(() => {
+    if (!timerDeadlineMs || timerDeadlineMs <= 0) {
+      setTurnTimeRemaining(null);
+      return;
+    }
+
+    const getRemainingInt = () => Math.ceil(Math.max(0, (timerDeadlineMs - Date.now()) / 1000));
     setTurnTimeRemaining(getRemainingInt());
 
-    // Update integer remaining for sounds every 500ms (less frequent, sounds don't need 100ms)
     const interval = setInterval(() => {
       setTurnTimeRemaining(getRemainingInt());
     }, 500);
 
     return () => clearInterval(interval);
-  }, [
-    timerResetKey,
-    tableState?.actionTimer,
-    tableState?.timeRemaining,
-    tableState?.actionStartTime,
-    tableState?.isTimeBankPhase,
-    serverTimeOffsetMs
-  ]);
+  }, [timerDeadlineMs]);
 
   // Auto-connect handled inside useNodePokerTable
 
