@@ -211,6 +211,7 @@ export function FullscreenPokerTableWrapper({
   // MAIN TIMER EFFECT: Only runs on NEW TURN
   // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
+    // POKERSTARS v3.5: Get actionTimer from server (15s cash / 30s tournament)
     const actionTimer = Number(tableState?.actionTimer ?? 15);
 
     // No active player = no timer
@@ -241,6 +242,7 @@ export function FullscreenPokerTableWrapper({
     setIsTimeBankActive(isTimeBankPhase);
 
     // Total duration for this timer slice
+    // POKERSTARS v3.5: Use server's actionTimer (not hardcoded)
     const sliceTotal = isTimeBankPhase ? resolveTimeBankTotal() : actionTimer;
     sliceTotalRef.current = sliceTotal;
     setTurnTimeTotal(sliceTotal);
@@ -296,20 +298,22 @@ export function FullscreenPokerTableWrapper({
     deadlineMsRef.current = newDeadline;
     setTimerDeadlineMs(newDeadline);
     
-    // ДИАГНОСТИКА: Детальное логирование таймера
-    console.log('[TIMER] New turn:', {
+    // POKERSTARS v3.5: Детальное логирование для диагностики
+    console.log('[TIMER] ⏱️ New turn:', {
       timerResetKey,
-      sliceTotal,
+      sliceTotal: sliceTotal + 's',
       source,
-      serverActionTimer: tableState?.actionTimer,
+      serverActionTimer: tableState?.actionTimer + 's',
       deadline: new Date(newDeadline).toISOString(),
       remaining: Math.round((newDeadline - now) / 1000) + 's',
       clientNow: new Date(now).toISOString(),
       isTimeBankPhase,
-      actionStartTime: tableState?.actionStartTime,
-      clientActionStartMs,
-      serverTimeOffsetMs,
-      timeRemaining: tableState?.timeRemaining
+      actionStartTime: tableState?.actionStartTime ? new Date(tableState.actionStartTime).toISOString() : null,
+      clientActionStartMs: clientActionStartMs ? new Date(clientActionStartMs).toISOString() : null,
+      serverTimeOffsetMs: serverTimeOffsetMs + 'ms',
+      timeRemaining: tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined 
+        ? tableState.timeRemaining + 's' 
+        : null
     });
 
   // Dependencies: only re-anchor on NEW TURN (timerResetKey) or when clock offset changes.
