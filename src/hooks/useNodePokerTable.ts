@@ -314,7 +314,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         isDisconnected: ((p as any).status === 'disconnected') as boolean,
         isSittingOut: (((p as any).isSittingOut ?? (p as any).is_sitting_out) || (p as any).status === 'sitting_out') as boolean,
         missedTurns: (((p as any).missedTurns ?? (p as any).missed_turns) || 0) as number,
-        timeBankRemaining: (((p as any).timeBank ?? (p as any).time_bank_remaining) || 60) as number,
+        // IMPORTANT: do NOT default to 60 here. If server doesn't send time bank, use 0.
+        // Wrong defaults break ring total calculation (client may think time bank is bigger than it is).
+        timeBankRemaining: Number((p as any).timeBank ?? (p as any).time_bank_remaining ?? 0),
         // Showdown fields
         handName: ((p as any).handName || (p as any).handRank || (p as any).hand_rank) as string | undefined,
         isWinner: Boolean((p as any).isWinner || ((p as any).wonAmount as number) > 0 || ((p as any).won_amount as number) > 0),
