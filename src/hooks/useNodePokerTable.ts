@@ -300,6 +300,17 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         });
       }
 
+      const timeBankRemaining = Number(
+        (p as any).timeBankRemaining ??
+          (p as any).time_bank_remaining ??
+          (p as any).timeBank ??
+          (p as any).time_bank ??
+          (p as any).timebankRemaining ??
+          (p as any).timebank_remaining ??
+          (p as any).timebank ??
+          0
+      );
+
       return {
         playerId: ((p as any).playerId || (p as any).id) as string,
         name: ((p as any).name || 'Player') as string,
@@ -311,16 +322,23 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         holeCards: (((p as any).holeCards || (p as any).cards) ?? []) as string[],
         isFolded: (((p as any).isFolded ?? (p as any).is_folded) || false) as boolean,
         isAllIn: (((p as any).isAllIn ?? (p as any).is_all_in) || false) as boolean,
-        isActive: ((p as any).isActive !== false && (p as any).status !== 'disconnected' && (p as any).status !== 'folded' && (p as any).status !== 'sitting_out') as boolean,
+        isActive:
+          (p as any).isActive !== false &&
+          (p as any).status !== 'disconnected' &&
+          (p as any).status !== 'folded' &&
+          (p as any).status !== 'sitting_out',
         isDisconnected: ((p as any).status === 'disconnected') as boolean,
-        isSittingOut: (((p as any).isSittingOut ?? (p as any).is_sitting_out) || (p as any).status === 'sitting_out') as boolean,
+        isSittingOut:
+          (((p as any).isSittingOut ?? (p as any).is_sitting_out) || (p as any).status === 'sitting_out') as boolean,
         missedTurns: (((p as any).missedTurns ?? (p as any).missed_turns) || 0) as number,
         // IMPORTANT: do NOT default to 60 here. If server doesn't send time bank, use 0.
         // Wrong defaults break ring total calculation (client may think time bank is bigger than it is).
-        timeBankRemaining: Number((p as any).timeBank ?? (p as any).time_bank_remaining ?? 0),
+        timeBankRemaining,
         // Showdown fields
         handName: ((p as any).handName || (p as any).handRank || (p as any).hand_rank) as string | undefined,
-        isWinner: Boolean((p as any).isWinner || ((p as any).wonAmount as number) > 0 || ((p as any).won_amount as number) > 0),
+        isWinner: Boolean(
+          (p as any).isWinner || ((p as any).wonAmount as number) > 0 || ((p as any).won_amount as number) > 0
+        ),
         bestCards: (((p as any).bestCards ?? (p as any).best_cards) || []) as string[]
       };
     });
@@ -445,7 +463,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       (state as any).currentPlayerTimeBank ??
       (state as any).current_player_time_bank ??
       (state as any).currentPlayerTimebank ??
-      (state as any).current_player_timebank;
+      (state as any).current_player_timebank ??
+      (state as any).current_time_bank_remaining ??
+      (state as any).currentTimeBankRemaining;
 
     const timeRemaining =
       timeRemainingRaw === null || timeRemainingRaw === undefined ? undefined : Number(timeRemainingRaw);
@@ -453,12 +473,21 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     const actionStartTime =
       actionStartTimeRaw === null || actionStartTimeRaw === undefined ? undefined : Number(actionStartTimeRaw);
 
-    const isTimeBankPhase = Boolean(isTimeBankPhaseRaw);
+    const parseBool = (v: unknown): boolean => {
+      if (v === true || v === 1) return true;
+      if (v === false || v === 0 || v === null || v === undefined) return false;
+      if (typeof v === 'string') {
+        const s = v.trim().toLowerCase();
+        if (s === 'true' || s === '1' || s === 'yes') return true;
+        if (s === 'false' || s === '0' || s === 'no' || s === '') return false;
+      }
+      return Boolean(v);
+    };
+
+    const isTimeBankPhase = parseBool(isTimeBankPhaseRaw);
 
     const currentPlayerTimeBank =
-      currentPlayerTimeBankRaw === null || currentPlayerTimeBankRaw === undefined
-        ? 0
-        : Number(currentPlayerTimeBankRaw);
+      currentPlayerTimeBankRaw === null || currentPlayerTimeBankRaw === undefined ? 0 : Number(currentPlayerTimeBankRaw);
 
     return {
       tableId: tblId,
@@ -773,80 +802,80 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
         case 'phase_change':
         case 'phaseChange':
-          // PROFESSIONAL TIMING: These events now include dealDelay and preDealDelay from server
-          log(`📡 ${data.type} event received:`, {
-            hasState: !!data.state,
-            stateKeys: data.state ? Object.keys(data.state as object) : [],
-            dealDelay: (data as any).dealDelay,
-            preDealDelay: (data as any).preDealDelay,
-            phase: (data as any).phase
-          });
-          
-          // Extract professional timings from server
+          // Server emits phase_change as a *cue* to animate dealing.
+          // IMPORTANT: do NOT start/anchor action timer here. That comes later in state_update
+          // after server waits (preDealDelay/dealDelay/postDealDelay).
           {
             const payload: any = (data as any).data || data;
+
             const dealDelay = (payload.dealDelay ?? payload.deal_delay) as number | undefined;
             const preDealDelay = (payload.preDealDelay ?? payload.pre_deal_delay) as number | undefined;
-            const eventPhase = (payload.phase || (data.state as any)?.phase) as string | undefined;
-            
-            if (dealDelay !== undefined || preDealDelay !== undefined) {
-              setPhaseTimings({
+            const postDealDelay = (payload.postDealDelay ?? payload.post_deal_delay) as number | undefined;
+            const rawPhase = (payload.phase ?? (data.state as any)?.phase) as string | undefined;
+
+            // Capture timings for ProfessionalCommunityCards
+            if (dealDelay !== undefined || preDealDelay !== undefined || postDealDelay !== undefined) {
+              setPhaseTimings({ dealDelay, preDealDelay, postDealDelay, phase: rawPhase });
+
+              const totalDelay = (preDealDelay || 0) + (dealDelay || 0) + (postDealDelay || 0) + 500;
+              setTimeout(() => setPhaseTimings(null), totalDelay);
+            }
+
+            // If server also attached a full state, accept it.
+            if (data.state && tableId) {
+              const stateData = data.state as Record<string, unknown>;
+              log(`📡 phase_change(with state):`, {
+                phase: (stateData as any).phase,
+                currentPlayerSeat: (stateData as any).currentPlayerSeat,
+                actionStartTime: (stateData as any).actionStartTime ?? (stateData as any).action_start_time,
+                timeRemaining: (stateData as any).timeRemaining ?? (stateData as any).time_remaining,
                 dealDelay,
                 preDealDelay,
-                phase: eventPhase
+                postDealDelay
               });
-              
-              // Clear timings after use
-              const totalDelay = (preDealDelay || 0) + (dealDelay || 0) + 500;
-              setTimeout(() => {
-                setPhaseTimings(null);
-              }, totalDelay);
-            }
-          }
-          
-          if (data.state && tableId) {
-            const stateData = data.state as Record<string, unknown>;
-            
-            // Log all state keys and values for debugging
-            log(`📊 Full state dump:`, JSON.stringify(stateData).substring(0, 800));
-            
-            // Log specific fields
-            log(`📊 State fields:`, {
-              phase: stateData.phase,
-              currentPlayerSeat: stateData.currentPlayerSeat,
-              myCards: stateData.myCards,
-              mySeat: stateData.mySeat,
-              isMyTurn: stateData.isMyTurn,
-              pot: stateData.pot,
-              hasConfig: !!stateData.config
-            });
-            
-            setTableState(transformServerState(data.state, tableId));
-            
-            // Extract myCards from state - server sends at root level
-            if (stateData.myCards) {
-              const cards = stateData.myCards as string[];
-              log('🃏 Setting my cards from myCards:', cards);
-              setMyCards(cards);
-            } else {
-              // Fallback: try to find my cards in players array
-              const playersData = stateData.players as Array<Record<string, unknown>> | undefined;
-              if (playersData && playerId) {
-                const myPlayer = playersData.find(p => 
-                  (p.playerId === playerId || p.id === playerId) && 
-                  Array.isArray(p.holeCards) && 
-                  (p.holeCards as string[]).length > 0
-                );
-                if (myPlayer) {
-                  const cards = myPlayer.holeCards as string[];
-                  log('🃏 Setting my cards from player holeCards:', cards);
-                  setMyCards(cards);
-                }
+
+              setTableState(transformServerState(data.state, tableId));
+
+              // Extract myCards from state - server sends at root level
+              if (stateData.myCards) {
+                const cards = stateData.myCards as string[];
+                log('🃏 Setting my cards from myCards:', cards);
+                setMyCards(cards);
               }
+              if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
+                setMySeat(stateData.mySeat as number);
+              }
+
+              break;
             }
-            
-            if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
-              setMySeat(stateData.mySeat as number);
+
+            // Typical v3 format: phase_change WITHOUT full state. Apply ONLY visual fields.
+            const communityCards = (payload.communityCards ?? payload.community_cards) as string[] | undefined;
+            const pot = payload.pot as number | undefined;
+
+            if (tableId && (rawPhase || communityCards || pot !== undefined)) {
+              const normalizePhase = (p?: string): TableState['phase'] | undefined => {
+                if (!p) return undefined;
+                const p0 = String(p).toLowerCase().trim().replace(/[-\s]+/g, '_');
+                if (p0 === 'pre_flop' || p0 === 'preflop') return 'preflop';
+                if (p0 === 'no_hand' || p0 === 'idle' || p0 === 'lobby') return 'waiting';
+                if (p0 === 'waiting' || p0 === 'flop' || p0 === 'turn' || p0 === 'river' || p0 === 'showdown') {
+                  return p0 as TableState['phase'];
+                }
+                return undefined;
+              };
+
+              const nextPhase = normalizePhase(rawPhase);
+
+              setTableState((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  ...(nextPhase ? { phase: nextPhase } : null),
+                  ...(Array.isArray(communityCards) ? { communityCards } : null),
+                  ...(pot !== undefined ? { pot } : null)
+                };
+              });
             }
           }
           break;
@@ -1638,33 +1667,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }
           break;
 
-        // PROFESSIONAL TIMING: Phase change with card dealing delays
-        case 'phase_change':
-          {
-            const phaseData = data as Record<string, unknown>;
-            log('🎴 Phase change:', phaseData);
-            
-            setPhaseTimings({
-              dealDelay: phaseData.dealDelay as number | undefined,
-              preDealDelay: phaseData.preDealDelay as number | undefined,
-              postDealDelay: phaseData.postDealDelay as number | undefined,
-              phase: phaseData.phase as string | undefined
-            });
-            
-            // Update community cards
-            if (phaseData.communityCards && tableId) {
-              setTableState(prev => {
-                if (!prev) return prev;
-                return {
-                  ...prev,
-                  phase: phaseData.phase as TableState['phase'] || prev.phase,
-                  communityCards: phaseData.communityCards as string[],
-                  pot: (phaseData.pot as number) ?? prev.pot
-                };
-              });
-            }
-          }
-          break;
+        // (phase_change handler is implemented earlier in the switch with full snake_case support)
+        // Keeping a second handler caused dead-code/duplication and could desync visual timing.
+
 
         // PROFESSIONAL: Showdown start event
         case 'showdown_start':
