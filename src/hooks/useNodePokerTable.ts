@@ -803,8 +803,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'phase_change':
         case 'phaseChange':
           // Server emits phase_change as a *cue* to animate dealing.
-          // IMPORTANT: do NOT start/anchor action timer here. That comes later in state_update
-          // after server waits (preDealDelay/dealDelay/postDealDelay).
+          // CRITICAL: Do NOT apply full state from phase_change!
+          // Timer/action fields MUST come from state_update AFTER server animation delays.
+          // Applying full state here causes desync: turn/river open before opponent acts.
           {
             const payload: any = (data as any).data || data;
 
@@ -821,39 +822,39 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               setTimeout(() => setPhaseTimings(null), totalDelay);
             }
 
-            // If server also attached a full state, accept it.
-            if (data.state && tableId) {
-              const stateData = data.state as Record<string, unknown>;
-              log(`📡 phase_change(with state):`, {
-                phase: (stateData as any).phase,
-                currentPlayerSeat: (stateData as any).currentPlayerSeat,
-                actionStartTime: (stateData as any).actionStartTime ?? (stateData as any).action_start_time,
-                timeRemaining: (stateData as any).timeRemaining ?? (stateData as any).time_remaining,
-                dealDelay,
-                preDealDelay,
-                postDealDelay
-              });
+            // FIXED: Even if server attached full state, extract ONLY visual fields.
+            // currentPlayerSeat, actionStartTime, timeRemaining are IGNORED here.
+            // They will be applied properly in the subsequent state_update event.
+            const stateData = (data.state as Record<string, unknown>) || {};
+            const communityCards = (
+              payload.communityCards ?? 
+              payload.community_cards ?? 
+              stateData.communityCards ?? 
+              (stateData as any).community_cards
+            ) as string[] | undefined;
+            const pot = (payload.pot ?? stateData.pot) as number | undefined;
+            const phaseFromState = (stateData.phase ?? (stateData as any).phase) as string | undefined;
+            const effectivePhase = rawPhase || phaseFromState;
 
-              setTableState(transformServerState(data.state, tableId));
+            log(`📡 phase_change (visual only):`, {
+              phase: effectivePhase,
+              communityCards,
+              pot,
+              ignoredFields: ['currentPlayerSeat', 'actionStartTime', 'timeRemaining']
+            });
 
-              // Extract myCards from state - server sends at root level
-              if (stateData.myCards) {
-                const cards = stateData.myCards as string[];
-                log('🃏 Setting my cards from myCards:', cards);
-                setMyCards(cards);
-              }
-              if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
-                setMySeat(stateData.mySeat as number);
-              }
-
-              break;
+            // Extract myCards from state if present
+            if (stateData.myCards) {
+              const cards = stateData.myCards as string[];
+              log('🃏 Setting my cards from phase_change:', cards);
+              setMyCards(cards);
+            }
+            if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
+              setMySeat(stateData.mySeat as number);
             }
 
-            // Typical v3 format: phase_change WITHOUT full state. Apply ONLY visual fields.
-            const communityCards = (payload.communityCards ?? payload.community_cards) as string[] | undefined;
-            const pot = payload.pot as number | undefined;
-
-            if (tableId && (rawPhase || communityCards || pot !== undefined)) {
+            // Apply ONLY visual fields - NO timer/action fields!
+            if (tableId && (effectivePhase || communityCards || pot !== undefined)) {
               const normalizePhase = (p?: string): TableState['phase'] | undefined => {
                 if (!p) return undefined;
                 const p0 = String(p).toLowerCase().trim().replace(/[-\s]+/g, '_');
@@ -865,7 +866,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 return undefined;
               };
 
-              const nextPhase = normalizePhase(rawPhase);
+              const nextPhase = normalizePhase(effectivePhase);
 
               setTableState((prev) => {
                 if (!prev) return prev;
@@ -874,6 +875,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                   ...(nextPhase ? { phase: nextPhase } : null),
                   ...(Array.isArray(communityCards) ? { communityCards } : null),
                   ...(pot !== undefined ? { pot } : null)
+                  // CRITICAL: Do NOT update currentPlayerSeat, actionStartTime, timeRemaining here!
                 };
               });
             }
