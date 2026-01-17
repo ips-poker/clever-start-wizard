@@ -214,9 +214,19 @@ export function FullscreenPokerTableWrapper({
   // ═══════════════════════════════════════════════════════════════════════════
   // MAIN TIMER EFFECT: UNIFIED RING (base + timebank as one continuous timer)
   // ═══════════════════════════════════════════════════════════════════════════
+  // 
+  // POKERSTARS MODEL:
+  // - Сервер присылает actionStartTime (anchor) + isTimeBankPhase + timeRemaining
+  // - Кольцо = base (15/30s) + timeBank (30/60s) = одно непрерывное кольцо
+  // - При переходе в timeBank кольцо НЕ сбрасывается, продолжает уменьшаться
+  // - deadline = actionStartTime + (base + timeBank) * 1000
+  // 
+  // КЛЮЧЕВОЕ: timerResetKey НЕ включает isTimeBankPhase, чтобы переход 
+  // main→timebank не вызывал "новый ход" и сброс кольца.
+  // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
-    // POKERSTARS v3.5: Get actionTimer from server (15s cash / 30s tournament)
-    const actionTimer = Number(tableState?.actionTimer ?? 15);
+    // Get base timer from server (15s cash / 30s tournament)
+    const actionTimer = Number(tableState?.actionTimer ?? (isTournament ? 30 : 15));
     const playerTimeBank = resolvePlayerTimeBank();
     
     // UNIFIED TOTAL: base time + time bank = one continuous ring
@@ -275,14 +285,13 @@ export function FullscreenPokerTableWrapper({
       newDeadline = clientActionStartMs + unifiedTotal * 1000;
       source = 'actionStartTime';
 
-      // Sanity check: deadline should be in the future (within reason)
+      // Sanity check: deadline should be in reasonable future
       const impliedRemaining = (newDeadline - now) / 1000;
       if (impliedRemaining < -5 || impliedRemaining > unifiedTotal + 10) {
         // actionStartTime seems broken, fall back to timeRemaining
         const serverRemainingRaw = tableState?.timeRemaining;
         if (serverRemainingRaw !== null && serverRemainingRaw !== undefined && serverRemainingRaw >= 0) {
-          // IMPORTANT: serverRemaining is usually per-slice.
-          // For UNIFIED ring, if we're still in main timer, add player's timebank.
+          // serverRemaining is per-slice. For UNIFIED ring, add timebank if still in main phase.
           const unifiedRemaining = isTimeBankPhase
             ? Number(serverRemainingRaw)
             : Math.min(unifiedTotal, Number(serverRemainingRaw) + playerTimeBank);
@@ -316,27 +325,23 @@ export function FullscreenPokerTableWrapper({
     deadlineMsRef.current = newDeadline;
     setTimerDeadlineMs(newDeadline);
     
-    // POKERSTARS v3.5: Детальное логирование для диагностики
-    console.log('[TIMER] ⏱️ New turn (UNIFIED RING):', {
-      timerResetKey,
-      unifiedTotal: unifiedTotal + 's',
-      baseTime: actionTimer + 's',
-      timeBank: playerTimeBank + 's',
-      source,
-      deadline: new Date(newDeadline).toISOString(),
-      remaining: Math.round((newDeadline - now) / 1000) + 's',
-      clientNow: new Date(now).toISOString(),
-      isTimeBankPhase,
-      actionStartTime: tableState?.actionStartTime ? new Date(tableState.actionStartTime).toISOString() : null,
-      clientActionStartMs: clientActionStartMs ? new Date(clientActionStartMs).toISOString() : null,
-      serverTimeOffsetMs: serverTimeOffsetMs + 'ms',
-      timeRemaining: tableState?.timeRemaining !== null && tableState?.timeRemaining !== undefined 
-        ? tableState.timeRemaining + 's' 
-        : null
-    });
+    // Debug logging (only in dev or with POKER_DEBUG=1)
+    if (import.meta.env.DEV || localStorage.getItem('POKER_DEBUG') === '1') {
+      console.log('[TIMER] ⏱️ New turn (UNIFIED RING):', {
+        timerResetKey,
+        unifiedTotal: unifiedTotal + 's',
+        baseTime: actionTimer + 's',
+        timeBank: playerTimeBank + 's',
+        source,
+        deadline: new Date(newDeadline).toISOString(),
+        remaining: Math.round((newDeadline - now) / 1000) + 's',
+        isTimeBankPhase,
+        serverTimeOffsetMs: serverTimeOffsetMs + 'ms'
+      });
+    }
 
   // Dependencies: only re-anchor on NEW TURN (timerResetKey) or when clock offset changes.
-  }, [timerResetKey, tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.isTimeBankPhase, serverTimeOffsetMs, normalizeEpochMs, resolvePlayerTimeBank]);
+  }, [timerResetKey, tableState?.currentPlayerSeat, tableState?.actionTimer, tableState?.isTimeBankPhase, serverTimeOffsetMs, normalizeEpochMs, resolvePlayerTimeBank, isTournament]);
 
   // 2) Update integer remaining (for sounds / simple UI). This must NOT restart on every server tick.
   useEffect(() => {
