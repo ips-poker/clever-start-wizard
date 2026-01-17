@@ -74,10 +74,20 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   useEffect(() => {
     const totalChanged = total !== lastTotalRef.current;
     const drift = Math.abs(remaining - currentRemainingRef.current);
-    const jumpedUp = remaining > currentRemainingRef.current + 0.75; // new turn / time bank
+
+    // IMPORTANT: parent often passes integer seconds (Math.ceil). That can be up to ~0.99s higher than
+    // our smooth internal value and would look like a “jump up” even though time is decreasing.
+    // So treat “jumped up” only when the prop increases by more than ~1.25s (new turn / time bank).
+    const jumpedUp = remaining > currentRemainingRef.current + 1.25;
 
     // If server corrects the remaining time by more than ~1.25s, re-sync.
     const needsResync = totalChanged || jumpedUp || drift > 1.25;
+
+    if (needsResync) {
+      lastTotalRef.current = total;
+      startAnimation(remaining);
+    }
+  }, [remaining, total]);
 
     if (needsResync) {
       lastTotalRef.current = total;
