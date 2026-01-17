@@ -2591,11 +2591,11 @@ export class PokerTable {
       const showdownHands: { playerId: string; holeCards: string[]; handRank: string }[] = [];
       for (const player of this.players.values()) {
         if (player.holeCards.length > 0 && !player.isFolded) {
-          const handResult = evaluateHand([...player.holeCards, ...this.currentHand.communityCards]);
+          const handResult = evaluateHand(player.holeCards, this.currentHand.communityCards);
           showdownHands.push({
             playerId: player.id,
             holeCards: player.holeCards,
-            handRank: handResult?.name || 'Unknown'
+            handRank: handResult?.handName || 'Unknown'
           });
         }
       }

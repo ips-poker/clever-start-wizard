@@ -20,7 +20,7 @@ export interface RecordedAction {
   playerId: string;
   playerName: string;
   seatNumber: number;
-  phase: 'preflop' | 'flop' | 'turn' | 'river';
+  phase: 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
   actionType: string;
   amount: number;
   potAfter: number;
