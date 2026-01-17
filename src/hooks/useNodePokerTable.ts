@@ -540,11 +540,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
               // If we're currently in showdown, keep showdown annotations stable even if
               // server keeps sending "state" snapshots without winner indices.
-              // IMPORTANT: Keep winning data for showdown display duration
+              // IMPORTANT: only preserve within the same handId; otherwise we can block the next hand.
               const showdownElapsed = Date.now() - showdownStartTimeRef.current;
               const isWithinShowdownWindow = showdownElapsed < SHOWDOWN_DISPLAY_MS;
+              const isSameHand = Boolean(prev?.handId && newState.handId && prev.handId === newState.handId);
               
-              if (prev?.phase === 'showdown' && isWithinShowdownWindow) {
+              if (prev?.phase === 'showdown' && isWithinShowdownWindow && isSameHand) {
                 const prevById = new Map(prev.players.map((p) => [p.playerId, p] as const));
                 newState.phase = 'showdown';
                 newState.players = newState.players.map((p) => {
@@ -556,12 +557,14 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                     holeCards: (old.holeCards?.length ?? 0) >= 2 ? old.holeCards : p.holeCards,
                     handName: old.handName ?? p.handName,
                     isWinner: old.isWinner ?? p.isWinner ?? false,
-                    winningCardIndices: (old.winningCardIndices && old.winningCardIndices.length > 0)
-                      ? old.winningCardIndices
-                      : p.winningCardIndices,
-                    communityCardIndices: (old.communityCardIndices && old.communityCardIndices.length > 0)
-                      ? old.communityCardIndices
-                      : p.communityCardIndices,
+                    winningCardIndices:
+                      (old.winningCardIndices && old.winningCardIndices.length > 0)
+                        ? old.winningCardIndices
+                        : p.winningCardIndices,
+                    communityCardIndices:
+                      (old.communityCardIndices && old.communityCardIndices.length > 0)
+                        ? old.communityCardIndices
+                        : p.communityCardIndices,
                   };
                 });
               }
@@ -783,9 +786,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           
           // Extract professional timings from server
           {
-            const dealDelay = (data as any).dealDelay as number | undefined;
-            const preDealDelay = (data as any).preDealDelay as number | undefined;
-            const eventPhase = ((data as any).phase || (data.state as any)?.phase) as string | undefined;
+            const payload: any = (data as any).data || data;
+            const dealDelay = (payload.dealDelay ?? payload.deal_delay) as number | undefined;
+            const preDealDelay = (payload.preDealDelay ?? payload.pre_deal_delay) as number | undefined;
+            const eventPhase = (payload.phase || (data.state as any)?.phase) as string | undefined;
             
             if (dealDelay !== undefined || preDealDelay !== undefined) {
               setPhaseTimings({
@@ -931,7 +935,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             const stateData = (data.state || data.data || data) as Record<string, unknown>;
             if (tableId && (stateData.players || stateData.phase)) {
               const incomingState = transformServerState(stateData, tableId);
-              const keepShowdown = tableStateRef.current?.phase === 'showdown';
+              const showdownElapsed = Date.now() - showdownStartTimeRef.current;
+              const isWithinShowdownWindow = showdownElapsed < SHOWDOWN_DISPLAY_MS;
+              const isSameHand = Boolean(tableStateRef.current?.handId && incomingState.handId && tableStateRef.current.handId === incomingState.handId);
+              const keepShowdown = tableStateRef.current?.phase === 'showdown' && isWithinShowdownWindow && isSameHand;
 
               setTableState((prev) => {
                 if (!prev) return keepShowdown ? { ...incomingState, phase: 'showdown' } : incomingState;
