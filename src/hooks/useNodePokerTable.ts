@@ -119,6 +119,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
   // State
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
+
+  // POKERSTARS-STYLE TIME SYNC:
+  // Server sends actionStartTime in *server epoch ms*. Client devices can have clock skew.
+  // We keep an offset (server_now - client_now) and convert server timestamps into client clock.
+  const [serverTimeOffsetMs, setServerTimeOffsetMs] = useState<number>(0);
+  const serverTimeOffsetRef = useRef<number>(0);
+
   const [tableState, setTableState] = useState<TableState | null>(null);
   const [myCards, setMyCards] = useState<string[]>([]);
   const [mySeat, setMySeat] = useState<number | null>(null);
