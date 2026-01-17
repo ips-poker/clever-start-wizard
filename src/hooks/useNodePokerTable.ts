@@ -486,11 +486,15 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // To convert server timestamp to client: clientTs = serverTs - offset
           if (data.timestamp && typeof data.timestamp === 'number') {
             const clientNow = Date.now();
-            const serverNow = data.timestamp as number;
+            const serverNowRaw = data.timestamp as number;
+            // Normalize: some servers may send seconds instead of ms
+            const serverNow = serverNowRaw > 0 && serverNowRaw < 1e11 ? serverNowRaw * 1000 : serverNowRaw;
             const offset = serverNow - clientNow;
             serverTimeOffsetRef.current = offset;
             setServerTimeOffsetMs(offset);
-            console.log(`[TimeSync] Server-client offset: ${offset}ms (${Math.round(offset / 1000)}s)`);
+            console.log(
+              `[TimeSync] Server-client offset: ${offset}ms (${Math.round(offset / 1000)}s) (serverNowRaw=${serverNowRaw})`
+            );
           }
           // Server may auto-subscribe based on URL params
           break;
