@@ -296,13 +296,19 @@ export function FullscreenPokerTableWrapper({
     deadlineMsRef.current = newDeadline;
     setTimerDeadlineMs(newDeadline);
     
+    // ДИАГНОСТИКА: Детальное логирование таймера
     console.log('[TIMER] New turn:', {
       timerResetKey,
       sliceTotal,
+      source,
+      serverActionTimer: tableState?.actionTimer,
       deadline: new Date(newDeadline).toISOString(),
       remaining: Math.round((newDeadline - now) / 1000) + 's',
+      clientNow: new Date(now).toISOString(),
       isTimeBankPhase,
       actionStartTime: tableState?.actionStartTime,
+      clientActionStartMs,
+      serverTimeOffsetMs,
       timeRemaining: tableState?.timeRemaining
     });
 
