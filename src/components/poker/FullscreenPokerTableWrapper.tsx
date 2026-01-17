@@ -73,6 +73,7 @@ export function FullscreenPokerTableWrapper({
   const [turnTimeRemaining, setTurnTimeRemaining] = useState<number | null>(null);
   const [turnTimeRemainingExact, setTurnTimeRemainingExact] = useState<number | null>(null);
   const [turnTimeTotal, setTurnTimeTotal] = useState<number>(15); // Total for current timer slice
+  const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPersonalSettings, setShowPersonalSettings] = useState(false);
   const [showBuyInDialog, setShowBuyInDialog] = useState(false);
@@ -810,6 +811,7 @@ export function FullscreenPokerTableWrapper({
             turnTimeRemainingExact={turnTimeRemainingExact ?? undefined}
             turnTimeTotal={turnTimeTotal}
             smallBlind={tableState?.smallBlindAmount || 10}
+            bigBlind={tableState?.bigBlindAmount || 20}
             canJoinTable={canJoinTable}
             onSeatClick={handleSeatClick}
             maxSeats={maxSeats}
