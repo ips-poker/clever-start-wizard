@@ -2095,6 +2095,34 @@ export class PokerTable {
           // completed_at is NULL - hand is in progress
         });
         
+        // CRITICAL FIX: Insert poker_hand_players records for each active player
+        // This was missing and caused orphaned hands without player data
+        const handPlayersToInsert = activePlayers.map(p => ({
+          hand_id: this.currentHand!.id,
+          player_id: p.id,
+          seat_number: p.seatNumber,
+          stack_start: p.stack,
+          hole_cards: p.holeCards,
+          bet_amount: p.currentBet,
+          is_folded: p.isFolded,
+          is_all_in: p.isAllIn
+        }));
+        
+        if (handPlayersToInsert.length > 0) {
+          const { error: handPlayersError } = await this.supabase
+            .from('poker_hand_players')
+            .insert(handPlayersToInsert);
+          
+          if (handPlayersError) {
+            logger.warn('Failed to insert hand players', { error: handPlayersError.message });
+          } else {
+            logger.info('Hand players saved to database', {
+              handId: this.currentHand!.id,
+              playerCount: handPlayersToInsert.length
+            });
+          }
+        }
+        
         // Also update poker_tables.current_hand_id
         await this.supabase
           .from('poker_tables')

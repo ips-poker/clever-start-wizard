@@ -327,6 +327,15 @@ export class PokerGameManager {
     try {
       const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
       
+      // CRITICAL FIX: First check for orphaned hands (hands without poker_hand_players)
+      // These are hands that were created but players weren't properly inserted
+      const { data: orphanedHands } = await this.supabase
+        .rpc('cleanup_stale_hands_and_consolidate');
+      
+      if (orphanedHands) {
+        logger.info('Orphaned hands cleanup result', { result: orphanedHands });
+      }
+      
       // Find hands that are TRULY stuck (not completed AND not in a finished phase)
       // Exclude 'complete', 'showdown', and 'aborted' phases - these should have completed_at set
       const { data: stuckHands, error } = await this.supabase
@@ -341,6 +350,41 @@ export class PokerGameManager {
       }
       
       for (const hand of stuckHands) {
+        // CRITICAL: Check if hand has any players - if not, it's orphaned
+        const { data: handPlayers } = await this.supabase
+          .from('poker_hand_players')
+          .select('id')
+          .eq('hand_id', hand.id)
+          .limit(1);
+        
+        if (!handPlayers || handPlayers.length === 0) {
+          // Orphaned hand - abort it immediately
+          logger.warn('Found orphaned hand (no players) - aborting', {
+            handId: hand.id,
+            tableId: hand.table_id,
+            phase: hand.phase
+          });
+          
+          await this.supabase
+            .from('poker_hands')
+            .update({ 
+              completed_at: new Date().toISOString(),
+              phase: 'aborted'
+            })
+            .eq('id', hand.id);
+          
+          await this.supabase
+            .from('poker_tables')
+            .update({ 
+              current_hand_id: null, 
+              status: 'waiting',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', hand.table_id);
+          
+          continue;
+        }
+        
         logger.warn('Found stuck hand - attempting recovery', {
           handId: hand.id,
           tableId: hand.table_id,
