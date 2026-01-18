@@ -149,6 +149,7 @@ const ProfessionalCard = memo(function ProfessionalCard({
 }) {
   const [isFlipped, setIsFlipped] = useState(!isNewCard);
   const [isDealt, setIsDealt] = useState(!isNewCard);
+  const [isVisible, setIsVisible] = useState(!isNewCard);
   
   const rank = card?.[0] === 'T' ? '10' : card?.[0] || '?';
   const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS_FOURCOLOR;
@@ -179,10 +180,16 @@ const ProfessionalCard = memo(function ProfessionalCard({
     if (!isNewCard) {
       setIsFlipped(true);
       setIsDealt(true);
+      setIsVisible(true);
       return;
     }
 
     const cardDelay = getCardDelay();
+    
+    // Make card visible right before animation starts
+    const visibleTimer = setTimeout(() => {
+      setIsVisible(true);
+    }, Math.max(0, cardDelay - 10));
     
     const slideTimer = setTimeout(() => {
       setIsDealt(true);
@@ -193,6 +200,7 @@ const ProfessionalCard = memo(function ProfessionalCard({
     }, cardDelay + 180);
 
     return () => {
+      clearTimeout(visibleTimer);
       clearTimeout(slideTimer);
       clearTimeout(flipTimer);
     };
@@ -242,6 +250,13 @@ const ProfessionalCard = memo(function ProfessionalCard({
   // Animated new card
   const cardDelay = getCardDelay();
 
+  // Hide card completely until animation starts
+  if (!isVisible) {
+    return (
+      <div style={{ width: 52, height: 72, visibility: 'hidden' }} />
+    );
+  }
+
   return (
     <motion.div
       className="relative"
@@ -266,7 +281,6 @@ const ProfessionalCard = memo(function ProfessionalCard({
       }}
       transition={{
         duration: 0.35,
-        delay: cardDelay / 1000,
         ease: [0.25, 0.46, 0.45, 0.94]
       }}
     >
