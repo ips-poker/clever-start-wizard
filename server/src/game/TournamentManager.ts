@@ -8,11 +8,19 @@
  * - Sit-N-Go presets
  */
 
-import { PokerGameType, TournamentBlindLevel } from './PokerEngineV3.js';
+import { PokerGameType } from './PokerEngineV3.js';
+import type { TournamentBlindLevel as TournamentBlindLevelType } from './PokerEngineV3.js';
 import { logger } from '../utils/logger.js';
 
-// Re-export TournamentBlindLevel for external use
-export { TournamentBlindLevel };
+// Re-export TournamentBlindLevel interface for external use
+export interface TournamentBlindLevel {
+  level: number;
+  smallBlind: number;
+  bigBlind: number;
+  ante: number;
+  duration: number;
+  isBreak: boolean;
+}
 
 // ==========================================
 // TOURNAMENT TYPES
