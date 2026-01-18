@@ -40,6 +40,18 @@ export interface Player {
   handsPlayedSinceLastTimeBank: number; // For time bank replenishment
 }
 
+// POKERSTARS-STYLE: Action log entry for hand history
+export interface ActionLogEntry {
+  playerId: string;
+  playerName: string;
+  seatNumber: number;
+  phase: 'preflop' | 'flop' | 'turn' | 'river';
+  actionType: string; // fold, check, call, raise, bet, all-in, posts_sb, posts_bb, posts_ante
+  amount: number;
+  timestamp: number;
+  actionOrder: number;
+}
+
 export interface HandState {
   id: string;
   handNumber: number;
@@ -62,6 +74,8 @@ export interface HandState {
   actionStartTime: number | null;
   isTimeBankPhase: boolean; // True when main timer expired, now using time bank
   playersActedThisRound: Set<string>; // Track who has acted in current betting round
+  // POKERSTARS-STYLE HAND HISTORY: Log all actions for export
+  actionLog: ActionLogEntry[];
 }
 
 type TableEventCallback = (event: TableEvent) => void;
@@ -1152,6 +1166,29 @@ export class PokerTable {
       }
     }
     
+    // POKERSTARS-STYLE HAND HISTORY: Record action to action log
+    if (this.currentHand) {
+      const actionLogEntry: ActionLogEntry = {
+        playerId,
+        playerName: player.name,
+        seatNumber: player.seatNumber,
+        phase: this.currentHand.phase as 'preflop' | 'flop' | 'turn' | 'river',
+        actionType: player.isAllIn ? 'all-in' : actionType,
+        amount: result.amount || 0,
+        timestamp: Date.now(),
+        actionOrder: this.currentHand.actionLog.length
+      };
+      this.currentHand.actionLog.push(actionLogEntry);
+      
+      logger.info('HAND HISTORY: Action recorded', {
+        handId: this.currentHand.id,
+        action: actionType,
+        player: player.name.substring(0, 10),
+        amount: result.amount,
+        totalActions: this.currentHand.actionLog.length
+      });
+    }
+    
     // Emit action event with player bet info
     this.emit('action', {
       playerId,
@@ -2010,8 +2047,66 @@ export class PokerTable {
         // POKERSTARS-STYLE: Track action timing precisely
         actionStartTime: Date.now(),
         isTimeBankPhase: false, // Main timer first, time bank only after it expires
-        playersActedThisRound: new Set()
+        playersActedThisRound: new Set(),
+        // POKERSTARS-STYLE HAND HISTORY: Initialize action log
+        actionLog: []
       };
+      
+      // POKERSTARS-STYLE HAND HISTORY: Record blind posts as actions
+      // These are the first entries in the action log
+      let actionOrder = 0;
+      
+      // Find SB and BB players
+      const sbPlayer = activePlayers.find(p => p.seatNumber === engineState.smallBlindSeat);
+      const bbPlayer = activePlayers.find(p => p.seatNumber === engineState.bigBlindSeat);
+      
+      if (sbPlayer) {
+        this.currentHand.actionLog.push({
+          playerId: sbPlayer.id,
+          playerName: sbPlayer.name,
+          seatNumber: sbPlayer.seatNumber,
+          phase: 'preflop',
+          actionType: 'posts_sb',
+          amount: this.config.smallBlind,
+          timestamp: Date.now(),
+          actionOrder: actionOrder++
+        });
+      }
+      
+      if (bbPlayer) {
+        this.currentHand.actionLog.push({
+          playerId: bbPlayer.id,
+          playerName: bbPlayer.name,
+          seatNumber: bbPlayer.seatNumber,
+          phase: 'preflop',
+          actionType: 'posts_bb',
+          amount: this.config.bigBlind,
+          timestamp: Date.now(),
+          actionOrder: actionOrder++
+        });
+      }
+      
+      // Record antes if configured
+      if (this.config.ante && this.config.ante > 0) {
+        for (const player of activePlayers) {
+          this.currentHand.actionLog.push({
+            playerId: player.id,
+            playerName: player.name,
+            seatNumber: player.seatNumber,
+            phase: 'preflop',
+            actionType: 'posts_ante',
+            amount: this.config.ante,
+            timestamp: Date.now(),
+            actionOrder: actionOrder++
+          });
+        }
+      }
+      
+      logger.info('HAND HISTORY: Recorded blind posts', {
+        handId: this.currentHand.id,
+        actionCount: this.currentHand.actionLog.length,
+        actions: this.currentHand.actionLog.map(a => ({ type: a.actionType, player: a.playerName, amount: a.amount }))
+      });
       
       // POKERSTARS-STYLE: Reset per-action time bank tracking and replenish if eligible
       for (const player of activePlayers) {
@@ -2451,8 +2546,8 @@ export class PokerTable {
     
     logger.info('=== HAND COMPLETION END ===');
     
-    // Save hand history
-    await this.saveHandHistory();
+    // Save hand history with winners
+    await this.saveHandHistory(winners, showdownPlayers);
     
     // CRITICAL: Check for players with zero chips (tournament elimination candidates)
     // Emit event for each player with stack <= 0 for tournament handling
@@ -2512,15 +2607,32 @@ export class PokerTable {
   }
   
   /**
-   * Save hand history to database
+   * Save hand history to database - POKERSTARS PROFESSIONAL LEVEL
    */
-  private async saveHandHistory(): Promise<void> {
+  private async saveHandHistory(
+    winners: { playerId: string; amount: number; handName: string }[] = [],
+    showdownPlayers: { playerId: string; holeCards: string[]; handName?: string }[] = []
+  ): Promise<void> {
     if (!this.currentHand) return;
     
+    const handId = this.currentHand.id;
+    const actionLog = this.currentHand.actionLog;
+    
+    // Build winners JSON for storage
+    const winnersJson = winners.map(w => {
+      const player = this.players.get(w.playerId);
+      return {
+        playerId: w.playerId,
+        playerName: player?.name || 'Unknown',
+        amount: w.amount,
+        handName: w.handName
+      };
+    });
+    
     try {
-      // Use upsert since hand was already created at start
+      // 1. Update poker_hands with final data including winners
       await this.supabase.from('poker_hands').upsert({
-        id: this.currentHand.id,
+        id: handId,
         table_id: this.id,
         hand_number: this.currentHand.handNumber,
         dealer_seat: this.currentHand.dealerSeat,
@@ -2531,11 +2643,59 @@ export class PokerTable {
         phase: this.currentHand.phase,
         current_bet: this.currentHand.currentBet,
         current_player_seat: null, // Hand is complete
+        winners: winnersJson,
+        side_pots: this.currentHand.sidePots,
         completed_at: new Date().toISOString()
       }, { onConflict: 'id' });
       
-      // CRITICAL: Clear current_hand_id from poker_tables to allow consolidation
-      // This was the main bug blocking table balancing during breaks
+      // 2. POKERSTARS-STYLE: Save ALL actions to poker_actions table
+      if (actionLog.length > 0) {
+        const actionsToInsert = actionLog.map(action => ({
+          hand_id: handId,
+          player_id: action.playerId,
+          seat_number: action.seatNumber,
+          phase: action.phase,
+          action_type: action.actionType,
+          amount: action.amount,
+          action_order: action.actionOrder
+        }));
+        
+        const { error: actionsError } = await this.supabase
+          .from('poker_actions')
+          .upsert(actionsToInsert, { onConflict: 'hand_id,action_order' });
+        
+        if (actionsError) {
+          logger.warn('Failed to save actions', { error: actionsError.message, handId });
+        } else {
+          logger.info('HAND HISTORY: Actions saved to database', {
+            handId,
+            actionCount: actionsToInsert.length
+          });
+        }
+      }
+      
+      // 3. Update poker_hand_players with final stacks, hole cards, won amounts, hand ranks
+      for (const player of this.players.values()) {
+        // Find if player is a winner
+        const winnerInfo = winners.find(w => w.playerId === player.id);
+        const showdownInfo = showdownPlayers.find(sp => sp.playerId === player.id);
+        
+        await this.supabase
+          .from('poker_hand_players')
+          .update({
+            stack_end: player.stack,
+            hole_cards: player.holeCards,
+            is_folded: player.isFolded,
+            is_all_in: player.isAllIn,
+            bet_amount: player.currentBet,
+            won_amount: winnerInfo?.amount || 0,
+            hand_rank: showdownInfo?.handName || winnerInfo?.handName || null
+          })
+          .eq('hand_id', handId)
+          .eq('player_id', player.id);
+      }
+      
+      // 4. Clear current_hand_id from poker_tables to allow consolidation
       await this.supabase
         .from('poker_tables')
         .update({
@@ -2546,12 +2706,14 @@ export class PokerTable {
         })
         .eq('id', this.id);
       
-      logger.info('Hand history saved and current_hand_id cleared', {
+      logger.info('HAND HISTORY: Complete save finished', {
         tableId: this.id,
-        handId: this.currentHand.id
+        handId,
+        actionCount: actionLog.length,
+        playerCount: this.players.size
       });
       
-      // CRITICAL: Sync all player stacks to database after each hand
+      // 5. Sync all player stacks to database after each hand
       await this.syncPlayerStacksToDatabase();
     } catch (err) {
       logger.error('Failed to save hand history', { error: String(err) });
