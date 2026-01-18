@@ -518,16 +518,6 @@ export class PokerGameManager {
       logger.error('Error checking stuck tables', { error: String(err) });
     }
   }
-              status: 'waiting',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', hand.table_id);
-        }
-      }
-    } catch (err) {
-      logger.error('Error checking stuck tables', { error: String(err) });
-    }
-  }
   
   /**
    * Save all active game states
