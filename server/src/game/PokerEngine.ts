@@ -3,7 +3,7 @@
  * Lightweight version for Node.js server
  */
 
-import { Player, HandState } from './PokerTable.js';
+import { Player, HandState, ActionLogEntry } from './PokerTable.js';
 
 // Card constants
 const SUITS = ['h', 'd', 'c', 's'] as const;
@@ -165,7 +165,8 @@ export class PokerEngine {
       deck,
       actionStartTime: null,
       playersActedThisRound: new Set<string>(), // Track actions per round
-      isTimeBankPhase: false // PokerStars-style: starts with main timer, not time bank
+      isTimeBankPhase: false, // PokerStars-style: starts with main timer, not time bank
+      actionLog: [] // POKERSTARS: Action log initialized here but populated in PokerTable
     };
   }
   
