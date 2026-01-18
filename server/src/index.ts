@@ -381,7 +381,7 @@ server.listen(config.port, () => {
 
   // Build marker (helps verify PM2 is running the latest compiled dist)
   // CRITICAL: Update this on every deploy to verify new code is running!
-  const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-15-fix-health-endpoint';
+  const BUILD_TAG = process.env.BUILD_TAG || 'lovable-build-2026-01-18-fix-orphaned-hands';
   logger.info(`🧩 Build tag: ${BUILD_TAG}`);
   
   logger.info(`🚀 Poker Server v3.5 running on port ${config.port}`);
