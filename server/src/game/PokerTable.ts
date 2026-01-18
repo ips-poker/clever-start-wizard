@@ -1947,6 +1947,7 @@ export class PokerTable {
   /**
    * Start a new hand using Engine v3.0
    * PROFESSIONAL: Full error handling with graceful recovery
+   * POKERSTARS-STYLE: Uses atomic_start_hand RPC for race condition protection
    */
   async startHand(): Promise<void> {
     // CRITICAL: Safety check - don't start if hand already in progress
@@ -2171,27 +2172,78 @@ export class PokerTable {
         }))
       });
       
-      // CRITICAL: Save hand to database at START (not just at completion)
-      // This ensures current_hand_id always points to existing record
+      // POKERSTARS-STYLE: Use atomic_start_hand RPC for race condition protection
+      // This atomically closes any stale hands and creates new one in single transaction
       try {
-        await this.supabase.from('poker_hands').insert({
-          id: this.currentHand.id,
-          table_id: this.id,
-          hand_number: this.currentHand.handNumber,
-          dealer_seat: this.currentHand.dealerSeat,
-          small_blind_seat: this.currentHand.smallBlindSeat,
-          big_blind_seat: this.currentHand.bigBlindSeat,
-          community_cards: this.currentHand.communityCards,
-          pot: this.currentHand.pot,
-          phase: this.currentHand.phase,
-          current_bet: this.currentHand.currentBet,
-          current_player_seat: this.currentHand.currentPlayerSeat,
-          action_started_at: new Date().toISOString()
-          // completed_at is NULL - hand is in progress
+        const { data: atomicResult, error: atomicError } = await this.supabase.rpc('atomic_start_hand', {
+          p_table_id: this.id,
+          p_dealer_seat: this.currentHand.dealerSeat,
+          p_small_blind_seat: this.currentHand.smallBlindSeat,
+          p_big_blind_seat: this.currentHand.bigBlindSeat,
+          p_deck_state: null
         });
         
+        if (atomicError) {
+          logger.error('atomic_start_hand RPC failed, falling back to direct insert', { 
+            error: atomicError.message,
+            tableId: this.id
+          });
+          // Fallback to direct insert
+          await this.supabase.from('poker_hands').insert({
+            id: this.currentHand.id,
+            table_id: this.id,
+            hand_number: this.currentHand.handNumber,
+            dealer_seat: this.currentHand.dealerSeat,
+            small_blind_seat: this.currentHand.smallBlindSeat,
+            big_blind_seat: this.currentHand.bigBlindSeat,
+            community_cards: this.currentHand.communityCards,
+            pot: this.currentHand.pot,
+            phase: this.currentHand.phase,
+            current_bet: this.currentHand.currentBet,
+            current_player_seat: this.currentHand.currentPlayerSeat,
+            action_started_at: new Date().toISOString()
+          });
+          
+          await this.supabase
+            .from('poker_tables')
+            .update({
+              current_hand_id: this.currentHand.id,
+              status: 'playing',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', this.id);
+        } else if (atomicResult?.success) {
+          // Use the hand_id from atomic operation
+          const atomicHandId = atomicResult.hand_id;
+          const closedStaleHands = atomicResult.closed_stale_hands || 0;
+          
+          // Update our local hand ID to match DB
+          this.currentHand.id = atomicHandId;
+          this.currentHand.handNumber = atomicResult.hand_number || this.handNumber;
+          
+          if (closedStaleHands > 0) {
+            logger.warn('POKERSTARS: Closed stale hands before starting new one', {
+              tableId: this.id,
+              closedCount: closedStaleHands,
+              newHandId: atomicHandId
+            });
+          }
+          
+          logger.info('POKERSTARS: Hand created via atomic RPC', {
+            tableId: this.id,
+            handId: atomicHandId,
+            handNumber: atomicResult.hand_number
+          });
+        } else {
+          // RPC returned error (e.g., race condition)
+          logger.error('atomic_start_hand returned failure', { 
+            result: atomicResult,
+            tableId: this.id
+          });
+          throw new Error(atomicResult?.error || 'Atomic hand start failed');
+        }
+        
         // CRITICAL FIX: Insert poker_hand_players records for each active player
-        // This was missing and caused orphaned hands without player data
         const handPlayersToInsert = activePlayers.map(p => ({
           hand_id: this.currentHand!.id,
           player_id: p.id,
@@ -2217,23 +2269,17 @@ export class PokerTable {
             });
           }
         }
-        
-        // Also update poker_tables.current_hand_id
-        await this.supabase
-          .from('poker_tables')
-          .update({
-            current_hand_id: this.currentHand.id,
-            status: 'playing',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', this.id);
           
-        logger.info('Hand saved to database at start', {
+        logger.info('POKERSTARS: Hand saved to database atomically', {
           tableId: this.id,
           handId: this.currentHand.id
         });
       } catch (dbErr) {
-        logger.warn('Failed to save hand at start (continuing anyway)', { error: String(dbErr) });
+        logger.error('Failed to save hand at start', { error: String(dbErr), tableId: this.id });
+        // Don't continue with broken hand - reset and retry
+        this.currentHand = null;
+        setTimeout(() => this.checkStartHand(), 5000);
+        return;
       }
       
       // Start action timer
@@ -3353,10 +3399,18 @@ export class PokerTable {
   }
   
   /**
+   * Get current hand ID for stuck hand detection
+   */
+  getCurrentHandId(): string | null {
+    return this.currentHand?.id || null;
+  }
+  
+  /**
    * Force recovery for stuck table
    * Called by PokerGameManager when table is detected as stuck
+   * POKERSTARS-STYLE: More aggressive recovery with proper DB sync
    */
-  forceRecovery(): void {
+  async forceRecovery(): Promise<void> {
     // Skip if hand is already in showdown (completed phase)
     const phase = this.currentHand?.phase;
     if (phase === 'showdown') {
@@ -3367,9 +3421,10 @@ export class PokerTable {
       return;
     }
     
-    logger.warn('Force recovery initiated for stuck table', {
+    logger.warn('POKERSTARS: Force recovery initiated for stuck table', {
       tableId: this.id,
       hasCurrentHand: !!this.currentHand,
+      currentHandId: this.currentHand?.id,
       currentPlayerSeat: this.currentHand?.currentPlayerSeat,
       phase
     });
@@ -3377,9 +3432,38 @@ export class PokerTable {
     // Clear any existing timer
     this.clearActionTimer();
     
+    // POKERSTARS-STYLE: If we have a hand in memory, check if it matches DB
+    // If DB has a DIFFERENT hand marked as active, abort that one
+    if (this.currentHand) {
+      try {
+        const { data: dbActiveHand } = await this.supabase
+          .from('poker_hands')
+          .select('id, phase')
+          .eq('table_id', this.id)
+          .is('completed_at', null)
+          .single();
+        
+        if (dbActiveHand && dbActiveHand.id !== this.currentHand.id) {
+          // DB has a different active hand - abort it
+          logger.warn('POKERSTARS: Found orphaned hand in DB - aborting', {
+            tableId: this.id,
+            memoryHandId: this.currentHand.id,
+            dbHandId: dbActiveHand.id
+          });
+          
+          await this.supabase
+            .from('poker_hands')
+            .update({ completed_at: new Date().toISOString(), phase: 'aborted' })
+            .eq('id', dbActiveHand.id);
+        }
+      } catch (err) {
+        logger.warn('Error checking DB hand state during recovery', { error: String(err) });
+      }
+    }
+    
     if (this.currentHand && this.currentHand.currentPlayerSeat !== null) {
       // Force timeout for current player
-      this.handleTimeout();
+      await this.handleTimeout();
     } else if (this.currentHand) {
       // Hand exists but no current player - complete the hand
       logger.warn('Force completing stuck hand (no current player)', { 
@@ -3394,13 +3478,20 @@ export class PokerTable {
       if (activePlayers.length === 1) {
         // Award pot to last remaining player
         const winner = activePlayers[0];
-        this.completeHand([{
+        await this.completeHand([{
           playerId: winner.id,
           amount: this.currentHand.pot,
           handName: 'Last standing'
         }]);
       } else if (activePlayers.length === 0) {
-        // No active players - just reset
+        // No active players - abort hand in DB and reset
+        try {
+          await this.supabase.rpc('atomic_complete_hand', {
+            p_hand_id: this.currentHand.id
+          });
+        } catch (err) {
+          logger.warn('Error aborting empty hand', { error: String(err) });
+        }
         this.currentHand = null;
         this.checkStartHand();
       } else {
@@ -3409,15 +3500,83 @@ export class PokerTable {
         for (let i = 1; i < activePlayers.length; i++) {
           activePlayers[i].isFolded = true;
         }
-        this.completeHand([{
+        await this.completeHand([{
           playerId: activePlayers[0].id,
           amount: this.currentHand.pot,
           handName: 'Recovery win'
         }]);
       }
     } else {
-      // No current hand - try to start one
+      // No current hand in memory - check if DB has one and abort it
+      try {
+        const { data: orphanedHands } = await this.supabase
+          .from('poker_hands')
+          .select('id')
+          .eq('table_id', this.id)
+          .is('completed_at', null);
+        
+        if (orphanedHands && orphanedHands.length > 0) {
+          logger.warn('POKERSTARS: Found orphaned hands in DB - aborting', {
+            tableId: this.id,
+            count: orphanedHands.length
+          });
+          
+          for (const orphan of orphanedHands) {
+            await this.supabase
+              .from('poker_hands')
+              .update({ completed_at: new Date().toISOString(), phase: 'aborted' })
+              .eq('id', orphan.id);
+          }
+          
+          // Clear table's current_hand_id
+          await this.supabase
+            .from('poker_tables')
+            .update({ current_hand_id: null, status: 'waiting', updated_at: new Date().toISOString() })
+            .eq('id', this.id);
+        }
+      } catch (err) {
+        logger.warn('Error cleaning up orphaned hands', { error: String(err) });
+      }
+      
+      // Try to start a new hand
       this.checkStartHand();
     }
+  }
+  
+  /**
+   * POKERSTARS-STYLE: Hard timeout handler
+   * Called when a hand has been stuck for too long (60+ seconds)
+   * Forces action regardless of player state
+   */
+  async hardTimeoutRecovery(): Promise<void> {
+    if (!this.currentHand) {
+      return;
+    }
+    
+    logger.warn('POKERSTARS: Hard timeout recovery triggered', {
+      tableId: this.id,
+      handId: this.currentHand.id,
+      phase: this.currentHand.phase,
+      currentPlayerSeat: this.currentHand.currentPlayerSeat
+    });
+    
+    // Clear timer
+    this.clearActionTimer();
+    
+    if (this.currentHand.currentPlayerSeat !== null) {
+      const playerId = this.seats[this.currentHand.currentPlayerSeat];
+      if (playerId) {
+        const player = this.players.get(playerId);
+        if (player && !player.isFolded && !player.isAllIn) {
+          // Force check if possible, otherwise fold
+          const canCheck = player.currentBet >= this.currentHand.currentBet;
+          await this.action(playerId, canCheck ? 'check' : 'fold');
+          return;
+        }
+      }
+    }
+    
+    // If we get here, something is very wrong - force complete the hand
+    await this.forceRecovery();
   }
 }

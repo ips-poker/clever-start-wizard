@@ -114,11 +114,34 @@ export class PokerGameManager {
   
   /**
    * CRITICAL: Clean up stale/phantom hands on startup
+   * POKERSTARS-STYLE: Aggressive cleanup - abort ALL uncompleted hands older than 5 minutes
    * This fixes issues with orphaned current_hand_id references
    */
   private async cleanupStaleHands(): Promise<void> {
     try {
-      logger.info('Cleaning up stale hands on startup...');
+      logger.info('POKERSTARS: Cleaning up stale hands on startup...');
+      
+      // POKERSTARS-STYLE: Abort ALL uncompleted hands older than 5 minutes
+      // This is aggressive but ensures clean state on server restart
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      
+      // Use atomic RPC for cleanup
+      try {
+        const { data: watchdogResult, error: watchdogError } = await this.supabase.rpc('cleanup_stuck_hands_watchdog', {
+          p_timeout_seconds: 300 // 5 minutes
+        });
+        
+        if (watchdogError) {
+          logger.warn('Watchdog RPC failed on startup', { error: watchdogError.message });
+        } else if (watchdogResult?.cleaned_count > 0) {
+          logger.info('POKERSTARS: Startup watchdog cleaned stuck hands', { 
+            cleanedCount: watchdogResult.cleaned_count,
+            cleanedHands: watchdogResult.cleaned_hands
+          });
+        }
+      } catch (rpcErr) {
+        logger.warn('Watchdog RPC exception on startup', { error: String(rpcErr) });
+      }
       
       // 1. Find tables with current_hand_id pointing to non-existent or completed hands
       const { data: tables } = await this.supabase
@@ -135,19 +158,34 @@ export class PokerGameManager {
         // Check if the hand exists and is active
         const { data: hand } = await this.supabase
           .from('poker_hands')
-          .select('id, completed_at')
+          .select('id, completed_at, action_started_at')
           .eq('id', table.current_hand_id)
           .maybeSingle();
         
-        // If hand doesn't exist OR is completed, reset the table
-        if (!hand || hand.completed_at !== null) {
-          logger.warn('Cleaning up stale hand reference', {
+        // If hand doesn't exist OR is completed OR is too old, reset the table
+        const handTooOld = hand?.action_started_at && 
+          new Date(hand.action_started_at).getTime() < Date.now() - 5 * 60 * 1000;
+        
+        if (!hand || hand.completed_at !== null || handTooOld) {
+          logger.warn('POKERSTARS: Cleaning up stale hand reference', {
             tableId: table.id,
             tableName: table.name,
             phantomHandId: table.current_hand_id,
             handExists: !!hand,
-            handCompleted: hand?.completed_at !== null
+            handCompleted: hand?.completed_at !== null,
+            handTooOld
           });
+          
+          // If hand exists but is too old, abort it
+          if (hand && !hand.completed_at) {
+            await this.supabase
+              .from('poker_hands')
+              .update({ 
+                completed_at: new Date().toISOString(),
+                phase: 'aborted'
+              })
+              .eq('id', table.current_hand_id);
+          }
           
           await this.supabase
             .from('poker_tables')
@@ -160,21 +198,21 @@ export class PokerGameManager {
         }
       }
       
-      // 2. Delete old completed hands (older than 1 hour) to prevent database bloat
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      const { error: deleteError } = await this.supabase
+      // 2. Delete old completed hands (older than 24 hours) to prevent database bloat
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { error: deleteError, count } = await this.supabase
         .from('poker_hands')
         .delete()
         .not('completed_at', 'is', null)
-        .lt('completed_at', oneHourAgo);
+        .lt('completed_at', oneDayAgo);
       
       if (deleteError) {
         logger.warn('Failed to delete old hands', { error: deleteError.message });
       } else {
-        logger.info('Cleaned up old completed hands');
+        logger.info('POKERSTARS: Cleaned up old completed hands', { deletedCount: count });
       }
       
-      logger.info('Stale hands cleanup complete');
+      logger.info('POKERSTARS: Stale hands cleanup complete');
     } catch (err) {
       logger.error('Error during stale hands cleanup', { error: String(err) });
     }
@@ -310,38 +348,49 @@ export class PokerGameManager {
   
   /**
    * Start auto-save interval
+   * POKERSTARS-STYLE: More aggressive stuck hand detection
    */
   private startAutoSave(): void {
     this.saveInterval = setInterval(() => {
       this.saveAllGames();
-      // Also check for stuck tables every 30 seconds
+      // POKERSTARS: Check for stuck tables every 15 seconds (was 30)
       this.checkStuckTables();
-    }, 30000); // Save every 30 seconds
+    }, 15000); // Check every 15 seconds for faster recovery
   }
   
   /**
    * Check for stuck tables and restart them
-   * A table is considered stuck if action_started_at is more than 2 minutes old
+   * POKERSTARS-STYLE: Reduced threshold from 2 minutes to 45 seconds
+   * A table is considered stuck if action_started_at is more than 45 seconds old
    */
   private async checkStuckTables(): Promise<void> {
     try {
-      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      // POKERSTARS: Reduced from 2 minutes to 45 seconds for faster recovery
+      const stuckThreshold = new Date(Date.now() - 45 * 1000).toISOString();
+      // Hard timeout: 90 seconds - force abort regardless of state
+      const hardTimeoutThreshold = new Date(Date.now() - 90 * 1000).toISOString();
       
-      // CRITICAL FIX: First check for orphaned hands (hands without poker_hand_players)
-      // These are hands that were created but players weren't properly inserted
-      const { data: orphanedHands } = await this.supabase
-        .rpc('cleanup_stale_hands_and_consolidate');
-      
-      if (orphanedHands) {
-        logger.info('Orphaned hands cleanup result', { result: orphanedHands });
+      // CRITICAL FIX: First, use the DB watchdog function to cleanup very old hands
+      try {
+        const { data: watchdogResult } = await this.supabase.rpc('cleanup_stuck_hands_watchdog', {
+          p_timeout_seconds: 120 // 2 minutes is hard limit for DB cleanup
+        });
+        
+        if (watchdogResult?.cleaned_count > 0) {
+          logger.info('POKERSTARS: DB watchdog cleaned stuck hands', { 
+            result: watchdogResult 
+          });
+        }
+      } catch (watchdogErr) {
+        logger.warn('Watchdog RPC failed', { error: String(watchdogErr) });
       }
       
       // Find hands that are TRULY stuck (not completed AND not in a finished phase)
-      // Exclude 'complete', 'showdown', and 'aborted' phases - these should have completed_at set
+      // Exclude 'complete', 'showdown', and 'aborted' phases
       const { data: stuckHands, error } = await this.supabase
         .from('poker_hands')
         .select('id, table_id, action_started_at, phase')
-        .lt('action_started_at', twoMinutesAgo)
+        .lt('action_started_at', stuckThreshold)
         .is('completed_at', null)
         .not('phase', 'in', '("complete","showdown","aborted")');
       
@@ -350,6 +399,11 @@ export class PokerGameManager {
       }
       
       for (const hand of stuckHands) {
+        // Calculate how long the hand has been stuck
+        const actionStartedAt = new Date(hand.action_started_at).getTime();
+        const stuckDuration = Date.now() - actionStartedAt;
+        const isHardTimeout = stuckDuration > 90 * 1000; // 90 seconds
+        
         // CRITICAL: Check if hand has any players - if not, it's orphaned
         const { data: handPlayers } = await this.supabase
           .from('poker_hand_players')
@@ -359,10 +413,11 @@ export class PokerGameManager {
         
         if (!handPlayers || handPlayers.length === 0) {
           // Orphaned hand - abort it immediately
-          logger.warn('Found orphaned hand (no players) - aborting', {
+          logger.warn('POKERSTARS: Found orphaned hand (no players) - aborting', {
             handId: hand.id,
             tableId: hand.table_id,
-            phase: hand.phase
+            phase: hand.phase,
+            stuckDurationMs: stuckDuration
           });
           
           await this.supabase
@@ -385,23 +440,57 @@ export class PokerGameManager {
           continue;
         }
         
-        logger.warn('Found stuck hand - attempting recovery', {
+        logger.warn('POKERSTARS: Found stuck hand - attempting recovery', {
           handId: hand.id,
           tableId: hand.table_id,
           phase: hand.phase,
-          actionStartedAt: hand.action_started_at
+          actionStartedAt: hand.action_started_at,
+          stuckDurationMs: stuckDuration,
+          isHardTimeout
         });
         
         // Check if table is in memory
         const table = this.tables.get(hand.table_id);
         if (table) {
-          // Table exists - trigger action timeout to move game forward
-          logger.info('Triggering timeout recovery for stuck table', { tableId: hand.table_id });
-          // Force table to restart hand checking
-          table.forceRecovery();
+          // POKERSTARS-STYLE: Check if table has a DIFFERENT hand in memory
+          // This prevents forceRecovery from conflicting with active games
+          const tableHandId = table.isHandInProgress() ? table.getCurrentHandId?.() : null;
+          
+          if (tableHandId && tableHandId !== hand.id) {
+            // Table has a different active hand - the DB hand is orphaned
+            logger.warn('POKERSTARS: Table has different active hand - aborting DB hand', {
+              tableId: hand.table_id,
+              dbHandId: hand.id,
+              memoryHandId: tableHandId
+            });
+            
+            await this.supabase
+              .from('poker_hands')
+              .update({ 
+                completed_at: new Date().toISOString(),
+                phase: 'aborted'
+              })
+              .eq('id', hand.id);
+            
+            continue;
+          }
+          
+          // Table exists and hand matches - trigger recovery
+          logger.info('POKERSTARS: Triggering timeout recovery for stuck table', { 
+            tableId: hand.table_id,
+            isHardTimeout 
+          });
+          
+          if (isHardTimeout) {
+            // Hard timeout - use aggressive recovery
+            table.hardTimeoutRecovery();
+          } else {
+            // Soft timeout - use normal recovery
+            table.forceRecovery();
+          }
         } else {
-          // Table not in memory - mark hand as completed (aborted)
-          logger.warn('Table not in memory - marking stuck hand as aborted', { 
+          // Table not in memory - mark hand as aborted
+          logger.warn('POKERSTARS: Table not in memory - marking stuck hand as aborted', { 
             tableId: hand.table_id, 
             handId: hand.id 
           });
@@ -419,6 +508,16 @@ export class PokerGameManager {
             .from('poker_tables')
             .update({ 
               current_hand_id: null, 
+              status: 'waiting',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', hand.table_id);
+        }
+      }
+    } catch (err) {
+      logger.error('Error checking stuck tables', { error: String(err) });
+    }
+  }
               status: 'waiting',
               updated_at: new Date().toISOString()
             })

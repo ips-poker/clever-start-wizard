@@ -2351,6 +2351,24 @@ export type Database = {
         Args: { p_player_id: string; p_rank: string }
         Returns: Json
       }
+      atomic_complete_hand: {
+        Args: {
+          p_community_cards?: string[]
+          p_hand_id: string
+          p_winners?: Json
+        }
+        Returns: Json
+      }
+      atomic_start_hand: {
+        Args: {
+          p_big_blind_seat: number
+          p_dealer_seat: number
+          p_deck_state?: string
+          p_small_blind_seat: number
+          p_table_id: string
+        }
+        Returns: Json
+      }
       balance_tournament_tables: {
         Args: { p_tournament_id: string }
         Returns: Json
@@ -2376,6 +2394,10 @@ export type Database = {
         Returns: boolean
       }
       cleanup_stale_hands_and_consolidate: { Args: never; Returns: Json }
+      cleanup_stuck_hands_watchdog: {
+        Args: { p_timeout_seconds?: number }
+        Returns: Json
+      }
       cleanup_stuck_poker_hands: { Args: never; Returns: number }
       cleanup_zero_stack_tournament_players: { Args: never; Returns: Json }
       complete_tournament: {
