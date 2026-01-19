@@ -2,6 +2,7 @@
 // POKERSTARS-STYLE ANIMATED TIMER RING
 // =====================================================
 // Uses centralized timer configuration for consistency
+// Supports Time Bank phase with distinct blue coloring
 
 import React, { memo, useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
@@ -22,6 +23,8 @@ interface PPPokerTimerRingProps {
   enableGlow?: boolean;
   /** Stroke width */
   strokeWidth?: number;
+  /** Whether we're in time bank phase - changes color to blue */
+  isTimeBankPhase?: boolean;
 }
 
 export const PPPokerTimerRing = memo(function PPPokerTimerRing({
@@ -31,20 +34,24 @@ export const PPPokerTimerRing = memo(function PPPokerTimerRing({
   showText = false,
   onTimeout,
   enableGlow = true,
-  strokeWidth = 4
+  strokeWidth = 4,
+  isTimeBankPhase = false
 }: PPPokerTimerRingProps) {
   const [localRemaining, setLocalRemaining] = useState(remaining);
   const [isAnimating, setIsAnimating] = useState(false);
   const lastRemainingRef = useRef(remaining);
+  const lastTimeBankPhaseRef = useRef(isTimeBankPhase);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync with external remaining time
   useEffect(() => {
-    if (Math.abs(remaining - lastRemainingRef.current) > 1) {
+    // Resync if remaining changed significantly or time bank phase changed
+    if (Math.abs(remaining - lastRemainingRef.current) > 1 || isTimeBankPhase !== lastTimeBankPhaseRef.current) {
       setLocalRemaining(remaining);
     }
     lastRemainingRef.current = remaining;
-  }, [remaining]);
+    lastTimeBankPhaseRef.current = isTimeBankPhase;
+  }, [remaining, isTimeBankPhase]);
 
   // Smooth local countdown for animation
   useEffect(() => {
@@ -79,19 +86,22 @@ export const PPPokerTimerRing = memo(function PPPokerTimerRing({
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference * (1 - progress);
   
-  // Use centralized timer configuration
+  // Use centralized timer configuration with time bank awareness
   const isCritical = isTimerCritical(localRemaining);
   const isWarning = isTimerWarning(localRemaining);
   
-  // Colors from centralized config
-  const strokeColor = getTimerColorHex(localRemaining);
-  const glowColor = getTimerGlowColor(localRemaining);
+  // Colors from centralized config - now supports time bank phase
+  const strokeColor = getTimerColorHex(localRemaining, isTimeBankPhase);
+  const glowColor = getTimerGlowColor(localRemaining, isTimeBankPhase);
 
   // Enhanced triple glow for critical state - PokerStars pulsing effect
+  // Time bank phase gets blue glow
   const glowFilter = enableGlow 
     ? isCritical 
       ? `drop-shadow(0 0 12px ${glowColor}) drop-shadow(0 0 24px ${glowColor}) drop-shadow(0 0 36px ${glowColor})`
-      : `drop-shadow(0 0 8px ${glowColor}) drop-shadow(0 0 16px ${glowColor})`
+      : isTimeBankPhase
+        ? `drop-shadow(0 0 10px ${glowColor}) drop-shadow(0 0 20px ${glowColor})`
+        : `drop-shadow(0 0 8px ${glowColor}) drop-shadow(0 0 16px ${glowColor})`
     : 'none';
 
   return (
@@ -141,7 +151,8 @@ export const PPPokerTimerRing = memo(function PPPokerTimerRing({
         strokeDashoffset={strokeDashoffset}
         className={cn(
           "transition-colors duration-300",
-          isCritical && isAnimating && "animate-[pulse_0.4s_ease-in-out_infinite]"
+          isCritical && isAnimating && "animate-[pulse_0.4s_ease-in-out_infinite]",
+          isTimeBankPhase && !isCritical && isAnimating && "animate-[pulse_0.8s_ease-in-out_infinite]"
         )}
         style={{
           transition: 'stroke-dashoffset 0.05s linear, stroke 0.3s ease',
@@ -170,6 +181,23 @@ export const PPPokerTimerRing = memo(function PPPokerTimerRing({
         }}
       />
 
+      {/* Time Bank indicator - inner ring when in time bank phase */}
+      {isTimeBankPhase && !isCritical && (
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius - 4}
+          fill="none"
+          stroke={POKERSTARS_TIMER.TIME_BANK_COLORS.ACTIVE}
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          opacity={0.5}
+          className="animate-[pulse_1s_ease-in-out_infinite]"
+        />
+      )}
+
       {/* Timer text in center (optional) */}
       {showText && (
         <text
@@ -197,13 +225,15 @@ interface PPPokerTimerBadgeProps {
   total: number;
   position?: 'left' | 'right' | 'bottom';
   isMobile?: boolean;
+  isTimeBankPhase?: boolean;
 }
 
 export const PPPokerTimerBadge = memo(function PPPokerTimerBadge({
   remaining,
   total,
   position = 'left',
-  isMobile = false
+  isMobile = false,
+  isTimeBankPhase = false
 }: PPPokerTimerBadgeProps) {
   // Use centralized timer configuration
   const isCritical = isTimerCritical(remaining);
@@ -214,17 +244,22 @@ export const PPPokerTimerBadge = memo(function PPPokerTimerBadge({
   const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
   // Gradient backgrounds matching PPPoker style
+  // Time bank phase uses blue gradient
   const bgGradient = isCritical
     ? 'linear-gradient(135deg, #dc2626, #b91c1c)'
     : isWarning
       ? 'linear-gradient(135deg, #f59e0b, #d97706)'
-      : 'linear-gradient(135deg, #22c55e, #16a34a)';
+      : isTimeBankPhase
+        ? 'linear-gradient(135deg, #3b82f6, #2563eb)'  // Blue for time bank
+        : 'linear-gradient(135deg, #22c55e, #16a34a)';
 
   const glowShadow = isCritical
     ? '0 0 20px rgba(220, 38, 38, 0.6)'
     : isWarning
       ? '0 0 20px rgba(245, 158, 11, 0.5)'
-      : '0 0 20px rgba(34, 197, 94, 0.5)';
+      : isTimeBankPhase
+        ? '0 0 20px rgba(59, 130, 246, 0.5)'  // Blue glow for time bank
+        : '0 0 20px rgba(34, 197, 94, 0.5)';
 
   // Position styles
   const positionStyles: Record<string, React.CSSProperties> = {
@@ -237,7 +272,8 @@ export const PPPokerTimerBadge = memo(function PPPokerTimerBadge({
     <div
       className={cn(
         "absolute z-30 flex items-center gap-1 rounded-full px-2 py-1",
-        isCritical && "animate-pulse"
+        isCritical && "animate-pulse",
+        isTimeBankPhase && !isCritical && "animate-[pulse_0.8s_ease-in-out_infinite]"
       )}
       style={{
         ...positionStyles[position],
@@ -246,7 +282,12 @@ export const PPPokerTimerBadge = memo(function PPPokerTimerBadge({
         border: '1px solid rgba(255, 255, 255, 0.25)'
       }}
     >
-      <span className={cn("text-white", isMobile ? "text-xs" : "text-sm")}>⏱️</span>
+      {/* Time Bank icon when in that phase */}
+      {isTimeBankPhase ? (
+        <span className={cn("text-white", isMobile ? "text-xs" : "text-sm")}>🏦</span>
+      ) : (
+        <span className={cn("text-white", isMobile ? "text-xs" : "text-sm")}>⏱️</span>
+      )}
       <span className={cn(
         "font-bold tabular-nums text-white",
         isMobile ? "text-[11px]" : "text-sm"
