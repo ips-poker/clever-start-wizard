@@ -2,9 +2,17 @@
 // THEME PAGE BACKGROUND - Full page backgrounds for each theme
 // ============================================
 // Extends theme styling to fill entire page (top/bottom edges)
+// Now includes immersive decorative elements for each theme
 
 import React, { memo } from 'react';
 import { TableGlowStyleId } from '@/hooks/usePokerPreferences';
+import { 
+  VegasNeonElements, 
+  CyberpunkHoloElements, 
+  MatrixCodeElements,
+  MafiaLuxuryElements,
+  CosmicStarsElements
+} from './theme-decorations';
 
 interface ThemePageBackgroundProps {
   glowStyleId: TableGlowStyleId;
@@ -762,6 +770,14 @@ export const ThemePageBackground = memo(function ThemePageBackground({
           background: 'radial-gradient(ellipse 85% 85% at 50% 50%, transparent 45%, rgba(0,0,0,0.22) 100%)'
         }}
       />
+      
+      {/* === IMMERSIVE DECORATIVE ELEMENTS === */}
+      {/* Each theme gets its own atmospheric decorations */}
+      {glowStyleId === 'vegas' && <VegasNeonElements />}
+      {glowStyleId === 'cyberpunk' && <CyberpunkHoloElements />}
+      {glowStyleId === 'matrix' && <MatrixCodeElements />}
+      {glowStyleId === 'mafia' && <MafiaLuxuryElements />}
+      {glowStyleId === 'cosmic' && <CosmicStarsElements />}
     </div>
   );
 });
