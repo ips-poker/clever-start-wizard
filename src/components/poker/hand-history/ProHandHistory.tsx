@@ -10,7 +10,7 @@ import { HandHistoryStats } from './HandHistoryStats';
 import { HandHistoryRow, HandRowData } from './HandHistoryRow';
 import { SessionGroup } from './SessionGroup';
 import { HandDetailModal } from './HandDetailModal';
-import { HandReplayer, HandReplay, ReplayAction, ReplayPlayer } from '../HandReplayer';
+import { ProHandReplayer, HandReplay, ReplayAction, ReplayPlayer } from './ProHandReplayer';
 import { formatHandHistoryPokerStars } from '@/utils/handHistoryFormatter';
 
 interface ProHandHistoryProps {
@@ -340,8 +340,8 @@ export function ProHandHistory({ tableId, playerId, className, onReplayHand }: P
 
       {/* Replay Modal */}
       {showReplay && selectedHand && (
-        <div className="fixed inset-4 z-50 bg-black/80 backdrop-blur-sm rounded-xl overflow-hidden">
-          <HandReplayer
+        <div className="fixed inset-4 z-50">
+          <ProHandReplayer
             hand={convertToReplayFormat(selectedHand)}
             onClose={() => setShowReplay(false)}
             isFullscreen
