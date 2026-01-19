@@ -100,8 +100,8 @@ export const ThemePageBackground = memo(function ThemePageBackground({
 
   return (
     <div 
-      className="absolute inset-0 overflow-hidden"
-      style={backgroundStyle}
+      className="fixed inset-0 overflow-hidden pointer-events-none"
+      style={{ ...backgroundStyle, zIndex: 0 }}
     >
       {/* Theme-specific ambient effects */}
       {glowStyleId === 'cyberpunk' && (
@@ -115,10 +115,38 @@ export const ThemePageBackground = memo(function ThemePageBackground({
             }}
           />
           {/* Corner glows */}
-          <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-radial from-cyan-500/10 to-transparent" />
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-fuchsia-500/10 to-transparent" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-radial from-fuchsia-500/10 to-transparent" />
-          <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-radial from-cyan-500/10 to-transparent" />
+          <div
+            className="absolute top-0 left-0"
+            style={{
+              width: '128px',
+              height: '128px',
+              background: 'radial-gradient(circle at 0% 0%, rgba(0,212,255,0.18) 0%, transparent 70%)'
+            }}
+          />
+          <div
+            className="absolute top-0 right-0"
+            style={{
+              width: '128px',
+              height: '128px',
+              background: 'radial-gradient(circle at 100% 0%, rgba(255,0,255,0.16) 0%, transparent 70%)'
+            }}
+          />
+          <div
+            className="absolute bottom-0 left-0"
+            style={{
+              width: '128px',
+              height: '128px',
+              background: 'radial-gradient(circle at 0% 100%, rgba(255,0,255,0.14) 0%, transparent 70%)'
+            }}
+          />
+          <div
+            className="absolute bottom-0 right-0"
+            style={{
+              width: '128px',
+              height: '128px',
+              background: 'radial-gradient(circle at 100% 100%, rgba(0,212,255,0.14) 0%, transparent 70%)'
+            }}
+          />
         </>
       )}
       
@@ -141,8 +169,9 @@ export const ThemePageBackground = memo(function ThemePageBackground({
           {[...Array(8)].map((_, i) => (
             <div 
               key={i}
-              className="absolute rounded-full bg-white pointer-events-none"
+              className="absolute rounded-full pointer-events-none"
               style={{
+                backgroundColor: 'rgba(255,255,255,0.9)',
                 width: 2 + (i % 3),
                 height: 2 + (i % 3),
                 left: `${10 + i * 12}%`,
@@ -155,8 +184,9 @@ export const ThemePageBackground = memo(function ThemePageBackground({
           {[...Array(8)].map((_, i) => (
             <div 
               key={`bottom-${i}`}
-              className="absolute rounded-full bg-white pointer-events-none"
+              className="absolute rounded-full pointer-events-none"
               style={{
+                backgroundColor: 'rgba(255,255,255,0.85)',
                 width: 2 + (i % 3),
                 height: 2 + (i % 3),
                 left: `${15 + i * 11}%`,
@@ -172,10 +202,38 @@ export const ThemePageBackground = memo(function ThemePageBackground({
       {glowStyleId === 'vegas' && (
         <>
           {/* Neon glow spots */}
-          <div className="absolute top-4 left-1/4 w-20 h-1 bg-gradient-to-r from-transparent via-pink-500/20 to-transparent" />
-          <div className="absolute top-8 right-1/4 w-16 h-1 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent" />
-          <div className="absolute bottom-6 left-1/3 w-24 h-1 bg-gradient-to-r from-transparent via-pink-500/15 to-transparent" />
-          <div className="absolute bottom-10 right-1/3 w-20 h-1 bg-gradient-to-r from-transparent via-yellow-400/15 to-transparent" />
+          <div
+            className="absolute top-4 left-1/4"
+            style={{
+              width: '80px',
+              height: '4px',
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255,20,147,0.22) 50%, transparent 100%)'
+            }}
+          />
+          <div
+            className="absolute top-8 right-1/4"
+            style={{
+              width: '64px',
+              height: '4px',
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.18) 50%, transparent 100%)'
+            }}
+          />
+          <div
+            className="absolute bottom-6 left-1/3"
+            style={{
+              width: '96px',
+              height: '4px',
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255,20,147,0.16) 50%, transparent 100%)'
+            }}
+          />
+          <div
+            className="absolute bottom-10 right-1/3"
+            style={{
+              width: '80px',
+              height: '4px',
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.14) 50%, transparent 100%)'
+            }}
+          />
         </>
       )}
       
@@ -183,7 +241,7 @@ export const ThemePageBackground = memo(function ThemePageBackground({
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse 80% 80% at 50% 50%, transparent 40%, rgba(0,0,0,0.4) 100%)'
+          background: 'radial-gradient(ellipse 85% 85% at 50% 50%, transparent 45%, rgba(0,0,0,0.22) 100%)'
         }}
       />
     </div>
