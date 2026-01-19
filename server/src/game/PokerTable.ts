@@ -1334,12 +1334,30 @@ export class PokerTable {
       await this.delay(phaseDelay);
       
       // Now emit state update after cards are visually dealt
+      // POKERSTARS-STYLE: Include timing info for instant timer reset
       this.emit('state_update', {
         pot: this.currentHand.pot,
         currentBet: 0, // Bets reset after phase
         currentPlayerSeat: this.currentHand.currentPlayerSeat,
-        phase: newPhase
+        phase: newPhase,
+        // POKERSTARS-STYLE: Timing info for client sync
+        actionStartTime: this.currentHand.actionStartTime,
+        actionTimeTotal: this.getActionTimeForPhase(),
+        isTimeBankPhase: false
       });
+      
+      // POKERSTARS-STYLE: Also emit turn_changed for precise timer sync
+      if (this.currentHand.currentPlayerSeat !== null) {
+        const nextPlayerId = this.seats[this.currentHand.currentPlayerSeat];
+        this.emit('turn_changed', {
+          currentPlayerSeat: this.currentHand.currentPlayerSeat,
+          playerId: nextPlayerId,
+          phase: newPhase,
+          actionStartTime: this.currentHand.actionStartTime,
+          actionTimeTotal: this.getActionTimeForPhase(),
+          isTimeBankPhase: false
+        });
+      }
       
     } else {
       // Normal state update without phase change - minimal delay
@@ -1348,12 +1366,30 @@ export class PokerTable {
       
       await this.delay(Math.min(afterActionDelay, 200));
       
+      // POKERSTARS-STYLE: Include timing info in state update
       this.emit('state_update', {
         pot: this.currentHand?.pot || 0,
         currentBet: this.currentHand?.currentBet || 0,
         currentPlayerSeat: this.currentHand?.currentPlayerSeat,
-        phase: this.currentHand?.phase || 'preflop'
+        phase: this.currentHand?.phase || 'preflop',
+        // POKERSTARS-STYLE: Timing info for client sync
+        actionStartTime: this.currentHand?.actionStartTime,
+        actionTimeTotal: this.getActionTimeForPhase(),
+        isTimeBankPhase: false
       });
+      
+      // POKERSTARS-STYLE: Emit turn_changed for instant timer reset on turn change
+      if (this.currentHand?.currentPlayerSeat !== null) {
+        const nextPlayerId = this.seats[this.currentHand!.currentPlayerSeat!];
+        this.emit('turn_changed', {
+          currentPlayerSeat: this.currentHand!.currentPlayerSeat,
+          playerId: nextPlayerId,
+          phase: this.currentHand?.phase,
+          actionStartTime: this.currentHand?.actionStartTime,
+          actionTimeTotal: this.getActionTimeForPhase(),
+          isTimeBankPhase: false
+        });
+      }
     }
     
     // Start timer for next player ONLY after all delays and animations complete
@@ -1596,6 +1632,8 @@ export class PokerTable {
     
     if (this.currentHand) {
       this.currentHand.actionStartTime = Date.now();
+      // POKERSTARS-STYLE: New turn always starts with main timer, not time bank
+      this.currentHand.isTimeBankPhase = false;
     }
 
     // Always clear any existing timer before starting a new one
