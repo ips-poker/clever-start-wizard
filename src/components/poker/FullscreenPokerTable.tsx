@@ -554,6 +554,10 @@ const PlayerSeat = memo(function PlayerSeat({
   // Avatar sizes - same for all players
   const avatarSize = 56;
   
+  // HUD hover state - MUST be called before any conditional returns!
+  const [showHUD, setShowHUD] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Format stack based on display preference
   const formatStack = (stack: number): string => {
     if (displayFormat === 'bb') {
@@ -613,10 +617,7 @@ const PlayerSeat = memo(function PlayerSeat({
   const resolvedAvatar = resolveAvatarUrl(player.avatarUrl, player.playerId);
   const isReplaceableBot = canJoin && /bot/i.test(player.name ?? '');
 
-  // HUD hover state
-  const [showHUD, setShowHUD] = useState(false);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
+  // HUD hover handlers (hooks defined above, before conditional returns)
   const handleMouseEnter = () => {
     if (isHero) return;
     hoverTimeoutRef.current = setTimeout(() => setShowHUD(true), 400);
