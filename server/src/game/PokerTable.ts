@@ -1335,14 +1335,19 @@ export class PokerTable {
       
       // Now emit state update after cards are visually dealt
       // POKERSTARS-STYLE: Include timing info for instant timer reset
-      // NOTE: Only emit state_update, NOT turn_changed - avoid double events
-      // startActionTimer() will handle setting correct actionStartTime
+      // CRITICAL FIX: Set actionStartTime BEFORE emitting state_update
+      // so the client gets the correct start time for the new turn
+      if (this.currentHand) {
+        this.currentHand.actionStartTime = Date.now();
+        this.currentHand.isTimeBankPhase = false;
+      }
+      
       this.emit('state_update', {
         pot: this.currentHand.pot,
         currentBet: 0, // Bets reset after phase
         currentPlayerSeat: this.currentHand.currentPlayerSeat,
         phase: newPhase,
-        // POKERSTARS-STYLE: Timing info for client sync
+        // POKERSTARS-STYLE: Timing info for client sync - now has fresh actionStartTime
         actionStartTime: this.currentHand.actionStartTime,
         actionTimeTotal: this.getActionTimeForPhase(),
         isTimeBankPhase: false
@@ -1356,14 +1361,19 @@ export class PokerTable {
       await this.delay(Math.min(afterActionDelay, 200));
       
       // POKERSTARS-STYLE: Include timing info in state update
-      // NOTE: Only emit state_update, NOT turn_changed - avoid double events causing bugs
-      // startActionTimer() will handle setting correct actionStartTime
+      // CRITICAL FIX: Set actionStartTime BEFORE emitting state_update
+      // so the client gets the correct start time for the new turn
+      if (this.currentHand) {
+        this.currentHand.actionStartTime = Date.now();
+        this.currentHand.isTimeBankPhase = false;
+      }
+      
       this.emit('state_update', {
         pot: this.currentHand?.pot || 0,
         currentBet: this.currentHand?.currentBet || 0,
         currentPlayerSeat: this.currentHand?.currentPlayerSeat,
         phase: this.currentHand?.phase || 'preflop',
-        // POKERSTARS-STYLE: Timing info for client sync  
+        // POKERSTARS-STYLE: Timing info for client sync - now has fresh actionStartTime
         actionStartTime: this.currentHand?.actionStartTime,
         actionTimeTotal: this.getActionTimeForPhase(),
         isTimeBankPhase: false
@@ -1608,9 +1618,16 @@ export class PokerTable {
       return;
     }
     
+    // NOTE: actionStartTime is usually set BEFORE state_update emission in afterAction()
+    // However, for direct calls (e.g., from advanceTurn, startHand, retry loop below),
+    // we need to ensure it's set if missing or stale (> 500ms old)
     if (this.currentHand) {
-      this.currentHand.actionStartTime = Date.now();
-      // POKERSTARS-STYLE: New turn always starts with main timer, not time bank
+      const now = Date.now();
+      const isStale = !this.currentHand.actionStartTime || 
+                      (now - this.currentHand.actionStartTime > 500);
+      if (isStale) {
+        this.currentHand.actionStartTime = now;
+      }
       this.currentHand.isTimeBankPhase = false;
     }
 
