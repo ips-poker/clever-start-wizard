@@ -644,7 +644,7 @@ export function FullscreenPokerTableWrapper({
         <div 
           className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 bg-gradient-to-b from-black/60 to-transparent"
           style={{
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 12px)'
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 48px)'
           }}
         >
           <div className="flex items-center gap-3">
@@ -752,7 +752,7 @@ export function FullscreenPokerTableWrapper({
         <div 
           className="absolute inset-0 pb-40"
           style={{
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 56px)'
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 92px)'
           }}
         >
           {/* Why there is no hand yet */}
