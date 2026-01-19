@@ -4,11 +4,9 @@
 // Extends theme styling to fill entire page (top/bottom edges)
 // Now includes immersive 3D environments for each theme
 
-import React, { memo, Suspense, lazy } from 'react';
+import React, { memo } from 'react';
 import { TableGlowStyleId } from '@/hooks/usePokerPreferences';
-
-// Lazy load 3D background for performance
-const Theme3DBackground = lazy(() => import('./theme-3d/Theme3DBackground'));
+import { RealisticThemeBackground } from './theme-backgrounds';
 
 interface ThemePageBackgroundProps {
   glowStyleId: TableGlowStyleId;
@@ -767,10 +765,8 @@ export const ThemePageBackground = memo(function ThemePageBackground({
         }}
       />
       
-      {/* === IMMERSIVE 3D BACKGROUND === */}
-      <Suspense fallback={null}>
-        <Theme3DBackground glowStyleId={glowStyleId} />
-      </Suspense>
+      {/* === REALISTIC ENVIRONMENT BACKGROUND === */}
+      <RealisticThemeBackground glowStyleId={glowStyleId} />
     </div>
   );
 });
