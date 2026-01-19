@@ -1079,23 +1079,63 @@ export class PokerTable {
     }
     
     // For tournaments: handle blind posting for sitting-out players (blinding out)
+    // POKERSTARS-STYLE: All sitting-out players pay blinds AND antes
     if (isTournament) {
+      const ante = this.config.ante || 0;
+      
       for (const player of sitOutPlayers) {
-        // Tournament players in BB/SB positions must post blinds even when sitting out
-        if (player.seatNumber === bbSeat && player.stack >= this.config.bigBlind) {
-          player.stack -= this.config.bigBlind;
-          player.currentBet = this.config.bigBlind;
-          logger.info('POKERSTARS TOURNAMENT: Sitting-out player posted BB', {
+        let totalDeducted = 0;
+        
+        // POKERSTARS: Ante is deducted from ALL players, including sitting-out
+        if (ante > 0 && player.stack > 0) {
+          const anteAmount = Math.min(ante, player.stack);
+          player.stack -= anteAmount;
+          totalDeducted += anteAmount;
+          logger.info('POKERSTARS TOURNAMENT: Sitting-out player posted ANTE', {
             playerId: player.id.substring(0, 8),
-            amount: this.config.bigBlind,
+            amount: anteAmount,
             remainingStack: player.stack
           });
-        } else if (player.seatNumber === sbSeat && player.stack >= this.config.smallBlind) {
-          player.stack -= this.config.smallBlind;
-          player.currentBet = this.config.smallBlind;
+        }
+        
+        // Tournament players in BB/SB positions must post blinds even when sitting out
+        if (player.seatNumber === bbSeat && player.stack > 0) {
+          const bbAmount = Math.min(this.config.bigBlind, player.stack);
+          player.stack -= bbAmount;
+          player.currentBet = bbAmount;
+          totalDeducted += bbAmount;
+          logger.info('POKERSTARS TOURNAMENT: Sitting-out player posted BB', {
+            playerId: player.id.substring(0, 8),
+            amount: bbAmount,
+            remainingStack: player.stack
+          });
+        } else if (player.seatNumber === sbSeat && player.stack > 0) {
+          const sbAmount = Math.min(this.config.smallBlind, player.stack);
+          player.stack -= sbAmount;
+          player.currentBet = sbAmount;
+          totalDeducted += sbAmount;
           logger.info('POKERSTARS TOURNAMENT: Sitting-out player posted SB', {
             playerId: player.id.substring(0, 8),
-            amount: this.config.smallBlind,
+            amount: sbAmount,
+            remainingStack: player.stack
+          });
+        }
+        
+        // Update stack in database if anything was deducted
+        if (totalDeducted > 0) {
+          this.supabase
+            .from('poker_table_players')
+            .update({ stack: player.stack })
+            .eq('table_id', this.id)
+            .eq('player_id', player.id)
+            .then(({ error }) => {
+              if (error) logger.warn('Failed to update sit-out player stack in DB', { error: error.message });
+            });
+          
+          // Emit event for UI to show blinding out
+          this.emit('player_blinding_out', {
+            playerId: player.id,
+            amountDeducted: totalDeducted,
             remainingStack: player.stack
           });
         }
@@ -2308,16 +2348,32 @@ export class PokerTable {
 
     await this.action(playerId, autoAction);
 
-    // After 2 consecutive missed turns, set player to sitting_out
-    if (player.missedTurns >= 2) {
-      logger.info('POKERSTARS: Player auto sitting out after 2 missed turns', {
+    // POKERSTARS-STYLE: After 1 timeout, set player to sitting_out immediately
+    // This matches PokerStars behavior where a single timeout triggers sit-out
+    if (player.missedTurns >= 1) {
+      logger.info('POKERSTARS: Player auto sitting out after 1 missed turn', {
         playerId: playerId.substring(0, 8),
         missedTurns: player.missedTurns
       });
       player.status = 'sitting_out';
+      player.sitOutAt = Date.now();
+      
+      // Update database
+      this.supabase
+        .from('poker_table_players')
+        .update({ 
+          status: 'sitting_out',
+          sit_out_at: new Date().toISOString()
+        })
+        .eq('table_id', this.id)
+        .eq('player_id', playerId)
+        .then(({ error }) => {
+          if (error) logger.warn('Failed to update sit-out status in DB', { error: error.message });
+        });
+      
       this.emit('player_sitting_out', {
         playerId,
-        reason: 'missed_turns',
+        reason: 'timeout',
         missedTurns: player.missedTurns
       });
     }
@@ -2581,14 +2637,45 @@ export class PokerTable {
         }
       }
       
-      // Get active players for engine v3
-      const activePlayers = Array.from(this.players.values())
-        .filter(p => !p.isFolded && p.stack > 0);
+      // POKERSTARS-STYLE: Determine if this is a tournament
+      const isTournament = !!this.config.tournamentId;
+      
+      // Get players for the hand
+      // TOURNAMENT MODE: Include sitting-out players (they get cards but auto-fold)
+      // CASH GAME MODE: Only active players participate
+      let activePlayers: Player[];
+      let sitOutAutoFoldPlayers: Player[] = [];
+      
+      if (isTournament) {
+        // In tournaments: all players with stack > 0 participate
+        // Sitting-out players get cards dealt but immediately fold
+        activePlayers = Array.from(this.players.values())
+          .filter(p => p.stack > 0 && !p.waitForBB);
+        
+        // Mark sit-out players as folded but they will receive cards for authenticity
+        sitOutAutoFoldPlayers = activePlayers.filter(p => p.status === 'sitting_out');
+        
+        for (const sitOutPlayer of sitOutAutoFoldPlayers) {
+          sitOutPlayer.isFolded = true; // They fold immediately after receiving cards
+        }
+        
+        logger.info('POKERSTARS TOURNAMENT: Including sit-out players for card dealing', {
+          activeCount: activePlayers.length,
+          sitOutCount: sitOutAutoFoldPlayers.length,
+          sitOutPlayers: sitOutAutoFoldPlayers.map(p => p.id.substring(0, 8))
+        });
+      } else {
+        // Cash games: only active players (no sitting-out)
+        activePlayers = Array.from(this.players.values())
+          .filter(p => !p.isFolded && p.stack > 0);
+      }
       
       // Verify we have enough players
-      if (activePlayers.length < 2) {
+      // For engine, we need at least 2 players who are NOT folded
+      const nonFoldedPlayers = activePlayers.filter(p => !p.isFolded);
+      if (nonFoldedPlayers.length < 2) {
         logger.warn('Not enough active players to start hand', { 
-          count: activePlayers.length,
+          count: nonFoldedPlayers.length,
           required: 2
         });
         return;
@@ -2599,11 +2686,14 @@ export class PokerTable {
         handNumber: this.handNumber,
         dealerSeat: this.dealerSeat,
         estimatedBBSeat,
+        isTournament,
         activePlayers: activePlayers.map(p => ({
           id: p.id.substring(0, 8),
           name: p.name,
           seat: p.seatNumber,
           stack: p.stack,
+          status: p.status,
+          isFolded: p.isFolded,
           waitForBB: p.waitForBB
         }))
       });
@@ -2787,6 +2877,36 @@ export class PokerTable {
           cardCount: p.holeCards.length
         }))
       });
+      
+      // POKERSTARS TOURNAMENT-STYLE: Emit auto-fold for sitting-out players
+      // They received cards but immediately folded
+      if (sitOutAutoFoldPlayers.length > 0) {
+        for (const sitOutPlayer of sitOutAutoFoldPlayers) {
+          // Record auto-fold in action log
+          this.currentHand.actionLog.push({
+            playerId: sitOutPlayer.id,
+            playerName: sitOutPlayer.name,
+            seatNumber: sitOutPlayer.seatNumber,
+            phase: 'preflop',
+            actionType: 'auto_fold_sit_out',
+            amount: 0,
+            timestamp: Date.now(),
+            actionOrder: this.currentHand.actionLog.length
+          });
+          
+          this.emit('player_auto_fold', {
+            playerId: sitOutPlayer.id,
+            reason: 'sitting_out',
+            holeCards: sitOutPlayer.holeCards // Cards were dealt but player folded
+          });
+          
+          logger.info('POKERSTARS TOURNAMENT: Sit-out player auto-folded', {
+            playerId: sitOutPlayer.id.substring(0, 8),
+            seatNumber: sitOutPlayer.seatNumber,
+            holeCards: sitOutPlayer.holeCards
+          });
+        }
+      }
       
       // POKERSTARS-STYLE: Use atomic_start_hand RPC for race condition protection
       // This atomically closes any stale hands and creates new one in single transaction
