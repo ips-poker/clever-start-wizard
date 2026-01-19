@@ -3140,7 +3140,6 @@ export class PokerTable {
       isTimeBankPhase: this.currentHand?.isTimeBankPhase || false,
       currentPlayerTimeBank: currentPlayer?.timeBank || 0,
       // POKERSTARS-STYLE: Phase-aware timing info for client
-      phase: this.currentHand?.phase || null,
       isRaisedPot: this.currentHand ? this.currentHand.currentBet > this.config.bigBlind : false,
       actionTimeTotal: this.getActionTimeForPhase()
     };
