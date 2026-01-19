@@ -22,6 +22,12 @@ export interface PokerPlayer {
   isSittingOut?: boolean;  // Player is sitting out (auto-fold mode)
   missedTurns?: number;    // Number of consecutive missed turns
   timeBankRemaining?: number;
+  // PokerStars-style sit-out tracking
+  sitOutOrbits?: number;   // Number of orbits spent sitting out
+  missedBB?: boolean;      // Missed big blind while sitting out
+  missedSB?: boolean;      // Missed small blind while sitting out
+  waitForBB?: boolean;     // Waiting for BB position to rejoin
+  autoPostBlinds?: boolean; // Auto-post blinds setting
   // Showdown fields
   handName?: string;
   bestCards?: string[];
@@ -311,6 +317,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         isSittingOut: (((p as any).isSittingOut ?? (p as any).is_sitting_out) || (p as any).status === 'sitting_out') as boolean,
         missedTurns: (((p as any).missedTurns ?? (p as any).missed_turns) || 0) as number,
         timeBankRemaining: (((p as any).timeBank ?? (p as any).time_bank_remaining) || 60) as number,
+        // PokerStars-style sit-out tracking fields
+        sitOutOrbits: (((p as any).sitOutOrbits ?? (p as any).sit_out_orbits) || 0) as number,
+        missedBB: (((p as any).missedBB ?? (p as any).missed_bb) || false) as boolean,
+        missedSB: (((p as any).missedSB ?? (p as any).missed_sb) || false) as boolean,
+        waitForBB: (((p as any).waitForBB ?? (p as any).wait_for_bb) || false) as boolean,
+        autoPostBlinds: (((p as any).autoPostBlinds ?? (p as any).auto_post_blinds) ?? true) as boolean,
         // Showdown fields
         handName: ((p as any).handName || (p as any).handRank || (p as any).hand_rank) as string | undefined,
         isWinner: Boolean((p as any).isWinner || ((p as any).wonAmount as number) > 0 || ((p as any).won_amount as number) > 0),
