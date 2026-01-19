@@ -877,6 +877,9 @@ export class PokerTable {
   /**
    * Mark player as disconnected - preserve seat for reconnect
    * Called when WebSocket connection closes
+   * 
+   * PHASE 3 IMPROVEMENT: If it's the player's turn, trigger IMMEDIATE auto-action
+   * to prevent game from stalling. Other players shouldn't wait 60 seconds.
    */
   markPlayerDisconnected(playerId: string): void {
     const player = this.players.get(playerId);
@@ -884,6 +887,12 @@ export class PokerTable {
       logger.warn('Cannot mark disconnect - player not found', { playerId: playerId.substring(0, 8) });
       return;
     }
+    
+    // Check if it's currently this player's turn
+    const isPlayerTurn = this.currentHand && 
+                         this.currentHand.currentPlayerSeat === player.seatNumber &&
+                         !player.isFolded && 
+                         !player.isAllIn;
     
     // Save player state for reconnection
     this.disconnectedPlayers.set(playerId, {
@@ -904,6 +913,7 @@ export class PokerTable {
       playerId: playerId.substring(0, 8),
       seatNumber: player.seatNumber,
       wasInHand: !!this.currentHand && !player.isFolded,
+      isPlayerTurn,
       reconnectWindowMs: this.RECONNECT_WINDOW_MS
     });
     
@@ -914,7 +924,59 @@ export class PokerTable {
       reconnectWindowSeconds: this.RECONNECT_WINDOW_MS / 1000
     });
     
-    // Set timeout to auto-fold/remove if player doesn't reconnect
+    // PHASE 3: IMMEDIATE auto-action if it's player's turn
+    // Don't make other players wait 60 seconds for disconnected player
+    if (isPlayerTurn) {
+      logger.warn('PHASE3: Player disconnected during their turn - triggering immediate auto-action', {
+        playerId: playerId.substring(0, 8),
+        seatNumber: player.seatNumber,
+        phase: this.currentHand?.phase
+      });
+      
+      // Clear existing timer
+      this.clearActionTimer();
+      
+      // Emit special event for UI to show disconnect-caused action
+      this.emit('disconnect_action_timeout', {
+        playerId,
+        seatNumber: player.seatNumber,
+        reason: 'connection_lost'
+      });
+      
+      // Short delay (2 seconds) to allow quick reconnect, then auto-action
+      // This is much shorter than the 60 second reconnect window
+      const DISCONNECT_ACTION_DELAY_MS = 2000;
+      
+      setTimeout(async () => {
+        // Double-check player is still disconnected and it's still their turn
+        const currentPlayer = this.players.get(playerId);
+        if (!currentPlayer || currentPlayer.status !== 'disconnected') {
+          logger.info('PHASE3: Player reconnected before auto-action', { playerId: playerId.substring(0, 8) });
+          return;
+        }
+        
+        if (!this.currentHand || this.currentHand.currentPlayerSeat !== player.seatNumber) {
+          logger.info('PHASE3: No longer player turn - skipping auto-action', { playerId: playerId.substring(0, 8) });
+          return;
+        }
+        
+        // Execute auto-action: check if possible, otherwise fold
+        const canCheck = currentPlayer.currentBet >= this.currentHand.currentBet;
+        const autoAction = canCheck ? 'check' : 'fold';
+        
+        logger.info('PHASE3: Executing auto-action for disconnected player', {
+          playerId: playerId.substring(0, 8),
+          action: autoAction,
+          canCheck,
+          currentBet: this.currentHand.currentBet,
+          playerBet: currentPlayer.currentBet
+        });
+        
+        await this.action(playerId, autoAction);
+      }, DISCONNECT_ACTION_DELAY_MS);
+    }
+    
+    // Set timeout to auto-fold/remove if player doesn't reconnect (for future hands)
     setTimeout(() => {
       this.checkDisconnectTimeout(playerId);
     }, this.RECONNECT_WINDOW_MS);

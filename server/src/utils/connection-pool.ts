@@ -28,10 +28,10 @@ export const POOL_CONFIG = {
   MAX_PLAYERS_PER_TOURNAMENT: 1000,   // Large tournament support
   
   // Cleanup
-  STALE_CONNECTION_TIMEOUT_MS: 120000,  // 2 minutes without activity
-  CLEANUP_INTERVAL_MS: 30000,           // Run cleanup every 30 seconds
-  PING_INTERVAL_MS: 30000,              // Ping clients every 30 seconds
-  MAX_MISSED_PINGS: 3,                  // Disconnect after 3 missed pings
+  STALE_CONNECTION_TIMEOUT_MS: 90000,   // 90 seconds without activity (reduced from 2 min)
+  CLEANUP_INTERVAL_MS: 15000,           // Run cleanup every 15 seconds (was 30)
+  PING_INTERVAL_MS: 15000,              // Ping clients every 15 seconds (was 30) - PHASE 3
+  MAX_MISSED_PINGS: 2,                  // Disconnect after 2 missed pings (was 3) - PHASE 3
   
   // Backpressure
   HIGH_LOAD_THRESHOLD: 0.8,           // 80% capacity = high load
@@ -86,13 +86,26 @@ export class ConnectionPool {
   private startTime: number = Date.now();
   private connectionIdCounter: number = 0;
   
+  // PHASE 3: Callback for notifying game logic about disconnects
+  private onDisconnectCallback: ((playerId: string, subscribedTables: Set<string>) => void) | null = null;
+  
   constructor() {
     this.startCleanupLoop();
     this.startPingLoop();
-    logger.info('ConnectionPool initialized', {
+    logger.info('ConnectionPool initialized with PHASE 3 improvements', {
       maxConnections: POOL_CONFIG.MAX_TOTAL_CONNECTIONS,
-      maxTables: POOL_CONFIG.MAX_TABLES
+      maxTables: POOL_CONFIG.MAX_TABLES,
+      pingIntervalMs: POOL_CONFIG.PING_INTERVAL_MS,
+      maxMissedPings: POOL_CONFIG.MAX_MISSED_PINGS
     });
+  }
+  
+  /**
+   * PHASE 3: Set callback for disconnect notifications
+   * This allows PokerWebSocketHandler to be notified when cleanup removes a connection
+   */
+  setOnDisconnectCallback(callback: (playerId: string, subscribedTables: Set<string>) => void): void {
+    this.onDisconnectCallback = callback;
   }
   
   // ==========================================
@@ -174,10 +187,15 @@ export class ConnectionPool {
   
   /**
    * Remove a connection from the pool
+   * PHASE 3: Now notifies game logic via callback for internal cleanups
    */
   removeConnection(ws: WebSocket, reason: string = 'unknown'): void {
     const connection = this.connections.get(ws);
     if (!connection) return;
+    
+    // PHASE 3: Store info before removing subscriptions (for callback)
+    const playerId = connection.playerId;
+    const subscribedTables = new Set(connection.subscribedTables);
     
     // Remove from table subscriptions
     for (const tableId of connection.subscribedTables) {
@@ -211,6 +229,19 @@ export class ConnectionPool {
       reason,
       totalConnections: this.connections.size
     });
+    
+    // PHASE 3: Notify game logic about disconnect for internal cleanups
+    // (missed_pings, stale - not triggered by ws.on('close'))
+    if (playerId && subscribedTables.size > 0 && 
+        (reason === 'missed_pings' || reason === 'stale')) {
+      if (this.onDisconnectCallback) {
+        try {
+          this.onDisconnectCallback(playerId, subscribedTables);
+        } catch (err) {
+          logger.error('Error in onDisconnectCallback', { error: String(err), playerId });
+        }
+      }
+    }
   }
   
   /**
