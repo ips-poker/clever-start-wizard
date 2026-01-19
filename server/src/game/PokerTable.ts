@@ -1542,6 +1542,41 @@ export class PokerTable {
   }
 
   /**
+   * POKERSTARS-STYLE: Get action time based on phase and pot state
+   * Different times for:
+   * - Preflop unraised pot (limped) = more time
+   * - Preflop raised pot = less time (decision is simpler)
+   * - Postflop = standard time
+   */
+  private getActionTimeForPhase(): number {
+    if (!this.currentHand) {
+      return this.config.actionTimeSeconds;
+    }
+    
+    const phase = this.currentHand.phase;
+    
+    // Use timing config from imported pokerTimings
+    const timingConfig = this.timings.actionTiming;
+    
+    if (phase === 'preflop') {
+      // Check if there's been a raise (pot is "raised")
+      // A raised pot means currentBet > bigBlind
+      const isRaisedPot = this.currentHand.currentBet > this.config.bigBlind;
+      
+      return isRaisedPot 
+        ? timingConfig.preflopRaised 
+        : timingConfig.preflopUnraised;
+    }
+    
+    if (phase === 'flop' || phase === 'turn' || phase === 'river') {
+      return timingConfig.postflop;
+    }
+    
+    // Showdown or unknown - no timer needed
+    return this.config.actionTimeSeconds;
+  }
+
+  /**
    * Start action timer
    */
   private startActionTimer(durationSeconds?: number): void {
@@ -1587,6 +1622,9 @@ export class PokerTable {
     }
 
     const isBot = this.isBotPlayer(player);
+    
+    // POKERSTARS-STYLE: Calculate phase-aware action time
+    const phaseAwareActionTime = this.getActionTimeForPhase();
 
     // Calculate bot think time - varies by situation to seem more human
     let delayMs: number;
@@ -1621,7 +1659,8 @@ export class PokerTable {
         }
       }, delayMs);
     } else {
-      const duration = Math.max(0, durationSeconds ?? this.config.actionTimeSeconds);
+      // POKERSTARS-STYLE: Use phase-aware action time instead of static config
+      const duration = Math.max(0, durationSeconds ?? phaseAwareActionTime);
       delayMs = duration * 1000;
       
       // CRITICAL FIX: Capture hand ID, seat, and phase at timer start for validation
@@ -1765,8 +1804,9 @@ export class PokerTable {
       // Main timer expired - enter time bank phase
       this.currentHand.isTimeBankPhase = true;
       
-      // Use time bank for next timer slice
-      const timeToUse = Math.min(player.timeBank, this.config.actionTimeSeconds);
+      // Use time bank for next timer slice - POKERSTARS-STYLE with phase-aware limit
+      const phaseActionTime = this.getActionTimeForPhase();
+      const timeToUse = Math.min(player.timeBank, phaseActionTime);
       player.timeBank = Math.max(0, player.timeBank - timeToUse);
       player.timeBankUsedThisAction = timeToUse;
 
@@ -2176,18 +2216,26 @@ export class PokerTable {
         player.timeBankUsedThisAction = 0;
         player.handsPlayedSinceLastTimeBank++;
         
-        // Replenish time bank: +5 seconds every 10 hands played (configurable)
-        const HANDS_PER_REPLENISH = 10;
-        const REPLENISH_AMOUNT = 5;
-        if (player.handsPlayedSinceLastTimeBank >= HANDS_PER_REPLENISH) {
-          const maxTimeBank = this.config.timeBankSeconds || 60;
-          player.timeBank = Math.min(maxTimeBank, player.timeBank + REPLENISH_AMOUNT);
+        // POKERSTARS-STYLE: Replenish time bank with MAX limit enforcement
+        const timeBankConfig = this.timings.timeBank;
+        if (player.handsPlayedSinceLastTimeBank >= timeBankConfig.replenishEveryNHands) {
+          const newTimeBank = Math.min(
+            player.timeBank + timeBankConfig.replenishAmount,
+            timeBankConfig.max  // CRITICAL: Cannot exceed MAX (120s like PokerStars)
+          );
+          
+          if (newTimeBank > player.timeBank) {
+            logger.info('POKERSTARS: Time bank replenished (with MAX limit)', {
+              playerId: player.id.substring(0, 8),
+              previousTimeBank: player.timeBank,
+              newTimeBank: newTimeBank,
+              maxTimeBank: timeBankConfig.max,
+              replenishAmount: timeBankConfig.replenishAmount
+            });
+            player.timeBank = newTimeBank;
+          }
+          
           player.handsPlayedSinceLastTimeBank = 0;
-          logger.info('POKERSTARS: Time bank replenished', {
-            playerId: player.id.substring(0, 8),
-            newTimeBank: player.timeBank,
-            replenishAmount: REPLENISH_AMOUNT
-          });
         }
       }
       
@@ -3090,7 +3138,11 @@ export class PokerTable {
       actionStartTime: this.currentHand?.actionStartTime || null,
       timeRemaining: this.calculateTimeRemaining(),
       isTimeBankPhase: this.currentHand?.isTimeBankPhase || false,
-      currentPlayerTimeBank: currentPlayer?.timeBank || 0
+      currentPlayerTimeBank: currentPlayer?.timeBank || 0,
+      // POKERSTARS-STYLE: Phase-aware timing info for client
+      phase: this.currentHand?.phase || null,
+      isRaisedPot: this.currentHand ? this.currentHand.currentBet > this.config.bigBlind : false,
+      actionTimeTotal: this.getActionTimeForPhase()
     };
   }
   
