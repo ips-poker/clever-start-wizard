@@ -152,8 +152,8 @@ export function FullscreenPokerTableWrapper({
   const deadlineMsRef = useRef<number>(0);
   
   useEffect(() => {
-    // POKERSTARS-STYLE: Cash = 15s, Tournament = 30s (server provides actual value)
-    const actionTimer = tableState?.actionTimer || 15;
+    // POKERSTARS-STYLE: Use server's actionTimeTotal (phase-aware) or fallback
+    const actionTimer = tableState?.actionTimeTotal || tableState?.actionTimer || 15;
 
     // No active player = no timer
     if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
