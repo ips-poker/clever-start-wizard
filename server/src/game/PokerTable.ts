@@ -2446,10 +2446,31 @@ export class PokerTable {
             });
           }
           
+          // CRITICAL FIX: Update hand with engine-calculated values (pot, current_player_seat, current_bet)
+          // atomic_start_hand only creates skeleton hand - we need to sync the actual game state
+          const { error: syncError } = await this.supabase
+            .from('poker_hands')
+            .update({
+              pot: this.currentHand.pot,
+              current_bet: this.currentHand.currentBet,
+              current_player_seat: this.currentHand.currentPlayerSeat
+            })
+            .eq('id', atomicHandId);
+          
+          if (syncError) {
+            logger.warn('Failed to sync hand state after atomic create', { 
+              error: syncError.message,
+              handId: atomicHandId
+            });
+          }
+          
           logger.info('POKERSTARS: Hand created via atomic RPC', {
             tableId: this.id,
             handId: atomicHandId,
-            handNumber: atomicResult.hand_number
+            handNumber: atomicResult.hand_number,
+            pot: this.currentHand.pot,
+            currentBet: this.currentHand.currentBet,
+            currentPlayerSeat: this.currentHand.currentPlayerSeat
           });
         } else {
           // RPC returned error (e.g., race condition)
