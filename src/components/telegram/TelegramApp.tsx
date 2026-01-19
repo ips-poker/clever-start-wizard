@@ -1734,23 +1734,8 @@ export const TelegramApp = () => {
       )}
 
       {activeTab === 'poker' && (
-        <div className={isAtPokerTable ? "min-h-screen relative z-10" : "pb-28 pt-24 px-4 min-h-screen relative z-10"}>
-          {/* Syndikate luxury background for poker table */}
-          {isAtPokerTable && (
-            <>
-              <div 
-                className="fixed inset-0 z-0"
-                style={{
-                  backgroundImage: `url(${syndikateBg})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                }}
-              />
-              <div className="fixed inset-0 z-0" style={{
-                background: 'radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.6) 100%)'
-              }} />
-            </>
-          )}
+        <div className={isAtPokerTable ? "min-h-screen relative z-10 bg-transparent" : "pb-28 pt-24 px-4 min-h-screen relative z-10"}>
+          {/* No background here - ThemePageBackground inside FullscreenPokerTableWrapper handles it */}
           <TelegramPokerLobby 
             playerId={userStats?.id}
             playerName={userStats?.name || telegramUser?.firstName || 'Гость'}
