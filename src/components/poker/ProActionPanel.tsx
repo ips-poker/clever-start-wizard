@@ -304,7 +304,7 @@ export const ProActionPanel = memo(function ProActionPanel({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6 bg-gradient-to-t from-background/95 via-background/70 to-transparent backdrop-blur-md"
+        className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6"
       >
         <div className="flex items-center justify-center gap-6 flex-wrap">
           <PreActionCheckbox
@@ -344,7 +344,7 @@ export const ProActionPanel = memo(function ProActionPanel({
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 30 }}
-      className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6 bg-gradient-to-t from-background/95 via-background/80 to-transparent backdrop-blur-md"
+      className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6"
     >
 
       {/* Raise slider panel */}
