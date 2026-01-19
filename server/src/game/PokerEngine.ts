@@ -166,6 +166,7 @@ export class PokerEngine {
       actionStartTime: null,
       playersActedThisRound: new Set<string>(), // Track actions per round
       isTimeBankPhase: false, // PokerStars-style: starts with main timer, not time bank
+      actionTimeTotal: null, // Will be set by PokerTable when timer starts
       actionLog: [] // POKERSTARS: Action log initialized here but populated in PokerTable
     };
   }
