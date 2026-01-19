@@ -2518,7 +2518,67 @@ export class PokerTable {
           player.stack = 0;
         }
         
+        // Initial fold status - waitForBB will be checked after BB position is determined
         player.isFolded = player.status !== 'active' || player.stack <= 0;
+      }
+      
+      // Get players that could potentially play (for BB position calculation)
+      const potentialPlayers = Array.from(this.players.values())
+        .filter(p => p.status === 'active' && p.stack > 0);
+      
+      // POKERSTARS-STYLE: Pre-calculate BB position to check waitForBB players
+      // This determines which seat will be BB BEFORE we filter out waitForBB players
+      const seatNumbers = potentialPlayers.map(p => p.seatNumber).sort((a, b) => a - b);
+      let estimatedBBSeat: number | null = null;
+      
+      if (seatNumbers.length >= 2) {
+        // Find next dealer after current
+        let nextDealerIdx = 0;
+        for (let i = 0; i < seatNumbers.length; i++) {
+          if (seatNumbers[i] > previousDealerSeat) {
+            nextDealerIdx = i;
+            break;
+          }
+          if (i === seatNumbers.length - 1) {
+            nextDealerIdx = 0; // Wrap around
+          }
+        }
+        
+        // BB is 2 positions after dealer (or 1 in heads-up)
+        if (seatNumbers.length === 2) {
+          estimatedBBSeat = seatNumbers[nextDealerIdx]; // Dealer is BB in heads-up
+        } else {
+          const bbIdx = (nextDealerIdx + 2) % seatNumbers.length;
+          estimatedBBSeat = seatNumbers[bbIdx];
+        }
+      }
+      
+      // POKERSTARS-STYLE: Check waitForBB players - if they're at BB position, clear the flag
+      for (const player of this.players.values()) {
+        if (player.waitForBB && player.seatNumber === estimatedBBSeat) {
+          // Player is now at BB position - they can play!
+          player.waitForBB = false;
+          player.isFolded = false;
+          
+          logger.info('POKERSTARS: Player waitForBB cleared - now at BB position', {
+            playerId: player.id.substring(0, 8),
+            seatNumber: player.seatNumber,
+            estimatedBBSeat
+          });
+          
+          // Update database to clear the flag
+          this.supabase
+            .from('poker_table_players')
+            .update({ wait_for_bb: false })
+            .eq('table_id', this.id)
+            .eq('player_id', player.id)
+            .then(({ error }) => {
+              if (error) logger.warn('Failed to clear wait_for_bb in DB', { error: error.message });
+            });
+        } else if (player.waitForBB) {
+          // Still waiting - mark as folded for this hand
+          player.isFolded = true;
+        }
       }
       
       // Get active players for engine v3
@@ -2538,11 +2598,13 @@ export class PokerTable {
         tableId: this.id,
         handNumber: this.handNumber,
         dealerSeat: this.dealerSeat,
+        estimatedBBSeat,
         activePlayers: activePlayers.map(p => ({
           id: p.id.substring(0, 8),
           name: p.name,
           seat: p.seatNumber,
-          stack: p.stack
+          stack: p.stack,
+          waitForBB: p.waitForBB
         }))
       });
       
