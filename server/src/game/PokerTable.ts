@@ -3560,6 +3560,13 @@ export class PokerTable {
         isActive: p.status === 'active',
         isSittingOut: p.status === 'sitting_out',
         missedTurns: p.missedTurns || 0,
+        // POKERSTARS-STYLE SIT-OUT TRACKING:
+        sitOutOrbits: p.sitOutOrbits || 0,
+        missedBB: p.missedBB || false,
+        missedSB: p.missedSB || false,
+        waitForBB: p.waitForBB || false,
+        autoPostBlinds: p.autoPostBlinds ?? true,
+        isPostingDead: p.isPostingDead || false,
         // CRITICAL: hasCards should ONLY be true when in active hand
         hasCards: isInActiveHand && !p.isFolded,
         holeCards: [] // Hidden for public state

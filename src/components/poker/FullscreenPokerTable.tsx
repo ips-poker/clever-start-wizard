@@ -38,6 +38,9 @@ import { BetCollectionAnimation } from './EnhancedBetCollectionAnimation';
 // ProfessionalShowdown and WinnerAnnouncement removed - using PlayerSeat showdown highlighting
 import { usePhaseAnimation } from '@/hooks/usePhaseAnimation';
 import { getHandStrengthName } from '@/utils/handEvaluator';
+// POKERSTARS-STYLE SIT-OUT INDICATORS
+import { SitOutIndicator, SitOutOverlay } from './SitOutIndicator';
+import { WaitForBBIndicator } from './WaitForBBIndicator';
 
 // ============= SUIT CONFIGURATION =============
 const SUITS = {
@@ -712,10 +715,18 @@ const PlayerSeat = memo(function PlayerSeat({
           />
           
           {/* Fold overlay */}
-          {player.isFolded && (
+          {player.isFolded && !player.isSittingOut && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
               <span className="text-white/80 text-[10px] font-bold">Fold</span>
             </div>
+          )}
+          
+          {/* POKERSTARS-STYLE: Sit-out overlay */}
+          {player.isSittingOut && (
+            <SitOutOverlay 
+              isTournament={false} 
+              showText={true} 
+            />
           )}
           
           {/* Winner glow overlay */}
@@ -732,6 +743,21 @@ const PlayerSeat = memo(function PlayerSeat({
           )}
         </div>
         
+        {/* POKERSTARS-STYLE: Sit-out indicator badge (orbit counter) */}
+        {player.isSittingOut && (
+          <SitOutIndicator
+            sitOutOrbits={player.sitOutOrbits || 0}
+            maxOrbits={4}
+            isTournament={false}
+            size="sm"
+            showOrbitCounter={true}
+          />
+        )}
+        
+        {/* POKERSTARS-STYLE: Wait for BB indicator */}
+        {player.waitForBB && !player.isSittingOut && (
+          <WaitForBBIndicator size="sm" />
+        )}
         {/* Opponent cards - positioned at corner of avatar */}
         {/* Only show cards during active hand phases (preflop through showdown), NOT waiting */}
         {!isHero && !player.isFolded && gamePhase && ['preflop', 'flop', 'turn', 'river', 'showdown'].includes(gamePhase) && (() => {
