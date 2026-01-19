@@ -810,6 +810,7 @@ export function FullscreenPokerTableWrapper({
             currentPlayerSeat={currentPlayerSeat}
             turnTimeRemaining={turnTimeRemaining ?? undefined}
             turnTimeTotal={turnTimeTotal}
+            isTimeBankActive={isTimeBankActive}
             smallBlind={tableState?.smallBlindAmount || 10}
             bigBlind={tableState?.bigBlindAmount || 20}
             canJoinTable={canJoinTable}
