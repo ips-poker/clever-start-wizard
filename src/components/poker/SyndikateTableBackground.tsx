@@ -14,14 +14,9 @@ export const SyndikateTableBackground = memo(function SyndikateTableBackground({
   themeColor = '#0d5c2e'
 }: SyndikateTableBackgroundProps) {
   return (
-    <div className="absolute inset-0 overflow-hidden will-change-auto">
-      {/* Base dark gradient - deep tech background - OPTIMIZED: single layer */}
-      <div 
-        className="absolute inset-0"
-        style={{
-          background: 'linear-gradient(180deg, #0a1520 0%, #050a0f 30%, #020508 60%, #000000 100%)'
-        }}
-      />
+    <div className="absolute inset-0 overflow-hidden will-change-auto pointer-events-none">
+      {/* Base layer removed - now using ThemePageBackground in wrapper */}
+      {/* Only keeping accent glows that complement the theme */}
       
       {/* Combined ambient glows - OPTIMIZED: merged into single gradient layer */}
       <div 
