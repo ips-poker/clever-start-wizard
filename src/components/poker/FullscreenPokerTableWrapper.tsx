@@ -32,6 +32,7 @@ import { TournamentBreakBanner } from './TournamentBreakBanner';
 import { POKERSTARS_TIMER } from '@/constants/pokerTimerConfig';
 import { FullHandHistory } from './FullHandHistory';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { ThemePageBackground } from './ThemePageBackground';
 
 
 // Syndikate branding
@@ -625,6 +626,12 @@ export function FullscreenPokerTableWrapper({
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px))'
         }}
       >
+        {/* Full-page theme background - fills entire screen including edges */}
+        <ThemePageBackground 
+          glowStyleId={preferences.tableGlowStyle} 
+          themeColor={currentTableTheme.color}
+        />
+
         {/* Connection status */}
         <ConnectionStatusBanner 
           status={connectionStatus as any}
