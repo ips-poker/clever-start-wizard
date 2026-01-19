@@ -10,12 +10,14 @@ import { PokerEngineV3, ActionResult, GameType, GameConfig, evaluateHand } from 
 import { logger } from '../utils/logger.js';
 import { makeBotDecision, getBotAggression, BotDecision } from './PokerBotAI.js';
 import { 
-  PROFESSIONAL_TIMINGS, 
+  PROFESSIONAL_TIMINGS,
+  TOURNAMENT_TIMINGS,
   ProfessionalTimings, 
   calculatePhaseDelay,
   calculateBetCollectionDelay,
   calculateShowdownDelay,
-  getTimingsForTableType
+  getTimingsForTableType,
+  getActionTimeForPhase as getActionTimeFromConfig
 } from '../config/pokerTimings.js';
 
 export interface Player {
@@ -1604,31 +1606,35 @@ export class PokerTable {
     
     const phase = this.currentHand.phase;
     
-    // POKERSTARS-STYLE: Use database config as base, with phase-aware adjustments
-    // Database stores action_time_seconds which should be the base time
-    const baseTime = this.config.actionTimeSeconds; // From database (e.g., 30s)
+    // POKERSTARS-STYLE: Use proper timing configuration based on table type
+    // Tournament tables get more time, cash games less
+    const isTournament = this.config.tableType === 'tournament';
+    const timingConfig = isTournament ? TOURNAMENT_TIMINGS : PROFESSIONAL_TIMINGS;
     
-    // For cash games, PokerStars uses the same time for all phases
-    // For tournaments, preflop unraised can be slightly longer
-    // We'll use the database value as the standard time
+    // Check if pot is raised (currentBet > bigBlind means someone raised)
+    const isRaisedPot = this.currentHand.currentBet > this.config.bigBlind;
     
-    if (phase === 'preflop') {
-      // Check if there's been a raise (pot is "raised")
-      // A raised pot means currentBet > bigBlind
-      const isRaisedPot = this.currentHand.currentBet > this.config.bigBlind;
-      
-      // When facing a raise on preflop, we can use slightly less time
-      // But for simplicity and PokerStars-like behavior, keep it the same
-      return baseTime;
+    // Use the professional timing function for accurate PokerStars-style times
+    const configuredTime = getActionTimeFromConfig(
+      phase as 'preflop' | 'flop' | 'turn' | 'river' | 'showdown',
+      isRaisedPot,
+      timingConfig
+    );
+    
+    // If config returns 0 (showdown), use database fallback
+    if (configuredTime === 0) {
+      return this.config.actionTimeSeconds;
     }
     
-    if (phase === 'flop' || phase === 'turn' || phase === 'river') {
-      // Postflop uses the same base time from database
-      return baseTime;
-    }
+    logger.info('getActionTimeForPhase: Calculated time', {
+      phase,
+      isTournament,
+      isRaisedPot,
+      configuredTime,
+      dbTime: this.config.actionTimeSeconds
+    });
     
-    // Showdown or unknown - no timer needed
-    return baseTime;
+    return configuredTime;
   }
 
   /**
