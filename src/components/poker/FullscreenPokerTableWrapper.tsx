@@ -140,9 +140,10 @@ export function FullscreenPokerTableWrapper({
   // POKERSTARS-STYLE TIMER: Server-authoritative timing
   // Server sends: timeRemaining, actionStartTime, isTimeBankPhase
   // Client syncs from server and counts down locally
+  // Include actionStartTime in key to detect timer resets even for same seat
   const timerResetKey = useMemo(() => {
-    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}`;
-  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase]);
+    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}-${tableState?.actionStartTime || 0}`;
+  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase, tableState?.actionStartTime]);
 
   // Track previous timerResetKey to detect new turn/phase
   const prevTimerResetKeyRef = useRef<string>('');
