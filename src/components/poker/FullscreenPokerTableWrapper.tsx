@@ -619,19 +619,14 @@ export function FullscreenPokerTableWrapper({
 
   return (
     <PokerErrorBoundary>
-      {/* Full-page theme background - OUTSIDE padding container to fill entire screen */}
+      {/* Full-page theme background - fills entire viewport including safe areas */}
       <ThemePageBackground 
         glowStyleId={preferences.tableGlowStyle} 
         themeColor={currentTableTheme.color}
       />
       
-      <div 
-        className="absolute inset-0 overflow-hidden"
-        style={{
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px))',
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px))'
-        }}
-      >
+      {/* Main container - NO padding, theme fills entire screen */}
+      <div className="fixed inset-0 overflow-hidden">
         {/* Connection status */}
         <ConnectionStatusBanner 
           status={connectionStatus as any}
@@ -754,12 +749,13 @@ export function FullscreenPokerTableWrapper({
           </div>
         )}
 
-        {/* Main poker table - optimized spacing for all UI elements */}
-        {/* Dynamic top padding for header + safe area, pb-40: space for action panel + hero cards */}
+        {/* Main poker table - fills entire screen, safe areas handled by individual elements */}
+        {/* pb-36: space for action panel which floats at bottom */}
         <div 
-          className="absolute inset-0 pb-40"
+          className="absolute inset-0"
           style={{
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 92px)'
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 92px)',
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px) + 140px)'
           }}
         >
           {/* Why there is no hand yet */}
@@ -915,16 +911,23 @@ export function FullscreenPokerTableWrapper({
           />
         )}
 
-        {/* Side menu */}
+        {/* Side menu - transparent with blur for immersive theme */}
         <AnimatePresence>
           {showMenu && (
             <motion.div
               initial={{ x: -300, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -300, opacity: 0 }}
-              className="absolute left-0 top-16 bottom-0 w-64 bg-background/80 backdrop-blur-xl z-40 p-4 border-r border-border/30"
+              className="absolute left-0 top-0 bottom-0 w-64 z-40 border-r border-white/10"
+              style={{
+                paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 80px)',
+                paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px) + 16px)'
+              }}
             >
-              <div className="space-y-2">
+              {/* Blur background layer */}
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-xl" />
+              
+              <div className="relative p-4 space-y-2">
                 <Button
                   variant="ghost"
                   className="w-full justify-start gap-3 text-foreground/80 hover:text-foreground hover:bg-foreground/10"
