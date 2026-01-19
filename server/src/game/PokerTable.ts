@@ -776,6 +776,51 @@ export class PokerTable {
   }
   
   /**
+   * POKERSTARS-STYLE: Return chips to player's main balance
+   * Called when player leaves table or is removed for excessive sit-out
+   */
+  private async returnChipsToBalance(playerId: string, amount: number): Promise<boolean> {
+    if (amount <= 0) return true;
+    
+    // Only return chips in cash games, not tournaments
+    if (this.config.tournamentId) {
+      logger.info('Not returning chips - tournament table', { playerId: playerId.substring(0, 8) });
+      return true;
+    }
+    
+    try {
+      const { data, error } = await this.supabase.rpc('update_player_balance', {
+        p_player_id: playerId,
+        p_amount: amount,
+        p_is_win: false
+      });
+      
+      if (error) {
+        logger.error('Failed to return chips to balance', { 
+          playerId: playerId.substring(0, 8), 
+          amount, 
+          error: error.message 
+        });
+        return false;
+      }
+      
+      logger.info('POKERSTARS: Chips returned to player balance', {
+        playerId: playerId.substring(0, 8),
+        amount,
+        newBalance: data
+      });
+      
+      return true;
+    } catch (err) {
+      logger.error('Error returning chips to balance', { 
+        playerId: playerId.substring(0, 8), 
+        error: String(err) 
+      });
+      return false;
+    }
+  }
+  
+  /**
    * Update player's stack (for rebuy/addon sync)
    */
   updatePlayerStack(playerId: string, newStack: number): boolean {
@@ -964,6 +1009,42 @@ export class PokerTable {
   }
   
   /**
+   * POKERSTARS-STYLE: Set auto-post blinds preference
+   * When enabled, player automatically posts blinds when returning from sit-out
+   */
+  async setAutoPostBlinds(playerId: string, enabled: boolean): Promise<{ 
+    success: boolean; 
+    error?: string;
+  }> {
+    const player = this.players.get(playerId);
+    if (!player) {
+      return { success: false, error: 'Player not at table' };
+    }
+    
+    player.autoPostBlinds = enabled;
+    
+    // Update database
+    const { error } = await this.supabase
+      .from('poker_table_players')
+      .update({ auto_post_blinds: enabled })
+      .eq('table_id', this.id)
+      .eq('player_id', playerId);
+    
+    if (error) {
+      logger.warn('Failed to update auto_post_blinds in DB', { error: error.message });
+    }
+    
+    logger.info('POKERSTARS: Auto-post blinds updated', {
+      playerId: playerId.substring(0, 8),
+      enabled
+    });
+    
+    this.emit('auto_post_blinds_changed', { playerId, enabled });
+    
+    return { success: true };
+  }
+  
+  /**
    * POKERSTARS-STYLE: Track sit-out orbits and missed blinds at hand start
    * Called every new hand to increment orbit counters and mark missed blind positions
    */
@@ -1046,35 +1127,66 @@ export class PokerTable {
         logger.warn('Failed to check missed blinds via RPC', { error: String(err) });
       }
       
-      // Check for excessive sit-out and remove players (cash games only)
-      try {
-        const { data: removalResult } = await this.supabase.rpc('remove_excessive_sit_out_players', {
-          p_table_id: this.id,
-          p_max_orbits: 4,
-          p_is_tournament: false
-        });
+      // POKERSTARS-STYLE: Check for excessive sit-out by TIME (15 minutes) or orbits (4)
+      // Remove players who have been sitting out too long
+      const SIT_OUT_TIME_LIMIT_MS = 15 * 60 * 1000; // 15 minutes
+      const MAX_SIT_OUT_ORBITS = 4;
+      const now = Date.now();
+      
+      const playersToRemove: string[] = [];
+      
+      for (const player of sitOutPlayers) {
+        const sitOutDuration = player.sitOutAt ? now - player.sitOutAt : 0;
+        const orbits = player.sitOutOrbits || 0;
         
-        if (removalResult?.removed_count > 0 && removalResult?.removed_players) {
-          for (const removedPlayerId of removalResult.removed_players) {
-            const player = this.players.get(removedPlayerId);
-            if (player) {
-              this.seats[player.seatNumber] = null;
-              this.players.delete(removedPlayerId);
-              
-              this.emit('player_removed_sit_out', {
-                playerId: removedPlayerId,
-                reason: 'exceeded_sit_out_limit',
-                orbits: 4
-              });
-              
-              logger.info('POKERSTARS: Player removed for excessive sit-out', {
-                playerId: removedPlayerId.substring(0, 8)
-              });
-            }
-          }
+        // Remove if: 15 minutes passed OR 4 orbits completed
+        if (sitOutDuration >= SIT_OUT_TIME_LIMIT_MS || orbits >= MAX_SIT_OUT_ORBITS) {
+          playersToRemove.push(player.id);
+          
+          logger.info('POKERSTARS: Player exceeded sit-out limit', {
+            playerId: player.id.substring(0, 8),
+            sitOutDurationMinutes: Math.round(sitOutDuration / 60000),
+            orbits,
+            reason: sitOutDuration >= SIT_OUT_TIME_LIMIT_MS ? 'time_limit' : 'orbit_limit'
+          });
+        } else if (sitOutDuration >= SIT_OUT_TIME_LIMIT_MS - 2 * 60 * 1000) {
+          // Warning at 13 minutes (2 minutes before removal)
+          this.emit('sit_out_time_warning', {
+            playerId: player.id,
+            timeRemaining: Math.round((SIT_OUT_TIME_LIMIT_MS - sitOutDuration) / 1000),
+            orbits
+          });
         }
-      } catch (err) {
-        logger.warn('Failed to remove excessive sit-out players', { error: String(err) });
+      }
+      
+      // Remove players who exceeded limits
+      for (const removedPlayerId of playersToRemove) {
+        const player = this.players.get(removedPlayerId);
+        if (player) {
+          // Return chips to balance before removal
+          await this.returnChipsToBalance(removedPlayerId, player.stack);
+          
+          this.seats[player.seatNumber] = null;
+          this.players.delete(removedPlayerId);
+          
+          // Remove from database
+          await this.supabase
+            .from('poker_table_players')
+            .delete()
+            .eq('table_id', this.id)
+            .eq('player_id', removedPlayerId);
+          
+          this.emit('player_removed_sit_out', {
+            playerId: removedPlayerId,
+            reason: 'exceeded_sit_out_limit',
+            chipsReturned: player.stack
+          });
+          
+          logger.info('POKERSTARS: Player removed for excessive sit-out', {
+            playerId: removedPlayerId.substring(0, 8),
+            chipsReturned: player.stack
+          });
+        }
       }
     }
     

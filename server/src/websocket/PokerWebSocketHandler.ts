@@ -65,6 +65,15 @@ const SitInSchema = z.object({
   }).optional()
 });
 
+const SetAutoPostBlindsSchema = z.object({
+  type: z.literal('set_auto_post_blinds'),
+  tableId: z.string().uuid(),
+  playerId: z.string().uuid(),
+  data: z.object({
+    enabled: z.boolean()
+  })
+});
+
 const SubscribeSchema = z.object({
   type: z.literal('subscribe'),
   tableId: z.string().uuid(),
@@ -334,6 +343,10 @@ export class PokerWebSocketHandler {
           await this.handleSitIn(ws, message);
           break;
         
+        case 'set_auto_post_blinds':
+          await this.handleSetAutoPostBlinds(ws, message);
+          break;
+        
         case 'subscribe':
           await this.handleSubscribe(ws, message);
           break;
@@ -598,6 +611,41 @@ export class PokerWebSocketHandler {
       // Include sit-in result info for client
       deadAmount: sitInResult.deadAmount,
       waitForBB: sitInResult.waitForBB
+    });
+  }
+  
+  /**
+   * Handle set auto-post blinds preference
+   * POKERSTARS-STYLE: Player can toggle auto-posting blinds when returning from sit-out
+   */
+  private async handleSetAutoPostBlinds(ws: WebSocket, message: unknown): Promise<void> {
+    const result = SetAutoPostBlindsSchema.safeParse(message);
+    if (!result.success) {
+      this.sendError(ws, 'Invalid set_auto_post_blinds request');
+      return;
+    }
+    
+    const { tableId, playerId, data } = result.data;
+    
+    const table = await this.gameManager.loadTableIfNeeded(tableId);
+    if (!table) {
+      this.sendError(ws, 'Table not found');
+      return;
+    }
+    
+    const setResult = await table.setAutoPostBlinds(playerId, data.enabled);
+    
+    if (!setResult.success) {
+      this.sendError(ws, setResult.error || 'Failed to update auto-post blinds');
+      return;
+    }
+    
+    const state = table.getPlayerState(playerId);
+    this.send(ws, { 
+      type: 'auto_post_blinds_updated', 
+      tableId, 
+      enabled: data.enabled,
+      state 
     });
   }
   
