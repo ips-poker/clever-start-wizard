@@ -644,12 +644,27 @@ export function FullscreenPokerTableWrapper({
 
         {/* Header - with safe area inset for Telegram fullscreen */}
         <div 
-          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 bg-gradient-to-b from-black/40 via-black/20 to-transparent backdrop-blur-sm"
+          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 relative"
           style={{
             paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 48px)'
           }}
         >
-          <div className="flex items-center gap-3">
+          {/* Seamless blur scrim (extends downward + fades out to avoid a hard edge) */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 right-0 top-0 -z-0 supports-[backdrop-filter]:backdrop-blur-md"
+            style={{
+              bottom: '-96px',
+              WebkitMaskImage:
+                'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
+              maskImage:
+                'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/50 to-transparent" />
+          </div>
+
+          <div className="relative z-10 flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
@@ -662,7 +677,7 @@ export function FullscreenPokerTableWrapper({
             <img src={syndikateLogo} alt="Syndikate" className="h-8 drop-shadow-lg" />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="relative z-10 flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
