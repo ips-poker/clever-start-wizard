@@ -304,18 +304,16 @@ export const ProActionPanel = memo(function ProActionPanel({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed bottom-0 left-0 right-0 z-50"
-        style={{
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px) + 16px)',
-          paddingLeft: '16px',
-          paddingRight: '16px',
-          paddingTop: '16px'
-        }}
-      >
-        {/* Transparent blur background */}
-        <div className="absolute inset-0 bg-black/20 backdrop-blur-md" />
+      className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/40 via-black/20 to-transparent backdrop-blur-sm"
+      style={{
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px) + 16px)',
+        paddingLeft: '16px',
+        paddingRight: '16px',
+        paddingTop: '24px'
+      }}
+    >
         
-        <div className="relative flex items-center justify-center gap-6 flex-wrap">
+        <div className="flex items-center justify-center gap-6 flex-wrap">
           <PreActionCheckbox
             label="Fold"
             checked={preAction === 'fold'}
@@ -343,7 +341,7 @@ export const ProActionPanel = memo(function ProActionPanel({
             variant="callAny"
           />
         </div>
-        <p className="relative text-center text-white/40 text-xs mt-2">Ожидание хода...</p>
+        <p className="text-center text-white/40 text-xs mt-2">Ожидание хода...</p>
       </motion.div>
     );
   }
@@ -353,16 +351,14 @@ export const ProActionPanel = memo(function ProActionPanel({
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 30 }}
-      className="fixed bottom-0 left-0 right-0 z-50"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/40 via-black/20 to-transparent backdrop-blur-sm"
       style={{
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px) + 16px)',
         paddingLeft: '16px',
         paddingRight: '16px',
-        paddingTop: '16px'
+        paddingTop: '24px'
       }}
     >
-      {/* Transparent blur background - extends behind entire panel */}
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-md" />
 
       {/* Raise slider panel - relative to appear above blur background */}
       <AnimatePresence>
