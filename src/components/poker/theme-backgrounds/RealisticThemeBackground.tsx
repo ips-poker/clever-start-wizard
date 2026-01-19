@@ -90,14 +90,11 @@ export const RealisticThemeBackground = memo(function RealisticThemeBackground({
   
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {/* Background image - static, no animations */}
+      {/* Background image - static, no animations, no blur */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url(${config.image})`,
-          // Slight blur for depth effect
-          filter: 'blur(2px)',
-          transform: 'scale(1.05)' // Prevent blur edges
+          backgroundImage: `url(${config.image})`
         }}
       />
       
