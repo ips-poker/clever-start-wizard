@@ -767,14 +767,10 @@ export const ThemePageBackground = memo(function ThemePageBackground({
         }}
       />
       
-      {/* === IMMERSIVE LED DECORATIVE ELEMENTS === */}
-      {/* New professional LED-based themes - subtle and comfortable */}
-      {glowStyleId === 'vegas' && <LoftLedElements />}
-      {glowStyleId === 'cyberpunk' && <HiTechLedElements />}
-      {glowStyleId === 'matrix' && <LowHouseLedElements />}
-      {glowStyleId === 'mafia' && <SyndicateLedElements />}
-      {glowStyleId === 'cosmic' && <UndergroundLedElements />}
-      {glowStyleId === 'none' && <SyndicateLedElements />}
+      {/* === IMMERSIVE 3D BACKGROUND === */}
+      <Suspense fallback={null}>
+        <Theme3DBackground glowStyleId={glowStyleId} />
+      </Suspense>
     </div>
   );
 });
