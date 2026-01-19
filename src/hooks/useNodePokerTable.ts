@@ -900,25 +900,78 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }
           break;
 
+        // POKERSTARS-STYLE: Time Bank activated - immediate visual feedback
+        case 'time_bank_activated':
+          log('⏱️ Time Bank ACTIVATED:', data);
+          {
+            const tbData = data as {
+              playerId: string;
+              timeUsed: number;
+              remaining: number;
+            };
+            
+            // Immediately update to time bank phase for instant visual change
+            setTableState((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                isTimeBankPhase: true,
+                // Reset action start time for time bank countdown
+                actionStartTime: Date.now(),
+                actionTimeTotal: tbData.timeUsed
+              };
+            });
+            
+            // Show toast notification for time bank activation
+            console.log(`⏱️ Time Bank активирован: ${tbData.timeUsed}s`);
+          }
+          break;
+
         case 'state_update':
           // State update after action - contains latest bets and player states
           log('📊 State update received:', data);
           {
             // The server broadcasts with full state attached
             const stateData = (data.state || data.data || data) as Record<string, unknown>;
+            
+            // POKERSTARS-STYLE: Check for time bank phase in direct state_update
+            // Server sends isTimeBankPhase and timeRemaining when entering time bank
+            const directTimeBankPhase = stateData.isTimeBankPhase as boolean | undefined;
+            const directTimeRemaining = stateData.timeRemaining as number | undefined;
+            
+            if (directTimeBankPhase !== undefined) {
+              log('⏱️ Time Bank phase update from state_update:', { 
+                isTimeBankPhase: directTimeBankPhase, 
+                timeRemaining: directTimeRemaining 
+              });
+            }
+            
             if (tableId && (stateData.players || stateData.phase)) {
               const incomingState = transformServerState(stateData, tableId);
               const keepShowdown = tableStateRef.current?.phase === 'showdown';
 
               setTableState((prev) => {
                 if (!prev) return keepShowdown ? { ...incomingState, phase: 'showdown' } : incomingState;
-                if (!keepShowdown) return incomingState;
+                if (!keepShowdown) {
+                  // POKERSTARS-STYLE: Preserve time bank state from direct update
+                  if (directTimeBankPhase !== undefined) {
+                    return {
+                      ...incomingState,
+                      isTimeBankPhase: directTimeBankPhase,
+                      actionStartTime: directTimeBankPhase ? Date.now() : incomingState.actionStartTime,
+                      actionTimeTotal: directTimeRemaining ?? incomingState.actionTimeTotal
+                    };
+                  }
+                  return incomingState;
+                }
 
                 const prevById = new Map(prev.players.map((p) => [p.playerId, p] as const));
 
                 return {
                   ...incomingState,
                   phase: 'showdown',
+                  // Preserve time bank state during showdown too
+                  isTimeBankPhase: directTimeBankPhase ?? prev.isTimeBankPhase,
                   players: incomingState.players.map((p) => {
                     const old = prevById.get(p.playerId);
                     if (!old) return p;
