@@ -1308,40 +1308,67 @@ export type Database = {
       }
       poker_table_players: {
         Row: {
+          auto_post_blinds: boolean | null
           id: string
           is_dealer: boolean
+          is_posting_dead: boolean | null
           joined_at: string
           last_action_at: string | null
+          last_orbit_dealer: number | null
+          missed_bb: boolean | null
+          missed_sb: boolean | null
+          missed_turns: number | null
           player_id: string
           seat_number: number
+          sit_out_at: string | null
+          sit_out_orbits: number | null
           stack: number
           status: string
           table_id: string
           time_bank_remaining: number | null
+          wait_for_bb: boolean | null
         }
         Insert: {
+          auto_post_blinds?: boolean | null
           id?: string
           is_dealer?: boolean
+          is_posting_dead?: boolean | null
           joined_at?: string
           last_action_at?: string | null
+          last_orbit_dealer?: number | null
+          missed_bb?: boolean | null
+          missed_sb?: boolean | null
+          missed_turns?: number | null
           player_id: string
           seat_number: number
+          sit_out_at?: string | null
+          sit_out_orbits?: number | null
           stack?: number
           status?: string
           table_id: string
           time_bank_remaining?: number | null
+          wait_for_bb?: boolean | null
         }
         Update: {
+          auto_post_blinds?: boolean | null
           id?: string
           is_dealer?: boolean
+          is_posting_dead?: boolean | null
           joined_at?: string
           last_action_at?: string | null
+          last_orbit_dealer?: number | null
+          missed_bb?: boolean | null
+          missed_sb?: boolean | null
+          missed_turns?: number | null
           player_id?: string
           seat_number?: number
+          sit_out_at?: string | null
+          sit_out_orbits?: number | null
           stack?: number
           status?: string
           table_id?: string
           time_bank_remaining?: number | null
+          wait_for_bb?: boolean | null
         }
         Relationships: [
           {
@@ -2393,6 +2420,10 @@ export type Database = {
         Args: { player_record: Database["public"]["Tables"]["players"]["Row"] }
         Returns: boolean
       }
+      check_missed_blinds: {
+        Args: { p_bb_seat: number; p_sb_seat: number; p_table_id: string }
+        Returns: Json
+      }
       cleanup_stale_hands_and_consolidate: { Args: never; Returns: Json }
       cleanup_stuck_hands_watchdog: {
         Args: { p_timeout_seconds?: number }
@@ -2618,6 +2649,10 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: boolean
       }
+      player_sit_in: {
+        Args: { p_player_id: string; p_post_dead?: boolean; p_table_id: string }
+        Returns: Json
+      }
       process_online_tournament_addon: {
         Args: { p_player_id: string; p_tournament_id: string }
         Returns: Json
@@ -2666,6 +2701,14 @@ export type Database = {
         Args: { p_player_id: string; p_tournament_id: string }
         Returns: Json
       }
+      remove_excessive_sit_out_players: {
+        Args: {
+          p_is_tournament?: boolean
+          p_max_orbits?: number
+          p_table_id: string
+        }
+        Returns: Json
+      }
       resume_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
@@ -2683,6 +2726,10 @@ export type Database = {
         Returns: boolean
       }
       sync_all_player_avatars: { Args: never; Returns: undefined }
+      track_sit_out_orbit: {
+        Args: { p_new_dealer_seat: number; p_table_id: string }
+        Returns: Json
+      }
       update_player_balance: {
         Args: { p_amount: number; p_is_win?: boolean; p_player_id: string }
         Returns: number

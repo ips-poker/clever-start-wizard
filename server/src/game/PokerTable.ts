@@ -40,6 +40,15 @@ export interface Player {
   lastActionTime: number | null;
   missedTurns: number; // Count of consecutive missed turns (timeouts)
   handsPlayedSinceLastTimeBank: number; // For time bank replenishment
+  // POKERSTARS-STYLE SIT-OUT TRACKING:
+  sitOutAt?: number; // Timestamp when sit-out started
+  sitOutOrbits: number; // Number of orbits spent sitting out
+  lastOrbitDealer?: number; // Dealer seat when last orbit was counted
+  missedBB: boolean; // Missed big blind while sitting out (cash games)
+  missedSB: boolean; // Missed small blind while sitting out (cash games)
+  autoPostBlinds: boolean; // Auto-post blinds setting
+  waitForBB: boolean; // Wait for big blind before playing
+  isPostingDead: boolean; // Currently posting dead money
 }
 
 // POKERSTARS-STYLE: Action log entry for hand history
@@ -101,6 +110,7 @@ export class PokerTable {
   private currentHand: HandState | null = null;
   private handNumber: number = 0;
   private dealerSeat: number = 0;
+  private lastDealerSeat: number = 0; // Track previous dealer for orbit counting
   private pendingHandStart: boolean = false; // Prevent concurrent checkStartHand calls
   
   private actionTimer: NodeJS.Timeout | null = null;
@@ -657,7 +667,16 @@ export class PokerTable {
       timeBankUsedThisAction: 0,
       lastActionTime: null,
       missedTurns: 0,
-      handsPlayedSinceLastTimeBank: 0
+      handsPlayedSinceLastTimeBank: 0,
+      // POKERSTARS-STYLE SIT-OUT TRACKING:
+      sitOutAt: undefined,
+      sitOutOrbits: 0,
+      lastOrbitDealer: undefined,
+      missedBB: false,
+      missedSB: false,
+      autoPostBlinds: true,
+      waitForBB: false,
+      isPostingDead: false
     };
     
     this.players.set(playerId, player);
@@ -794,7 +813,8 @@ export class PokerTable {
   }
 
   /**
-   * Sit out - player will auto-fold when it's their turn
+   * POKERSTARS-STYLE: Sit out - player will auto-fold when it's their turn
+   * Tracks sit-out timestamp and orbit counting for removal logic
    */
   async sitOut(playerId: string): Promise<{ success: boolean; error?: string }> {
     const player = this.players.get(playerId);
@@ -807,24 +827,51 @@ export class PokerTable {
     }
     
     player.status = 'sitting_out';
-    logger.info('Player sitting out', { playerId: playerId.substring(0, 8) });
+    player.sitOutAt = Date.now();
+    player.sitOutOrbits = 0;
     
-    // Update database
+    // Track current dealer for orbit counting
+    const currentDealerSeat = this.currentHand?.dealerSeat ?? this.lastDealerSeat ?? 0;
+    player.lastOrbitDealer = currentDealerSeat;
+    
+    logger.info('POKERSTARS: Player sitting out', { 
+      playerId: playerId.substring(0, 8),
+      dealerSeat: currentDealerSeat,
+      isTournament: !!this.config.tournamentId
+    });
+    
+    // Update database with full sit-out tracking
     await this.supabase
       .from('poker_table_players')
-      .update({ status: 'sitting_out' })
+      .update({ 
+        status: 'sitting_out',
+        sit_out_at: new Date().toISOString(),
+        sit_out_orbits: 0,
+        last_orbit_dealer: currentDealerSeat
+      })
       .eq('table_id', this.id)
       .eq('player_id', playerId);
     
-    this.emit('player_sitting_out', { playerId, reason: 'manual' });
+    this.emit('player_sitting_out', { 
+      playerId, 
+      reason: 'manual',
+      sitOutAt: player.sitOutAt,
+      maxOrbits: this.config.tournamentId ? 2 : 4
+    });
     
     return { success: true };
   }
 
   /**
-   * Sit in - return to active play
+   * POKERSTARS-STYLE: Sit in - return to active play
+   * Handles missed blinds for cash games (post dead money or wait for BB)
    */
-  async sitIn(playerId: string): Promise<{ success: boolean; error?: string }> {
+  async sitIn(playerId: string, options: { postDead?: boolean } = {}): Promise<{ 
+    success: boolean; 
+    error?: string;
+    deadAmount?: number;
+    waitForBB?: boolean;
+  }> {
     const player = this.players.get(playerId);
     if (!player) {
       return { success: false, error: 'Player not at table' };
@@ -838,25 +885,241 @@ export class PokerTable {
       return { success: false, error: 'No chips to play' };
     }
     
+    // For cash games: handle missed blinds
+    let deadAmount = 0;
+    let waitForBB = false;
+    
+    if (!this.config.tournamentId && (player.missedBB || player.missedSB)) {
+      if (options.postDead) {
+        // Post dead money: BB + SB if both missed
+        deadAmount = this.config.bigBlind;
+        if (player.missedSB) {
+          deadAmount += this.config.smallBlind;
+        }
+        player.isPostingDead = true;
+        logger.info('POKERSTARS: Player posting dead money', {
+          playerId: playerId.substring(0, 8),
+          deadAmount,
+          missedBB: player.missedBB,
+          missedSB: player.missedSB
+        });
+      } else {
+        // Wait for big blind position
+        waitForBB = true;
+        player.waitForBB = true;
+        logger.info('POKERSTARS: Player waiting for big blind', {
+          playerId: playerId.substring(0, 8)
+        });
+      }
+    }
+    
     player.status = 'active';
-    player.missedTurns = 0; // Reset missed turns counter
-    logger.info('Player sitting in', { playerId: playerId.substring(0, 8) });
+    player.missedTurns = 0;
+    player.sitOutAt = undefined;
+    player.sitOutOrbits = 0;
+    player.missedBB = false;
+    player.missedSB = false;
     
-    // Update database
-    await this.supabase
-      .from('poker_table_players')
-      .update({ status: 'active' })
-      .eq('table_id', this.id)
-      .eq('player_id', playerId);
+    logger.info('POKERSTARS: Player sitting in', { 
+      playerId: playerId.substring(0, 8),
+      deadAmount,
+      waitForBB
+    });
     
-    this.emit('player_sitting_in', { playerId });
+    // Use RPC for atomic update
+    const { data: result } = await this.supabase.rpc('player_sit_in', {
+      p_table_id: this.id,
+      p_player_id: playerId,
+      p_post_dead: options.postDead ?? false
+    });
+    
+    this.emit('player_sitting_in', { 
+      playerId, 
+      deadAmount,
+      waitForBB
+    });
     
     // Check if we can start a hand now
     if (!this.currentHand) {
       this.checkStartHand();
     }
     
-    return { success: true };
+    return { success: true, deadAmount, waitForBB };
+  }
+  
+  /**
+   * POKERSTARS-STYLE: Track sit-out orbits and missed blinds at hand start
+   * Called every new hand to increment orbit counters and mark missed blind positions
+   */
+  private async trackSitOutOrbitsAndMissedBlinds(
+    newDealerSeat: number,
+    sbSeat: number,
+    bbSeat: number
+  ): Promise<void> {
+    const isTournament = !!this.config.tournamentId;
+    const sitOutPlayers = Array.from(this.players.values())
+      .filter(p => p.status === 'sitting_out');
+    
+    if (sitOutPlayers.length === 0) return;
+    
+    // Track orbits via RPC for atomicity
+    try {
+      const { data: orbitResult } = await this.supabase.rpc('track_sit_out_orbit', {
+        p_table_id: this.id,
+        p_new_dealer_seat: newDealerSeat
+      });
+      
+      if (orbitResult?.warned_players?.length > 0) {
+        // Emit warning for players approaching removal limit
+        for (const warnedPlayerId of orbitResult.warned_players) {
+          const player = this.players.get(warnedPlayerId);
+          if (player) {
+            player.sitOutOrbits = (player.sitOutOrbits || 0) + 1;
+            const maxOrbits = isTournament ? 2 : 4;
+            const remaining = maxOrbits - player.sitOutOrbits;
+            
+            this.emit('sit_out_warning', {
+              playerId: warnedPlayerId,
+              orbitsRemaining: remaining,
+              maxOrbits,
+              isTournament
+            });
+            
+            logger.info('POKERSTARS: Sit-out warning issued', {
+              playerId: warnedPlayerId.substring(0, 8),
+              orbits: player.sitOutOrbits,
+              remaining
+            });
+          }
+        }
+      }
+    } catch (err) {
+      logger.warn('Failed to track sit-out orbits via RPC', { error: String(err) });
+    }
+    
+    // For cash games only: track missed blinds
+    if (!isTournament) {
+      try {
+        const { data: missedResult } = await this.supabase.rpc('check_missed_blinds', {
+          p_table_id: this.id,
+          p_bb_seat: bbSeat,
+          p_sb_seat: sbSeat
+        });
+        
+        // Update local player state
+        if (missedResult?.missed_bb_player) {
+          const player = this.players.get(missedResult.missed_bb_player);
+          if (player) {
+            player.missedBB = true;
+            logger.info('POKERSTARS: Player missed BB', {
+              playerId: missedResult.missed_bb_player.substring(0, 8)
+            });
+          }
+        }
+        
+        if (missedResult?.missed_sb_player) {
+          const player = this.players.get(missedResult.missed_sb_player);
+          if (player) {
+            player.missedSB = true;
+            logger.info('POKERSTARS: Player missed SB', {
+              playerId: missedResult.missed_sb_player.substring(0, 8)
+            });
+          }
+        }
+      } catch (err) {
+        logger.warn('Failed to check missed blinds via RPC', { error: String(err) });
+      }
+      
+      // Check for excessive sit-out and remove players (cash games only)
+      try {
+        const { data: removalResult } = await this.supabase.rpc('remove_excessive_sit_out_players', {
+          p_table_id: this.id,
+          p_max_orbits: 4,
+          p_is_tournament: false
+        });
+        
+        if (removalResult?.removed_count > 0 && removalResult?.removed_players) {
+          for (const removedPlayerId of removalResult.removed_players) {
+            const player = this.players.get(removedPlayerId);
+            if (player) {
+              this.seats[player.seatNumber] = null;
+              this.players.delete(removedPlayerId);
+              
+              this.emit('player_removed_sit_out', {
+                playerId: removedPlayerId,
+                reason: 'exceeded_sit_out_limit',
+                orbits: 4
+              });
+              
+              logger.info('POKERSTARS: Player removed for excessive sit-out', {
+                playerId: removedPlayerId.substring(0, 8)
+              });
+            }
+          }
+        }
+      } catch (err) {
+        logger.warn('Failed to remove excessive sit-out players', { error: String(err) });
+      }
+    }
+    
+    // For tournaments: handle blind posting for sitting-out players (blinding out)
+    if (isTournament) {
+      for (const player of sitOutPlayers) {
+        // Tournament players in BB/SB positions must post blinds even when sitting out
+        if (player.seatNumber === bbSeat && player.stack >= this.config.bigBlind) {
+          player.stack -= this.config.bigBlind;
+          player.currentBet = this.config.bigBlind;
+          logger.info('POKERSTARS TOURNAMENT: Sitting-out player posted BB', {
+            playerId: player.id.substring(0, 8),
+            amount: this.config.bigBlind,
+            remainingStack: player.stack
+          });
+        } else if (player.seatNumber === sbSeat && player.stack >= this.config.smallBlind) {
+          player.stack -= this.config.smallBlind;
+          player.currentBet = this.config.smallBlind;
+          logger.info('POKERSTARS TOURNAMENT: Sitting-out player posted SB', {
+            playerId: player.id.substring(0, 8),
+            amount: this.config.smallBlind,
+            remainingStack: player.stack
+          });
+        }
+        
+        // If player is busted, eliminate them
+        if (player.stack <= 0) {
+          await this.eliminatePlayer(player.id, 'blinded_out');
+        }
+      }
+    }
+  }
+  
+  /**
+   * Eliminate a player from the table (tournament or bust)
+   */
+  private async eliminatePlayer(playerId: string, reason: string): Promise<void> {
+    const player = this.players.get(playerId);
+    if (!player) return;
+    
+    logger.info('POKERSTARS: Player eliminated', {
+      playerId: playerId.substring(0, 8),
+      reason,
+      stack: player.stack
+    });
+    
+    this.seats[player.seatNumber] = null;
+    this.players.delete(playerId);
+    
+    // Remove from DB
+    await this.supabase
+      .from('poker_table_players')
+      .delete()
+      .eq('table_id', this.id)
+      .eq('player_id', playerId);
+    
+    this.emit('player_eliminated', {
+      playerId,
+      reason,
+      finalStack: player.stack
+    });
   }
   
   // ==========================================
@@ -2235,6 +2498,16 @@ export class PokerTable {
       
       // Update local dealerSeat from engine calculation
       this.dealerSeat = engineState.dealerSeat;
+      
+      // POKERSTARS-STYLE: Track orbits for sit-out players and missed blinds
+      await this.trackSitOutOrbitsAndMissedBlinds(
+        engineState.dealerSeat, 
+        engineState.smallBlindSeat, 
+        engineState.bigBlindSeat
+      );
+      
+      // Update lastDealerSeat after tracking orbits
+      this.lastDealerSeat = this.dealerSeat;
       
       // Map engine state to our HandState
       this.currentHand = {
