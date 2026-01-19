@@ -53,6 +53,9 @@ export interface TableState {
   actionStartTime?: number | null;     // When turn started (Unix ms) for precise sync
   isTimeBankPhase?: boolean;           // True when main timer expired, using time bank
   currentPlayerTimeBank?: number;      // Time bank available for current player
+  // NEW: Phase-aware action timing (PokerStars-style)
+  isRaisedPot?: boolean;               // Whether preflop has been raised
+  actionTimeTotal?: number;            // Total action time for this turn (server-calculated)
   lastRaiserSeat?: number | null;
   playersNeeded?: number;
   gameStartingCountdown?: number;
@@ -442,6 +445,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       actionStartTime: (state as any).actionStartTime as number | null | undefined,
       isTimeBankPhase: Boolean((state as any).isTimeBankPhase),
       currentPlayerTimeBank: Number((state as any).currentPlayerTimeBank ?? 0),
+      // NEW: Phase-aware action timing
+      isRaisedPot: Boolean((state as any).isRaisedPot),
+      actionTimeTotal: Number((state as any).actionTimeTotal ?? actionTimer),
       playersNeeded: ((state as any).playersNeeded || 0) as number
     };
   }, []);
