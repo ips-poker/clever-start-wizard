@@ -873,6 +873,33 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }
           break;
 
+        // POKERSTARS-STYLE: Handle turn change with immediate timer reset
+        case 'turn_changed':
+          log('🔄 Turn changed event:', data);
+          {
+            // Update only the timing-critical fields for instant timer reset
+            const turnData = data as {
+              currentPlayerSeat: number;
+              phase: string;
+              actionStartTime?: number;
+              actionTimeTotal?: number;
+              isTimeBankPhase?: boolean;
+            };
+            
+            setTableState((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                currentPlayerSeat: turnData.currentPlayerSeat,
+                phase: turnData.phase as any,
+                actionStartTime: turnData.actionStartTime ?? Date.now(),
+                actionTimeTotal: turnData.actionTimeTotal ?? prev.actionTimer ?? 15,
+                isTimeBankPhase: turnData.isTimeBankPhase ?? false
+              };
+            });
+          }
+          break;
+
         case 'state_update':
           // State update after action - contains latest bets and player states
           log('📊 State update received:', data);

@@ -2990,11 +2990,17 @@ export class PokerTable {
         if (player && !player.isFolded && !player.isAllIn && player.status === 'active') {
           this.currentHand.currentPlayerSeat = nextSeat;
           this.currentHand.actionStartTime = Date.now();
+          // POKERSTARS-STYLE: Reset time bank phase for new player's turn
+          this.currentHand.isTimeBankPhase = false;
           
           this.emit('turn_changed', {
             currentPlayerSeat: nextSeat,
             playerId,
-            phase: this.currentHand.phase
+            phase: this.currentHand.phase,
+            // POKERSTARS-STYLE: Include timing info for instant timer reset
+            actionStartTime: this.currentHand.actionStartTime,
+            actionTimeTotal: this.getActionTimeForPhase(),
+            isTimeBankPhase: false
           });
           
           // Start new action timer
