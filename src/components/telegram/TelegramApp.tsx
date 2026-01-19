@@ -105,6 +105,16 @@ export const TelegramApp = () => {
   const [playerBalance, setPlayerBalance] = useState(10000);
   const [isAtPokerTable, setIsAtPokerTable] = useState(false);
   
+  // Make body transparent when at poker table for immersive theme backgrounds
+  useEffect(() => {
+    if (isAtPokerTable) {
+      document.documentElement.classList.add('poker-immersive');
+      return () => {
+        document.documentElement.classList.remove('poker-immersive');
+      };
+    }
+  }, [isAtPokerTable]);
+  
   // Clan notifications - передаём userStats?.id для работы в Telegram Mini App
   const { pendingInvitations, acceptInvitation, declineInvitation, refresh: refreshClan, loading: clanLoading } = useClanSystem({ telegramPlayerId: userStats?.id || null });
   const { newInvitations, unreadCount, clearNotifications } = useClanRealtimeNotifications(userStats?.id || null);

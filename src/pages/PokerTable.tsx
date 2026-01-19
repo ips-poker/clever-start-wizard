@@ -9,7 +9,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { X, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// Make body transparent for immersive theme backgrounds
+const useTransparentBody = () => {
+  useEffect(() => {
+    // Add immersive class to html element
+    document.documentElement.classList.add('poker-immersive');
+    
+    return () => {
+      document.documentElement.classList.remove('poker-immersive');
+    };
+  }, []);
+};
+
 export default function PokerTable() {
+  // Make body transparent for immersive full-screen theme backgrounds
+  useTransparentBody();
+  
   const { tableId } = useParams<{ tableId: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
