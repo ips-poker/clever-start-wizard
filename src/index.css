@@ -518,7 +518,26 @@ html.poker-immersive #root {
   .animate-pulse-glow,
   .animate-shimmer,
   .animate-float,
-  .animate-glitch {
+  .animate-glitch,
+  .led-strip-breathe {
     animation: none !important;
   }
+}
+
+/* LED Strip Breathing Animation - slow and comfortable */
+@keyframes led-breathe {
+  0%, 100% {
+    opacity: var(--led-min-opacity, 0.4);
+    filter: brightness(0.85);
+  }
+  50% {
+    opacity: var(--led-max-opacity, 0.8);
+    filter: brightness(1.15);
+  }
+}
+
+.led-strip-breathe {
+  animation: led-breathe 6s ease-in-out infinite;
+  --led-min-opacity: 0.4;
+  --led-max-opacity: 0.8;
 }

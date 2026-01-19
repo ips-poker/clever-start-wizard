@@ -7,11 +7,11 @@
 import React, { memo } from 'react';
 import { TableGlowStyleId } from '@/hooks/usePokerPreferences';
 import { 
-  VegasNeonElements, 
-  CyberpunkHoloElements, 
-  MatrixCodeElements,
-  MafiaLuxuryElements,
-  CosmicStarsElements
+  LoftLedElements,
+  UndergroundLedElements,
+  HiTechLedElements,
+  SyndicateLedElements,
+  LowHouseLedElements
 } from './theme-decorations';
 
 interface ThemePageBackgroundProps {
@@ -771,13 +771,14 @@ export const ThemePageBackground = memo(function ThemePageBackground({
         }}
       />
       
-      {/* === IMMERSIVE DECORATIVE ELEMENTS === */}
-      {/* Each theme gets its own atmospheric decorations */}
-      {glowStyleId === 'vegas' && <VegasNeonElements />}
-      {glowStyleId === 'cyberpunk' && <CyberpunkHoloElements />}
-      {glowStyleId === 'matrix' && <MatrixCodeElements />}
-      {glowStyleId === 'mafia' && <MafiaLuxuryElements />}
-      {glowStyleId === 'cosmic' && <CosmicStarsElements />}
+      {/* === IMMERSIVE LED DECORATIVE ELEMENTS === */}
+      {/* New professional LED-based themes - subtle and comfortable */}
+      {glowStyleId === 'vegas' && <LoftLedElements />}
+      {glowStyleId === 'cyberpunk' && <HiTechLedElements />}
+      {glowStyleId === 'matrix' && <LowHouseLedElements />}
+      {glowStyleId === 'mafia' && <SyndicateLedElements />}
+      {glowStyleId === 'cosmic' && <UndergroundLedElements />}
+      {glowStyleId === 'none' && <SyndicateLedElements />}
     </div>
   );
 });
