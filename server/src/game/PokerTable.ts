@@ -1627,6 +1627,23 @@ export class PokerTable {
         this.currentHand.isTimeBankPhase = false;
         // Store the calculated actionTimeTotal for consistency
         this.currentHand.actionTimeTotal = actionTimeTotal;
+        
+        // CRITICAL FIX: Sync action_started_at to DB to prevent watchdog false positives
+        // This ensures DB, server memory, and client all have consistent timer state
+        this.supabase
+          .from('poker_hands')
+          .update({
+            action_started_at: new Date(newActionStartTime).toISOString(),
+            current_player_seat: this.currentHand.currentPlayerSeat,
+            phase: newPhase,
+            current_bet: 0
+          })
+          .eq('id', this.currentHand.id)
+          .then(({ error }) => {
+            if (error) {
+              logger.warn('Failed to sync action_started_at to DB (phase change)', { error: error.message });
+            }
+          });
       }
       
       logger.info('Emitting state_update with timer info (phase change)', {
@@ -1665,6 +1682,22 @@ export class PokerTable {
         this.currentHand.isTimeBankPhase = false;
         // Store the calculated actionTimeTotal for consistency
         this.currentHand.actionTimeTotal = actionTimeTotal;
+        
+        // CRITICAL FIX: Sync action_started_at to DB to prevent watchdog false positives
+        // This ensures DB, server memory, and client all have consistent timer state
+        this.supabase
+          .from('poker_hands')
+          .update({
+            action_started_at: new Date(newActionStartTime).toISOString(),
+            current_player_seat: this.currentHand.currentPlayerSeat,
+            current_bet: this.currentHand.currentBet
+          })
+          .eq('id', this.currentHand.id)
+          .then(({ error }) => {
+            if (error) {
+              logger.warn('Failed to sync action_started_at to DB (normal)', { error: error.message });
+            }
+          });
       }
       
       logger.info('Emitting state_update with timer info (normal)', {
@@ -2192,7 +2225,21 @@ export class PokerTable {
       });
 
       // CRITICAL: Reset actionStartTime for time bank phase
-      this.currentHand.actionStartTime = Date.now();
+      const timeBankStartTime = Date.now();
+      this.currentHand.actionStartTime = timeBankStartTime;
+      
+      // CRITICAL FIX: Sync action_started_at to DB for time bank phase
+      this.supabase
+        .from('poker_hands')
+        .update({
+          action_started_at: new Date(timeBankStartTime).toISOString()
+        })
+        .eq('id', this.currentHand.id)
+        .then(({ error }) => {
+          if (error) {
+            logger.warn('Failed to sync action_started_at to DB (time bank)', { error: error.message });
+          }
+        });
 
       // Start time bank timer
       if (timeToUse > 0) {
@@ -2205,7 +2252,8 @@ export class PokerTable {
           currentPlayerSeat: this.currentHand.currentPlayerSeat,
           phase: this.currentHand.phase,
           isTimeBankPhase: true,
-          timeRemaining: timeToUse
+          timeRemaining: timeToUse,
+          actionStartTime: timeBankStartTime
         });
         return;
       }
@@ -2737,12 +2785,14 @@ export class PokerTable {
           
           // CRITICAL FIX: Update hand with engine-calculated values (pot, current_player_seat, current_bet)
           // atomic_start_hand only creates skeleton hand - we need to sync the actual game state
+          // Also sync action_started_at to prevent watchdog false positives
           const { error: syncError } = await this.supabase
             .from('poker_hands')
             .update({
               pot: this.currentHand.pot,
               current_bet: this.currentHand.currentBet,
-              current_player_seat: this.currentHand.currentPlayerSeat
+              current_player_seat: this.currentHand.currentPlayerSeat,
+              action_started_at: new Date(this.currentHand.actionStartTime || Date.now()).toISOString()
             })
             .eq('id', atomicHandId);
           
