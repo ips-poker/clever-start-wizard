@@ -644,7 +644,7 @@ export function FullscreenPokerTableWrapper({
 
         {/* Header - with safe area inset for Telegram fullscreen */}
         <div 
-          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 bg-transparent"
+          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 bg-gradient-to-b from-black/40 via-black/20 to-transparent backdrop-blur-sm"
           style={{
             paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 48px)'
           }}
