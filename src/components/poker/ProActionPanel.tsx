@@ -546,8 +546,9 @@ export const ProActionPanel = memo(function ProActionPanel({
           Стек: <span className="text-amber-400 font-bold">{formatAmount(myStack)}</span>
         </span>
       </div>
-    </motion.div>
-  );
+    </div>
+  </motion.div>
+);
 });
 
 export default ProActionPanel;
