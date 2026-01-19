@@ -2070,15 +2070,30 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     });
   }, [tableId, playerId, sendMessage]);
 
-  // Sit in - return to active play with optional dead blind posting
-  const sitIn = useCallback((options?: { postDead?: boolean }) => {
+  // Sit in - return to active play with optional dead blind posting or wait for BB
+  const sitIn = useCallback((options?: { postDead?: boolean; waitForBB?: boolean }) => {
     if (!tableId || !playerId) return;
     log('🎮 Returning to game', options);
     sendMessage({
       type: 'sit_in',
       tableId,
       playerId,
-      data: { postDead: options?.postDead ?? false }
+      data: { 
+        postDead: options?.postDead ?? false,
+        waitForBB: options?.waitForBB ?? false
+      }
+    });
+  }, [tableId, playerId, sendMessage]);
+
+  // Set auto-post blinds preference
+  const setAutoPostBlinds = useCallback((enabled: boolean) => {
+    if (!tableId || !playerId) return;
+    log('⚙️ Setting auto-post blinds:', enabled);
+    sendMessage({
+      type: 'set_auto_post_blinds',
+      tableId,
+      playerId,
+      data: { enabled }
     });
   }, [tableId, playerId, sendMessage]);
 
@@ -2260,6 +2275,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     allIn,
     sitOut,
     sitIn,
+    setAutoPostBlinds,
     addChips,
     sendChatMessage
   };
