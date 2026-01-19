@@ -304,44 +304,60 @@ export const ProActionPanel = memo(function ProActionPanel({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-      className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/40 via-black/20 to-transparent backdrop-blur-sm"
-      style={{
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px) + 16px)',
-        paddingLeft: '16px',
-        paddingRight: '16px',
-        paddingTop: '24px'
-      }}
-    >
-        
-        <div className="flex items-center justify-center gap-6 flex-wrap">
-          <PreActionCheckbox
-            label="Fold"
-            checked={preAction === 'fold'}
-            onChange={() => setPreAction(p => p === 'fold' ? null : 'fold')}
-            variant="fold"
-          />
-          <PreActionCheckbox
-            label="Check/Fold"
-            checked={preAction === 'check'}
-            onChange={() => setPreAction(p => p === 'check' ? null : 'check')}
-            variant="check"
-          />
-          {callAmount > 0 && callAmount <= myStack && (
-            <PreActionCheckbox
-              label={`Call ${formatAmount(callAmount)}`}
-              checked={preAction === 'call'}
-              onChange={() => setPreAction(p => p === 'call' ? null : 'call')}
-              variant="call"
-            />
-          )}
-          <PreActionCheckbox
-            label="Call Any"
-            checked={preAction === 'callAny'}
-            onChange={() => setPreAction(p => p === 'callAny' ? null : 'callAny')}
-            variant="callAny"
-          />
+        className="fixed bottom-0 left-0 right-0 z-50 relative"
+        style={{
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px) + 16px)',
+          paddingLeft: '16px',
+          paddingRight: '16px',
+          paddingTop: '24px'
+        }}
+      >
+        {/* Seamless blur scrim (extends upward + fades out to avoid a hard edge) */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-0 right-0 bottom-0 -z-0 supports-[backdrop-filter]:backdrop-blur-md"
+          style={{
+            top: '-96px',
+            WebkitMaskImage:
+              'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)',
+            maskImage:
+              'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)'
+          }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/50 to-transparent" />
         </div>
-        <p className="text-center text-white/40 text-xs mt-2">Ожидание хода...</p>
+
+        <div className="relative z-10">
+          <div className="flex items-center justify-center gap-6 flex-wrap">
+            <PreActionCheckbox
+              label="Fold"
+              checked={preAction === 'fold'}
+              onChange={() => setPreAction(p => p === 'fold' ? null : 'fold')}
+              variant="fold"
+            />
+            <PreActionCheckbox
+              label="Check/Fold"
+              checked={preAction === 'check'}
+              onChange={() => setPreAction(p => p === 'check' ? null : 'check')}
+              variant="check"
+            />
+            {callAmount > 0 && callAmount <= myStack && (
+              <PreActionCheckbox
+                label={`Call ${formatAmount(callAmount)}`}
+                checked={preAction === 'call'}
+                onChange={() => setPreAction(p => p === 'call' ? null : 'call')}
+                variant="call"
+              />
+            )}
+            <PreActionCheckbox
+              label="Call Any"
+              checked={preAction === 'callAny'}
+              onChange={() => setPreAction(p => p === 'callAny' ? null : 'callAny')}
+              variant="callAny"
+            />
+          </div>
+          <p className="text-center text-white/40 text-xs mt-2">Ожидание хода...</p>
+        </div>
       </motion.div>
     );
   }
@@ -351,7 +367,7 @@ export const ProActionPanel = memo(function ProActionPanel({
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 30 }}
-      className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-t from-black/40 via-black/20 to-transparent backdrop-blur-sm"
+      className="fixed bottom-0 left-0 right-0 z-50 relative"
       style={{
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px) + 16px)',
         paddingLeft: '16px',
@@ -359,16 +375,30 @@ export const ProActionPanel = memo(function ProActionPanel({
         paddingTop: '24px'
       }}
     >
+      {/* Seamless blur scrim (extends upward + fades out to avoid a hard edge) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-0 right-0 bottom-0 -z-0 supports-[backdrop-filter]:backdrop-blur-md"
+        style={{
+          top: '-96px',
+          WebkitMaskImage:
+            'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)',
+          maskImage:
+            'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)'
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/50 to-transparent" />
+      </div>
 
-      {/* Raise slider panel - relative to appear above blur background */}
-      <AnimatePresence>
-        {showSlider && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="relative overflow-hidden mb-3"
-          >
+      <div className="relative z-10">
+        <AnimatePresence>
+          {showSlider && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="relative overflow-hidden mb-3"
+            >
             <div className="bg-black/30 backdrop-blur-md rounded-xl p-3 border border-white/10">
               {/* Presets */}
               <div className="flex justify-center gap-2 mb-3">
