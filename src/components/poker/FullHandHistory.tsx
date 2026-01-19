@@ -1,4 +1,5 @@
-// Re-export the new professional hand history component as default
+// Public API: always use the new PokerStars-style history
+export { ProHandHistory as FullHandHistory } from './hand-history/ProHandHistory';
 export { ProHandHistory } from './hand-history/ProHandHistory';
 export { ProHandHistory as default } from './hand-history/ProHandHistory';
 
@@ -52,7 +53,7 @@ const ACTION_LABELS: Record<string, string> = {
   'all-in': 'Олл-ин'
 };
 
-export function FullHandHistory({ tableId, playerId, className, onReplayHand }: FullHandHistoryProps) {
+export function LegacyFullHandHistory({ tableId, playerId, className, onReplayHand }: FullHandHistoryProps) {
   const { hands, isLoading, error, selectedHand, setSelectedHand, fetchHistory, fetchHandDetails } = useHandHistory({
     tableId,
     playerId,
