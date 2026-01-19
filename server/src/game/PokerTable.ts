@@ -73,6 +73,7 @@ export interface HandState {
   // Client syncs via: remaining = actionTime - (now - actionStartTime)
   actionStartTime: number | null;
   isTimeBankPhase: boolean; // True when main timer expired, now using time bank
+  actionTimeTotal: number | null; // Cached action time for current turn (for consistency)
   playersActedThisRound: Set<string>; // Track who has acted in current betting round
   // POKERSTARS-STYLE HAND HISTORY: Log all actions for export
   actionLog: ActionLogEntry[];
@@ -1336,11 +1337,23 @@ export class PokerTable {
       // Now emit state update after cards are visually dealt
       // POKERSTARS-STYLE: Include timing info for instant timer reset
       // CRITICAL FIX: Set actionStartTime BEFORE emitting state_update
-      // so the client gets the correct start time for the new turn
+      // Calculate actionTimeTotal ONCE and use it consistently
+      const actionTimeTotal = this.getActionTimeForPhase();
+      const newActionStartTime = Date.now();
+      
       if (this.currentHand) {
-        this.currentHand.actionStartTime = Date.now();
+        this.currentHand.actionStartTime = newActionStartTime;
         this.currentHand.isTimeBankPhase = false;
+        // Store the calculated actionTimeTotal for consistency
+        this.currentHand.actionTimeTotal = actionTimeTotal;
       }
+      
+      logger.info('Emitting state_update with timer info (phase change)', {
+        actionStartTime: newActionStartTime,
+        actionTimeTotal,
+        phase: newPhase,
+        currentPlayerSeat: this.currentHand.currentPlayerSeat
+      });
       
       this.emit('state_update', {
         pot: this.currentHand.pot,
@@ -1348,8 +1361,8 @@ export class PokerTable {
         currentPlayerSeat: this.currentHand.currentPlayerSeat,
         phase: newPhase,
         // POKERSTARS-STYLE: Timing info for client sync - now has fresh actionStartTime
-        actionStartTime: this.currentHand.actionStartTime,
-        actionTimeTotal: this.getActionTimeForPhase(),
+        actionStartTime: newActionStartTime,
+        actionTimeTotal: actionTimeTotal,
         isTimeBankPhase: false
       });
       
@@ -1362,11 +1375,23 @@ export class PokerTable {
       
       // POKERSTARS-STYLE: Include timing info in state update
       // CRITICAL FIX: Set actionStartTime BEFORE emitting state_update
-      // so the client gets the correct start time for the new turn
+      // Calculate actionTimeTotal ONCE and use it consistently
+      const actionTimeTotal = this.getActionTimeForPhase();
+      const newActionStartTime = Date.now();
+      
       if (this.currentHand) {
-        this.currentHand.actionStartTime = Date.now();
+        this.currentHand.actionStartTime = newActionStartTime;
         this.currentHand.isTimeBankPhase = false;
+        // Store the calculated actionTimeTotal for consistency
+        this.currentHand.actionTimeTotal = actionTimeTotal;
       }
+      
+      logger.info('Emitting state_update with timer info (normal)', {
+        actionStartTime: newActionStartTime,
+        actionTimeTotal,
+        currentPlayerSeat: this.currentHand?.currentPlayerSeat,
+        phase: this.currentHand?.phase
+      });
       
       this.emit('state_update', {
         pot: this.currentHand?.pot || 0,
@@ -1374,8 +1399,8 @@ export class PokerTable {
         currentPlayerSeat: this.currentHand?.currentPlayerSeat,
         phase: this.currentHand?.phase || 'preflop',
         // POKERSTARS-STYLE: Timing info for client sync - now has fresh actionStartTime
-        actionStartTime: this.currentHand?.actionStartTime,
-        actionTimeTotal: this.getActionTimeForPhase(),
+        actionStartTime: newActionStartTime,
+        actionTimeTotal: actionTimeTotal,
         isTimeBankPhase: false
       });
     }
@@ -1662,8 +1687,9 @@ export class PokerTable {
 
     const isBot = this.isBotPlayer(player);
     
-    // POKERSTARS-STYLE: Calculate phase-aware action time
-    const phaseAwareActionTime = this.getActionTimeForPhase();
+    // POKERSTARS-STYLE: Use cached actionTimeTotal if available, otherwise calculate fresh
+    // This ensures consistency between timer start and state_update events
+    const phaseAwareActionTime = this.currentHand?.actionTimeTotal || this.getActionTimeForPhase();
 
     // Calculate bot think time - varies by situation to seem more human
     let delayMs: number;
@@ -2224,6 +2250,7 @@ export class PokerTable {
         // POKERSTARS-STYLE: Track action timing precisely
         actionStartTime: Date.now(),
         isTimeBankPhase: false, // Main timer first, time bank only after it expires
+        actionTimeTotal: this.getActionTimeForPhase(), // Cache the initial action time
         playersActedThisRound: new Set(),
         // POKERSTARS-STYLE HAND HISTORY: Initialize action log
         actionLog: []
@@ -3221,7 +3248,8 @@ export class PokerTable {
       currentPlayerTimeBank: currentPlayer?.timeBank || 0,
       // POKERSTARS-STYLE: Phase-aware timing info for client
       isRaisedPot: this.currentHand ? this.currentHand.currentBet > this.config.bigBlind : false,
-      actionTimeTotal: this.getActionTimeForPhase()
+      // Use stored actionTimeTotal if available (for consistency), otherwise calculate fresh
+      actionTimeTotal: this.currentHand?.actionTimeTotal || this.getActionTimeForPhase()
     };
   }
   
@@ -3338,13 +3366,13 @@ export class PokerTable {
     
     // No action start time recorded = timer not started yet
     if (!this.currentHand.actionStartTime) {
-      return this.getActionTimeForPhase(); // Full time (phase-aware)
+      return this.currentHand.actionTimeTotal || this.getActionTimeForPhase(); // Full time (phase-aware)
     }
     
     const elapsedMs = Date.now() - this.currentHand.actionStartTime;
     const elapsedSec = elapsedMs / 1000;
-    // CRITICAL FIX: Use getActionTimeForPhase() for consistency with startActionTimer
-    const totalTime = this.getActionTimeForPhase();
+    // CRITICAL FIX: Use cached actionTimeTotal for consistency with startActionTimer and state_update
+    const totalTime = this.currentHand.actionTimeTotal || this.getActionTimeForPhase();
     const remaining = Math.max(0, totalTime - elapsedSec);
     
     return Math.round(remaining * 10) / 10; // Round to 1 decimal
