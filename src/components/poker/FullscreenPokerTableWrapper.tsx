@@ -649,19 +649,19 @@ export function FullscreenPokerTableWrapper({
             paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 48px)'
           }}
         >
-          {/* Seamless blur scrim (extends downward + fades out to avoid a hard edge) */}
+          {/* Seamless top scrim (NO blur; lighter so cards remain readable) */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-0 right-0 top-0 -z-0 supports-[backdrop-filter]:backdrop-blur-md"
+            className="pointer-events-none absolute left-0 right-0 top-0 -z-0"
             style={{
-              bottom: '-96px',
+              bottom: '-64px',
               WebkitMaskImage:
-                'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)',
+                'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 100%)',
               maskImage:
-                'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%)'
+                'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 100%)'
             }}
           >
-            <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/50 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/25 to-transparent" />
           </div>
 
           <div className="relative z-10 flex items-center gap-3">
