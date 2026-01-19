@@ -2058,14 +2058,15 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     });
   }, [tableId, playerId, sendMessage]);
 
-  // Sit in - return to active play
-  const sitIn = useCallback(() => {
+  // Sit in - return to active play with optional dead blind posting
+  const sitIn = useCallback((options?: { postDead?: boolean }) => {
     if (!tableId || !playerId) return;
-    log('🎮 Returning to game');
+    log('🎮 Returning to game', options);
     sendMessage({
       type: 'sit_in',
       tableId,
-      playerId
+      playerId,
+      data: { postDead: options?.postDead ?? false }
     });
   }, [tableId, playerId, sendMessage]);
 
