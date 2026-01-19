@@ -18,25 +18,25 @@ export const SyndikateTableBackground = memo(function SyndikateTableBackground({
       {/* Base layer removed - now using ThemePageBackground in wrapper */}
       {/* Only keeping accent glows that complement the theme */}
       
-      {/* Combined ambient glows - OPTIMIZED: merged into single gradient layer */}
+      {/* Combined ambient glows - reduced intensity, transparent base */}
       <div 
         className="absolute inset-0"
         style={{
           background: `
-            radial-gradient(ellipse 80% 50% at 50% 0%, rgba(20,80,100,0.3) 0%, transparent 50%),
-            radial-gradient(ellipse 40% 50% at 0% 50%, rgba(0,80,100,0.1) 0%, transparent 50%),
-            radial-gradient(ellipse 40% 50% at 100% 50%, rgba(0,80,100,0.1) 0%, transparent 50%)
+            radial-gradient(ellipse 80% 50% at 50% 0%, rgba(20,80,100,0.15) 0%, transparent 50%),
+            radial-gradient(ellipse 40% 50% at 0% 50%, rgba(0,80,100,0.08) 0%, transparent 50%),
+            radial-gradient(ellipse 40% 50% at 100% 50%, rgba(0,80,100,0.08) 0%, transparent 50%)
           `
         }}
       />
       
       {/* REMOVED: Heavy SVG corners and side indicators for mobile performance */}
       
-      {/* Vignette overlay - kept for depth */}
+      {/* Vignette overlay - reduced intensity since ThemePageBackground has its own */}
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse 70% 70% at 50% 45%, transparent 30%, rgba(0,0,0,0.5) 100%)'
+          background: 'radial-gradient(ellipse 75% 75% at 50% 45%, transparent 40%, rgba(0,0,0,0.25) 100%)'
         }}
       />
       

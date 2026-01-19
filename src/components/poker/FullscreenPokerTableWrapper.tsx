@@ -619,6 +619,12 @@ export function FullscreenPokerTableWrapper({
 
   return (
     <PokerErrorBoundary>
+      {/* Full-page theme background - OUTSIDE padding container to fill entire screen */}
+      <ThemePageBackground 
+        glowStyleId={preferences.tableGlowStyle} 
+        themeColor={currentTableTheme.color}
+      />
+      
       <div 
         className="absolute inset-0 overflow-hidden"
         style={{
@@ -626,12 +632,6 @@ export function FullscreenPokerTableWrapper({
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--tg-safe-area-inset-bottom, 0px))'
         }}
       >
-        {/* Full-page theme background - fills entire screen including edges */}
-        <ThemePageBackground 
-          glowStyleId={preferences.tableGlowStyle} 
-          themeColor={currentTableTheme.color}
-        />
-
         {/* Connection status */}
         <ConnectionStatusBanner 
           status={connectionStatus as any}
@@ -680,7 +680,7 @@ export function FullscreenPokerTableWrapper({
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-amber-400 hover:bg-black/60"
+              className="h-10 w-10 rounded-full bg-background/20 backdrop-blur-md border border-border/30 text-amber-400 hover:bg-background/30"
               onClick={() => setShowPersonalSettings(true)}
             >
               <Palette className="h-5 w-5" />
@@ -922,12 +922,12 @@ export function FullscreenPokerTableWrapper({
               initial={{ x: -300, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -300, opacity: 0 }}
-              className="absolute left-0 top-16 bottom-0 w-64 bg-black/90 backdrop-blur-xl z-40 p-4"
+              className="absolute left-0 top-16 bottom-0 w-64 bg-background/80 backdrop-blur-xl z-40 p-4 border-r border-border/30"
             >
               <div className="space-y-2">
                 <Button
                   variant="ghost"
-                  className="w-full justify-start gap-3 text-white/80 hover:text-white hover:bg-white/10"
+                  className="w-full justify-start gap-3 text-foreground/80 hover:text-foreground hover:bg-foreground/10"
                   onClick={() => setSoundEnabled(!soundEnabled)}
                 >
                   {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
@@ -957,7 +957,7 @@ export function FullscreenPokerTableWrapper({
                 
                 <Button
                   variant="ghost"
-                  className="w-full justify-start gap-3 text-white/80 hover:text-white hover:bg-white/10"
+                  className="w-full justify-start gap-3 text-foreground/80 hover:text-foreground hover:bg-foreground/10"
                   onClick={() => { setShowMenu(false); setShowSettings(true); }}
                 >
                   <Settings2 className="h-5 w-5" />
@@ -973,7 +973,7 @@ export function FullscreenPokerTableWrapper({
                   История рук
                 </Button>
                 
-                <div className="h-px bg-white/10 my-4" />
+                <div className="h-px bg-border/30 my-4" />
                 
                 <Button
                   variant="ghost"
