@@ -31,6 +31,7 @@ import { ProfessionalCommunityCards } from './ProfessionalCommunityCards';
 import { PPPokerPotDisplay } from './PPPokerPotDisplay';
 import { PPPokerActionBadge } from './PPPokerActionBadge';
 import { PPPokerLevelBadge } from './PPPokerLevelBadge';
+import { PokerStarsHUDPopup } from './hud/PokerStarsHUDPopup';
 // PotCollectionAnimation removed - using BetCollectionAnimation only for performance
 import { WinnerChipCascade } from './WinnerChipCascade';
 import { BetCollectionAnimation } from './EnhancedBetCollectionAnimation';
@@ -612,6 +613,22 @@ const PlayerSeat = memo(function PlayerSeat({
   const resolvedAvatar = resolveAvatarUrl(player.avatarUrl, player.playerId);
   const isReplaceableBot = canJoin && /bot/i.test(player.name ?? '');
 
+  // HUD hover state
+  const [showHUD, setShowHUD] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = () => {
+    if (isHero) return;
+    hoverTimeoutRef.current = setTimeout(() => setShowHUD(true), 400);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    setShowHUD(false);
+  };
+
+  const hudPosition = position.x < 40 ? 'right' : position.x > 60 ? 'left' : position.y < 50 ? 'bottom' : 'top';
+
   return (
     <motion.div
       className={cn(
@@ -625,7 +642,18 @@ const PlayerSeat = memo(function PlayerSeat({
       onClick={() => {
         if (isReplaceableBot) onSeatClick?.(seatNumber);
       }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
+      {/* HUD Popup on hover */}
+      {!isHero && (
+        <PokerStarsHUDPopup
+          playerId={player.playerId}
+          playerName={player.name}
+          isVisible={showHUD}
+          position={hudPosition as 'left' | 'right' | 'top' | 'bottom'}
+        />
+      )}
 
       {/* Avatar with status border and opponent cards */}
       <div className="relative">
