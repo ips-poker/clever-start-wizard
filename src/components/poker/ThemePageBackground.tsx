@@ -22,9 +22,19 @@ export const ThemePageBackground = memo(function ThemePageBackground({
       case 'cyberpunk':
         return {
           background: `
-            linear-gradient(180deg, #0a0a1a 0%, #0d0d20 20%, #050510 50%, #0a0a15 80%, #000008 100%),
-            radial-gradient(ellipse 100% 60% at 50% 0%, rgba(0,212,255,0.15) 0%, transparent 50%),
-            radial-gradient(ellipse 100% 60% at 50% 100%, rgba(255,0,255,0.1) 0%, transparent 50%)
+            linear-gradient(180deg, 
+              #0a0a1a 0%, 
+              #0d0d25 10%, 
+              #080815 30%,
+              #050510 50%, 
+              #080815 70%,
+              #0d0d25 90%, 
+              #0a0a1a 100%
+            ),
+            radial-gradient(ellipse 120% 50% at 50% 0%, rgba(0,212,255,0.25) 0%, rgba(0,150,200,0.1) 30%, transparent 60%),
+            radial-gradient(ellipse 120% 50% at 50% 100%, rgba(255,0,255,0.2) 0%, rgba(180,0,180,0.08) 30%, transparent 60%),
+            radial-gradient(ellipse 80% 40% at 20% 0%, rgba(255,0,255,0.12) 0%, transparent 50%),
+            radial-gradient(ellipse 80% 40% at 80% 100%, rgba(0,212,255,0.12) 0%, transparent 50%)
           `,
           backgroundBlendMode: 'normal'
         };
@@ -106,45 +116,124 @@ export const ThemePageBackground = memo(function ThemePageBackground({
       {/* Theme-specific ambient effects */}
       {glowStyleId === 'cyberpunk' && (
         <>
-          {/* Scan lines effect */}
+          {/* Scan lines effect - full screen */}
           <div 
-            className="absolute inset-0 pointer-events-none opacity-[0.03]"
+            className="absolute inset-0 pointer-events-none opacity-[0.04]"
             style={{
-              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,255,0.1) 2px, rgba(0,212,255,0.1) 4px)',
+              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,255,0.15) 2px, rgba(0,212,255,0.15) 4px)',
               backgroundSize: '100% 4px'
             }}
           />
-          {/* Corner glows */}
+          
+          {/* TOP EDGE - Full width cyan glow */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: '35%',
+              background: `
+                linear-gradient(180deg, 
+                  rgba(0,212,255,0.22) 0%, 
+                  rgba(0,180,220,0.12) 20%,
+                  rgba(0,150,200,0.05) 50%,
+                  transparent 100%
+                )
+              `
+            }}
+          />
+          {/* TOP edge accent lines */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: '3px',
+              background: 'linear-gradient(90deg, transparent 5%, rgba(0,212,255,0.6) 30%, rgba(255,0,255,0.4) 70%, transparent 95%)'
+            }}
+          />
+          <div
+            className="absolute top-3 left-0 right-0"
+            style={{
+              height: '1px',
+              background: 'linear-gradient(90deg, transparent 10%, rgba(0,212,255,0.3) 40%, rgba(255,0,255,0.2) 60%, transparent 90%)'
+            }}
+          />
+          
+          {/* BOTTOM EDGE - Full width magenta glow */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: '35%',
+              background: `
+                linear-gradient(0deg, 
+                  rgba(255,0,255,0.2) 0%, 
+                  rgba(200,0,200,0.1) 20%,
+                  rgba(150,0,150,0.04) 50%,
+                  transparent 100%
+                )
+              `
+            }}
+          />
+          {/* BOTTOM edge accent lines */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: '3px',
+              background: 'linear-gradient(90deg, transparent 5%, rgba(255,0,255,0.5) 30%, rgba(0,212,255,0.4) 70%, transparent 95%)'
+            }}
+          />
+          <div
+            className="absolute bottom-3 left-0 right-0"
+            style={{
+              height: '1px',
+              background: 'linear-gradient(90deg, transparent 10%, rgba(255,0,255,0.25) 40%, rgba(0,212,255,0.15) 60%, transparent 90%)'
+            }}
+          />
+          
+          {/* Corner accents - larger and brighter */}
           <div
             className="absolute top-0 left-0"
             style={{
-              width: '128px',
-              height: '128px',
-              background: 'radial-gradient(circle at 0% 0%, rgba(0,212,255,0.18) 0%, transparent 70%)'
+              width: '30%',
+              height: '25%',
+              background: 'radial-gradient(ellipse at 0% 0%, rgba(0,212,255,0.25) 0%, transparent 60%)'
             }}
           />
           <div
             className="absolute top-0 right-0"
             style={{
-              width: '128px',
-              height: '128px',
-              background: 'radial-gradient(circle at 100% 0%, rgba(255,0,255,0.16) 0%, transparent 70%)'
+              width: '30%',
+              height: '25%',
+              background: 'radial-gradient(ellipse at 100% 0%, rgba(255,0,255,0.22) 0%, transparent 60%)'
             }}
           />
           <div
             className="absolute bottom-0 left-0"
             style={{
-              width: '128px',
-              height: '128px',
-              background: 'radial-gradient(circle at 0% 100%, rgba(255,0,255,0.14) 0%, transparent 70%)'
+              width: '30%',
+              height: '25%',
+              background: 'radial-gradient(ellipse at 0% 100%, rgba(255,0,255,0.2) 0%, transparent 60%)'
             }}
           />
           <div
             className="absolute bottom-0 right-0"
             style={{
-              width: '128px',
-              height: '128px',
-              background: 'radial-gradient(circle at 100% 100%, rgba(0,212,255,0.14) 0%, transparent 70%)'
+              width: '30%',
+              height: '25%',
+              background: 'radial-gradient(ellipse at 100% 100%, rgba(0,212,255,0.2) 0%, transparent 60%)'
+            }}
+          />
+          
+          {/* Side edge glows */}
+          <div
+            className="absolute top-0 bottom-0 left-0"
+            style={{
+              width: '15%',
+              background: 'linear-gradient(90deg, rgba(0,212,255,0.08) 0%, transparent 100%)'
+            }}
+          />
+          <div
+            className="absolute top-0 bottom-0 right-0"
+            style={{
+              width: '15%',
+              background: 'linear-gradient(270deg, rgba(255,0,255,0.08) 0%, transparent 100%)'
             }}
           />
         </>
