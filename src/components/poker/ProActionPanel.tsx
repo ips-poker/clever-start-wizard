@@ -312,19 +312,19 @@ export const ProActionPanel = memo(function ProActionPanel({
           paddingTop: '24px'
         }}
       >
-        {/* Seamless blur scrim (extends upward + fades out to avoid a hard edge) */}
+        {/* Seamless bottom scrim (NO blur; lighter so it doesn't cover hero cards) */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute left-0 right-0 bottom-0 -z-0 supports-[backdrop-filter]:backdrop-blur-md"
+          className="pointer-events-none absolute left-0 right-0 bottom-0 -z-0"
           style={{
-            top: '-96px',
+            top: '-64px',
             WebkitMaskImage:
-              'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)',
+              'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 100%)',
             maskImage:
-              'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)'
+              'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 100%)'
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-background/25 to-transparent" />
         </div>
 
         <div className="relative z-10">
@@ -375,19 +375,19 @@ export const ProActionPanel = memo(function ProActionPanel({
         paddingTop: '24px'
       }}
     >
-      {/* Seamless blur scrim (extends upward + fades out to avoid a hard edge) */}
+      {/* Seamless bottom scrim (NO blur; lighter so it doesn't cover hero cards) */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-0 right-0 bottom-0 -z-0 supports-[backdrop-filter]:backdrop-blur-md"
+        className="pointer-events-none absolute left-0 right-0 bottom-0 -z-0"
         style={{
-          top: '-96px',
+          top: '-64px',
           WebkitMaskImage:
-            'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)',
+            'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 100%)',
           maskImage:
-            'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%)'
+            'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 100%)'
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-background/25 to-transparent" />
       </div>
 
       <div className="relative z-10">
