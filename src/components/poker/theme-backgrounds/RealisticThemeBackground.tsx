@@ -23,26 +23,26 @@ interface RealisticThemeBackgroundProps {
 // Get background image and overlay color for each theme
 const getThemeConfig = (glowStyleId: TableGlowStyleId) => {
   switch (glowStyleId) {
-    case 'vegas': // Loft theme
+    case 'vegas': // Vegas casino - High Roller VIP room
+      return {
+        image: vegasBg,
+        overlayColor: 'rgba(30, 10, 20, 0.3)',
+        vignetteIntensity: 0.45,
+        glowColor: 'rgba(255, 200, 100, 0.12)'
+      };
+    case 'western': // Loft theme - industrial brick
       return {
         image: loftBg,
         overlayColor: 'rgba(20, 12, 5, 0.4)',
         vignetteIntensity: 0.6,
         glowColor: 'rgba(255, 140, 50, 0.15)'
       };
-    case 'cosmic': // Underground theme
+    case 'cosmic': // Underground theme - red lights basement
       return {
         image: undergroundBg,
         overlayColor: 'rgba(10, 5, 5, 0.5)',
         vignetteIntensity: 0.7,
         glowColor: 'rgba(200, 50, 50, 0.12)'
-      };
-    case 'western': // Vegas theme
-      return {
-        image: vegasBg,
-        overlayColor: 'rgba(30, 10, 20, 0.35)',
-        vignetteIntensity: 0.5,
-        glowColor: 'rgba(255, 180, 100, 0.15)'
       };
     case 'mafia': // Syndicate theme
       return {
