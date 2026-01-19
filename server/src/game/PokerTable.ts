@@ -1579,25 +1579,31 @@ export class PokerTable {
     
     const phase = this.currentHand.phase;
     
-    // Use timing config from imported pokerTimings
-    const timingConfig = this.timings.actionTiming;
+    // POKERSTARS-STYLE: Use database config as base, with phase-aware adjustments
+    // Database stores action_time_seconds which should be the base time
+    const baseTime = this.config.actionTimeSeconds; // From database (e.g., 30s)
+    
+    // For cash games, PokerStars uses the same time for all phases
+    // For tournaments, preflop unraised can be slightly longer
+    // We'll use the database value as the standard time
     
     if (phase === 'preflop') {
       // Check if there's been a raise (pot is "raised")
       // A raised pot means currentBet > bigBlind
       const isRaisedPot = this.currentHand.currentBet > this.config.bigBlind;
       
-      return isRaisedPot 
-        ? timingConfig.preflopRaised 
-        : timingConfig.preflopUnraised;
+      // When facing a raise on preflop, we can use slightly less time
+      // But for simplicity and PokerStars-like behavior, keep it the same
+      return baseTime;
     }
     
     if (phase === 'flop' || phase === 'turn' || phase === 'river') {
-      return timingConfig.postflop;
+      // Postflop uses the same base time from database
+      return baseTime;
     }
     
     // Showdown or unknown - no timer needed
-    return this.config.actionTimeSeconds;
+    return baseTime;
   }
 
   /**
@@ -3332,12 +3338,14 @@ export class PokerTable {
     
     // No action start time recorded = timer not started yet
     if (!this.currentHand.actionStartTime) {
-      return this.config.actionTimeSeconds; // Full time
+      return this.getActionTimeForPhase(); // Full time (phase-aware)
     }
     
     const elapsedMs = Date.now() - this.currentHand.actionStartTime;
     const elapsedSec = elapsedMs / 1000;
-    const remaining = Math.max(0, this.config.actionTimeSeconds - elapsedSec);
+    // CRITICAL FIX: Use getActionTimeForPhase() for consistency with startActionTimer
+    const totalTime = this.getActionTimeForPhase();
+    const remaining = Math.max(0, totalTime - elapsedSec);
     
     return Math.round(remaining * 10) / 10; // Round to 1 decimal
   }
