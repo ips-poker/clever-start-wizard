@@ -649,7 +649,7 @@ export function FullscreenPokerTableWrapper({
 
         {/* Header - with safe area inset for Telegram fullscreen */}
         <div 
-          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 bg-gradient-to-b from-black/60 to-transparent"
+          className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between p-3 bg-transparent"
           style={{
             paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + 48px)'
           }}
@@ -658,7 +658,7 @@ export function FullscreenPokerTableWrapper({
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
+              className="h-10 w-10 rounded-full bg-background/20 backdrop-blur-md border border-border/30 text-foreground/80 hover:bg-background/30"
               onClick={() => setShowMenu(!showMenu)}
             >
               {showMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -671,7 +671,7 @@ export function FullscreenPokerTableWrapper({
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
+              className="h-10 w-10 rounded-full bg-background/20 backdrop-blur-md border border-border/30 text-foreground/80 hover:bg-background/30"
               onClick={() => setSoundEnabled(!soundEnabled)}
             >
               {soundEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
@@ -689,7 +689,7 @@ export function FullscreenPokerTableWrapper({
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-sm text-white/80 hover:bg-black/60"
+              className="h-10 w-10 rounded-full bg-background/20 backdrop-blur-md border border-border/30 text-foreground/80 hover:bg-background/30"
               onClick={() => setShowSettings(true)}
             >
               <Settings2 className="h-5 w-5" />

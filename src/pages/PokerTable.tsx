@@ -205,7 +205,7 @@ export default function PokerTable() {
   }
 
   return (
-    <div className="w-screen h-screen overflow-hidden relative bg-black">
+    <div className="w-screen h-screen overflow-hidden relative bg-transparent">
       
       {/* Tournament HUD is rendered inside OnlinePokerTable -> FullscreenPokerTableWrapper */}
 
@@ -237,27 +237,29 @@ export default function PokerTable() {
       )}
 
       {/* Window controls - for popup window */}
-      <div 
-        className="absolute top-0 left-0 right-0 h-7 z-50 flex items-center justify-between px-2"
-        style={{
-          background: 'linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 50%, transparent 100%)',
-        }}
-      >
-        <span className="text-white/60 text-xs font-medium truncate max-w-[200px]">
-          {tableName}
-        </span>
-        
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-5 w-5 text-white/60 hover:text-white hover:bg-white/10 rounded"
-            onClick={handleLeaveTable}
-          >
-            <X className="h-3 w-3" />
-          </Button>
+      {!((window as any).Telegram?.WebApp || window.location.pathname.startsWith('/telegram') || window.location.pathname.startsWith('/telegram-mini-app')) && (
+        <div 
+          className="absolute top-0 left-0 right-0 h-7 z-50 flex items-center justify-between px-2"
+          style={{
+            background: 'linear-gradient(180deg, hsl(var(--background) / 0.85) 0%, hsl(var(--background) / 0.55) 50%, transparent 100%)',
+          }}
+        >
+          <span className="text-foreground/70 text-xs font-medium truncate max-w-[200px]">
+            {tableName}
+          </span>
+          
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 text-foreground/70 hover:text-foreground hover:bg-background/20 rounded"
+              onClick={handleLeaveTable}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
       
       {/* Poker table */}
       <div className="relative w-full h-full">

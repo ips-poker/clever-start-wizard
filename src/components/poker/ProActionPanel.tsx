@@ -304,10 +304,7 @@ export const ProActionPanel = memo(function ProActionPanel({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6"
-        style={{
-          background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.8) 70%, transparent 100%)'
-        }}
+        className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6 bg-gradient-to-t from-background/95 via-background/70 to-transparent backdrop-blur-md"
       >
         <div className="flex items-center justify-center gap-6 flex-wrap">
           <PreActionCheckbox
@@ -347,10 +344,7 @@ export const ProActionPanel = memo(function ProActionPanel({
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 30 }}
-      className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6"
-      style={{
-        background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(20,20,20,0.95) 60%, transparent 100%)'
-      }}
+      className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-6 bg-gradient-to-t from-background/95 via-background/80 to-transparent backdrop-blur-md"
     >
 
       {/* Raise slider panel */}
@@ -362,7 +356,7 @@ export const ProActionPanel = memo(function ProActionPanel({
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden mb-3"
           >
-            <div className="bg-black/40 rounded-xl p-3 border border-white/10">
+            <div className="bg-background/30 backdrop-blur-md rounded-xl p-3 border border-border/30">
               {/* Presets */}
               <div className="flex justify-center gap-2 mb-3">
                 <PresetButton
