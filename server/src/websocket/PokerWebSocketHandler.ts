@@ -57,7 +57,12 @@ const SitOutSchema = z.object({
 const SitInSchema = z.object({
   type: z.literal('sit_in'),
   tableId: z.string().uuid(),
-  playerId: z.string().uuid()
+  playerId: z.string().uuid(),
+  // POKERSTARS-STYLE: Support cash game options (postDead, waitForBB)
+  data: z.object({
+    postDead: z.boolean().optional(),
+    waitForBB: z.boolean().optional()
+  }).optional()
 });
 
 const SubscribeSchema = z.object({
@@ -549,6 +554,7 @@ export class PokerWebSocketHandler {
   
   /**
    * Handle sit in request
+   * POKERSTARS-STYLE: Supports postDead option for cash games with missed blinds
    */
   private async handleSitIn(ws: WebSocket, message: unknown): Promise<void> {
     const result = SitInSchema.safeParse(message);
@@ -557,7 +563,7 @@ export class PokerWebSocketHandler {
       return;
     }
     
-    const { tableId, playerId } = result.data;
+    const { tableId, playerId, data } = result.data;
     
     const table = await this.gameManager.loadTableIfNeeded(tableId);
     if (!table) {
@@ -565,7 +571,19 @@ export class PokerWebSocketHandler {
       return;
     }
     
-    const sitInResult = await table.sitIn(playerId);
+    // POKERSTARS-STYLE: Pass postDead option to handle missed blinds in cash games
+    const sitInOptions = {
+      postDead: data?.postDead ?? false,
+      waitForBB: data?.waitForBB ?? false
+    };
+    
+    logger.info('Processing sit-in request', {
+      playerId: playerId.substring(0, 8),
+      postDead: sitInOptions.postDead,
+      waitForBB: sitInOptions.waitForBB
+    });
+    
+    const sitInResult = await table.sitIn(playerId, sitInOptions);
     
     if (!sitInResult.success) {
       this.sendError(ws, sitInResult.error || 'Failed to sit in');
@@ -573,7 +591,14 @@ export class PokerWebSocketHandler {
     }
     
     const state = table.getPlayerState(playerId);
-    this.send(ws, { type: 'sit_in_success', tableId, state });
+    this.send(ws, { 
+      type: 'sit_in_success', 
+      tableId, 
+      state,
+      // Include sit-in result info for client
+      deadAmount: sitInResult.deadAmount,
+      waitForBB: sitInResult.waitForBB
+    });
   }
   
   /**
