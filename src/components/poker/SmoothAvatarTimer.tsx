@@ -1,8 +1,9 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Style
 // Designed to stay visually smooth even when parent updates `remaining` every second.
+// Supports Time Bank phase with distinct blue coloring
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { isTimerCritical, getTimerColorHex, getTimerGlowColor } from '@/constants/pokerTimerConfig';
+import { isTimerCritical, getTimerColorHex, getTimerGlowColor, POKERSTARS_TIMER } from '@/constants/pokerTimerConfig';
 
 interface SmoothAvatarTimerProps {
   remaining: number;
@@ -10,6 +11,10 @@ interface SmoothAvatarTimerProps {
   size: number;
   strokeWidth?: number;
   className?: string;
+  /** Whether we're in time bank phase - changes color to blue */
+  isTimeBankPhase?: boolean;
+  /** Current player's total time bank (for secondary indicator) */
+  timeBankRemaining?: number;
 }
 
 export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
@@ -17,7 +22,9 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   total,
   size,
   strokeWidth = 4,
-  className
+  className,
+  isTimeBankPhase = false,
+  timeBankRemaining
 }: SmoothAvatarTimerProps) {
   const [currentRemaining, setCurrentRemaining] = useState(remaining);
 
@@ -28,6 +35,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   // Keep a ref in sync so we can measure drift vs. incoming props.
   const currentRemainingRef = useRef<number>(remaining);
   const lastTotalRef = useRef<number>(total);
+  const lastTimeBankPhaseRef = useRef<boolean>(isTimeBankPhase);
 
   const startAnimation = (startRemaining: number) => {
     if (animationRef.current !== null) {
@@ -60,6 +68,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   useEffect(() => {
     startAnimation(remaining);
     lastTotalRef.current = total;
+    lastTimeBankPhaseRef.current = isTimeBankPhase;
 
     return () => {
       if (animationRef.current !== null) {
@@ -70,20 +79,23 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   }, []);
 
   // Re-sync only on *meaningful* changes.
-  // This avoids restarting the animation every second (which causes “спешит/опаздывает”).
+  // This avoids restarting the animation every second (which causes "спешит/опаздывает").
   useEffect(() => {
     const totalChanged = total !== lastTotalRef.current;
+    const timeBankPhaseChanged = isTimeBankPhase !== lastTimeBankPhaseRef.current;
     const drift = Math.abs(remaining - currentRemainingRef.current);
     const jumpedUp = remaining > currentRemainingRef.current + 0.75; // new turn / time bank
 
     // If server corrects the remaining time by more than ~1.25s, re-sync.
-    const needsResync = totalChanged || jumpedUp || drift > 1.25;
+    // Also resync when time bank phase changes (important visual transition)
+    const needsResync = totalChanged || timeBankPhaseChanged || jumpedUp || drift > 1.25;
 
     if (needsResync) {
       lastTotalRef.current = total;
+      lastTimeBankPhaseRef.current = isTimeBankPhase;
       startAnimation(remaining);
     }
-  }, [remaining, total]);
+  }, [remaining, total, isTimeBankPhase]);
 
   const progress =
     total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;
@@ -94,12 +106,16 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
 
   const isCritical = isTimerCritical(currentRemaining);
 
-  const strokeColor = getTimerColorHex(currentRemaining);
-  const glowColor = getTimerGlowColor(currentRemaining);
+  // Use time bank aware color functions
+  const strokeColor = getTimerColorHex(currentRemaining, isTimeBankPhase);
+  const glowColor = getTimerGlowColor(currentRemaining, isTimeBankPhase);
 
+  // Enhanced glow for critical state or time bank activation
   const glowFilter = isCritical
     ? `drop-shadow(0 0 12px ${glowColor}) drop-shadow(0 0 24px ${glowColor})`
-    : `drop-shadow(0 0 8px ${glowColor})`;
+    : isTimeBankPhase
+      ? `drop-shadow(0 0 10px ${glowColor}) drop-shadow(0 0 20px ${glowColor})`
+      : `drop-shadow(0 0 8px ${glowColor})`;
 
   return (
     <svg
@@ -132,7 +148,10 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={strokeDashoffset}
-        className={cn(isCritical && 'animate-[pulse_0.4s_ease-in-out_infinite]')}
+        className={cn(
+          isCritical && 'animate-[pulse_0.4s_ease-in-out_infinite]',
+          isTimeBankPhase && !isCritical && 'animate-[pulse_0.8s_ease-in-out_infinite]'
+        )}
         style={{ transition: 'stroke 0.3s ease' }}
       />
 
@@ -158,9 +177,31 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
           />
         );
       })()}
+
+      {/* Time Bank indicator - inner ring when in time bank phase */}
+      {isTimeBankPhase && !isCritical && (() => {
+        const innerRadius = radius - 3;
+        const innerCircumference = 2 * Math.PI * innerRadius;
+        const innerOffset = innerCircumference * (1 - progress);
+
+        return (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={innerRadius}
+            fill="none"
+            stroke={POKERSTARS_TIMER.TIME_BANK_COLORS.ACTIVE}
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeDasharray={innerCircumference}
+            strokeDashoffset={innerOffset}
+            opacity={0.6}
+            className="animate-[pulse_1s_ease-in-out_infinite]"
+          />
+        );
+      })()}
     </svg>
   );
 });
 
 export default SmoothAvatarTimer;
-
