@@ -270,7 +270,16 @@ export class PokerTable {
           timeBankUsedThisAction: 0,
           lastActionTime: null,
           missedTurns: 0,
-          handsPlayedSinceLastTimeBank: 0
+          handsPlayedSinceLastTimeBank: 0,
+          // POKERSTARS-STYLE SIT-OUT TRACKING:
+          sitOutOrbits: dbPlayer.sit_out_orbits || 0,
+          lastOrbitDealer: dbPlayer.last_orbit_dealer || undefined,
+          missedBB: dbPlayer.missed_bb || false,
+          missedSB: dbPlayer.missed_sb || false,
+          autoPostBlinds: dbPlayer.auto_post_blinds ?? true,
+          waitForBB: dbPlayer.wait_for_bb || false,
+          isPostingDead: dbPlayer.is_posting_dead || false,
+          sitOutAt: dbPlayer.sit_out_at ? new Date(dbPlayer.sit_out_at).getTime() : undefined
         };
         
         this.players.set(dbPlayer.player_id, player);
@@ -440,7 +449,14 @@ export class PokerTable {
         timeBankUsedThisAction: 0,
         lastActionTime: null,
         missedTurns: 0,
-        handsPlayedSinceLastTimeBank: 0
+        handsPlayedSinceLastTimeBank: 0,
+        // POKERSTARS-STYLE SIT-OUT TRACKING:
+        sitOutOrbits: 0,
+        missedBB: false,
+        missedSB: false,
+        autoPostBlinds: true,
+        waitForBB: false,
+        isPostingDead: false
       };
 
       this.players.set(playerId, player);
@@ -3838,7 +3854,14 @@ export class PokerTable {
       lastActionTime: null,
       missedTurns: 0,
       timeBankUsedThisAction: 0,
-      handsPlayedSinceLastTimeBank: 0
+      handsPlayedSinceLastTimeBank: 0,
+      // POKERSTARS-STYLE SIT-OUT TRACKING:
+      sitOutOrbits: 0,
+      missedBB: false,
+      missedSB: false,
+      autoPostBlinds: true,
+      waitForBB: false,
+      isPostingDead: false
     };
     
     this.players.set(playerId, player);
