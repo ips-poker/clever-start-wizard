@@ -241,21 +241,156 @@ export const ThemePageBackground = memo(function ThemePageBackground({
       
       {glowStyleId === 'matrix' && (
         <>
-          {/* Digital rain effect */}
+          {/* Digital rain lines - full screen */}
           <div 
-            className="absolute inset-0 pointer-events-none opacity-[0.02]"
+            className="absolute inset-0 pointer-events-none opacity-[0.04]"
             style={{
-              backgroundImage: 'repeating-linear-gradient(180deg, transparent, transparent 20px, rgba(0,255,65,0.15) 20px, rgba(0,255,65,0.15) 22px)',
+              backgroundImage: 'repeating-linear-gradient(180deg, transparent, transparent 20px, rgba(0,255,65,0.2) 20px, rgba(0,255,65,0.2) 22px)',
               backgroundSize: '100% 22px'
             }}
           />
+          
+          {/* TOP EDGE - Full width green glow */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: '30%',
+              background: `
+                linear-gradient(180deg, 
+                  rgba(0,255,65,0.2) 0%, 
+                  rgba(0,200,50,0.1) 30%,
+                  rgba(0,150,40,0.04) 60%,
+                  transparent 100%
+                )
+              `
+            }}
+          />
+          {/* TOP accent line */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: '2px',
+              background: 'linear-gradient(90deg, transparent 5%, rgba(0,255,65,0.6) 50%, transparent 95%)'
+            }}
+          />
+          
+          {/* BOTTOM EDGE - Full width green glow */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: '30%',
+              background: `
+                linear-gradient(0deg, 
+                  rgba(0,255,65,0.18) 0%, 
+                  rgba(0,200,50,0.08) 30%,
+                  rgba(0,150,40,0.03) 60%,
+                  transparent 100%
+                )
+              `
+            }}
+          />
+          {/* BOTTOM accent line */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: '2px',
+              background: 'linear-gradient(90deg, transparent 5%, rgba(0,255,65,0.5) 50%, transparent 95%)'
+            }}
+          />
+          
+          {/* Side glows */}
+          <div
+            className="absolute top-0 bottom-0 left-0"
+            style={{
+              width: '12%',
+              background: 'linear-gradient(90deg, rgba(0,255,65,0.1) 0%, transparent 100%)'
+            }}
+          />
+          <div
+            className="absolute top-0 bottom-0 right-0"
+            style={{
+              width: '12%',
+              background: 'linear-gradient(270deg, rgba(0,255,65,0.1) 0%, transparent 100%)'
+            }}
+          />
+          
+          {/* Vertical rain streams */}
+          {[10, 25, 40, 55, 70, 85].map((left, i) => (
+            <div 
+              key={i}
+              className="absolute pointer-events-none"
+              style={{
+                left: `${left}%`,
+                top: 0,
+                bottom: 0,
+                width: '1px',
+                background: `linear-gradient(180deg, 
+                  rgba(0,255,65,0.4) 0%, 
+                  rgba(57,255,20,0.2) 20%, 
+                  transparent 40%,
+                  rgba(0,255,65,0.15) 60%,
+                  rgba(57,255,20,0.3) 80%,
+                  rgba(0,255,65,0.4) 100%
+                )`,
+                opacity: 0.3 + (i % 3) * 0.15
+              }}
+            />
+          ))}
         </>
       )}
       
       {glowStyleId === 'cosmic' && (
         <>
-          {/* Star dust effect */}
-          {[...Array(8)].map((_, i) => (
+          {/* TOP EDGE - Purple nebula glow */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: '30%',
+              background: `
+                linear-gradient(180deg, 
+                  rgba(155,89,182,0.22) 0%, 
+                  rgba(120,70,150,0.1) 30%,
+                  rgba(80,50,120,0.04) 60%,
+                  transparent 100%
+                )
+              `
+            }}
+          />
+          {/* TOP accent line */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: '2px',
+              background: 'linear-gradient(90deg, transparent 10%, rgba(155,89,182,0.5) 30%, rgba(52,152,219,0.4) 70%, transparent 90%)'
+            }}
+          />
+          
+          {/* BOTTOM EDGE - Blue nebula glow */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: '30%',
+              background: `
+                linear-gradient(0deg, 
+                  rgba(52,152,219,0.18) 0%, 
+                  rgba(40,120,180,0.08) 30%,
+                  rgba(30,90,140,0.03) 60%,
+                  transparent 100%
+                )
+              `
+            }}
+          />
+          {/* BOTTOM accent line */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: '2px',
+              background: 'linear-gradient(90deg, transparent 10%, rgba(52,152,219,0.4) 30%, rgba(155,89,182,0.3) 70%, transparent 90%)'
+            }}
+          />
+          
+          {/* Star dust effect - more stars */}
+          {[...Array(12)].map((_, i) => (
             <div 
               key={i}
               className="absolute rounded-full pointer-events-none"
@@ -263,14 +398,14 @@ export const ThemePageBackground = memo(function ThemePageBackground({
                 backgroundColor: 'rgba(255,255,255,0.9)',
                 width: 2 + (i % 3),
                 height: 2 + (i % 3),
-                left: `${10 + i * 12}%`,
-                top: `${5 + (i * 7) % 20}%`,
-                opacity: 0.2 + (i % 4) * 0.1,
-                boxShadow: '0 0 4px rgba(255,255,255,0.5)'
+                left: `${8 + i * 8}%`,
+                top: `${3 + (i * 5) % 15}%`,
+                opacity: 0.25 + (i % 4) * 0.12,
+                boxShadow: '0 0 6px rgba(155,89,182,0.6)'
               }}
             />
           ))}
-          {[...Array(8)].map((_, i) => (
+          {[...Array(12)].map((_, i) => (
             <div 
               key={`bottom-${i}`}
               className="absolute rounded-full pointer-events-none"
@@ -278,49 +413,343 @@ export const ThemePageBackground = memo(function ThemePageBackground({
                 backgroundColor: 'rgba(255,255,255,0.85)',
                 width: 2 + (i % 3),
                 height: 2 + (i % 3),
-                left: `${15 + i * 11}%`,
-                bottom: `${5 + (i * 6) % 18}%`,
-                opacity: 0.15 + (i % 3) * 0.1,
-                boxShadow: '0 0 4px rgba(155,89,182,0.5)'
+                left: `${12 + i * 7}%`,
+                bottom: `${3 + (i * 4) % 12}%`,
+                opacity: 0.2 + (i % 3) * 0.1,
+                boxShadow: '0 0 5px rgba(52,152,219,0.5)'
               }}
             />
           ))}
+          
+          {/* Side nebula glows */}
+          <div
+            className="absolute top-0 bottom-0 left-0"
+            style={{
+              width: '15%',
+              background: 'linear-gradient(90deg, rgba(155,89,182,0.1) 0%, transparent 100%)'
+            }}
+          />
+          <div
+            className="absolute top-0 bottom-0 right-0"
+            style={{
+              width: '15%',
+              background: 'linear-gradient(270deg, rgba(52,152,219,0.08) 0%, transparent 100%)'
+            }}
+          />
         </>
       )}
       
       {glowStyleId === 'vegas' && (
         <>
-          {/* Neon glow spots */}
+          {/* TOP EDGE - Hot pink glow */}
           <div
-            className="absolute top-4 left-1/4"
+            className="absolute top-0 left-0 right-0"
             style={{
-              width: '80px',
-              height: '4px',
-              background: 'linear-gradient(90deg, transparent 0%, rgba(255,20,147,0.22) 50%, transparent 100%)'
+              height: '30%',
+              background: `
+                linear-gradient(180deg, 
+                  rgba(255,20,147,0.25) 0%, 
+                  rgba(200,15,120,0.12) 25%,
+                  rgba(150,10,90,0.05) 50%,
+                  transparent 100%
+                )
+              `
+            }}
+          />
+          {/* TOP accent lines */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: '3px',
+              background: 'linear-gradient(90deg, transparent 5%, rgba(255,20,147,0.7) 25%, rgba(255,215,0,0.5) 50%, rgba(0,191,255,0.4) 75%, transparent 95%)'
             }}
           />
           <div
-            className="absolute top-8 right-1/4"
+            className="absolute top-4 left-0 right-0"
             style={{
-              width: '64px',
-              height: '4px',
-              background: 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.18) 50%, transparent 100%)'
+              height: '1px',
+              background: 'linear-gradient(90deg, transparent 10%, rgba(255,215,0,0.3) 30%, rgba(255,20,147,0.2) 70%, transparent 90%)'
+            }}
+          />
+          
+          {/* BOTTOM EDGE - Gold glow */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: '30%',
+              background: `
+                linear-gradient(0deg, 
+                  rgba(255,215,0,0.2) 0%, 
+                  rgba(200,170,0,0.1) 25%,
+                  rgba(150,130,0,0.04) 50%,
+                  transparent 100%
+                )
+              `
+            }}
+          />
+          {/* BOTTOM accent lines */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: '3px',
+              background: 'linear-gradient(90deg, transparent 5%, rgba(57,255,20,0.5) 25%, rgba(0,191,255,0.4) 50%, rgba(255,20,147,0.6) 75%, transparent 95%)'
             }}
           />
           <div
-            className="absolute bottom-6 left-1/3"
+            className="absolute bottom-4 left-0 right-0"
             style={{
-              width: '96px',
-              height: '4px',
-              background: 'linear-gradient(90deg, transparent 0%, rgba(255,20,147,0.16) 50%, transparent 100%)'
+              height: '1px',
+              background: 'linear-gradient(90deg, transparent 10%, rgba(0,191,255,0.25) 40%, rgba(255,215,0,0.2) 60%, transparent 90%)'
+            }}
+          />
+          
+          {/* Corner neon spots */}
+          <div
+            className="absolute top-0 left-0"
+            style={{
+              width: '25%',
+              height: '20%',
+              background: 'radial-gradient(ellipse at 0% 0%, rgba(255,20,147,0.3) 0%, transparent 60%)'
             }}
           />
           <div
-            className="absolute bottom-10 right-1/3"
+            className="absolute top-0 right-0"
             style={{
-              width: '80px',
-              height: '4px',
-              background: 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.14) 50%, transparent 100%)'
+              width: '25%',
+              height: '20%',
+              background: 'radial-gradient(ellipse at 100% 0%, rgba(0,191,255,0.25) 0%, transparent 60%)'
+            }}
+          />
+          <div
+            className="absolute bottom-0 left-0"
+            style={{
+              width: '25%',
+              height: '20%',
+              background: 'radial-gradient(ellipse at 0% 100%, rgba(57,255,20,0.2) 0%, transparent 60%)'
+            }}
+          />
+          <div
+            className="absolute bottom-0 right-0"
+            style={{
+              width: '25%',
+              height: '20%',
+              background: 'radial-gradient(ellipse at 100% 100%, rgba(255,215,0,0.25) 0%, transparent 60%)'
+            }}
+          />
+          
+          {/* Side neon bars */}
+          <div
+            className="absolute top-0 bottom-0 left-0"
+            style={{
+              width: '3px',
+              background: `linear-gradient(180deg, 
+                rgba(255,20,147,0.5) 0%, 
+                rgba(0,191,255,0.4) 25%,
+                rgba(57,255,20,0.4) 50%,
+                rgba(255,215,0,0.5) 75%,
+                rgba(255,20,147,0.4) 100%
+              )`
+            }}
+          />
+          <div
+            className="absolute top-0 bottom-0 right-0"
+            style={{
+              width: '3px',
+              background: `linear-gradient(180deg, 
+                rgba(0,191,255,0.5) 0%, 
+                rgba(255,20,147,0.4) 25%,
+                rgba(255,215,0,0.4) 50%,
+                rgba(57,255,20,0.5) 75%,
+                rgba(0,191,255,0.4) 100%
+              )`
+            }}
+          />
+        </>
+      )}
+      
+      {glowStyleId === 'mafia' && (
+        <>
+          {/* TOP EDGE - Gold/warm glow */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: '28%',
+              background: `
+                linear-gradient(180deg, 
+                  rgba(212,175,55,0.18) 0%, 
+                  rgba(180,140,40,0.08) 30%,
+                  rgba(140,100,30,0.03) 60%,
+                  transparent 100%
+                )
+              `
+            }}
+          />
+          {/* TOP accent line */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: '2px',
+              background: 'linear-gradient(90deg, transparent 10%, rgba(212,175,55,0.5) 50%, transparent 90%)'
+            }}
+          />
+          
+          {/* BOTTOM EDGE - Brown glow */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: '28%',
+              background: `
+                linear-gradient(0deg, 
+                  rgba(139,90,43,0.15) 0%, 
+                  rgba(100,65,30,0.06) 30%,
+                  rgba(70,45,20,0.02) 60%,
+                  transparent 100%
+                )
+              `
+            }}
+          />
+          {/* BOTTOM accent line */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: '2px',
+              background: 'linear-gradient(90deg, transparent 10%, rgba(139,90,43,0.4) 50%, transparent 90%)'
+            }}
+          />
+          
+          {/* Side warm glows */}
+          <div
+            className="absolute top-0 bottom-0 left-0"
+            style={{
+              width: '10%',
+              background: 'linear-gradient(90deg, rgba(212,175,55,0.06) 0%, transparent 100%)'
+            }}
+          />
+          <div
+            className="absolute top-0 bottom-0 right-0"
+            style={{
+              width: '10%',
+              background: 'linear-gradient(270deg, rgba(212,175,55,0.06) 0%, transparent 100%)'
+            }}
+          />
+        </>
+      )}
+      
+      {glowStyleId === 'western' && (
+        <>
+          {/* TOP EDGE - Copper glow */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: '28%',
+              background: `
+                linear-gradient(180deg, 
+                  rgba(184,115,51,0.18) 0%, 
+                  rgba(150,90,40,0.08) 30%,
+                  rgba(120,70,30,0.03) 60%,
+                  transparent 100%
+                )
+              `
+            }}
+          />
+          {/* TOP accent line */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: '2px',
+              background: 'linear-gradient(90deg, transparent 10%, rgba(184,115,51,0.5) 50%, transparent 90%)'
+            }}
+          />
+          
+          {/* BOTTOM EDGE - Rust glow */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: '28%',
+              background: `
+                linear-gradient(0deg, 
+                  rgba(139,69,19,0.15) 0%, 
+                  rgba(100,50,15,0.06) 30%,
+                  rgba(70,35,10,0.02) 60%,
+                  transparent 100%
+                )
+              `
+            }}
+          />
+          {/* BOTTOM accent line */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: '2px',
+              background: 'linear-gradient(90deg, transparent 10%, rgba(139,69,19,0.4) 50%, transparent 90%)'
+            }}
+          />
+          
+          {/* Side copper glows */}
+          <div
+            className="absolute top-0 bottom-0 left-0"
+            style={{
+              width: '10%',
+              background: 'linear-gradient(90deg, rgba(184,115,51,0.06) 0%, transparent 100%)'
+            }}
+          />
+          <div
+            className="absolute top-0 bottom-0 right-0"
+            style={{
+              width: '10%',
+              background: 'linear-gradient(270deg, rgba(184,115,51,0.06) 0%, transparent 100%)'
+            }}
+          />
+        </>
+      )}
+      
+      {glowStyleId === 'elegant' && (
+        <>
+          {/* TOP EDGE - Subtle gold glow */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: '25%',
+              background: `
+                linear-gradient(180deg, 
+                  rgba(212,175,55,0.12) 0%, 
+                  rgba(180,150,45,0.05) 30%,
+                  rgba(140,120,35,0.02) 60%,
+                  transparent 100%
+                )
+              `
+            }}
+          />
+          {/* TOP accent line - thin elegant */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: '1px',
+              background: 'linear-gradient(90deg, transparent 15%, rgba(212,175,55,0.4) 50%, transparent 85%)'
+            }}
+          />
+          
+          {/* BOTTOM EDGE - Subtle warm glow */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: '25%',
+              background: `
+                linear-gradient(0deg, 
+                  rgba(180,150,50,0.1) 0%, 
+                  rgba(140,120,40,0.04) 30%,
+                  rgba(100,90,30,0.015) 60%,
+                  transparent 100%
+                )
+              `
+            }}
+          />
+          {/* BOTTOM accent line */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{
+              height: '1px',
+              background: 'linear-gradient(90deg, transparent 15%, rgba(180,150,50,0.35) 50%, transparent 85%)'
             }}
           />
         </>
