@@ -172,7 +172,7 @@ export class PokerTable {
     try {
       const { data: dbPlayers, error } = await this.supabase
         .from('poker_table_players')
-        .select('player_id, seat_number, stack, status')
+        .select('player_id, seat_number, stack, status, sit_out_at, sit_out_orbits, last_orbit_dealer, missed_bb, missed_sb, auto_post_blinds, wait_for_bb, is_posting_dead')
         .eq('table_id', this.id);
       
       if (error) {
