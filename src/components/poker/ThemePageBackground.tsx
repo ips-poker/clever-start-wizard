@@ -2,17 +2,13 @@
 // THEME PAGE BACKGROUND - Full page backgrounds for each theme
 // ============================================
 // Extends theme styling to fill entire page (top/bottom edges)
-// Now includes immersive decorative elements for each theme
+// Now includes immersive 3D environments for each theme
 
-import React, { memo } from 'react';
+import React, { memo, Suspense, lazy } from 'react';
 import { TableGlowStyleId } from '@/hooks/usePokerPreferences';
-import { 
-  LoftLedElements,
-  UndergroundLedElements,
-  HiTechLedElements,
-  SyndicateLedElements,
-  LowHouseLedElements
-} from './theme-decorations';
+
+// Lazy load 3D background for performance
+const Theme3DBackground = lazy(() => import('./theme-3d/Theme3DBackground'));
 
 interface ThemePageBackgroundProps {
   glowStyleId: TableGlowStyleId;
