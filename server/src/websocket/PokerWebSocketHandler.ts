@@ -126,8 +126,14 @@ export class PokerWebSocketHandler {
     // Initialize ConnectionPool
     this.connectionPool = new ConnectionPool();
     
-    // Start ping interval
-    this.pingInterval = setInterval(() => this.pingClients(), 30000);
+    // PHASE 3: Register disconnect callback for internal cleanups (missed_pings, stale)
+    // This ensures game logic is notified even when cleanup happens without ws.on('close')
+    this.connectionPool.setOnDisconnectCallback((playerId, subscribedTables) => {
+      this.handleInternalDisconnect(playerId, subscribedTables);
+    });
+    
+    // Start ping interval - PHASE 3: reduced to 15 seconds (handled by ConnectionPool)
+    this.pingInterval = setInterval(() => this.pingClients(), 15000);
     
     // Start tournament timer broadcast (every second)
     this.tournamentTimerInterval = setInterval(() => this.broadcastTournamentTimers(), 1000);
@@ -150,7 +156,7 @@ export class PokerWebSocketHandler {
     // Load active tournaments from database
     this.loadActiveTournaments();
     
-    logger.info('PokerWebSocketHandler v3.3 initialized with auto table listener setup');
+    logger.info('PokerWebSocketHandler v3.4 initialized with PHASE 3 disconnect handling');
   }
   
   /**
@@ -676,6 +682,32 @@ export class PokerWebSocketHandler {
     
     this.connectionPool.removeConnection(ws, 'closed');
     logger.info('Client disconnected');
+  }
+  
+  /**
+   * PHASE 3: Handle internal disconnect (from ConnectionPool cleanup)
+   * Called when connection is removed due to missed_pings or stale timeout
+   * This ensures game logic is notified even without ws.on('close') event
+   */
+  private handleInternalDisconnect(playerId: string, subscribedTables: Set<string>): void {
+    logger.info('PHASE3: Internal disconnect detected', {
+      playerId: playerId.substring(0, 8),
+      tablesCount: subscribedTables.size
+    });
+    
+    for (const tableId of subscribedTables) {
+      const table = this.gameManager.getTable(tableId);
+      if (table) {
+        // Mark player as disconnected - triggers immediate auto-action if it's their turn
+        table.markPlayerDisconnected(playerId);
+        
+        logger.info('PHASE3: Player marked disconnected via internal cleanup', {
+          playerId: playerId.substring(0, 8),
+          tableId,
+          reason: 'connection_pool_cleanup'
+        });
+      }
+    }
   }
   
   /**
