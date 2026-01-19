@@ -475,6 +475,7 @@ interface PlayerSeatProps {
   isCurrentTurn: boolean;
   turnTimeRemaining?: number;
   turnTimeTotal?: number;
+  isTimeBankActive?: boolean; // POKERSTARS-STYLE: Time bank phase
   heroCards?: string[];
   communityCards?: string[];
   gamePhase?: string;
@@ -537,6 +538,7 @@ const PlayerSeat = memo(function PlayerSeat({
   isCurrentTurn,
   turnTimeRemaining,
   turnTimeTotal = 15,
+  isTimeBankActive = false,
   heroCards,
   communityCards = [],
   gamePhase = 'waiting',
@@ -644,6 +646,7 @@ const PlayerSeat = memo(function PlayerSeat({
               total={turnTimeTotal}
               size={avatarSize + 6}
               strokeWidth={3}
+              isTimeBankPhase={isTimeBankActive}
             />
           </div>
         )}
@@ -1283,6 +1286,7 @@ export interface FullscreenPokerTableProps {
   currentPlayerSeat: number | null;
   turnTimeRemaining?: number;
   turnTimeTotal?: number;
+  isTimeBankActive?: boolean; // POKERSTARS-STYLE: Time bank phase indicator
   smallBlind: number;
   bigBlind: number;
   canJoinTable: boolean;
@@ -1360,6 +1364,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   currentPlayerSeat,
   turnTimeRemaining,
   turnTimeTotal,
+  isTimeBankActive,
   smallBlind,
   bigBlind,
   canJoinTable,
@@ -1598,6 +1603,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               isCurrentTurn={player?.seatNumber === currentPlayerSeat}
               turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
               turnTimeTotal={turnTimeTotal}
+              isTimeBankActive={player?.seatNumber === currentPlayerSeat ? isTimeBankActive : false}
               heroCards={idx === 0 ? heroCards : undefined}
               communityCards={communityCards}
               gamePhase={phase}
