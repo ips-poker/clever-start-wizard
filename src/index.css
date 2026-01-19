@@ -125,7 +125,14 @@
   }
 }
 
-/* Safe area utility for iOS/Android */
+/* Poker table immersive mode - transparent background for theme backgrounds */
+html.poker-immersive,
+html.poker-immersive body,
+html.poker-immersive #root {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
 .pb-safe {
   padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
 }
