@@ -1021,7 +1021,7 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
         }}
       />
       
-      {/* Outer metallic rail - OPTIMIZED: reduced box-shadow complexity */}
+      {/* Outer rail - dark leather with gold accents */}
       <div 
         className="absolute"
         style={{
@@ -1030,13 +1030,13 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
           right: sideMargin.outer,
           bottom: '6%',
           borderRadius: '45% / 22%',
-          background: 'linear-gradient(180deg, #5a6a7a 0%, #3d4a5a 20%, #2a3440 50%, #3d4a5a 80%, #5a6a7a 100%)',
-          boxShadow: '0 8px 40px rgba(0,0,0,0.7), inset 0 1px 10px rgba(255,255,255,0.1)',
-          border: '1px solid rgba(255,255,255,0.08)'
+          background: 'linear-gradient(180deg, #3a4550 0%, #2a3540 20%, #1e2830 50%, #2a3540 80%, #3a4550 100%)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.7), inset 0 1px 10px rgba(255,255,255,0.08)',
+          border: '1px solid rgba(255,255,255,0.05)'
         }}
       />
       
-      {/* Leather padding rail - OPTIMIZED: reduced inset shadows */}
+      {/* Gold ornate trim - premium accent */}
       <div 
         className="absolute"
         style={{
@@ -1045,22 +1045,37 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
           right: sideMargin.leather,
           bottom: '7%',
           borderRadius: '44% / 21%',
-          background: 'linear-gradient(180deg, #3a2820 0%, #2a1a14 30%, #1a0f0a 60%, #2a1a14 85%, #3a2820 100%)',
+          background: 'linear-gradient(180deg, #c9a227 0%, #a67c00 15%, #7d5c00 30%, #55400a 50%, #7d5c00 70%, #a67c00 85%, #c9a227 100%)',
+          boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.5), 0 0 15px rgba(201,162,39,0.15)'
+        }}
+      />
+      
+      {/* Inner dark leather padding */}
+      <div 
+        className="absolute"
+        style={{
+          top: '8%',
+          left: sideMargin.inner,
+          right: sideMargin.inner,
+          bottom: '8%',
+          borderRadius: '43% / 20%',
+          background: 'linear-gradient(180deg, #2a3545 0%, #1e2835 30%, #151c25 60%, #1e2835 85%, #2a3545 100%)',
           boxShadow: 'inset 0 3px 15px rgba(0,0,0,0.6)'
         }}
       />
       
-      {/* Inner metal trim - OPTIMIZED: minimal shadow */}
+      {/* Inner gold trim line */}
       <div 
         className="absolute"
         style={{
-          top: '9%',
-          left: sideMargin.inner,
-          right: sideMargin.inner,
-          bottom: '9%',
-          borderRadius: '42% / 20%',
-          background: 'linear-gradient(180deg, #4a5568 0%, #2d3748 50%, #1a202c 100%)',
-          border: '1px solid rgba(212,175,55,0.2)'
+          top: '9.5%',
+          left: sideMargin.felt,
+          right: sideMargin.felt,
+          bottom: '9.5%',
+          borderRadius: '41% / 19%',
+          background: 'transparent',
+          border: '2px solid rgba(201,162,39,0.4)',
+          boxShadow: '0 0 8px rgba(201,162,39,0.2)'
         }}
       />
       

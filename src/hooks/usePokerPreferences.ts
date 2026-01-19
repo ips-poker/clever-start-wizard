@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 // Table felt themes
 export const TABLE_THEMES = [
+  { id: 'navy-gold', name: 'Премиум', color: '#1a2a3a', gradient: 'from-[#1a2a3a] via-[#152535] to-[#101c28]' },
   { id: 'classic-green', name: 'Классика', color: '#0d5c2e', gradient: 'from-[#0d5c2e] via-[#0a4a25] to-[#083d1f]' },
   { id: 'royal-blue', name: 'Роял', color: '#1e3a5f', gradient: 'from-[#1e3a5f] via-[#152d4d] to-[#0f2038]' },
   { id: 'midnight', name: 'Полночь', color: '#0a1628', gradient: 'from-[#0a1628] via-[#0d1e36] to-[#0a1628]' },
