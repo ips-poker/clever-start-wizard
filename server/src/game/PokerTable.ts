@@ -1795,14 +1795,33 @@ export class PokerTable {
       player.timeBank = 0;
     }
 
-    // POKERSTARS-STYLE TIME BANK:
-    // Time bank activates ONLY when main timer expires
-    // It's a separate phase, not concurrent with main timer
+    // POKERSTARS-STYLE TIME BANK ACTIVATION RULES:
+    // Time Bank activates ONLY when:
+    // 1. Main timer expires (this function is called)
+    // 2. Player has Time Bank remaining
+    // 3. Player has money invested in the pot (including blinds/antes)
+    //    - If no money invested: auto-fold WITHOUT using Time Bank
+    //    - This prevents abuse of Time Bank by limpers who haven't contributed
     const isTimeBankPhase = this.currentHand.isTimeBankPhase;
     
-    if (!isTimeBankPhase && player.timeBank > 0) {
-      // Main timer expired - enter time bank phase
+    // Check if player has money in pot (PokerStars rule)
+    const hasMoneyInPot = player.currentBet > 0;
+    const isBlindsPlayer = seat === this.currentHand.smallBlindSeat || 
+                           seat === this.currentHand.bigBlindSeat;
+    const hasAnteInvested = (this.config.ante ?? 0) > 0;
+    const hasInvestment = hasMoneyInPot || isBlindsPlayer || hasAnteInvested;
+    
+    if (!isTimeBankPhase && player.timeBank > 0 && hasInvestment) {
+      // Main timer expired AND player has investment - enter time bank phase
       this.currentHand.isTimeBankPhase = true;
+      
+      logger.info('POKERSTARS: Time Bank eligible - player has investment', {
+        playerId: playerId.substring(0, 8),
+        currentBet: player.currentBet,
+        isBlindsPlayer,
+        hasAnteInvested,
+        timeBank: player.timeBank
+      });
       
       // Use time bank for next timer slice - POKERSTARS-STYLE with phase-aware limit
       const phaseActionTime = this.getActionTimeForPhase();
@@ -1841,6 +1860,21 @@ export class PokerTable {
         return;
       }
     }
+    
+    // POKERSTARS-STYLE: Player timed out without Time Bank protection
+    // Two scenarios:
+    // 1. No Time Bank remaining -> graceful auto-action
+    // 2. Has Time Bank but NO investment in pot -> auto-fold WITHOUT using Time Bank
+    
+    // Log reason for no Time Bank activation
+    if (!isTimeBankPhase && player.timeBank > 0 && !hasInvestment) {
+      logger.info('POKERSTARS: Time Bank NOT activated - no pot investment', {
+        playerId: playerId.substring(0, 8),
+        timeBank: player.timeBank,
+        currentBet: player.currentBet,
+        phase: this.currentHand?.phase
+      });
+    }
 
     // Reset time bank phase flag
     if (this.currentHand) {
@@ -1855,6 +1889,7 @@ export class PokerTable {
       playerId: playerId.substring(0, 8), 
       missedTurns: player.missedTurns,
       timeBank: player.timeBank,
+      hadInvestment: hasInvestment,
       phase: this.currentHand?.phase
     });
 
