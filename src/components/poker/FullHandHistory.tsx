@@ -1,3 +1,8 @@
+// Re-export the new professional hand history component as default
+export { ProHandHistory } from './hand-history/ProHandHistory';
+export { ProHandHistory as default } from './hand-history/ProHandHistory';
+
+// Legacy component below (keeping for backward compatibility)
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   History, 
-  Trophy, 
+  Trophy,
   Coins, 
   Users, 
   PlayCircle,
