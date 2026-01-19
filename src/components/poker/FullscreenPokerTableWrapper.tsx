@@ -225,6 +225,7 @@ export function FullscreenPokerTableWrapper({
   }, [
     timerResetKey,
     tableState?.actionTimer,
+    tableState?.actionTimeTotal, // POKERSTARS-STYLE: Phase-aware timing
     tableState?.timeRemaining,
     tableState?.actionStartTime,
     tableState?.isTimeBankPhase
