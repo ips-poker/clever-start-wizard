@@ -521,28 +521,39 @@ export const TelegramApp = () => {
           
           <CardContent className="p-5 relative z-10">
             <div className="flex items-center gap-5">
-              {/* Logo with glitch effect - larger */}
-              <div className="relative w-24 h-24 flex-shrink-0">
+              {/* Logo with metal frame like loading screen */}
+              <div className="relative w-28 h-28 flex-shrink-0">
                 {/* Glow behind logo */}
                 <div className="absolute inset-0 bg-syndikate-orange/25 blur-2xl rounded-full"></div>
-                {/* Glitch layers */}
-                <img 
-                  src={syndikateLogo} 
-                  alt="" 
-                  className="absolute inset-0 w-full h-full object-contain opacity-70 animate-glitch-logo-1" 
-                  style={{ filter: 'drop-shadow(3px 0 0 hsl(24, 100%, 50%))' }}
-                />
-                <img 
-                  src={syndikateLogo} 
-                  alt="" 
-                  className="absolute inset-0 w-full h-full object-contain opacity-65 animate-glitch-logo-2" 
-                  style={{ filter: 'drop-shadow(-3px 0 0 hsl(0, 84%, 45%))' }}
-                />
-                <img 
-                  src={syndikateLogo} 
-                  alt="" 
-                  className="relative w-full h-full object-contain group-hover/hero:scale-110 transition-transform duration-500" 
-                />
+                
+                {/* Corner Brackets */}
+                <div className="absolute -top-1 -left-1 w-6 h-6 border-l-2 border-t-2 border-syndikate-orange animate-pulse" />
+                <div className="absolute -top-1 -right-1 w-6 h-6 border-r-2 border-t-2 border-syndikate-orange animate-pulse" style={{ animationDelay: '0.5s' }} />
+                <div className="absolute -bottom-1 -left-1 w-6 h-6 border-l-2 border-b-2 border-syndikate-orange animate-pulse" style={{ animationDelay: '1s' }} />
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 border-r-2 border-b-2 border-syndikate-orange animate-pulse" style={{ animationDelay: '1.5s' }} />
+                
+                {/* Main Logo Box */}
+                <div className="absolute inset-0 brutal-border bg-syndikate-metal/50 backdrop-blur-sm flex items-center justify-center p-3">
+                  {/* Glitch layers */}
+                  <img 
+                    src={syndikateLogo} 
+                    alt="" 
+                    className="absolute inset-3 w-[calc(100%-24px)] h-[calc(100%-24px)] object-contain opacity-70 animate-glitch-logo-1" 
+                    style={{ filter: 'drop-shadow(2px 0 0 hsl(24, 100%, 50%))' }}
+                  />
+                  <img 
+                    src={syndikateLogo} 
+                    alt="" 
+                    className="absolute inset-3 w-[calc(100%-24px)] h-[calc(100%-24px)] object-contain opacity-65 animate-glitch-logo-2" 
+                    style={{ filter: 'drop-shadow(-2px 0 0 hsl(0, 84%, 45%))' }}
+                  />
+                  <img 
+                    src={syndikateLogo} 
+                    alt="" 
+                    className="relative w-full h-full object-contain group-hover/hero:scale-110 transition-transform duration-500"
+                    style={{ filter: 'drop-shadow(0 0 10px rgba(255, 135, 31, 0.6))' }}
+                  />
+                </div>
               </div>
               
               {/* Content */}
