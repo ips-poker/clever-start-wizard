@@ -153,7 +153,7 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
               </div>
               
               {/* Tournament name */}
-              <h3 className="text-lg font-display font-bold text-foreground tracking-wide uppercase group-hover:text-syndikate-orange transition-colors duration-300 leading-tight">
+              <h3 className="text-xl sm:text-2xl font-display font-bold text-foreground tracking-wide uppercase group-hover:text-syndikate-orange transition-colors duration-300 leading-tight">
                 <GlitchText text={tournament.name} glitchIntensity="low" />
               </h3>
             </div>
@@ -188,40 +188,40 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
           {/* Main info grid */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             {/* Date & Time */}
-            <div className="bg-syndikate-metal/30 brutal-border p-3 relative overflow-hidden group/card hover:bg-syndikate-metal/40 transition-colors">
+            <div className="bg-syndikate-metal/30 brutal-border p-4 relative overflow-hidden group/card hover:bg-syndikate-metal/40 transition-colors">
               <div className="absolute top-0 right-0 w-16 h-16 bg-syndikate-orange/15 rounded-full blur-2xl" />
               <div className="relative">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-9 h-9 bg-gradient-to-br from-syndikate-orange to-syndikate-red brutal-border flex items-center justify-center shadow-lg">
+                  <div className="w-10 h-10 bg-gradient-to-br from-syndikate-orange to-syndikate-red brutal-border flex items-center justify-center shadow-lg">
                     <Calendar className="h-5 w-5 text-background" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Дата</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Дата</span>
                 </div>
-                <div className="text-foreground/80 text-sm mb-1">
+                <div className="text-foreground text-base font-semibold mb-0.5">
                   {new Date(tournament.start_time).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
                 </div>
-                <div className="font-display text-xl text-syndikate-orange">
+                <div className="font-display text-2xl sm:text-3xl text-syndikate-orange">
                   {new Date(tournament.start_time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
             </div>
             
             {/* Buy-in */}
-            <div className="bg-syndikate-metal/30 brutal-border p-3 relative overflow-hidden group/card hover:bg-syndikate-metal/40 transition-colors">
+            <div className="bg-syndikate-metal/30 brutal-border p-4 relative overflow-hidden group/card hover:bg-syndikate-metal/40 transition-colors">
               <div className="absolute top-0 right-0 w-16 h-16 bg-syndikate-orange/20 rounded-full blur-2xl" />
               <div className="relative">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-9 h-9 bg-gradient-to-br from-syndikate-orange to-syndikate-red brutal-border flex items-center justify-center shadow-lg">
+                  <div className="w-10 h-10 bg-gradient-to-br from-syndikate-orange to-syndikate-red brutal-border flex items-center justify-center shadow-lg">
                     <Coins className="h-5 w-5 text-background" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Взнос</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Взнос</span>
                 </div>
-                <div className="font-display text-2xl text-syndikate-orange">
+                <div className="font-display text-2xl sm:text-3xl text-syndikate-orange font-bold">
                   {tournament.participation_fee.toLocaleString()}₽
                 </div>
                 {tournament.reentry_fee && tournament.reentry_fee > 0 && (
-                  <div className="text-muted-foreground text-[10px] uppercase tracking-wider">
-                    Re: {tournament.reentry_fee.toLocaleString()}₽
+                  <div className="text-muted-foreground text-xs uppercase tracking-wider font-semibold mt-1">
+                    Re-entry: {tournament.reentry_fee.toLocaleString()}₽
                   </div>
                 )}
               </div>
@@ -231,31 +231,31 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ tournament, inde
           {/* Secondary info row */}
           <div className="grid grid-cols-3 gap-2 mb-4">
             <div className="bg-syndikate-metal/30 brutal-border p-3 text-center group/stat hover:bg-syndikate-metal/50 transition-all hover:scale-[1.02]">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 brutal-border flex items-center justify-center mx-auto mb-2 shadow-lg">
+              <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-blue-600 brutal-border flex items-center justify-center mx-auto mb-2 shadow-lg">
                 <Users className="h-5 w-5 text-white" />
               </div>
-              <div className="text-foreground font-bold text-base">
+              <div className="text-foreground font-bold text-lg">
                 {registeredCount}/{maxPlayers}
               </div>
-              <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Игроков</div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Игроков</div>
             </div>
             <div className="bg-syndikate-metal/30 brutal-border p-3 text-center group/stat hover:bg-syndikate-metal/50 transition-all hover:scale-[1.02]">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 brutal-border flex items-center justify-center mx-auto mb-2 shadow-lg">
+              <div className="w-11 h-11 bg-gradient-to-br from-purple-500 to-purple-600 brutal-border flex items-center justify-center mx-auto mb-2 shadow-lg">
                 <Gem className="h-5 w-5 text-white" />
               </div>
-              <div className="text-foreground font-bold text-base">
+              <div className="text-foreground font-bold text-lg">
                 {(tournament.starting_chips / 1000).toFixed(0)}K
               </div>
-              <div className="text-[9px] text-muted-foreground uppercase tracking-wider">Стек</div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Стек</div>
             </div>
             <div className="bg-syndikate-metal/30 brutal-border p-3 text-center group/stat hover:bg-syndikate-metal/50 transition-all hover:scale-[1.02]">
-              <div className="w-10 h-10 bg-gradient-to-br from-syndikate-orange to-syndikate-red brutal-border flex items-center justify-center mx-auto mb-2 shadow-lg">
+              <div className="w-11 h-11 bg-gradient-to-br from-syndikate-orange to-syndikate-red brutal-border flex items-center justify-center mx-auto mb-2 shadow-lg">
                 <Trophy className="h-5 w-5 text-white" />
               </div>
-              <div className="text-foreground font-bold text-base">
+              <div className="text-foreground font-bold text-lg">
                 {calculateTotalRPSPool(registeredCount, tournament.participation_fee || 0, 0, tournament.reentry_fee || 0, 0, 0)}
               </div>
-              <div className="text-[9px] text-muted-foreground uppercase tracking-wider">RPS</div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">RPS</div>
             </div>
           </div>
           
