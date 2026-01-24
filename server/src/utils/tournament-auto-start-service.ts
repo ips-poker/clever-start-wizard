@@ -177,28 +177,10 @@ class TournamentAutoStartService {
   private async startTournament(tournament: TournamentToProcess, playerCount: number): Promise<void> {
     if (!this.supabase) return;
 
-    const now = new Date();
-    const levelDuration = tournament.level_duration || 300;
-    const levelEndAt = new Date(now.getTime() + levelDuration * 1000);
-
     logger.info(`[TournamentAutoStart] Starting tournament ${tournament.name} with ${playerCount} players`);
 
-    // 1. Update tournament status
-    const { error: updateError } = await this.supabase
-      .from('online_poker_tournaments')
-      .update({
-        status: 'running',
-        started_at: now.toISOString(),
-        level_end_at: levelEndAt.toISOString(),
-        current_level: 1
-      })
-      .eq('id', tournament.id);
-
-    if (updateError) {
-      throw new Error(`Failed to update tournament: ${updateError.message}`);
-    }
-
-    // 2. Create tables using RPC function (correct function name)
+    // 1. FIRST call RPC to create tables and seat players (RPC requires status='registration')
+    // The RPC function will update the status to 'running' itself
     const { data: startResult, error: startError } = await this.supabase
       .rpc('start_online_tournament_with_seating', {
         p_tournament_id: tournament.id
@@ -206,13 +188,22 @@ class TournamentAutoStartService {
 
     if (startError) {
       logger.warn(`[TournamentAutoStart] RPC start failed, using fallback`, { error: startError.message });
-      // Fallback: manually start the tournament via the existing function
+      // Fallback: manually start the tournament
       await this.fallbackStartTournament(tournament);
     } else {
-      logger.info(`[TournamentAutoStart] ${tournament.name} started successfully`, { result: startResult });
+      const result = startResult as { success: boolean; error?: string; tables_created?: number };
+      if (result && result.success) {
+        logger.info(`[TournamentAutoStart] ${tournament.name} started successfully via RPC`, { 
+          tablesCreated: result.tables_created,
+          playerCount 
+        });
+      } else {
+        logger.warn(`[TournamentAutoStart] RPC returned error, using fallback`, { error: result?.error });
+        await this.fallbackStartTournament(tournament);
+      }
     }
 
-    // 3. Calculate and update prize pool
+    // 2. Calculate and update prize pool
     await this.updatePrizePool(tournament.id);
 
     logger.info(`[TournamentAutoStart] Tournament ${tournament.name} fully started`);
@@ -221,19 +212,22 @@ class TournamentAutoStartService {
   private async fallbackStartTournament(tournament: TournamentToProcess): Promise<void> {
     if (!this.supabase) return;
 
+    logger.info(`[TournamentAutoStart] Using fallback seating for ${tournament.name}`);
+
     // Get all registered participants
     const { data: participants, error: partError } = await this.supabase
       .from('online_poker_tournament_participants')
-      .select('player_id')
+      .select('id, player_id')
       .eq('tournament_id', tournament.id)
       .eq('status', 'registered');
 
-    if (partError || !participants) {
-      throw new Error(`Failed to get participants: ${partError?.message}`);
+    if (partError || !participants || participants.length === 0) {
+      throw new Error(`Failed to get participants: ${partError?.message || 'No participants'}`);
     }
 
-    const playersPerTable = tournament.players_per_table || 9;
+    const playersPerTable = tournament.players_per_table || 6;
     const tablesNeeded = Math.ceil(participants.length / playersPerTable);
+    const tableIds: string[] = [];
 
     // Create tables
     for (let i = 1; i <= tablesNeeded; i++) {
@@ -245,31 +239,83 @@ class TournamentAutoStartService {
           game_type: 'holdem',
           tournament_id: tournament.id,
           max_players: playersPerTable,
-          min_buy_in: 0,
-          max_buy_in: 0,
+          min_buy_in: tournament.starting_chips,
+          max_buy_in: tournament.starting_chips,
           small_blind: tournament.small_blind,
           big_blind: tournament.big_blind,
           ante: tournament.ante || 0,
-          // POKERSTARS-STYLE: Tournament = 30s base time
-          action_time_seconds: tournament.action_time_seconds || 30,
+          action_time_seconds: tournament.action_time_seconds || 25,
           status: 'waiting',
           auto_start_enabled: true
         })
         .select('id')
         .single();
 
-      if (tableError) {
-        logger.error(`[TournamentAutoStart] Failed to create table ${i}`, { error: tableError.message });
+      if (tableError || !table) {
+        logger.error(`[TournamentAutoStart] Failed to create table ${i}`, { error: tableError?.message });
+        continue;
+      }
+      tableIds.push(table.id);
+    }
+
+    if (tableIds.length === 0) {
+      throw new Error('Failed to create any tables');
+    }
+
+    // Shuffle and seat players
+    const shuffled = participants.sort(() => Math.random() - 0.5);
+    let currentTableIndex = 0;
+    let currentSeat = 0;
+
+    for (const p of shuffled) {
+      const tableId = tableIds[currentTableIndex];
+
+      // Update participant with table and seat
+      await this.supabase
+        .from('online_poker_tournament_participants')
+        .update({
+          table_id: tableId,
+          seat_number: currentSeat,
+          status: 'playing',
+          chips: tournament.starting_chips
+        })
+        .eq('id', p.id);
+
+      // Insert into poker_table_players
+      await this.supabase
+        .from('poker_table_players')
+        .insert({
+          table_id: tableId,
+          player_id: p.player_id,
+          seat_number: currentSeat,
+          stack: tournament.starting_chips,
+          status: 'active',
+          is_dealer: currentSeat === 0
+        });
+
+      currentSeat++;
+      if (currentSeat >= playersPerTable) {
+        currentSeat = 0;
+        currentTableIndex++;
       }
     }
 
-    // Seat players at tables using the late_register function
-    for (const p of participants) {
-      await this.supabase.rpc('late_register_tournament_player', {
-        p_tournament_id: tournament.id,
-        p_player_id: p.player_id
-      });
-    }
+    // Update tournament status
+    const now = new Date();
+    const levelDuration = tournament.level_duration || 300;
+    const levelEndAt = new Date(now.getTime() + levelDuration * 1000);
+
+    await this.supabase
+      .from('online_poker_tournaments')
+      .update({
+        status: 'running',
+        started_at: now.toISOString(),
+        level_end_at: levelEndAt.toISOString(),
+        current_level: 1
+      })
+      .eq('id', tournament.id);
+
+    logger.info(`[TournamentAutoStart] Fallback completed: ${tablesNeeded} tables, ${participants.length} players seated`);
   }
 
   private async cancelTournament(tournament: TournamentToProcess, playerCount: number, minPlayers: number): Promise<void> {
