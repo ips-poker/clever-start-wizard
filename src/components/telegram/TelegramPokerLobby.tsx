@@ -67,6 +67,7 @@ interface TelegramPokerLobbyProps {
   onJoinTable?: (tableId: string, buyIn: number) => void;
   onJoinTournament?: (tournamentId: string) => void;
   onTableStateChange?: (isAtTable: boolean) => void;
+  onBalanceUpdate?: () => void;
 }
 
 export function TelegramPokerLobby({
@@ -76,7 +77,8 @@ export function TelegramPokerLobby({
   playerBalance = 10000,
   onJoinTable,
   onJoinTournament,
-  onTableStateChange
+  onTableStateChange,
+  onBalanceUpdate
 }: TelegramPokerLobbyProps) {
   const [activeTab, setActiveTab] = useState('tournaments');
   const [tables, setTables] = useState<OnlinePokerTable[]>([]);
@@ -183,6 +185,9 @@ export function TelegramPokerLobby({
     fetchData();
   };
 
+  // Store selected table for passing minBuyIn/maxBuyIn
+  const [activeTable, setActiveTable] = useState<OnlinePokerTable | null>(null);
+  
   const handleJoinTable = async (table: OnlinePokerTable) => {
     if (!playerId) {
       toast.error('Необходимо войти в систему');
@@ -204,6 +209,7 @@ export function TelegramPokerLobby({
       if (existingPlayer) {
         console.log('Player already at table, opening table');
         setActiveTableId(table.id);
+        setActiveTable(table);
         // Use player's current stack, but ensure it's at least the table minimum for display
         const effectiveBuyIn = Math.max(existingPlayer.stack, table.min_buy_in);
         setActiveBuyIn(effectiveBuyIn);
@@ -211,36 +217,21 @@ export function TelegramPokerLobby({
         return;
       }
 
-      // Используем Edge Function для корректной обработки баланса
-      const { data: joinResult, error: joinError } = await supabase.functions.invoke('poker-game-engine', {
-        body: {
-          action: 'join',
-          tableId: table.id,
-          playerId: playerId,
-          amount: table.min_buy_in
-        }
-      });
-
-      if (joinError) {
-        console.error('Join error:', joinError);
-        toast.error('Ошибка при присоединении к столу');
+      // Check if player has enough balance to meet minimum buy-in
+      if (playerBalance < table.min_buy_in) {
+        toast.error(`Недостаточно алмазов. Минимум: ${table.min_buy_in.toLocaleString()} 💎`);
         return;
       }
 
-      if (!joinResult?.success) {
-        toast.error(joinResult?.error || 'Не удалось присоединиться к столу');
-        return;
-      }
-
-      toast.success(`Вы присоединились к столу ${table.name}!`);
-      
-      // Open the table after successful join
+      // DON'T auto-join - just open the table and let the player select a seat
+      // The FullscreenPokerTableWrapper will show BuyInDialog when player clicks empty seat
       setActiveTableId(table.id);
-      setActiveBuyIn(joinResult.stack || table.min_buy_in);
-      onJoinTable?.(table.id, joinResult.stack || table.min_buy_in);
+      setActiveTable(table);
+      setActiveBuyIn(table.min_buy_in);
+      onJoinTable?.(table.id, table.min_buy_in);
     } catch (error: any) {
       console.error('Error joining table:', error);
-      toast.error(error.message || 'Не удалось присоединиться к столу');
+      toast.error(error.message || 'Ошибка подключения к столу');
     } finally {
       setJoiningId(null);
     }
@@ -377,6 +368,12 @@ export function TelegramPokerLobby({
     onTableStateChange?.(isAtTable);
   }, [activeTableId, showDemoTable, onTableStateChange]);
 
+  // Refresh balance callback - refetches from parent when needed
+  const handleBalanceUpdate = useCallback(() => {
+    // Trigger parent to refetch balance from DB
+    onBalanceUpdate?.();
+  }, [onBalanceUpdate]);
+
   // Если открыт активный стол или демо-режим - используем OnlinePokerTable
   if (activeTableId && playerId) {
     return (
@@ -386,13 +383,18 @@ export function TelegramPokerLobby({
         playerName={playerName}
         playerAvatar={playerAvatar}
         buyIn={activeBuyIn}
+        minBuyIn={activeTable?.min_buy_in || 200}
+        maxBuyIn={activeTable?.max_buy_in || 2000}
+        playerBalance={playerBalance}
         isTournament={!!activeTournamentId}
         tournamentId={activeTournamentId || undefined}
         onLeave={() => {
           setActiveTableId(null);
+          setActiveTable(null);
           setActiveTournamentId(null);
           setActiveBuyIn(10000);
         }}
+        onBalanceUpdate={handleBalanceUpdate}
       />
     );
   }
@@ -406,6 +408,7 @@ export function TelegramPokerLobby({
         playerName={playerName}
         playerAvatar={playerAvatar}
         buyIn={playerBalance}
+        playerBalance={playerBalance}
         onLeave={() => setShowDemoTable(false)}
       />
     );
