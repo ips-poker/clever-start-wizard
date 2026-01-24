@@ -808,6 +808,7 @@ export type Database = {
           percentage: number
           player_id: string | null
           position: number
+          rps_points: number | null
           tournament_id: string
         }
         Insert: {
@@ -817,6 +818,7 @@ export type Database = {
           percentage: number
           player_id?: string | null
           position: number
+          rps_points?: number | null
           tournament_id: string
         }
         Update: {
@@ -826,6 +828,7 @@ export type Database = {
           percentage?: number
           player_id?: string | null
           position?: number
+          rps_points?: number | null
           tournament_id?: string
         }
         Relationships: [
