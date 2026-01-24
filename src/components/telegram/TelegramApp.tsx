@@ -1763,6 +1763,7 @@ export const TelegramApp = () => {
             playerAvatar={fixStorageUrl(userStats?.avatar_url, userStats?.id) || telegramUser?.photoUrl}
             playerBalance={playerBalance}
             onTableStateChange={setIsAtPokerTable}
+            onBalanceUpdate={fetchPlayerBalance}
           />
         </div>
       )}
