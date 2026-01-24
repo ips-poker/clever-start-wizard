@@ -93,23 +93,27 @@ export function TournamentRebuyDialog({
     
     setIsProcessing(true);
     try {
-      // Call poker-game-engine for rebuy
-      const { data, error } = await supabase.functions.invoke('poker-game-engine', {
-        body: {
-          action: 'tournament_rebuy',
-          tournamentId,
-          playerId,
-          tableId
-        }
+      // Call RPC directly for rebuy - handles wallet deduction and chip addition
+      const { data, error } = await supabase.rpc('process_online_tournament_rebuy', {
+        p_tournament_id: tournamentId,
+        p_player_id: playerId
       });
 
-      if (error || !data?.success) {
-        toast.error(data?.error || 'Ошибка при ребае');
+      if (error) {
+        console.error('Rebuy RPC error:', error);
+        toast.error(error.message || 'Ошибка при ребае');
+        return;
+      }
+
+      const result = data as { success: boolean; error?: string; new_chips?: number; rebuy_cost?: number; new_balance?: number } | null;
+
+      if (!result?.success) {
+        toast.error(result?.error || 'Ошибка при ребае');
         return;
       }
 
       toast.success(`Ребай выполнен! +${tournamentInfo.rebuy_chips.toLocaleString()} фишек`);
-      onRebuySuccess(data.chips || tournamentInfo.rebuy_chips);
+      onRebuySuccess(result.new_chips || tournamentInfo.rebuy_chips);
       onClose();
     } catch (err) {
       console.error('Rebuy failed:', err);
@@ -117,7 +121,7 @@ export function TournamentRebuyDialog({
     } finally {
       setIsProcessing(false);
     }
-  }, [tournamentId, playerId, tableId, tournamentInfo, isProcessing, onRebuySuccess, onClose]);
+  }, [tournamentId, playerId, tournamentInfo, isProcessing, onRebuySuccess, onClose]);
 
   const handleLeave = useCallback(() => {
     onLeave();
