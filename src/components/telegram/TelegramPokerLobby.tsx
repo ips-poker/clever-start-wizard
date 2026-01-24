@@ -50,6 +50,8 @@ interface OnlineTournament {
   small_blind?: number;
   big_blind?: number;
   participant_count?: number;
+  late_registration_enabled?: boolean;
+  late_registration_level?: number;
 }
 
 interface Player {
@@ -308,19 +310,40 @@ export function TelegramPokerLobby({
 
     setJoiningId(tournament.id);
     try {
-      const { error } = await supabase
-        .from('online_poker_tournament_participants')
-        .insert({
-          tournament_id: tournament.id,
-          player_id: playerId,
-          chips: tournament.starting_chips,
-          status: 'registered'
+      // Check if this is late registration (tournament already running)
+      const isLateReg = tournament.late_registration_enabled && 
+                        ['running', 'starting', 'break'].includes(tournament.status) &&
+                        (tournament.current_level || 1) <= (tournament.late_registration_level || 0);
+
+      if (isLateReg) {
+        // Use late registration RPC that handles seating
+        const { data, error } = await supabase.rpc('late_register_tournament_player', {
+          p_tournament_id: tournament.id,
+          p_player_id: playerId
         });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast.success(`Вы зарегистрировались на ${tournament.name}!`);
-      setMyTournamentStatusById((prev) => ({ ...prev, [tournament.id]: 'registered' }));
+        const result = data as { table_name?: string } | null;
+        toast.success(`Поздняя регистрация успешна! Ваш стол: ${result?.table_name || 'назначен'}`);
+        setMyTournamentStatusById((prev) => ({ ...prev, [tournament.id]: 'playing' }));
+      } else {
+        // Regular pre-registration
+        const { error } = await supabase
+          .from('online_poker_tournament_participants')
+          .insert({
+            tournament_id: tournament.id,
+            player_id: playerId,
+            chips: tournament.starting_chips,
+            status: 'registered'
+          });
+
+        if (error) throw error;
+
+        toast.success(`Вы зарегистрировались на ${tournament.name}!`);
+        setMyTournamentStatusById((prev) => ({ ...prev, [tournament.id]: 'registered' }));
+      }
+
       onJoinTournament?.(tournament.id);
       fetchData();
     } catch (error: any) {
@@ -627,9 +650,15 @@ export function TelegramPokerLobby({
                           isMine &&
                           myStatus !== 'eliminated' &&
                           ['starting', 'running', 'break', 'hand_for_hand', 'final_table'].includes(tournament.status);
+                        
+                        // Check if late registration is available
+                        const isLateRegOpen = tournament.late_registration_enabled && 
+                                              ['running', 'starting', 'break'].includes(tournament.status) &&
+                                              (tournament.current_level || 1) <= (tournament.late_registration_level || 0);
+                        
                         const canRegister =
                           !isMine &&
-                          ['registration', 'late_registration'].includes(tournament.status) &&
+                          (tournament.status === 'registration' || tournament.status === 'late_registration' || isLateRegOpen) &&
                           playerBalance >= tournament.buy_in &&
                           (tournament.participant_count || 0) < tournament.max_players;
 
@@ -645,6 +674,8 @@ export function TelegramPokerLobby({
                             className={`w-full ${
                               isMine
                                 ? 'bg-green-600 hover:bg-green-700'
+                                : isLateRegOpen
+                                ? 'bg-amber-600 hover:bg-amber-700'
                                 : 'bg-syndikate-orange hover:bg-syndikate-orange-glow'
                             }`}
                             size="sm"
@@ -661,15 +692,20 @@ export function TelegramPokerLobby({
                                 <CircleDot className="h-4 w-4 mr-2" />
                                 {myStatus === 'eliminated' ? 'Выбыли' : 'Зарегистрирован'}
                               </>
-                            ) : ['starting', 'running', 'break', 'hand_for_hand', 'final_table'].includes(tournament.status) ? (
+                            ) : canRegister && isLateRegOpen ? (
                               <>
-                                <Play className="h-4 w-4 mr-2" />
-                                Турнир идёт
+                                <Timer className="h-4 w-4 mr-2" />
+                                Поздняя регистрация
                               </>
-                            ) : (
+                            ) : canRegister ? (
                               <>
                                 <UserPlus className="h-4 w-4 mr-2" />
                                 Регистрация
+                              </>
+                            ) : (
+                              <>
+                                <Play className="h-4 w-4 mr-2" />
+                                Турнир идёт
                               </>
                             )}
                           </Button>
