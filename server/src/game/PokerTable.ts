@@ -3622,8 +3622,9 @@ export class PokerTable {
       player.isFolded = false;
       player.isAllIn = false;
     }
-  
-  
+  }
+
+
   /**
    * Save hand history to database - POKERSTARS PROFESSIONAL LEVEL
    */
