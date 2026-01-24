@@ -49,6 +49,10 @@ export interface Player {
   autoPostBlinds: boolean; // Auto-post blinds setting
   waitForBB: boolean; // Wait for big blind before playing
   isPostingDead: boolean; // Currently posting dead money
+  // LEAVE-DURING-HAND FLAG:
+  // Set when player clicks "Leave Table" during active hand
+  // Player will be fully removed after hand completes
+  pendingLeave?: boolean;
 }
 
 // POKERSTARS-STYLE: Action log entry for hand history
@@ -754,8 +758,15 @@ export class PokerTable {
         // Mark as folded for this hand
         player.isFolded = true;
       }
-      // Mark as sitting out - will be removed after hand
+      // Mark as sitting out - will be removed after hand completes
       player.status = 'sitting_out';
+      // CRITICAL: Mark for removal after hand - prevents "ghost players"
+      player.pendingLeave = true;
+      logger.info('POKERSTARS: Player leaving during hand - will be removed after completion', {
+        playerId: playerId.substring(0, 8),
+        name: player.name,
+        seatNumber: player.seatNumber
+      });
       this.emit('player_sitting_out', { playerId, reason: 'leaving' });
       return { success: true };
     }
@@ -3499,6 +3510,54 @@ export class PokerTable {
     // This ensures no stale timers can trigger after hand is null
     this.clearActionTimer();
     
+    // CRITICAL FIX: Remove players who left during the hand (sitting_out with pending leave)
+    // This prevents "ghost players" from blocking table state and causing stuck hands
+    const playersToRemove: string[] = [];
+    for (const [playerId, player] of this.players) {
+      if (player.status === 'sitting_out' && player.pendingLeave) {
+        playersToRemove.push(playerId);
+        logger.info('POKERSTARS: Removing player who left during hand', {
+          playerId: playerId.substring(0, 8),
+          name: player.name,
+          seatNumber: player.seatNumber,
+          stack: player.stack
+        });
+      }
+    }
+    
+    // Actually remove pending-leave players
+    for (const playerId of playersToRemove) {
+      const player = this.players.get(playerId);
+      if (player) {
+        // Clear seat
+        this.seats[player.seatNumber] = null;
+        
+        // Return chips to balance for cash games
+        if (!this.config.tournamentId && player.stack > 0) {
+          await this.returnChipsToBalance(playerId, player.stack);
+        }
+        
+        // Remove from players map
+        this.players.delete(playerId);
+        
+        // Remove from database
+        await this.supabase
+          .from('poker_table_players')
+          .delete()
+          .eq('table_id', this.id)
+          .eq('player_id', playerId);
+        
+        this.emit('player_left', { playerId, stack: player.stack, reason: 'left_during_hand' });
+      }
+    }
+    
+    if (playersToRemove.length > 0) {
+      logger.info('POKERSTARS: Cleaned up players who left during hand', {
+        tableId: this.id,
+        removedCount: playersToRemove.length
+      });
+    }
+    
     // CRITICAL: Reset all player states for clean slate before next hand
     // This prevents cards/bets from previous hand showing for new players
     for (const player of this.players.values()) {
@@ -3725,7 +3784,7 @@ export class PokerTable {
    * Advance to next player when current player is disconnected/timed out
    * Used after marking player as folded due to disconnect timeout
    */
-  private advanceToNextPlayer(): void {
+  private async advanceToNextPlayer(): Promise<void> {
     if (!this.currentHand) return;
     
     const activePlayers = this.getActivePlayersInHand();
@@ -3733,7 +3792,7 @@ export class PokerTable {
     // Check if hand should end (only 1 player left)
     if (activePlayers.length <= 1) {
       logger.info('Only one player left after disconnect timeout, ending hand');
-      this.endHandWithWinner(activePlayers[0]?.id);
+      await this.endHandWithWinner(activePlayers[0]?.id);
       return;
     }
     
@@ -3790,12 +3849,16 @@ export class PokerTable {
   
   /**
    * End hand with a winner (when all others folded/disconnected)
+   * CRITICAL: Must also clean up pending-leave players like completeHand does
    */
-  private endHandWithWinner(winnerId?: string): void {
+  private async endHandWithWinner(winnerId?: string): Promise<void> {
     if (!this.currentHand || !winnerId) return;
     
     const winner = this.players.get(winnerId);
     if (!winner) return;
+    
+    // Clear action timer
+    this.clearActionTimer();
     
     const pot = this.currentHand.pot;
     winner.stack += pot;
@@ -3811,13 +3874,66 @@ export class PokerTable {
       reason: 'all_folded'
     });
     
+    // Save hand history (also clears current_hand_id in DB)
+    await this.saveHandHistory([{
+      playerId: winnerId,
+      amount: pot,
+      handName: 'Last Standing'
+    }], []);
+    
+    // CRITICAL: Remove players who left during the hand
+    const playersToRemove: string[] = [];
+    for (const [playerId, player] of this.players) {
+      if (player.status === 'sitting_out' && player.pendingLeave) {
+        playersToRemove.push(playerId);
+        logger.info('POKERSTARS: Removing player who left during hand (endHandWithWinner)', {
+          playerId: playerId.substring(0, 8),
+          name: player.name
+        });
+      }
+    }
+    
+    for (const playerId of playersToRemove) {
+      const player = this.players.get(playerId);
+      if (player) {
+        this.seats[player.seatNumber] = null;
+        if (!this.config.tournamentId && player.stack > 0) {
+          await this.returnChipsToBalance(playerId, player.stack);
+        }
+        this.players.delete(playerId);
+        await this.supabase
+          .from('poker_table_players')
+          .delete()
+          .eq('table_id', this.id)
+          .eq('player_id', playerId);
+        this.emit('player_left', { playerId, stack: player.stack, reason: 'left_during_hand' });
+      }
+    }
+    
+    // Reset player states
+    for (const player of this.players.values()) {
+      player.holeCards = [];
+      player.currentBet = 0;
+      player.isFolded = false;
+      player.isAllIn = false;
+    }
+    
     // Clear hand state
     this.currentHand = null;
+    
+    // Emit state update
+    this.emit('state_update', {
+      pot: 0,
+      currentBet: 0,
+      currentPlayerSeat: null,
+      phase: 'waiting',
+      isHandActive: false
+    });
     
     // Check for new hand
     setTimeout(() => {
       this.checkStartHand();
-    }, 1000);
+    }, this.timings.betweenHands);
   }
   
   /**
