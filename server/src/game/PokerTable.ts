@@ -3583,6 +3583,48 @@ export class PokerTable {
   }
   
   /**
+   * HELPER: Clean up players who left during the hand
+   * Extracted to avoid code duplication
+   */
+  private async cleanupPendingLeavePlayers(): Promise<void> {
+    const playersToRemove: string[] = [];
+    for (const [playerId, player] of this.players) {
+      if (player.status === 'sitting_out' && player.pendingLeave) {
+        playersToRemove.push(playerId);
+        logger.info('POKERSTARS: Cleaning up player who left during hand', {
+          playerId: playerId.substring(0, 8),
+          name: player.name
+        });
+      }
+    }
+    
+    for (const playerId of playersToRemove) {
+      const player = this.players.get(playerId);
+      if (player) {
+        this.seats[player.seatNumber] = null;
+        if (!this.config.tournamentId && player.stack > 0) {
+          await this.returnChipsToBalance(playerId, player.stack);
+        }
+        this.players.delete(playerId);
+        await this.supabase
+          .from('poker_table_players')
+          .delete()
+          .eq('table_id', this.id)
+          .eq('player_id', playerId);
+        this.emit('player_left', { playerId, stack: player.stack, reason: 'left_during_hand' });
+      }
+    }
+    
+    // Reset remaining player states
+    for (const player of this.players.values()) {
+      player.holeCards = [];
+      player.currentBet = 0;
+      player.isFolded = false;
+      player.isAllIn = false;
+    }
+  
+  
+  /**
    * Save hand history to database - POKERSTARS PROFESSIONAL LEVEL
    */
   private async saveHandHistory(
@@ -3852,10 +3894,63 @@ export class PokerTable {
    * CRITICAL: Must also clean up pending-leave players like completeHand does
    */
   private async endHandWithWinner(winnerId?: string): Promise<void> {
-    if (!this.currentHand || !winnerId) return;
+    if (!this.currentHand) return;
+    
+    // CRITICAL: If no winner or winner not found, still clean up properly
+    if (!winnerId) {
+      logger.warn('endHandWithWinner called without winnerId - aborting hand', {
+        tableId: this.id,
+        handId: this.currentHand.id
+      });
+      
+      // Abort the hand and clear state
+      await this.supabase
+        .from('poker_hands')
+        .update({ completed_at: new Date().toISOString(), phase: 'aborted' })
+        .eq('id', this.currentHand.id);
+      
+      await this.supabase
+        .from('poker_tables')
+        .update({ current_hand_id: null, status: 'waiting', updated_at: new Date().toISOString() })
+        .eq('id', this.id);
+      
+      this.clearActionTimer();
+      this.currentHand = null;
+      
+      // Clean up pending leave players
+      await this.cleanupPendingLeavePlayers();
+      
+      setTimeout(() => this.checkStartHand(), this.timings.betweenHands);
+      return;
+    }
     
     const winner = this.players.get(winnerId);
-    if (!winner) return;
+    if (!winner) {
+      logger.warn('endHandWithWinner: winner not found - aborting hand', {
+        tableId: this.id,
+        handId: this.currentHand.id,
+        winnerId: winnerId.substring(0, 8)
+      });
+      
+      // Same cleanup as above
+      await this.supabase
+        .from('poker_hands')
+        .update({ completed_at: new Date().toISOString(), phase: 'aborted' })
+        .eq('id', this.currentHand.id);
+      
+      await this.supabase
+        .from('poker_tables')
+        .update({ current_hand_id: null, status: 'waiting', updated_at: new Date().toISOString() })
+        .eq('id', this.id);
+      
+      this.clearActionTimer();
+      this.currentHand = null;
+      
+      await this.cleanupPendingLeavePlayers();
+      
+      setTimeout(() => this.checkStartHand(), this.timings.betweenHands);
+      return;
+    }
     
     // Clear action timer
     this.clearActionTimer();
@@ -4468,6 +4563,12 @@ export class PokerTable {
             .from('poker_hands')
             .update({ completed_at: new Date().toISOString(), phase: 'aborted' })
             .eq('id', dbActiveHand.id);
+          
+          // CRITICAL: Clear current_hand_id to allow new hands to start
+          await this.supabase
+            .from('poker_tables')
+            .update({ current_hand_id: null, status: 'waiting', updated_at: new Date().toISOString() })
+            .eq('id', this.id);
         }
       } catch (err) {
         logger.warn('Error checking DB hand state during recovery', { error: String(err) });
@@ -4540,6 +4641,8 @@ export class PokerTable {
               .update({ completed_at: new Date().toISOString(), phase: 'aborted' })
               .eq('id', orphan.id);
           }
+          
+          // CRITICAL: Already clearing current_hand_id below, but ensure it happens
           
           // Clear table's current_hand_id
           await this.supabase
