@@ -168,6 +168,13 @@ export class PokerTable {
   }
   
   /**
+   * Get the tournament ID if this is a tournament table
+   */
+  public getTournamentId(): string | undefined {
+    return this.config.tournamentId;
+  }
+  
+  /**
    * Load existing players from database on table initialization
    * CRITICAL: This ensures server state matches database after restart
    * Made PUBLIC so loadTableIfNeeded can await it after construction
