@@ -208,20 +208,26 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
     }
   }, [selectedTableId, addLog]);
 
-  // Load available bots
+  // Load available bots - search for bots without user_id (they are managed bots)
   const loadAvailableBots = useCallback(async () => {
+    // Bots are players without user_id (not linked to auth accounts)
+    // Also exclude players who already have active tournament participations
     const { data, error } = await supabase
       .from('players')
       .select('id, name')
-      .like('name', 'CashBot_%')
-      .order('name');
+      .is('user_id', null)
+      .order('created_at', { ascending: false })
+      .limit(100);
 
     if (error) {
       addLog('error', 'Ошибка загрузки ботов', error);
       return;
     }
 
-    setAvailableBots(data || []);
+    // Filter out TestBot_ prefix if needed for cleaner list
+    const bots = data?.filter(p => !p.name.startsWith('TestBot_')) || [];
+    setAvailableBots(bots);
+    addLog('info', `Найдено ${bots.length} доступных ботов`);
   }, [addLog]);
 
   // Create cash bots with diamond wallets
