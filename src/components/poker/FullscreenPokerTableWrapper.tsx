@@ -86,12 +86,71 @@ export function FullscreenPokerTableWrapper({
   const [actualBuyIn, setActualBuyIn] = useState<number>(buyIn);
   const [isTimeBankActive, setIsTimeBankActive] = useState(false);
   
+  // Tournament blinds can desync in WS state; DB poker_tables is authoritative for current SB/BB/ante.
+  const [dbBlinds, setDbBlinds] = useState<{ sb: number; bb: number; ante: number } | null>(null);
+  
   const { preferences, currentTableTheme, updatePreference } = usePokerPreferences();
   
   // Синхронизация калибровки позиций с Supabase (для Telegram mini-app)
   useCalibrationSync();
   
   const sounds = usePokerSounds();
+
+  // Keep tournament blinds in sync with DB (realtime + polling fallback)
+  useEffect(() => {
+    const enabled = Boolean(isTournament);
+    if (!enabled) {
+      setDbBlinds(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetch = async () => {
+      const { data, error } = await supabase
+        .from('poker_tables')
+        .select('small_blind, big_blind, ante')
+        .eq('id', tableId)
+        .single();
+
+      if (cancelled) return;
+      if (error) return;
+
+      if (data && typeof data.small_blind === 'number' && typeof data.big_blind === 'number') {
+        setDbBlinds({
+          sb: data.small_blind,
+          bb: data.big_blind,
+          ante: typeof data.ante === 'number' ? data.ante : 0,
+        });
+      }
+    };
+
+    fetch();
+
+    const channel = supabase
+      .channel(`table-blinds-${tableId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'poker_tables',
+          filter: `id=eq.${tableId}`,
+        },
+        () => {
+          fetch();
+        }
+      )
+      .subscribe();
+
+    const poll = setInterval(fetch, 15000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(poll);
+      supabase.removeChannel(channel);
+    };
+  }, [isTournament, tableId]);
 
   // Connection is auto-managed by useNodePokerTable (connects when tableId/playerId present)
 
@@ -108,6 +167,10 @@ export function FullscreenPokerTableWrapper({
     // Professional showdown and winner announcement
     showdownReveals, winnerAnnouncement, clearWinnerAnnouncement
   } = pokerTable;
+
+  const effectiveSmallBlind = (isTournament ? dbBlinds?.sb : undefined) ?? tableState?.smallBlindAmount ?? 10;
+  const effectiveBigBlind = (isTournament ? dbBlinds?.bb : undefined) ?? tableState?.bigBlindAmount ?? 20;
+  const effectiveAnte = (isTournament ? dbBlinds?.ante : undefined) ?? tableState?.anteAmount ?? 0;
 
   // Check if player can join (not yet seated) - only for cash games
   // Tournaments use auto-seating from participant data
@@ -831,8 +894,9 @@ export function FullscreenPokerTableWrapper({
             turnTimeRemaining={turnTimeRemaining ?? undefined}
             turnTimeTotal={turnTimeTotal}
             isTimeBankActive={isTimeBankActive}
-            smallBlind={tableState?.smallBlindAmount || 10}
-            bigBlind={tableState?.bigBlindAmount || 20}
+            smallBlind={effectiveSmallBlind}
+            bigBlind={effectiveBigBlind}
+            ante={effectiveAnte}
             canJoinTable={canJoinTable}
             onSeatClick={handleSeatClick}
             maxSeats={maxSeats}
@@ -885,7 +949,7 @@ export function FullscreenPokerTableWrapper({
           minBuyIn={minBuyIn}
           maxBuyIn={maxBuyIn}
           playerBalance={playerBalance}
-          bigBlind={tableState?.bigBlindAmount || 20}
+            bigBlind={effectiveBigBlind}
           occupiedSeats={occupiedSeats}
           maxSeats={maxSeats}
         />
