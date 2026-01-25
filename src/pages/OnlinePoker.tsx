@@ -28,7 +28,7 @@ export default function OnlinePoker() {
   const [playerName, setPlayerName] = useState('');
   const [playerAvatar, setPlayerAvatar] = useState<string | null>(null);
   const [playerBalance, setPlayerBalance] = useState(0);
-  const [activeTable, setActiveTable] = useState<{ id: string; buyIn: number; isTournament?: boolean; tournamentId?: string } | null>(null);
+  const [activeTable, setActiveTable] = useState<{ id: string; buyIn: number; isTournament?: boolean; tournamentId?: string; isSpectator?: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [lobbyTab, setLobbyTab] = useState('cash');
   const [activeTournamentId, setActiveTournamentId] = useState<string | null>(null);
@@ -292,6 +292,56 @@ export default function OnlinePoker() {
     }
   };
 
+  // PokerStars-style: Spectate a tournament (watch without playing)
+  const handleSpectateTournament = async (tournamentId: string) => {
+    toast.loading('Открываю стол для наблюдения...', { id: 'spectate' });
+    
+    try {
+      // Get first active table for this tournament
+      const { data: tables, error } = await supabase
+        .from('poker_tables')
+        .select('id, name')
+        .eq('tournament_id', tournamentId)
+        .eq('status', 'playing')
+        .limit(1);
+      
+      if (error) throw error;
+      
+      if (!tables || tables.length === 0) {
+        toast.error('Нет активных столов для наблюдения', { id: 'spectate' });
+        return;
+      }
+      
+      const tableId = tables[0].id;
+      toast.success(`Открываю ${tables[0].name}...`, { id: 'spectate' });
+      
+      // Open table in spectator mode
+      const isDesktop = window.innerWidth > 768;
+      
+      if (isDesktop) {
+        const width = 420;
+        const height = 900;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+        
+        // Add spectator=true parameter
+        const tableUrl = `/table/${tableId}?playerId=${playerId}&spectator=true&tournament=true`;
+        
+        window.open(
+          tableUrl,
+          `poker_spectator_${tableId}`,
+          `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
+        );
+      } else {
+        // On mobile - open embedded with spectator mode
+        setActiveTable({ id: tableId, buyIn: 0, isTournament: true, isSpectator: true });
+      }
+    } catch (error: any) {
+      console.error('Error opening spectator mode:', error);
+      toast.error('Ошибка открытия стола: ' + error.message, { id: 'spectate' });
+    }
+  };
+
   const handleLeaveTable = () => {
     setActiveTable(null);
   };
@@ -445,6 +495,7 @@ export default function OnlinePoker() {
                     playerBalance={playerBalance}
                     isTournament={activeTable.isTournament}
                     tournamentId={activeTable.isTournament ? activeTable.id : undefined}
+                    isSpectator={activeTable.isSpectator}
                     onLeave={handleLeaveTable}
                     onBalanceUpdate={() => {
                       // Refresh balance from PlayerBalanceCard
@@ -494,6 +545,7 @@ export default function OnlinePoker() {
                   playerBalance={playerBalance}
                   onJoinTournament={handleJoinTournament}
                   onJoinTable={handleJoinTournamentTable}
+                  onSpectate={handleSpectateTournament}
                 />
               </TabsContent>
 

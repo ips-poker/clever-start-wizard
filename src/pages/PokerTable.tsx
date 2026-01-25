@@ -38,12 +38,13 @@ export default function PokerTable() {
 
   const buyIn = parseInt(searchParams.get('buyIn') || '0', 10);
   const isTournament = searchParams.get('tournament') === 'true';
+  const urlSpectator = searchParams.get('spectator') === 'true';
   const [playerBalance, setPlayerBalance] = useState(0);
   const [tableName, setTableName] = useState('');
   const [tournamentId, setTournamentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentTableId, setCurrentTableId] = useState<string | null>(tableId || null);
-  const [isSpectator, setIsSpectator] = useState(false);
+  const [isSpectator, setIsSpectator] = useState(urlSpectator);
 
   // If user is authenticated and we didn't explicitly request a playerId in the URL,
   // prefer the "real" player (non-TestBot) for this user.
