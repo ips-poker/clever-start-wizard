@@ -273,6 +273,7 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
 
   const renderTournamentCard = (tournament: OnlineTournament) => {
     const isRegistered = myRegistrations.has(tournament.id);
+    const myRegistration = myRegistrations.has(tournament.id) ? tournament.id : null;
     
     // Check if late registration is available
     const isLateRegOpen = tournament.late_registration_enabled && 
@@ -285,8 +286,9 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
     const canUnregister = isRegistered && tournament.status === 'registration';
     const canJoin = isRegistered && ['running', 'starting', 'final_table', 'break', 'hand_for_hand'].includes(tournament.status);
     
-    // PokerStars-style: Anyone can spectate running tournaments
-    const canSpectate = ['running', 'final_table', 'break', 'hand_for_hand'].includes(tournament.status) && !canJoin;
+    // PokerStars-style: Anyone can spectate running tournaments (including eliminated players)
+    const isRunning = ['running', 'final_table', 'break', 'hand_for_hand'].includes(tournament.status);
+    const canSpectate = isRunning;
 
     // Calculate RPS pool: buy_in / 50 * player_count = RPS points
     const rpsPool = Math.floor((tournament.buy_in / 50) * (tournament.player_count || 0));
@@ -391,15 +393,15 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
               {canSpectate && onSpectate && (
                 <Button 
                   size="sm" 
-                  variant="outline"
-                  className="flex-1 gap-1"
+                  variant={canJoin ? "ghost" : "outline"}
+                  className={cn("gap-1", canJoin ? "w-auto px-2" : "flex-1")}
                   onClick={(e) => {
                     e.stopPropagation();
                     onSpectate(tournament.id);
                   }}
                 >
                   <Eye className="h-3.5 w-3.5" />
-                  Наблюдать
+                  {!canJoin && "Наблюдать"}
                 </Button>
               )}
               {isRegistered && tournament.status === 'registration' && (
