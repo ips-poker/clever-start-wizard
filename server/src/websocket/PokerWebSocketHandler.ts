@@ -1580,6 +1580,28 @@ export class PokerWebSocketHandler {
         }
       }
       
+      // POKERSTARS-STYLE: Trigger immediate table balancing after elimination
+      // This ensures ±1 player difference is maintained at all times
+      try {
+        const { data: balanceResult, error: balanceError } = await this.supabase.rpc('professional_balance_tables', {
+          p_tournament_id: tournamentId
+        });
+        
+        if (balanceError) {
+          logger.warn('Post-elimination table balance failed', { tournamentId, error: balanceError.message });
+        } else if (balanceResult?.players_moved > 0) {
+          logger.info('POKERSTARS: Post-elimination table balance', { 
+            tournamentId, 
+            playersMoved: balanceResult.players_moved 
+          });
+          
+          // Immediately sync in-memory state with DB changes
+          await this.gameManager.syncTableBalancing(tournamentId);
+        }
+      } catch (balanceErr) {
+        logger.warn('Post-elimination balancing error', { error: String(balanceErr) });
+      }
+      
       // Process PKO bounty if applicable
       if (eliminatedBy) {
         try {
