@@ -155,6 +155,25 @@ export class PokerWebSocketHandler {
     // Start metrics collection (every 10 seconds)
     this.metricsInterval = setInterval(() => this.collectMetrics(), 10000);
     
+    // CRITICAL: Register callback for player movement notifications
+    // This sends redirect events to clients when they are moved to another table
+    this.gameManager.onPlayerMoved((playerId, newTableId, newSeat, tournamentId) => {
+      const connection = this.connectionPool.getPlayerConnection(playerId);
+      if (connection && connection.ws.readyState === 1) { // WebSocket.OPEN = 1
+        connection.ws.send(JSON.stringify({
+          type: 'player_moved',
+          playerId,
+          newTableId,
+          newSeat,
+          tournamentId
+        }));
+        logger.info('Sent player_moved redirect to client', { 
+          playerId: playerId.substring(0, 8), 
+          newTableId: newTableId.substring(0, 8) 
+        });
+      }
+    });
+    
     // CRITICAL: Register callback to setup event listeners when tables are loaded
     // This ensures elimination events are handled even for tables loaded dynamically
     // (e.g., tournament tables where bots play before any human connects)
