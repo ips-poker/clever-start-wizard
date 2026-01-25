@@ -3469,9 +3469,22 @@ export class PokerTable {
     const communityCards: string[] = [];
     const playerCount = activePlayers.length;
 
+    // POKERSTARS-STYLE: All-in showdown with burn card visuals and proper delays
+    
     // Deal flop (3 cards) - burn 1, deal 3
     if (deck.length >= 4) {
-      deck.shift(); // burn
+      const burnCard = deck.shift()!; // burn
+      
+      // Emit burn card event for visual animation
+      this.emit('burn_card', {
+        handNumber: this.handNumber,
+        phase: 'flop',
+        isAllInShowdown: true
+      });
+      
+      // Delay for burn card animation (PokerStars: ~300ms)
+      await this.delay(300);
+      
       communityCards.push(deck.shift()!, deck.shift()!, deck.shift()!);
       
       this.currentHand.communityCards = [...communityCards];
@@ -3485,12 +3498,24 @@ export class PokerTable {
       });
       
       logger.info('All-in showdown: Flop dealt', { cards: communityCards });
-      await this.delay(this.timings.phases.flop.perCardDelay * 3 + 300);
+      // POKERSTARS-STYLE: Longer pause after flop (~800ms total for cards + settling)
+      await this.delay(this.timings.phases.flop.perCardDelay * 3 + 500);
     }
 
     // Deal turn (1 card) - burn 1, deal 1
     if (deck.length >= 2) {
-      deck.shift(); // burn
+      const burnCard = deck.shift()!; // burn
+      
+      // Emit burn card event for visual animation
+      this.emit('burn_card', {
+        handNumber: this.handNumber,
+        phase: 'turn',
+        isAllInShowdown: true
+      });
+      
+      // POKERSTARS-STYLE: Longer delay for burn card (~400ms)
+      await this.delay(400);
+      
       const turnCard = deck.shift()!;
       communityCards.push(turnCard);
       
@@ -3505,12 +3530,24 @@ export class PokerTable {
       });
       
       logger.info('All-in showdown: Turn dealt', { card: turnCard });
-      await this.delay(this.timings.phases.turn.perCardDelay + 200);
+      // POKERSTARS-STYLE: Longer pause after turn (~600ms)
+      await this.delay(this.timings.phases.turn.preDealDelay + 300);
     }
 
     // Deal river (1 card) - burn 1, deal 1
     if (deck.length >= 2) {
-      deck.shift(); // burn
+      const burnCard = deck.shift()!; // burn
+      
+      // Emit burn card event for visual animation
+      this.emit('burn_card', {
+        handNumber: this.handNumber,
+        phase: 'river',
+        isAllInShowdown: true
+      });
+      
+      // POKERSTARS-STYLE: Longer delay for burn card (~400ms)
+      await this.delay(400);
+      
       const riverCard = deck.shift()!;
       communityCards.push(riverCard);
       
@@ -3525,7 +3562,8 @@ export class PokerTable {
       });
       
       logger.info('All-in showdown: River dealt', { card: riverCard });
-      await this.delay(this.timings.phases.river.perCardDelay + 200);
+      // POKERSTARS-STYLE: Longer pause after river (~600ms)
+      await this.delay(this.timings.phases.river.preDealDelay + 300);
     }
 
     // Step 3: Move to showdown phase

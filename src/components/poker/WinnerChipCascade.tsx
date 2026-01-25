@@ -76,14 +76,15 @@ const FlyingChip = memo(function FlyingChip({
       animate={{
         x: `${deltaX}vw`,
         y: `${deltaY}vh`,
-        scale: [1, 1, 0.8],
+        scale: [1, 1.05, 0.85],
         opacity: [1, 1, 0]
       }}
       transition={{
-        duration: 0.6,
+        // POKERSTARS-STYLE: Slower chip flight for clear visibility (1.2s)
+        duration: 1.2,
         delay,
-        ease: "easeOut",
-        times: [0, 0.7, 1]
+        ease: [0.25, 0.1, 0.25, 1], // Smooth easing
+        times: [0, 0.75, 1]
       }}
       onAnimationComplete={onComplete}
     >
@@ -158,8 +159,8 @@ export const WinnerChipCascade = memo(function WinnerChipCascade({
           transform: 'translate(-50%, -100%)'
         }}
         initial={{ y: 20, opacity: 0, scale: 0.8 }}
-        animate={{ y: -30, opacity: [0, 1, 1, 0], scale: 1 }}
-        transition={{ duration: 1.2, delay: 0.4, times: [0, 0.2, 0.7, 1] }}
+        animate={{ y: -35, opacity: [0, 1, 1, 0], scale: 1 }}
+        transition={{ duration: 1.8, delay: 0.6, times: [0, 0.15, 0.75, 1] }}
       >
         <div 
           className="px-2 py-0.5 rounded-md font-bold text-sm whitespace-nowrap"

@@ -198,7 +198,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     timestamp: number;
   } | null>(null);
 
-  // Refs
+  // POKERSTARS-STYLE: Burn card animation state
+  const [activeBurnCard, setActiveBurnCard] = useState<{
+    phase: 'flop' | 'turn' | 'river';
+    timestamp: number;
+  } | null>(null);
+
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptRef = useRef(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1703,6 +1708,25 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }
           break;
 
+        // POKERSTARS-STYLE: Burn card animation before community cards
+        case 'burn_card':
+          {
+            const burnData = data as Record<string, unknown>;
+            const burnPhase = burnData.phase as 'flop' | 'turn' | 'river';
+            log('🔥 Burn card:', burnPhase);
+            
+            setActiveBurnCard({
+              phase: burnPhase,
+              timestamp: Date.now()
+            });
+            
+            // Auto-clear after animation completes (~400ms)
+            setTimeout(() => {
+              setActiveBurnCard(null);
+            }, 400);
+          }
+          break;
+
         // PROFESSIONAL: Showdown start event
         case 'showdown_start':
           {
@@ -2271,6 +2295,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     showdownReveals,
     winnerAnnouncement,
     clearWinnerAnnouncement: () => setWinnerAnnouncement(null),
+    activeBurnCard, // POKERSTARS-STYLE: Burn card animation state
 
     // Computed
     isMyTurn,

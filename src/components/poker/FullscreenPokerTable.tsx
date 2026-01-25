@@ -36,6 +36,7 @@ import { PokerStarsHUDPopup } from './hud/PokerStarsHUDPopup';
 // PotCollectionAnimation removed - using BetCollectionAnimation only for performance
 import { WinnerChipCascade } from './WinnerChipCascade';
 import { BetCollectionAnimation } from './EnhancedBetCollectionAnimation';
+import { BurnCardAnimation } from './BurnCardAnimation';
 // ProfessionalShowdown and WinnerAnnouncement removed - using PlayerSeat showdown highlighting
 import { usePhaseAnimation } from '@/hooks/usePhaseAnimation';
 import { getHandStrengthName } from '@/utils/handEvaluator';
@@ -1420,6 +1421,11 @@ export interface FullscreenPokerTableProps {
     celebrationDuration: number;
     timestamp: number;
   } | null;
+  // POKERSTARS-STYLE: Burn card animation
+  activeBurnCard?: {
+    phase: 'flop' | 'turn' | 'river';
+    timestamp: number;
+  } | null;
 }
 
 export const FullscreenPokerTable = memo(function FullscreenPokerTable({
@@ -1459,7 +1465,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   betsBeingCollected,
   phaseTimings,
   showdownReveals,
-  winnerAnnouncement
+  winnerAnnouncement,
+  activeBurnCard
 }: FullscreenPokerTableProps) {
   // Use dynamic positions based on max seats
   // wideMode prop explicitly indicates Telegram Mini App context
@@ -1626,6 +1633,12 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
         return (
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-3 z-10">
             <PotDisplay pot={pot} blinds={`${smallBlind}/${bigBlind}`} displayFormat={preferences.displayFormat} />
+            
+            {/* POKERSTARS-STYLE: Burn card animation before community cards */}
+            <BurnCardAnimation 
+              isActive={!!activeBurnCard}
+              phase={activeBurnCard?.phase || 'flop'}
+            />
             
             {/* Professional Community Cards with server timing */}
             <ProfessionalCommunityCards 

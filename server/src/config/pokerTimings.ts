@@ -161,10 +161,10 @@ export const PROFESSIONAL_TIMINGS: ProfessionalTimings = {
   
   showdown: {
     perPlayerReveal: 500,    // Faster reveal (PokerStars: ~500ms)
-    winnerHighlight: 2000,   // Time to highlight winning hand
-    potCollection: 600,      // Pot slides from center
-    potSlideToWinner: 500,   // Chips slide to winner
-    winnerCelebration: 1500, // Winner overlay display (shorter)
+    winnerHighlight: 2500,   // Time to highlight winning hand (increased for visibility)
+    potCollection: 700,      // Pot slides from center
+    potSlideToWinner: 1200,  // POKERSTARS-STYLE: Chips slide to winner (1.2s for clear visibility)
+    winnerCelebration: 1800, // Winner overlay display (increased)
   },
   
   betCollection: {
