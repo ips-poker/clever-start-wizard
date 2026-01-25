@@ -127,6 +127,7 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [botCount, setBotCount] = useState(3);
   const [buyInAmount, setBuyInAmount] = useState(1000);
+  const [botsToSeatCount, setBotsToSeatCount] = useState(1); // Number of bots to seat at once
   
   // Bot mode state
   const [botMode, setBotMode] = useState(false);
@@ -472,47 +473,72 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
     setLoading(false);
   };
 
-  // Sit all available bots
-  const sitAllBots = async () => {
+  // Sit specified number of bots
+  const sitSelectedBots = async (count: number) => {
     if (!selectedTableId) {
       toast.error('Выберите стол');
       return;
     }
 
-   // Reload table data before starting to get accurate counts
-   await loadCashTables();
-   
-   let table = cashTables.find(t => t.id === selectedTableId);
-   if (!table) {
-     toast.error('Стол не найден');
-     return;
-   }
-
-   const seatedIds = new Set(table.players.map(p => p.player_id));
-   const botsToSit = availableBots.filter(b => !seatedIds.has(b.id));
-   let remainingSeats = table.max_players - table.players.length;
-
-   addLog('info', `Начинаю посадку ботов: ${botsToSit.length} доступно, ${remainingSeats} мест свободно`);
-
-   for (let i = 0; i < Math.min(botsToSit.length, remainingSeats); i++) {
-      await sitBotAtTable(botsToSit[i].id, botsToSit[i].name);
-     // Wait for DB to settle and reload table data before next iteration
-     await new Promise(r => setTimeout(r, 500));
-     await loadCashTables();
-     
-     // Refresh table object with updated data
-     table = cashTables.find(t => t.id === selectedTableId);
-     if (!table) break;
-     
-     // Recalculate remaining seats
-     remainingSeats = table.max_players - table.players.length;
-     if (remainingSeats <= 0) {
-       addLog('info', 'Стол заполнен, остановка посадки');
-       break;
-     }
+    setLoading(true);
+    
+    // Reload table data before starting to get accurate counts
+    await loadCashTables();
+    
+    let table = cashTables.find(t => t.id === selectedTableId);
+    if (!table) {
+      toast.error('Стол не найден');
+      setLoading(false);
+      return;
     }
-   
-   addLog('success', 'Посадка завершена');
+
+    const seatedIds = new Set(table.players.map(p => p.player_id));
+    const botsToSit = availableBots.filter(b => !seatedIds.has(b.id));
+    let remainingSeats = table.max_players - table.players.length;
+    
+    const actualCount = Math.min(count, botsToSit.length, remainingSeats);
+
+    if (actualCount === 0) {
+      toast.error('Нет доступных ботов или свободных мест');
+      setLoading(false);
+      return;
+    }
+
+    addLog('info', `Посадка ${actualCount} ботов: ${botsToSit.length} доступно, ${remainingSeats} мест свободно`);
+
+    for (let i = 0; i < actualCount; i++) {
+      await sitBotAtTable(botsToSit[i].id, botsToSit[i].name);
+      
+      // Wait for DB to settle and reload table data before next iteration
+      await new Promise(r => setTimeout(r, 500));
+      await loadCashTables();
+      
+      // Refresh table object with updated data
+      table = cashTables.find(t => t.id === selectedTableId);
+      if (!table) break;
+      
+      // Recalculate remaining seats
+      remainingSeats = table.max_players - table.players.length;
+      if (remainingSeats <= 0) {
+        addLog('info', 'Стол заполнен, остановка посадки');
+        break;
+      }
+    }
+    
+    addLog('success', 'Посадка завершена');
+    setLoading(false);
+  };
+
+  // Sit all available bots (convenience wrapper)
+  const sitAllBots = async () => {
+    const table = cashTables.find(t => t.id === selectedTableId);
+    if (!table) return;
+    
+    const seatedIds = new Set(table.players.map(p => p.player_id));
+    const botsToSit = availableBots.filter(b => !seatedIds.has(b.id));
+    const remainingSeats = table.max_players - table.players.length;
+    
+    await sitSelectedBots(Math.min(botsToSit.length, remainingSeats));
   };
 
   // Connect bot to WebSocket
@@ -1069,15 +1095,57 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
                 </div>
               </div>
               
-              <Button 
-                size="sm" 
-                className="w-full"
-                onClick={sitAllBots} 
-                disabled={loading || availableBots.length === 0 || !selectedTableId}
-              >
-                <Users className="h-4 w-4 mr-1" />
-                Посадить всех
-              </Button>
+              {/* Number of bots to seat */}
+              <div className="space-y-2">
+                <Label className="text-xs">Количество ботов</Label>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    size="icon" 
+                    variant="outline" 
+                    className="h-8 w-8"
+                    onClick={() => setBotsToSeatCount(Math.max(1, botsToSeatCount - 1))}
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <Input
+                    type="number"
+                    value={botsToSeatCount}
+                    onChange={(e) => setBotsToSeatCount(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="text-center w-16"
+                    min={1}
+                    max={9}
+                  />
+                  <Button 
+                    size="icon" 
+                    variant="outline" 
+                    className="h-8 w-8"
+                    onClick={() => setBotsToSeatCount(Math.min(9, botsToSeatCount + 1))}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => sitSelectedBots(botsToSeatCount)} 
+                  disabled={loading || availableBots.length === 0 || !selectedTableId}
+                >
+                  <UserPlus className="h-4 w-4 mr-1" />
+                  Посадить {botsToSeatCount}
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={sitAllBots} 
+                  disabled={loading || availableBots.length === 0 || !selectedTableId}
+                >
+                  <Users className="h-4 w-4 mr-1" />
+                  Всех
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
