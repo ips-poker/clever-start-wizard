@@ -704,10 +704,7 @@ export class PokerWebSocketHandler {
     });
     
     // Broadcast new state to all connected clients
-    const table = await this.gameManager.loadTableIfNeeded(tableId);
-    if (table) {
-      this.broadcastToTable(tableId, { type: 'state_update', state: table.getPublicState() });
-    }
+    this.broadcastToTable(tableId, { type: 'state_update', state: table.getPublicState() });
   }
   
   /**
