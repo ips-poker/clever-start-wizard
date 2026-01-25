@@ -425,6 +425,21 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
         return;
       }
 
+      // Notify server to sync players from database
+      try {
+        const wsUrl = getWsUrl(selectedTableId, 'admin');
+        const syncWs = new WebSocket(wsUrl);
+        syncWs.onopen = () => {
+          syncWs.send(JSON.stringify({ 
+            type: 'sync_players', 
+            tableId: selectedTableId 
+          }));
+          setTimeout(() => syncWs.close(), 500);
+        };
+      } catch (e) {
+        // Non-critical - server will sync on next connection
+      }
+
       await loadCashTables();
      addLog('success', `${botName} сел за ${tableData.name} с ${buyInAmount}💎 на место ${availableSeat}`);
       toast.success(`${botName} за столом`);
