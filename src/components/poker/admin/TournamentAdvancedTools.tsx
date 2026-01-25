@@ -28,6 +28,23 @@ import { ICMDealCalculator } from '../ICMDealCalculator';
 import { TournamentChatModeration } from '../TournamentChatModeration';
 import { useTournamentLiveData } from '@/hooks/useTournamentLiveData';
 import { useTournamentHandForHand } from '@/hooks/useTournamentHandForHand';
+
+interface ParticipantWithCards {
+  id: string;
+  player_id: string;
+  player_name: string;
+  chips: number;
+  status: string;
+  table_id: string | null;
+  seatNumber?: number;
+  holeCards?: string[];
+  currentBet?: number;
+  isFolded?: boolean;
+  isAllIn?: boolean;
+  isActing?: boolean;
+  lastAction?: string;
+  lastActionAmount?: number;
+}
 import { useTournamentChat } from '@/hooks/useTournamentChat';
 
 interface Tournament {
@@ -51,7 +68,7 @@ export function TournamentAdvancedTools() {
   const [icmEnabled, setIcmEnabled] = useState(false);
 
   // Live data hooks
-  const { liveData, participants, refetch } = useTournamentLiveData(
+  const { liveData, participants, recentActions, refetch } = useTournamentLiveData(
     selectedTournament?.id || null
   );
   
@@ -154,15 +171,22 @@ export function TournamentAdvancedTools() {
     toast.success('Bubble burst! Все оставшиеся игроки в деньгах!');
   };
 
-  // Prepare players data for TV mode and ICM
+  // Prepare players data for TV mode and ICM with full card info
   const playersForTV = participants.slice(0, 9).map((p, i) => ({
     id: p.player_id,
     name: p.player_name,
     chips: p.chips,
-    seatNumber: i + 1,
+    seatNumber: p.seatNumber || i + 1,
     isDealer: i === 0,
     isBigBlind: i === 1,
-    isSmallBlind: i === 2
+    isSmallBlind: i === 2,
+    holeCards: p.holeCards,
+    currentBet: p.currentBet,
+    isFolded: p.isFolded,
+    isAllIn: p.isAllIn,
+    isActing: p.isActing,
+    lastAction: p.lastAction,
+    lastActionAmount: p.lastActionAmount
   }));
 
   const bubblePosition = Math.max(Math.floor(participants.length * 0.15), 3);
@@ -330,6 +354,8 @@ export function TournamentAdvancedTools() {
               pot={liveData.pot}
               communityCards={liveData.communityCards}
               isHandInProgress={liveData.isHandInProgress}
+              currentPhase={liveData.currentPhase}
+              recentActions={recentActions}
             />
           ) : (
             <Card>
