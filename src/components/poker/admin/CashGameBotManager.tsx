@@ -479,17 +479,40 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
       return;
     }
 
-    const table = cashTables.find(t => t.id === selectedTableId);
-    if (!table) return;
+   // Reload table data before starting to get accurate counts
+   await loadCashTables();
+   
+   let table = cashTables.find(t => t.id === selectedTableId);
+   if (!table) {
+     toast.error('Стол не найден');
+     return;
+   }
 
-    const seatedIds = new Set(table.players.map(p => p.player_id));
-    const botsToSit = availableBots.filter(b => !seatedIds.has(b.id));
-    const availableSeats = table.max_players - table.players.length;
+   const seatedIds = new Set(table.players.map(p => p.player_id));
+   const botsToSit = availableBots.filter(b => !seatedIds.has(b.id));
+   let remainingSeats = table.max_players - table.players.length;
 
-    for (let i = 0; i < Math.min(botsToSit.length, availableSeats); i++) {
+   addLog('info', `Начинаю посадку ботов: ${botsToSit.length} доступно, ${remainingSeats} мест свободно`);
+
+   for (let i = 0; i < Math.min(botsToSit.length, remainingSeats); i++) {
       await sitBotAtTable(botsToSit[i].id, botsToSit[i].name);
-      await new Promise(r => setTimeout(r, 200));
+     // Wait for DB to settle and reload table data before next iteration
+     await new Promise(r => setTimeout(r, 500));
+     await loadCashTables();
+     
+     // Refresh table object with updated data
+     table = cashTables.find(t => t.id === selectedTableId);
+     if (!table) break;
+     
+     // Recalculate remaining seats
+     remainingSeats = table.max_players - table.players.length;
+     if (remainingSeats <= 0) {
+       addLog('info', 'Стол заполнен, остановка посадки');
+       break;
+     }
     }
+   
+   addLog('success', 'Посадка завершена');
   };
 
   // Connect bot to WebSocket
