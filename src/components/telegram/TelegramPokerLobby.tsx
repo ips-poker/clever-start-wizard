@@ -10,7 +10,7 @@ import {
   Trophy, Users, Clock, Coins, Play, ChevronRight, 
   Zap, Crown, Target, Star, Loader2, CircleDot,
   Spade, RefreshCw, Search, Filter, Wallet, TrendingUp,
-  Gamepad2, Award, Timer, UserPlus, DollarSign
+  Gamepad2, Award, Timer, UserPlus, DollarSign, Eye
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -283,6 +283,38 @@ export function TelegramPokerLobby({
       toast.error(error.message || 'Не удалось войти в турнир');
     } finally {
       setJoiningId(null);
+    }
+  };
+
+  // PokerStars-style spectator mode - watch any running tournament
+  const handleSpectateTournament = async (tournamentId: string) => {
+    try {
+      // Get first active table for this tournament
+      const { data: tables, error } = await supabase
+        .from('poker_tables')
+        .select('id, name')
+        .eq('tournament_id', tournamentId)
+        .eq('status', 'playing')
+        .limit(1);
+      
+      if (error) throw error;
+      
+      if (!tables || tables.length === 0) {
+        toast.error('Нет активных столов для наблюдения');
+        return;
+      }
+      
+      const tableId = tables[0].id;
+      
+      // Open table in spectator mode (no seat assignment)
+      setActiveTableId(tableId);
+      setActiveTournamentId(tournamentId);
+      setActiveBuyIn(0);
+      
+      toast.success(`Наблюдение: ${tables[0].name}`);
+    } catch (error: any) {
+      console.error('Error opening spectator mode:', error);
+      toast.error('Ошибка открытия режима наблюдения');
     }
   };
 
@@ -642,13 +674,14 @@ export function TelegramPokerLobby({
                         </div>
                       </div>
 
-                      {/* Action Button */}
+                      {/* Action Buttons */}
                       {(() => {
                         const myStatus = myTournamentStatusById[tournament.id];
                         const isMine = !!myStatus;
+                        const isEliminated = myStatus === 'eliminated';
                         const canEnter =
                           isMine &&
-                          myStatus !== 'eliminated' &&
+                          !isEliminated &&
                           ['starting', 'running', 'break', 'hand_for_hand', 'final_table'].includes(tournament.status);
                         
                         // Check if late registration is available
@@ -662,53 +695,73 @@ export function TelegramPokerLobby({
                           playerBalance >= tournament.buy_in &&
                           (tournament.participant_count || 0) < tournament.max_players;
 
+                        // PokerStars-style: Anyone can spectate running tournaments
+                        const isRunning = ['running', 'final_table', 'break', 'hand_for_hand'].includes(tournament.status);
+                        const canSpectate = isRunning && !canEnter;
+
                         const disabled = joiningId === tournament.id || !(canEnter || canRegister);
 
                         return (
-                          <Button
-                            onClick={() => {
-                              if (canEnter) handleEnterTournament(tournament.id);
-                              else handleJoinTournament(tournament);
-                            }}
-                            disabled={disabled}
-                            className={`w-full ${
-                              isMine
-                                ? 'bg-green-600 hover:bg-green-700'
-                                : isLateRegOpen
-                                ? 'bg-amber-600 hover:bg-amber-700'
-                                : 'bg-syndikate-orange hover:bg-syndikate-orange-glow'
-                            }`}
-                            size="sm"
-                          >
-                            {joiningId === tournament.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            ) : canEnter ? (
-                              <>
-                                <Play className="h-4 w-4 mr-2" />
-                                Войти в турнир
-                              </>
-                            ) : isMine ? (
-                              <>
-                                <CircleDot className="h-4 w-4 mr-2" />
-                                {myStatus === 'eliminated' ? 'Выбыли' : 'Зарегистрирован'}
-                              </>
-                            ) : canRegister && isLateRegOpen ? (
-                              <>
-                                <Timer className="h-4 w-4 mr-2" />
-                                Поздняя регистрация
-                              </>
-                            ) : canRegister ? (
-                              <>
-                                <UserPlus className="h-4 w-4 mr-2" />
-                                Регистрация
-                              </>
-                            ) : (
-                              <>
-                                <Play className="h-4 w-4 mr-2" />
-                                Турнир идёт
-                              </>
+                          <div className="flex gap-2">
+                            {/* Main action button */}
+                            {(canEnter || canRegister) && (
+                              <Button
+                                onClick={() => {
+                                  if (canEnter) handleEnterTournament(tournament.id);
+                                  else handleJoinTournament(tournament);
+                                }}
+                                disabled={joiningId === tournament.id}
+                                className={`flex-1 ${
+                                  isMine
+                                    ? 'bg-green-600 hover:bg-green-700'
+                                    : isLateRegOpen
+                                    ? 'bg-amber-600 hover:bg-amber-700'
+                                    : 'bg-syndikate-orange hover:bg-syndikate-orange-glow'
+                                }`}
+                                size="sm"
+                              >
+                                {joiningId === tournament.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                ) : canEnter ? (
+                                  <>
+                                    <Play className="h-4 w-4 mr-2" />
+                                    Войти
+                                  </>
+                                ) : canRegister && isLateRegOpen ? (
+                                  <>
+                                    <Timer className="h-4 w-4 mr-2" />
+                                    Поздняя рег.
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserPlus className="h-4 w-4 mr-2" />
+                                    Регистрация
+                                  </>
+                                )}
+                              </Button>
                             )}
-                          </Button>
+                            
+                            {/* Status badge for registered/eliminated players */}
+                            {isMine && !canEnter && !canSpectate && (
+                              <Badge variant="secondary" className="flex-1 justify-center py-2">
+                                <CircleDot className="h-3 w-3 mr-1" />
+                                {isEliminated ? 'Выбыли' : 'Зарегистрирован'}
+                              </Badge>
+                            )}
+                            
+                            {/* Spectate button - PokerStars style */}
+                            {canSpectate && (
+                              <Button
+                                onClick={() => handleSpectateTournament(tournament.id)}
+                                variant={canEnter ? "ghost" : "outline"}
+                                className={canEnter ? "w-auto px-3" : "flex-1"}
+                                size="sm"
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Наблюдать
+                              </Button>
+                            )}
+                          </div>
                         );
                       })()}
                     </CardContent>
