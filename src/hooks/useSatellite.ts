@@ -3,6 +3,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 
 interface SatelliteInfo {
   isSatellite: boolean;
@@ -100,7 +101,7 @@ export function useSatellite(tournamentId: string, playerId?: string) {
       if (topPlayers) {
         const candidatesList = topPlayers.map((p, index) => ({
           playerId: p.player_id,
-          playerName: (p.players as any)?.name || 'Unknown',
+          playerName: getMaskedName(p.player_id, (p.players as any)?.name || 'Unknown'),
           avatarUrl: (p.players as any)?.avatar_url || null,
           chips: p.chips || 0,
           position: index + 1,

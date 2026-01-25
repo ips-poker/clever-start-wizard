@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 
 interface FinalTablePlayer {
   id: string;
@@ -383,7 +384,7 @@ export const FinalTableTVMode: React.FC<FinalTableTVModeProps> = ({
                         "text-white text-sm font-medium truncate",
                         player.isFolded && "line-through"
                       )}>
-                        {player.name}
+                        {getMaskedName(player.id, player.name)}
                       </span>
                       {player.isAllIn && (
                         <Badge className="h-4 text-[8px] px-1 bg-red-500/30 text-red-300">

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Trophy, Users, Medal, ChevronUp, ChevronDown, Minus } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 
 interface LeaderboardPlayer {
   id: string;
@@ -81,7 +82,7 @@ export const TournamentLeaderboard = ({ tournamentId, currentPlayerId }: Tournam
       return {
         id: p.id,
         playerId: p.player_id,
-        playerName: player?.name || 'Unknown',
+        playerName: getMaskedName(p.player_id, player?.name || 'Unknown'),
         chips: p.chips || 0,
         status: p.status,
         previousPosition: prevPosition >= 0 ? prevPosition : undefined,

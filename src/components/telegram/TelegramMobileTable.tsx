@@ -11,7 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fixStorageUrl } from '@/utils/storageUtils';
-import { 
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
+import {
   createDeck, 
   shuffleDeckSecure, 
   dealToPlayers, 
@@ -255,7 +256,7 @@ export function TelegramMobileTable({
         {player && (
           <div className="mt-1 text-center">
             <p className="text-[10px] font-medium truncate max-w-[60px]">
-              {isMe ? 'Вы' : player.player?.name}
+              {isMe ? 'Вы' : getMaskedName(player.player?.id || '', player.player?.name || '')}
             </p>
             <div className="flex items-center justify-center gap-0.5 text-[9px] text-syndikate-orange">
               <Coins className="w-2.5 h-2.5" />

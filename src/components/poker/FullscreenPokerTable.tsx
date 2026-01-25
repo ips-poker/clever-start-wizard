@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { PokerPlayer } from '@/hooks/useNodePokerTable';
 import { resolveAvatarUrl } from '@/utils/avatarResolver';
 import { usePokerPreferences, TABLE_THEMES, CARD_BACKS } from '@/hooks/usePokerPreferences';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 import { SmoothAvatarTimer } from './SmoothAvatarTimer';
 import { PPPokerChipStack } from './PPPokerChipStack';
@@ -653,7 +654,7 @@ const PlayerSeat = memo(function PlayerSeat({
       {!isHero && (
         <PokerStarsHUDPopup
           playerId={player.playerId}
-          playerName={player.name}
+          playerName={getMaskedName(player.playerId, player.name)}
           isVisible={showHUD}
           position={hudPosition as 'left' | 'right' | 'top' | 'bottom'}
         />
