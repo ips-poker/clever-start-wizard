@@ -12,7 +12,8 @@ import {
   Play, 
   Calendar,
   Award,
-  Loader2
+  Loader2,
+  Eye
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -50,9 +51,10 @@ interface OnlineTournamentLobbyProps {
   playerBalance: number;
   onJoinTournament: (tournamentId: string) => void;
   onJoinTable?: (tableId: string) => void;
+  onSpectate?: (tournamentId: string) => void;
 }
 
-export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournament, onJoinTable }: OnlineTournamentLobbyProps) {
+export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournament, onJoinTable, onSpectate }: OnlineTournamentLobbyProps) {
   const [tournaments, setTournaments] = useState<OnlineTournament[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -282,6 +284,9 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
                         !isRegistered;
     const canUnregister = isRegistered && tournament.status === 'registration';
     const canJoin = isRegistered && ['running', 'starting', 'final_table', 'break', 'hand_for_hand'].includes(tournament.status);
+    
+    // PokerStars-style: Anyone can spectate running tournaments
+    const canSpectate = ['running', 'final_table', 'break', 'hand_for_hand'].includes(tournament.status) && !canJoin;
 
     // Calculate RPS pool: buy_in / 50 * player_count = RPS points
     const rpsPool = Math.floor((tournament.buy_in / 50) * (tournament.player_count || 0));
@@ -381,6 +386,20 @@ export function OnlineTournamentLobby({ playerId, playerBalance, onJoinTournamen
                 >
                   <Play className="h-3.5 w-3.5" />
                   Войти
+                </Button>
+              )}
+              {canSpectate && onSpectate && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="flex-1 gap-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSpectate(tournament.id);
+                  }}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  Наблюдать
                 </Button>
               )}
               {isRegistered && tournament.status === 'registration' && (
