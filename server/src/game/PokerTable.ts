@@ -838,6 +838,50 @@ export class PokerTable {
       return { success: false, error: 'Player not at table' };
     }
     
+    // POKERSTARS-STYLE: Tournament players NEVER leave - they sit out and continue paying blinds
+    // They can return at any time by opening the table again
+    if (this.config.tournamentId) {
+      // If in active hand and not folded, fold first
+      if (this.currentHand && !player.isFolded && player.status === 'active') {
+        if (this.currentHand.currentPlayerSeat === player.seatNumber) {
+          await this.action(playerId, 'fold');
+        } else {
+          player.isFolded = true;
+        }
+      }
+      
+      // Just set to sitting_out - DO NOT remove from table or database
+      player.status = 'sitting_out';
+      player.sitOutAt = Date.now();
+      player.pendingLeave = false; // CRITICAL: Do NOT mark for removal in tournaments
+      
+      // Update database status only
+      await this.supabase
+        .from('poker_table_players')
+        .update({ 
+          status: 'sitting_out',
+          sit_out_at: new Date().toISOString()
+        })
+        .eq('table_id', this.id)
+        .eq('player_id', playerId);
+      
+      logger.info('POKERSTARS: Tournament player left table - sitting out (can return anytime)', {
+        playerId: playerId.substring(0, 8),
+        name: player.name,
+        seatNumber: player.seatNumber,
+        stack: player.stack
+      });
+      
+      this.emit('player_sitting_out', { 
+        playerId, 
+        reason: 'tournament_leave',
+        canReturn: true 
+      });
+      
+      return { success: true };
+    }
+    
+    // CASH GAME LOGIC: Player actually leaves and gets chips returned
     // If in active hand and not folded, fold first
     if (this.currentHand && !player.isFolded && player.status === 'active') {
       // If it's this player's turn, fold them
@@ -851,7 +895,7 @@ export class PokerTable {
       player.status = 'sitting_out';
       // CRITICAL: Mark for removal after hand - prevents "ghost players"
       player.pendingLeave = true;
-      logger.info('POKERSTARS: Player leaving during hand - will be removed after completion', {
+      logger.info('POKERSTARS: Cash game player leaving during hand - will be removed after completion', {
         playerId: playerId.substring(0, 8),
         name: player.name,
         seatNumber: player.seatNumber
@@ -3925,11 +3969,13 @@ export class PokerTable {
     
     // CRITICAL FIX: Remove players who left during the hand (sitting_out with pending leave)
     // This prevents "ghost players" from blocking table state and causing stuck hands
+    // IMPORTANT: Tournament players are NEVER removed - they sit out and pay blinds
     const playersToRemove: string[] = [];
     for (const [playerId, player] of this.players) {
-      if (player.status === 'sitting_out' && player.pendingLeave) {
+      // Only cash game players with pendingLeave should be removed
+      if (player.status === 'sitting_out' && player.pendingLeave && !this.config.tournamentId) {
         playersToRemove.push(playerId);
-        logger.info('POKERSTARS: Removing player who left during hand', {
+        logger.info('POKERSTARS: Removing cash game player who left during hand', {
           playerId: playerId.substring(0, 8),
           name: player.name,
           seatNumber: player.seatNumber,
@@ -3938,7 +3984,7 @@ export class PokerTable {
       }
     }
     
-    // Actually remove pending-leave players
+    // Actually remove pending-leave players (CASH GAMES ONLY)
     for (const playerId of playersToRemove) {
       const player = this.players.get(playerId);
       if (player) {
@@ -3946,7 +3992,7 @@ export class PokerTable {
         this.seats[player.seatNumber] = null;
         
         // Return chips to balance for cash games
-        if (!this.config.tournamentId && player.stack > 0) {
+        if (player.stack > 0) {
           await this.returnChipsToBalance(playerId, player.stack);
         }
         
@@ -3965,7 +4011,7 @@ export class PokerTable {
     }
     
     if (playersToRemove.length > 0) {
-      logger.info('POKERSTARS: Cleaned up players who left during hand', {
+      logger.info('POKERSTARS: Cleaned up cash game players who left during hand', {
         tableId: this.id,
         removedCount: playersToRemove.length
       });
@@ -4000,11 +4046,14 @@ export class PokerTable {
    * Extracted to avoid code duplication
    */
   private async cleanupPendingLeavePlayers(): Promise<void> {
+    // POKERSTARS-STYLE: Only remove cash game players who left
+    // Tournament players ALWAYS stay - they sit out and pay blinds until eliminated
     const playersToRemove: string[] = [];
     for (const [playerId, player] of this.players) {
-      if (player.status === 'sitting_out' && player.pendingLeave) {
+      // Only remove cash game players with pendingLeave flag
+      if (player.status === 'sitting_out' && player.pendingLeave && !this.config.tournamentId) {
         playersToRemove.push(playerId);
-        logger.info('POKERSTARS: Cleaning up player who left during hand', {
+        logger.info('POKERSTARS: Cleaning up cash game player who left during hand', {
           playerId: playerId.substring(0, 8),
           name: player.name
         });
@@ -4015,7 +4064,7 @@ export class PokerTable {
       const player = this.players.get(playerId);
       if (player) {
         this.seats[player.seatNumber] = null;
-        if (!this.config.tournamentId && player.stack > 0) {
+        if (player.stack > 0) {
           await this.returnChipsToBalance(playerId, player.stack);
         }
         this.players.delete(playerId);

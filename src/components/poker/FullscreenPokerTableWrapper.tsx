@@ -339,7 +339,35 @@ export function FullscreenPokerTableWrapper({
     autoJoinTournament();
   }, [isTournament, tournamentId, isConnected, myPlayer, playerId, joinTable]);
 
-  // Track previous phase for phase change sounds
+  // POKERSTARS-STYLE: Auto sit-in for tournament players returning to table
+  // When player opens their tournament table and they're sitting_out, automatically activate them
+  const hasAutoSitInRef = useRef(false);
+  useEffect(() => {
+    // Only for tournaments, when player is connected, seated but sitting out
+    if (!isTournament || !isConnected || !myPlayer || isSpectator) {
+      return;
+    }
+    
+    // If player is sitting out, auto-activate them (one time per session)
+    if (myPlayer.isSittingOut && !hasAutoSitInRef.current) {
+      hasAutoSitInRef.current = true;
+      console.log('[Tournament AutoSitIn] Player returning from sit-out, auto-activating');
+      
+      // Small delay to ensure connection is stable
+      setTimeout(() => {
+        sitIn();
+        toast.success('Добро пожаловать обратно! Вы снова в игре.', {
+          icon: '🎮',
+          duration: 3000
+        });
+      }, 500);
+    }
+    
+    // Reset flag if player goes back to active (allow future returns)
+    if (!myPlayer.isSittingOut) {
+      hasAutoSitInRef.current = false;
+    }
+  }, [isTournament, isConnected, myPlayer, isSpectator, sitIn]);
   const previousPhaseRef = useRef<string | null>(null);
   
   // Play sounds for actions
@@ -863,7 +891,12 @@ export function FullscreenPokerTableWrapper({
                 className="flex flex-col items-center gap-2"
               >
                 <div className="text-white/70 text-sm bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm">
-                  {myPlayer?.isDisconnected ? 'Соединение потеряно' : 'Вы вне игры'}
+                  {myPlayer?.isDisconnected 
+                    ? 'Соединение потеряно' 
+                    : isTournament 
+                      ? 'Вы вне игры (блайнды списываются автоматически)'
+                      : 'Вы вне игры'
+                  }
                 </div>
                 <Button
                   variant="default"
