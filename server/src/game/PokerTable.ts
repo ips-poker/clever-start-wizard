@@ -2779,6 +2779,10 @@ export class PokerTable {
     }
     
     try {
+      // CRITICAL FIX: Always refresh blinds from DB before starting a hand
+      // This ensures tournament blind increases are applied even if Realtime subscription missed the UPDATE
+      await this.refreshBlindsFromDatabase();
+      
       this.handNumber++;
       
       // NOTE: Do NOT move dealer button here!
