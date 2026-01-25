@@ -83,6 +83,7 @@ interface CashTablePlayer {
   id: string;
   player_id: string;
   player_name: string;
+  player_user_id: string | null;
   seat_number: number;
   stack: number;
   status: string;
@@ -183,7 +184,7 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
       (tables || []).map(async (table) => {
         const { data: players } = await supabase
           .from('poker_table_players')
-          .select(`*, players!inner(id, name)`)
+          .select(`*, players!inner(id, name, user_id)`)
           .eq('table_id', table.id);
 
         return {
@@ -192,6 +193,7 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
             id: p.id,
             player_id: p.player_id,
             player_name: (p.players as any)?.name || 'Unknown',
+            player_user_id: (p.players as any)?.user_id || null,
             seat_number: p.seat_number,
             stack: p.stack,
             status: p.status
@@ -776,16 +778,15 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
     
     addLog('action', '🤖 Подключение ботов...');
     
-    // Get all bot player IDs (players without user_id)
-    const botPlayerIds = new Set(availableBots.map(b => b.id));
-    const botPlayersAtTable = table.players.filter(p => botPlayerIds.has(p.player_id));
+    // Bots are players without user_id
+    const botPlayersAtTable = table.players.filter(p => p.player_user_id === null);
     
     if (botPlayersAtTable.length === 0) {
-      addLog('warning', 'Нет ботов за столом');
+      addLog('warning', 'Нет ботов за столом (все игроки имеют user_id)');
       return;
     }
     
-    addLog('info', `Найдено ${botPlayersAtTable.length} ботов за столом`);
+    addLog('info', `Найдено ${botPlayersAtTable.length} ботов за столом: ${botPlayersAtTable.map(p => p.player_name).join(', ')}`);
     
     for (const player of botPlayersAtTable) {
       if (!botConnectionsRef.current.has(player.player_id)) {
@@ -800,7 +801,7 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
         await new Promise(r => setTimeout(r, 100));
       }
     }
-  }, [selectedTableId, cashTables, availableBots, connectBot, addLog]);
+  }, [selectedTableId, cashTables, connectBot, addLog]);
 
   // Disconnect all bots
   const disconnectAllBots = useCallback(() => {
@@ -1022,7 +1023,8 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
             </CardHeader>
             <CardContent className="space-y-3">
               {(() => {
-                const botsAtTable = selectedTable?.players.filter(p => availableBots.some(b => b.id === p.player_id)) || [];
+                // Bots are players without user_id
+                const botsAtTable = selectedTable?.players.filter(p => p.player_user_id === null) || [];
                 const hasBotsAtTable = botsAtTable.length > 0;
                 
                 return (
