@@ -305,10 +305,20 @@ Deno.serve(async (req) => {
         }
       }
 
-      // 6. Проверяем нужна ли балансировка столов (особенно важно после перерыва)
-      if (wasBreak || action === 'break_ended') {
-        console.log(`Tournament ${tournament.name}: Running table balancing after break end`);
+      // 6. POKERSTARS-STYLE: Professional table balancing on EVERY level change
+      // Ensures ±1 player difference between tables at all times
+      console.log(`Tournament ${tournament.name}: Running professional_balance_tables RPC`);
+      const { data: balanceResult, error: balanceError } = await supabase.rpc('professional_balance_tables', {
+        p_tournament_id: tournament.id
+      });
+      
+      if (balanceError) {
+        console.error(`Balance tables error for ${tournament.name}:`, balanceError.message);
+      } else if (balanceResult?.players_moved > 0) {
+        console.log(`Tournament ${tournament.name}: Balanced - moved ${balanceResult.players_moved} players`);
       }
+      
+      // Also run consolidation check for empty tables
       await checkAndBalanceTables(supabase, tournament.id);
 
       results.push({
