@@ -883,7 +883,7 @@ const PlayerSeat = memo(function PlayerSeat({
         }}
       >
         <p className="text-[9px] text-white/80 font-medium truncate max-w-[60px]">
-          {player.name}
+          {getMaskedName(player.playerId, player.name)}
         </p>
         <p className={cn(
           "text-[11px] font-bold",
