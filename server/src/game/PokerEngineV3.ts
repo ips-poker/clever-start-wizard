@@ -2118,6 +2118,35 @@ export class PokerEngineV3 {
     // Generate hand ID
     const handId = crypto.randomUUID();
     
+    // CRITICAL FIX: After posting blinds, recalculate first to act
+    // If the original first player is now all-in from posting blind, find next active player
+    let actualFirstToAct = positions.firstToActSeat;
+    const firstPlayer = playersWithCards.find(p => p.seatNumber === positions.firstToActSeat);
+    
+    if (firstPlayer?.isAllIn) {
+      // Find next active player who can still act (not all-in, not folded)
+      const activePlayers = playersWithCards
+        .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0)
+        .sort((a, b) => a.seatNumber - b.seatNumber);
+      
+      if (activePlayers.length > 0) {
+        // In heads-up: if SB is all-in, BB gets action
+        // In multi-way: find next player clockwise from dealer
+        const afterFirst = activePlayers.find(p => p.seatNumber > positions.firstToActSeat);
+        actualFirstToAct = afterFirst ? afterFirst.seatNumber : activePlayers[0].seatNumber;
+        
+        console.log('[Engine] First to act was all-in from blind, reassigning:', {
+          originalFirst: positions.firstToActSeat,
+          newFirst: actualFirstToAct,
+          reason: 'blind_all_in'
+        });
+      } else {
+        // Everyone is all-in, no action needed - will proceed to showdown
+        actualFirstToAct = -1; // No one to act
+        console.log('[Engine] All players are all-in after blinds, proceeding to showdown');
+      }
+    }
+    
     // Create initial state
     this.state = {
       tableId: '',
@@ -2130,7 +2159,7 @@ export class PokerEngineV3 {
       dealerSeat: positions.dealerSeat,
       smallBlindSeat: positions.sbSeat,
       bigBlindSeat: positions.bbSeat,
-      currentPlayerSeat: positions.firstToActSeat,
+      currentPlayerSeat: actualFirstToAct,
       players: playersWithCards,
       deck: deck.slice(deckIndex),
       smallBlind: this.config.smallBlind,
@@ -2158,7 +2187,7 @@ export class PokerEngineV3 {
       dealerSeat: positions.dealerSeat,
       smallBlindSeat: positions.sbSeat,
       bigBlindSeat: positions.bbSeat,
-      currentPlayerSeat: positions.firstToActSeat,
+      currentPlayerSeat: actualFirstToAct,
       minRaise: this.config.bigBlind,
       players: playersWithCards.map(p => ({
         id: p.id,

@@ -3280,6 +3280,37 @@ export class PokerTable {
         return;
       }
       
+      // CRITICAL FIX: Check if all remaining players are all-in after blinds
+      // This happens when short stack posted blind as all-in (e.g., stack < BB in heads-up)
+      // In this case, we should immediately proceed to showdown
+      const remainingPlayers = activePlayers.filter(p => !p.isFolded);
+      const allInPlayers = remainingPlayers.filter(p => p.isAllIn);
+      const canActPlayers = remainingPlayers.filter(p => !p.isAllIn && p.stack > 0);
+      
+      if (canActPlayers.length <= 1 && allInPlayers.length > 0 && remainingPlayers.length >= 2) {
+        // Either everyone is all-in, or only one player can act (and others are all-in)
+        // If only one can act and they are the BB with no raise to call, give them option
+        const bbPlayer = remainingPlayers.find(p => p.seatNumber === this.currentHand.bigBlindSeat);
+        const hasRaiseToCall = allInPlayers.some(p => p.currentBet > this.config.bigBlind);
+        
+        if (canActPlayers.length === 0 || 
+            (canActPlayers.length === 1 && canActPlayers[0].id !== bbPlayer?.id) ||
+            (canActPlayers.length === 1 && !hasRaiseToCall && canActPlayers[0].currentBet >= this.currentHand.currentBet)) {
+          
+          logger.info('POKERSTARS: All players all-in after blinds, skipping to showdown', {
+            tableId: this.id,
+            handNumber: this.handNumber,
+            remainingCount: remainingPlayers.length,
+            allInCount: allInPlayers.length,
+            canActCount: canActPlayers.length
+          });
+          
+          // Skip directly to showdown - deal all community cards and determine winner
+          await this.proceedToAllInShowdown(activePlayers);
+          return;
+        }
+      }
+      
       // Start action timer
       this.startActionTimer();
       
