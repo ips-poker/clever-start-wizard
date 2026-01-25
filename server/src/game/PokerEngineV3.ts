@@ -1946,6 +1946,45 @@ export class PokerEngineV3 {
   }
   
   /**
+   * TOURNAMENT LEVEL SYNC: Update blinds dynamically
+   * Called when tournament level changes to ensure next hand uses new blinds
+   */
+  updateBlinds(smallBlind: number, bigBlind: number, ante: number): void {
+    // Validate inputs
+    if (bigBlind <= 0) {
+      console.error('[Engine] updateBlinds: bigBlind must be positive, ignoring update', { bigBlind });
+      return;
+    }
+    if (smallBlind <= 0) {
+      console.error('[Engine] updateBlinds: smallBlind must be positive, ignoring update', { smallBlind });
+      return;
+    }
+    
+    const oldConfig = {
+      smallBlind: this.config.smallBlind,
+      bigBlind: this.config.bigBlind,
+      ante: this.config.ante
+    };
+    
+    // Update config for next hand
+    this.config.smallBlind = smallBlind;
+    this.config.bigBlind = bigBlind;
+    this.config.ante = ante;
+    
+    console.log('[Engine] TOURNAMENT LEVEL SYNC: Blinds updated', {
+      old: oldConfig,
+      new: { smallBlind, bigBlind, ante }
+    });
+  }
+  
+  /**
+   * Get current config (read-only)
+   */
+  getConfig(): Readonly<GameConfig> {
+    return this.config;
+  }
+  
+  /**
    * Start a new hand
    */
   startNewHand(

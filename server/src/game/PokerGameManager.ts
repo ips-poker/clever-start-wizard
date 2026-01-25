@@ -28,11 +28,13 @@ export class PokerGameManager {
   private supabase: SupabaseClient;
   private saveInterval: NodeJS.Timeout | null = null;
   private onTableLoadedCallbacks: Set<(table: PokerTable) => void> = new Set();
+  private blindsSyncSubscription: any = null;
   
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
     this.startAutoSave();
     this.loadActiveTables();
+    this.setupBlindsSyncSubscription();
   }
   
   /**
@@ -730,12 +732,72 @@ export class PokerGameManager {
   }
   
   /**
+   * TOURNAMENT LEVEL SYNC: Subscribe to poker_tables changes
+   * When tournament-level-manager updates blinds, refresh all affected tables
+   */
+  private setupBlindsSyncSubscription(): void {
+    try {
+      this.blindsSyncSubscription = this.supabase
+        .channel('poker-tables-blinds-sync')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'poker_tables'
+          },
+          async (payload: any) => {
+            const tableId = payload.new?.id;
+            const newSmallBlind = payload.new?.small_blind;
+            const newBigBlind = payload.new?.big_blind;
+            const newAnte = payload.new?.ante;
+            const oldSmallBlind = payload.old?.small_blind;
+            const oldBigBlind = payload.old?.big_blind;
+            
+            // Only process if blinds changed
+            if (tableId && 
+                (newSmallBlind !== oldSmallBlind || newBigBlind !== oldBigBlind)) {
+              
+              logger.info('TOURNAMENT LEVEL SYNC: Detected blind change in DB', {
+                tableId,
+                oldBlinds: { smallBlind: oldSmallBlind, bigBlind: oldBigBlind },
+                newBlinds: { smallBlind: newSmallBlind, bigBlind: newBigBlind, ante: newAnte }
+              });
+              
+              // Find and update the table in memory
+              const table = this.tables.get(tableId);
+              if (table) {
+                await table.refreshBlindsFromDatabase();
+                logger.info('TOURNAMENT LEVEL SYNC: Updated table blinds from realtime event', {
+                  tableId
+                });
+              }
+            }
+          }
+        )
+        .subscribe((status: string) => {
+          logger.info('Blinds sync subscription status', { status });
+        });
+      
+      logger.info('TOURNAMENT LEVEL SYNC: Subscribed to poker_tables changes');
+    } catch (err) {
+      logger.error('Failed to setup blinds sync subscription', { error: String(err) });
+    }
+  }
+  
+  /**
    * Cleanup on shutdown
    */
   async shutdown(): Promise<void> {
     if (this.saveInterval) {
       clearInterval(this.saveInterval);
     }
+    
+    // Cleanup realtime subscription
+    if (this.blindsSyncSubscription) {
+      await this.supabase.removeChannel(this.blindsSyncSubscription);
+    }
+    
     await this.saveAllGames();
     logger.info('Game manager shutdown complete');
   }
