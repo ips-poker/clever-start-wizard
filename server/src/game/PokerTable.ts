@@ -3280,6 +3280,19 @@ export class PokerTable {
         return;
       }
       
+      // POKERSTARS/TDA: Engine already detected all-in showdown case (currentPlayerSeat === -1)
+      // This means no player can act - proceed directly to showdown
+      if (this.currentHand.currentPlayerSeat === -1) {
+        logger.info('POKERSTARS: Engine detected all-in showdown (currentPlayerSeat = -1)', {
+          tableId: this.id,
+          handNumber: this.handNumber,
+          pot: this.currentHand.pot
+        });
+        
+        await this.proceedToAllInShowdown(activePlayers);
+        return;
+      }
+      
       // CRITICAL FIX: Check if all remaining players are all-in after blinds
       // This happens when short stack posted blind as all-in (e.g., stack < BB in heads-up)
       // In this case, we should immediately proceed to showdown
@@ -3349,6 +3362,259 @@ export class PokerTable {
       'showdown': 'showdown'
     };
     return phaseMap[enginePhase] || 'preflop';
+  }
+  
+  /**
+   * POKERSTARS/TDA RULE 16: All-In Showdown
+   * When all players are all-in after blinds (no further betting action possible),
+   * immediately deal remaining community cards and determine winner.
+   * "All hands will be tabled without delay once a player is all-in and 
+   *  all betting action by all other players in the hand is complete."
+   * 
+   * This handles heads-up scenario where SB goes all-in while posting blind
+   * (stack < SB amount) - BB has no option, proceed directly to showdown.
+   */
+  private async proceedToAllInShowdown(activePlayers: Player[]): Promise<void> {
+    if (!this.currentHand) {
+      logger.error('proceedToAllInShowdown: No current hand');
+      return;
+    }
+
+    logger.info('=== POKERSTARS ALL-IN SHOWDOWN ===', {
+      tableId: this.id,
+      handNumber: this.handNumber,
+      pot: this.currentHand.pot,
+      currentBet: this.currentHand.currentBet,
+      playerCount: activePlayers.length,
+      players: activePlayers.map(p => ({
+        id: p.id.substring(0, 8),
+        name: p.name,
+        stack: p.stack,
+        currentBet: p.currentBet,
+        isAllIn: p.isAllIn,
+        holeCards: p.holeCards?.length || 0
+      }))
+    });
+
+    // Step 1: Emit all-in showdown event (TDA Rule 16: cards tabled immediately)
+    this.emit('all_in_showdown', {
+      handNumber: this.handNumber,
+      players: activePlayers.filter(p => !p.isFolded).map(p => ({
+        playerId: p.id,
+        name: p.name,
+        seatNumber: p.seatNumber,
+        holeCards: p.holeCards,
+        stack: p.stack,
+        isAllIn: p.isAllIn
+      })),
+      pot: this.currentHand.pot
+    });
+
+    // Short delay for card reveal animation
+    await this.delay(500);
+
+    // Step 2: Deal remaining community cards (flop → turn → river)
+    // Get deck from engine state
+    const engineState = this.engine.getState();
+    if (!engineState) {
+      logger.error('proceedToAllInShowdown: No engine state');
+      return;
+    }
+
+    let deck = [...engineState.deck];
+    const communityCards: string[] = [];
+    const playerCount = activePlayers.length;
+
+    // Deal flop (3 cards) - burn 1, deal 3
+    if (deck.length >= 4) {
+      deck.shift(); // burn
+      communityCards.push(deck.shift()!, deck.shift()!, deck.shift()!);
+      
+      this.currentHand.communityCards = [...communityCards];
+      this.currentHand.phase = 'flop';
+      
+      this.emit('community_cards', {
+        phase: 'flop',
+        cards: communityCards,
+        handNumber: this.handNumber,
+        isAllInShowdown: true
+      });
+      
+      logger.info('All-in showdown: Flop dealt', { cards: communityCards });
+      await this.delay(this.timings.dealing.communityCard * 3 + 300);
+    }
+
+    // Deal turn (1 card) - burn 1, deal 1
+    if (deck.length >= 2) {
+      deck.shift(); // burn
+      const turnCard = deck.shift()!;
+      communityCards.push(turnCard);
+      
+      this.currentHand.communityCards = [...communityCards];
+      this.currentHand.phase = 'turn';
+      
+      this.emit('community_cards', {
+        phase: 'turn',
+        cards: communityCards,
+        handNumber: this.handNumber,
+        isAllInShowdown: true
+      });
+      
+      logger.info('All-in showdown: Turn dealt', { card: turnCard });
+      await this.delay(this.timings.dealing.communityCard + 200);
+    }
+
+    // Deal river (1 card) - burn 1, deal 1
+    if (deck.length >= 2) {
+      deck.shift(); // burn
+      const riverCard = deck.shift()!;
+      communityCards.push(riverCard);
+      
+      this.currentHand.communityCards = [...communityCards];
+      this.currentHand.phase = 'river';
+      
+      this.emit('community_cards', {
+        phase: 'river',
+        cards: communityCards,
+        handNumber: this.handNumber,
+        isAllInShowdown: true
+      });
+      
+      logger.info('All-in showdown: River dealt', { card: riverCard });
+      await this.delay(this.timings.dealing.communityCard + 200);
+    }
+
+    // Step 3: Move to showdown phase
+    this.currentHand.phase = 'showdown';
+    this.currentHand.currentPlayerSeat = null as any; // No one to act
+
+    // Step 4: Evaluate all hands and determine winner(s)
+    const showdownPlayers = activePlayers.filter(p => !p.isFolded && p.holeCards.length >= 2);
+    
+    if (showdownPlayers.length === 0) {
+      logger.error('proceedToAllInShowdown: No players with cards for showdown');
+      return;
+    }
+
+    // Evaluate each player's hand
+    const evaluatedPlayers: Array<{
+      playerId: string;
+      name: string;
+      seatNumber: number;
+      holeCards: string[];
+      handRank: number;
+      handName: string;
+      bestCards: string[];
+      contribution: number;
+    }> = [];
+
+    for (const player of showdownPlayers) {
+      try {
+        const result = evaluateHand(player.holeCards, communityCards);
+        evaluatedPlayers.push({
+          playerId: player.id,
+          name: player.name,
+          seatNumber: player.seatNumber,
+          holeCards: player.holeCards,
+          handRank: result.handRank,
+          handName: result.handName,
+          bestCards: result.bestCards || [],
+          contribution: player.currentBet
+        });
+        
+        logger.info('Hand evaluated:', {
+          playerId: player.id.substring(0, 8),
+          name: player.name,
+          holeCards: player.holeCards,
+          handName: result.handName,
+          handRank: result.handRank
+        });
+      } catch (e) {
+        logger.error('Failed to evaluate hand:', { 
+          playerId: player.id.substring(0, 8),
+          error: String(e)
+        });
+      }
+    }
+
+    // Sort by hand rank (higher is better)
+    evaluatedPlayers.sort((a, b) => b.handRank - a.handRank);
+
+    // Step 5: Calculate side pots and distribute winnings
+    // For all-in scenarios, we need proper side pot calculation
+    const pot = this.currentHand.pot;
+    const winners: { playerId: string; amount: number; handName: string }[] = [];
+
+    if (evaluatedPlayers.length > 0) {
+      // Simple case: find the best hand(s)
+      const bestRank = evaluatedPlayers[0].handRank;
+      const winningPlayers = evaluatedPlayers.filter(p => p.handRank === bestRank);
+      
+      // Calculate side pots for proper distribution
+      // Get all unique contribution levels
+      const contributions = [...new Set(showdownPlayers.map(p => p.currentBet))].sort((a, b) => a - b);
+      
+      let remainingPot = pot;
+      const playerWinnings = new Map<string, number>();
+      
+      // Process each pot level
+      let previousLevel = 0;
+      for (const level of contributions) {
+        const levelContribution = level - previousLevel;
+        
+        // Find players eligible for this pot level
+        const eligiblePlayers = showdownPlayers.filter(p => p.currentBet >= level);
+        const levelPot = levelContribution * eligiblePlayers.length;
+        
+        // Find the best hand among eligible players
+        const eligibleEvaluated = evaluatedPlayers.filter(ep => 
+          eligiblePlayers.some(p => p.id === ep.playerId)
+        );
+        
+        if (eligibleEvaluated.length > 0) {
+          const bestInLevel = eligibleEvaluated[0].handRank;
+          const levelWinners = eligibleEvaluated.filter(p => p.handRank === bestInLevel);
+          
+          // Split pot among winners
+          const share = Math.floor(levelPot / levelWinners.length);
+          const remainder = levelPot % levelWinners.length;
+          
+          for (let i = 0; i < levelWinners.length; i++) {
+            const winAmount = share + (i === 0 ? remainder : 0); // First winner gets remainder
+            const current = playerWinnings.get(levelWinners[i].playerId) || 0;
+            playerWinnings.set(levelWinners[i].playerId, current + winAmount);
+          }
+        }
+        
+        previousLevel = level;
+        remainingPot -= levelPot;
+      }
+      
+      // Build final winners array
+      for (const [playerId, amount] of playerWinnings) {
+        const player = evaluatedPlayers.find(p => p.playerId === playerId);
+        if (player && amount > 0) {
+          winners.push({
+            playerId,
+            amount,
+            handName: player.handName
+          });
+        }
+      }
+    }
+
+    logger.info('All-in showdown winners:', {
+      winnersCount: winners.length,
+      totalPot: pot,
+      winners: winners.map(w => ({
+        playerId: w.playerId.substring(0, 8),
+        amount: w.amount,
+        handName: w.handName
+      }))
+    });
+
+    // Step 6: Complete the hand using existing completeHand logic
+    await this.completeHand(winners);
   }
   
   /**
