@@ -204,6 +204,14 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     timestamp: number;
   } | null>(null);
 
+  // TOURNAMENT: Player moved to another table event
+  const [playerMovedToTable, setPlayerMovedToTable] = useState<{
+    newTableId: string;
+    newSeat: number;
+    tournamentId: string;
+    timestamp: number;
+  } | null>(null);
+
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptRef = useRef(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1853,6 +1861,53 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }
           break;
 
+        // TOURNAMENT: Player moved to another table (balancing/consolidation)
+        case 'player_moved':
+        case 'player_moved_to_other_table':
+          {
+            const moveData = data as Record<string, unknown>;
+            const movedPlayerId = (moveData.playerId || moveData.player_id) as string;
+            const newTableId = (moveData.newTableId || moveData.new_table_id) as string;
+            const newSeat = (moveData.newSeat ?? moveData.new_seat ?? moveData.seatNumber) as number;
+            const tournamentIdFromEvent = (moveData.tournamentId || moveData.tournament_id) as string;
+            
+            log('🔄 Player moved event:', { movedPlayerId, newTableId, newSeat, currentPlayerId: playerId });
+            
+            // Only redirect if it's the current player being moved
+            if (movedPlayerId === playerId && newTableId && newTableId !== tableId) {
+              log('🚀 Current player moved to new table - triggering redirect');
+              
+              setPlayerMovedToTable({
+                newTableId,
+                newSeat: newSeat ?? 0,
+                tournamentId: tournamentIdFromEvent || '',
+                timestamp: Date.now()
+              });
+            }
+          }
+          break;
+
+        // Table closed/disbanded event
+        case 'table_closed':
+        case 'table_disbanded':
+          {
+            const closeData = data as Record<string, unknown>;
+            const newTableIdFromClose = (closeData.newTableId || closeData.new_table_id) as string | undefined;
+            
+            log('🚪 Table closed event:', closeData);
+            
+            if (newTableIdFromClose) {
+              // Players should move to another table
+              setPlayerMovedToTable({
+                newTableId: newTableIdFromClose,
+                newSeat: 0,
+                tournamentId: (closeData.tournamentId || closeData.tournament_id) as string || '',
+                timestamp: Date.now()
+              });
+            }
+          }
+          break;
+
         default:
           log('📨 Unknown message type:', data.type, data);
       }
@@ -2317,6 +2372,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     setAutoPostBlinds,
     addChips,
     sendChatMessage,
-    tournamentRebuy
+    tournamentRebuy,
+    
+    // Tournament table movement
+    playerMovedToTable,
+    clearPlayerMovedToTable: () => setPlayerMovedToTable(null)
   };
 }

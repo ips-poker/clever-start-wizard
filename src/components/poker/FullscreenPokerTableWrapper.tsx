@@ -167,7 +167,11 @@ export function FullscreenPokerTableWrapper({
     // Professional showdown and winner announcement
     showdownReveals, winnerAnnouncement, clearWinnerAnnouncement,
     // Tournament rebuy
-    tournamentRebuy
+    tournamentRebuy,
+    // Burn card animation
+    activeBurnCard,
+    // Tournament table movement
+    playerMovedToTable, clearPlayerMovedToTable
   } = pokerTable;
 
   const effectiveSmallBlind = (isTournament ? dbBlinds?.sb : undefined) ?? tableState?.smallBlindAmount ?? 10;
@@ -368,6 +372,51 @@ export function FullscreenPokerTableWrapper({
       hasAutoSitInRef.current = false;
     }
   }, [isTournament, isConnected, myPlayer, isSpectator, sitIn]);
+
+  // TOURNAMENT: Auto-redirect when player is moved to another table
+  useEffect(() => {
+    if (!playerMovedToTable || !isTournament) return;
+    
+    const { newTableId, newSeat, tournamentId: eventTournamentId } = playerMovedToTable;
+    
+    console.log('[Tournament Move] Player moved to new table:', {
+      newTableId,
+      newSeat,
+      currentTableId: tableId,
+      tournamentId: eventTournamentId || tournamentId
+    });
+    
+    // Show notification
+    toast.info('Вас пересадили за другой стол', {
+      icon: '🔄',
+      duration: 3000
+    });
+    
+    // Clear the event to prevent multiple redirects
+    clearPlayerMovedToTable();
+    
+    // Small delay to allow animation/notification to show
+    setTimeout(() => {
+      // Construct the new URL for the new table
+      const effectiveTournamentId = eventTournamentId || tournamentId;
+      
+      // For wideMode (Telegram Mini App), navigate within the app
+      // For desktop, use window.location or router
+      if (wideMode) {
+        // Telegram Mini App - update URL/state to new table
+        const newUrl = `/tournament/${effectiveTournamentId}/table/${newTableId}`;
+        console.log('[Tournament Move] Redirecting to:', newUrl);
+        window.location.href = newUrl;
+      } else {
+        // Desktop - redirect to new table
+        const newUrl = `/tournament/${effectiveTournamentId}/table/${newTableId}`;
+        console.log('[Tournament Move] Redirecting to:', newUrl);
+        window.location.href = newUrl;
+      }
+    }, 500);
+    
+  }, [playerMovedToTable, isTournament, tableId, tournamentId, wideMode, clearPlayerMovedToTable]);
+
   const previousPhaseRef = useRef<string | null>(null);
   
   // Play sounds for actions

@@ -31,11 +31,22 @@ export class PokerGameManager {
   private blindsSyncSubscription: any = null;
   private lastTournamentBalanceSyncAt = 0;
   
+  // Callback for player movement notifications (to WebSocket handler)
+  private onPlayerMovedCallback: ((playerId: string, newTableId: string, newSeat: number, tournamentId: string) => void) | null = null;
+  
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
     this.startAutoSave();
     this.loadActiveTables();
     this.setupBlindsSyncSubscription();
+  }
+  
+  /**
+   * Register callback to be notified when a player is moved between tables
+   * Used by WebSocketHandler to send redirect events to clients
+   */
+  onPlayerMoved(callback: (playerId: string, newTableId: string, newSeat: number, tournamentId: string) => void): void {
+    this.onPlayerMovedCallback = callback;
   }
   
   /**
@@ -680,6 +691,17 @@ export class PokerGameManager {
                 playerData.avatar_url
               );
               totalMoves++;
+              
+              // CRITICAL: Notify WebSocket handler to redirect player to new table
+              if (this.onPlayerMovedCallback) {
+                this.onPlayerMovedCallback(
+                  dbPlayer.player_id,
+                  dbTable.id,
+                  dbPlayer.seat_number,
+                  tournamentId
+                );
+              }
+              
               logger.info('Synced player addition after DB balance', {
                 tableId: dbTable.id,
                 playerId: dbPlayer.player_id.substring(0, 8)
