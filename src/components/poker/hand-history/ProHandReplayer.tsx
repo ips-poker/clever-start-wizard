@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { MiniCardGroup } from './MiniPokerCard';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 
 // Types
 export interface ReplayAction {
@@ -434,7 +435,7 @@ export function ProHandReplayer({ hand, onClose, isFullscreen = false }: ProHand
                     "mt-1 px-2 py-1 rounded text-center min-w-20",
                     "bg-black/60 backdrop-blur-sm border border-white/10"
                   )}>
-                    <p className="text-[11px] text-white/80 truncate max-w-20">{player.name}</p>
+                    <p className="text-[11px] text-white/80 truncate max-w-20">{getMaskedName(player.id, player.name)}</p>
                     <p className={cn(
                       "text-sm font-bold tabular-nums",
                       stack === 0 ? "text-red-400" : "text-amber-400"

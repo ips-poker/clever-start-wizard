@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Trophy, Crown } from 'lucide-react';
 import { MemoizedPokerCard } from './MemoizedPokerCard';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 
 interface ShowdownPlayer {
   playerId: string;
@@ -156,7 +157,7 @@ const ShowdownPlayerRow = memo(function ShowdownPlayerRow({
           'font-semibold text-sm truncate',
           player.isWinner && showWinner ? 'text-amber-400' : 'text-white'
         )}>
-          {player.name}
+          {getMaskedName(player.playerId, player.name)}
         </p>
         {player.handName && isRevealed && (
           <motion.p
