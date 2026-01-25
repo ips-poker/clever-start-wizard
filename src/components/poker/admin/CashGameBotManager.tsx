@@ -284,18 +284,34 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
       return;
     }
 
-    const table = cashTables.find(t => t.id === selectedTableId);
-    if (!table) return;
+   // Fetch fresh table data to get current occupied seats
+   const { data: tableData, error: tableError } = await supabase
+     .from('poker_tables')
+     .select('*')
+     .eq('id', selectedTableId)
+     .single();
+
+   if (tableError || !tableData) {
+     addLog('error', 'Не удалось загрузить данные стола', tableError);
+     return;
+   }
+
+   // Fetch current players at table
+   const { data: currentPlayers } = await supabase
+     .from('poker_table_players')
+     .select('seat_number')
+     .eq('table_id', selectedTableId);
 
     // Check if table is full
-    if (table.players.length >= table.max_players) {
+   const playerCount = currentPlayers?.length || 0;
+   if (playerCount >= tableData.max_players) {
       toast.error('Стол заполнен');
       return;
     }
 
     // Check buy-in limits
-    if (buyInAmount < table.min_buy_in || buyInAmount > table.max_buy_in) {
-      toast.error(`Бай-ин должен быть от ${table.min_buy_in} до ${table.max_buy_in}`);
+   if (buyInAmount < tableData.min_buy_in || buyInAmount > tableData.max_buy_in) {
+     toast.error(`Бай-ин должен быть от ${tableData.min_buy_in} до ${tableData.max_buy_in}`);
       return;
     }
 
@@ -311,10 +327,10 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
       return;
     }
 
-    // Find available seat
-    const occupiedSeats = new Set(table.players.map(p => p.seat_number));
+   // Find available seat from fresh data
+   const occupiedSeats = new Set((currentPlayers || []).map(p => p.seat_number));
     let availableSeat = -1;
-    for (let i = 0; i < table.max_players; i++) {
+   for (let i = 0; i < tableData.max_players; i++) {
       if (!occupiedSeats.has(i)) {
         availableSeat = i;
         break;
@@ -327,7 +343,7 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
     }
 
     setLoading(true);
-    addLog('action', `Посадка ${botName} за стол ${table.name}...`);
+   addLog('action', `Посадка ${botName} за стол ${tableData.name} (место ${availableSeat})...`);
 
     try {
       // Deduct diamonds
@@ -352,7 +368,7 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
           balance_before: wallet.balance,
           balance_after: wallet.balance - buyInAmount,
           transaction_type: 'cash_game_buyin',
-          description: `Бай-ин кэш-стол ${table.name}`
+         description: `Бай-ин кэш-стол ${tableData.name}`
         });
 
       if (txError) {
@@ -383,7 +399,7 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
       }
 
       await loadCashTables();
-      addLog('success', `${botName} сел за ${table.name} с ${buyInAmount}💎 на место ${availableSeat}`);
+     addLog('success', `${botName} сел за ${tableData.name} с ${buyInAmount}💎 на место ${availableSeat}`);
       toast.success(`${botName} за столом`);
     } catch (err) {
       addLog('error', 'Ошибка', err);
