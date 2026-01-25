@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 
 interface Player {
   id: string;
@@ -300,11 +301,11 @@ export const ICMDealCalculator: React.FC<ICMDealCalculatorProps> = ({
                     <div className="col-span-3 flex items-center gap-2">
                       <img
                         src={player.avatarUrl || '/placeholder.svg'}
-                        alt={player.name}
+                        alt={getMaskedName(player.id, player.name)}
                         className="w-7 h-7 rounded-full object-cover"
                       />
                       <div className="truncate">
-                        <span className="text-white text-sm">{player.name}</span>
+                        <span className="text-white text-sm">{getMaskedName(player.id, player.name)}</span>
                         {isCurrentPlayer && (
                           <Badge variant="outline" className="ml-1 h-4 px-1 text-[9px]">
                             Вы

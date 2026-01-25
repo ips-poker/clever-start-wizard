@@ -5,6 +5,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 
 interface LiveTournamentData {
   pot: number;
@@ -216,7 +217,7 @@ export function useTournamentLiveData(tournamentId: string | null) {
       const processedActions: RecentAction[] = (actions || []).map(a => ({
         id: a.id,
         playerId: a.player_id,
-        playerName: (a.players as any)?.name || 'Unknown',
+        playerName: getMaskedName(a.player_id, (a.players as any)?.name || 'Unknown'),
         actionType: a.action_type,
         amount: a.amount,
         phase: a.phase,

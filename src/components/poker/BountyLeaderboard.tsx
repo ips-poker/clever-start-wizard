@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Crosshair, Crown, Skull, Medal, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 
 interface BountyLeaderboardProps {
   tournamentId: string;
@@ -87,7 +88,7 @@ export function BountyLeaderboard({
             const player = p.players as any;
             return {
               playerId: p.player_id,
-              playerName: player?.name || 'Unknown',
+              playerName: getMaskedName(p.player_id, player?.name || 'Unknown'),
               avatarUrl: player?.avatar_url || null,
               knockouts: p.knockouts_count || 0,
               bountiesCollected: p.bounty_collected || 0,

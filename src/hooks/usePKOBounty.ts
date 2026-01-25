@@ -3,6 +3,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 
 interface BountyData {
   currentBounty: number;
@@ -70,7 +71,7 @@ export function usePKOBounty(tournamentId: string, playerId?: string) {
       if (leaderboardData) {
         setLeaderboard((leaderboardData as any[]).map(h => ({
           playerId: h.player_id,
-          playerName: h.player_name || 'Unknown',
+          playerName: getMaskedName(h.player_id, h.player_name || 'Unknown'),
           avatarUrl: h.avatar_url,
           knockouts: h.knockouts || 0,
           bountiesCollected: h.bounty_collected || 0,

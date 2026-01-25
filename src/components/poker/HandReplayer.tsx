@@ -179,7 +179,7 @@ export function HandReplayer({ hand, onClose, isFullscreen = false }: HandReplay
 
   const formatAction = (action: ReplayAction) => {
     const player = hand.players.find(p => p.id === action.playerId);
-    const name = player?.name || `Seat ${action.seatNumber}`;
+    const name = player ? getMaskedName(player.id, player.name) : `Seat ${action.seatNumber}`;
     
     switch (action.action) {
       case 'fold': return `${name} folds`;

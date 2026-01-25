@@ -21,6 +21,7 @@ import {
   User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 
 interface Participant {
   id: string;
@@ -239,7 +240,7 @@ export function TournamentDetailsModal({
                       </div>
                       <div className="flex-1">
                         <p className="font-medium text-sm">
-                          {p.player?.name || 'Игрок'}
+                          {getMaskedName(p.player_id, p.player?.name || 'Игрок')}
                           {p.player_id === playerId && (
                             <Badge variant="secondary" className="ml-2 text-[10px]">Вы</Badge>
                           )}

@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 
 interface ChatMessage {
   id: string;
@@ -227,7 +228,7 @@ export const TableChat: React.FC<TableChatProps> = ({
                       onClick={() => onMutePlayer?.(msg.playerId, !mutedPlayers.has(msg.playerId))}
                       title={mutedPlayers.has(msg.playerId) ? 'Размутить' : 'Замутить'}
                     >
-                      {msg.playerName}:
+                      {getMaskedName(msg.playerId, msg.playerName)}:
                     </span>
                     <span className={cn(
                       "ml-1",
