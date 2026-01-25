@@ -761,14 +761,18 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
     
     addLog('action', '🤖 Подключение ботов...');
     
-    const cashBotPlayers = table.players.filter(p => p.player_name.startsWith('CashBot_'));
+    // Get all bot player IDs (players without user_id)
+    const botPlayerIds = new Set(availableBots.map(b => b.id));
+    const botPlayersAtTable = table.players.filter(p => botPlayerIds.has(p.player_id));
     
-    if (cashBotPlayers.length === 0) {
+    if (botPlayersAtTable.length === 0) {
       addLog('warning', 'Нет ботов за столом');
       return;
     }
     
-    for (const player of cashBotPlayers) {
+    addLog('info', `Найдено ${botPlayersAtTable.length} ботов за столом`);
+    
+    for (const player of botPlayersAtTable) {
       if (!botConnectionsRef.current.has(player.player_id)) {
         connectBot(
           player.player_id,
@@ -781,7 +785,7 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
         await new Promise(r => setTimeout(r, 100));
       }
     }
-  }, [selectedTableId, cashTables, connectBot, addLog]);
+  }, [selectedTableId, cashTables, availableBots, connectBot, addLog]);
 
   // Disconnect all bots
   const disconnectAllBots = useCallback(() => {
@@ -1006,7 +1010,7 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
                 className="w-full"
                 variant={botMode ? 'destructive' : 'default'}
                 onClick={toggleBotMode}
-                disabled={!selectedTable || selectedTable.players.filter(p => p.player_name.startsWith('CashBot_')).length === 0}
+                disabled={!selectedTable || selectedTable.players.filter(p => availableBots.some(b => b.id === p.player_id)).length === 0}
               >
                 {botMode ? (
                   <>
