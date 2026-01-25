@@ -3303,12 +3303,12 @@ export class PokerTable {
       if (canActPlayers.length <= 1 && allInPlayers.length > 0 && remainingPlayers.length >= 2) {
         // Either everyone is all-in, or only one player can act (and others are all-in)
         // If only one can act and they are the BB with no raise to call, give them option
-        const bbPlayer = remainingPlayers.find(p => p.seatNumber === this.currentHand.bigBlindSeat);
+        const bbPlayer = remainingPlayers.find(p => p.seatNumber === this.currentHand!.bigBlindSeat);
         const hasRaiseToCall = allInPlayers.some(p => p.currentBet > this.config.bigBlind);
         
         if (canActPlayers.length === 0 || 
             (canActPlayers.length === 1 && canActPlayers[0].id !== bbPlayer?.id) ||
-            (canActPlayers.length === 1 && !hasRaiseToCall && canActPlayers[0].currentBet >= this.currentHand.currentBet)) {
+            (canActPlayers.length === 1 && !hasRaiseToCall && canActPlayers[0].currentBet >= this.currentHand!.currentBet)) {
           
           logger.info('POKERSTARS: All players all-in after blinds, skipping to showdown', {
             tableId: this.id,
@@ -3441,7 +3441,7 @@ export class PokerTable {
       });
       
       logger.info('All-in showdown: Flop dealt', { cards: communityCards });
-      await this.delay(this.timings.dealing.communityCard * 3 + 300);
+      await this.delay(this.timings.phases.flop.perCardDelay * 3 + 300);
     }
 
     // Deal turn (1 card) - burn 1, deal 1
@@ -3461,7 +3461,7 @@ export class PokerTable {
       });
       
       logger.info('All-in showdown: Turn dealt', { card: turnCard });
-      await this.delay(this.timings.dealing.communityCard + 200);
+      await this.delay(this.timings.phases.turn.perCardDelay + 200);
     }
 
     // Deal river (1 card) - burn 1, deal 1
@@ -3481,7 +3481,7 @@ export class PokerTable {
       });
       
       logger.info('All-in showdown: River dealt', { card: riverCard });
-      await this.delay(this.timings.dealing.communityCard + 200);
+      await this.delay(this.timings.phases.river.perCardDelay + 200);
     }
 
     // Step 3: Move to showdown phase
