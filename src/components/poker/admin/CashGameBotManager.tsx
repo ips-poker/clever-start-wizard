@@ -1012,33 +1012,55 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
             </CardContent>
           </Card>
 
-          {/* Bot Mode Controls */}
-          <Card className={botMode ? 'border-cyan-500/50 bg-cyan-500/5' : ''}>
+          {/* Bot Mode Controls - MAIN ACTION */}
+          <Card className={botMode ? 'border-green-500 bg-green-500/10' : 'border-primary'}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Bot className="h-4 w-4" />
-                Режим ботов (WebSocket)
+                🎮 Управление ботами
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button 
-                className="w-full"
-                variant={botMode ? 'destructive' : 'default'}
-                onClick={toggleBotMode}
-                disabled={!selectedTable || selectedTable.players.filter(p => availableBots.some(b => b.id === p.player_id)).length === 0}
-              >
-                {botMode ? (
+              {(() => {
+                const botsAtTable = selectedTable?.players.filter(p => availableBots.some(b => b.id === p.player_id)) || [];
+                const hasBotsAtTable = botsAtTable.length > 0;
+                
+                return (
                   <>
-                    <WifiOff className="h-4 w-4 mr-2" />
-                    Отключить ботов
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Ботов за столом: <strong>{botsAtTable.length}</strong>
+                      {botsAtTable.length > 0 && (
+                        <span className="ml-2 block truncate">({botsAtTable.map(p => p.player_name).join(', ')})</span>
+                      )}
+                    </div>
+                    
+                    <Button 
+                      className="w-full h-12 text-base"
+                      variant={botMode ? 'destructive' : 'default'}
+                      onClick={toggleBotMode}
+                      disabled={!selectedTable || !hasBotsAtTable}
+                    >
+                      {botMode ? (
+                        <>
+                          <WifiOff className="h-5 w-5 mr-2" />
+                          Отключить ботов
+                        </>
+                      ) : (
+                        <>
+                          <Wifi className="h-5 w-5 mr-2" />
+                          Подключить ботов ({botsAtTable.length})
+                        </>
+                      )}
+                    </Button>
+                    
+                    {!hasBotsAtTable && selectedTable && (
+                      <div className="text-xs text-amber-500">
+                        ⚠️ Сначала посадите ботов за стол (раздел ниже)
+                      </div>
+                    )}
                   </>
-                ) : (
-                  <>
-                    <Wifi className="h-4 w-4 mr-2" />
-                    Подключить ботов
-                  </>
-                )}
-              </Button>
+                );
+              })()}
               
               {botMode && (
                 <>
@@ -1053,9 +1075,9 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
                     />
                   </div>
                   
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <div>Подключено: {connectedBots}</div>
-                    <div>Сыграно рук: {handsPlayed}</div>
+                  <div className="text-xs space-y-1 p-2 bg-green-500/10 rounded">
+                    <div>✅ Подключено: {connectedBots}</div>
+                    <div>🃏 Сыграно рук: {handsPlayed}</div>
                   </div>
                 </>
               )}
