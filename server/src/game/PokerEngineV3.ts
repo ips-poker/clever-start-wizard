@@ -485,13 +485,18 @@ export function calculateSidePots(contributions: PlayerContribution[]): PotResul
   const activeBettors = contributions.filter(c => c.totalBet > 0);
   if (activeBettors.length === 0) return empty;
 
-  const allInLevels = new Set<number>();
+  // CRITICAL FIX: Include ALL unique bet levels, not just all-in levels
+  // This ensures players with different bet amounts get correct pot eligibility
+  // Previously only all-in levels were tracked, causing non-all-in players 
+  // with lower bets to be excluded from pots they contributed to
+  const betLevels = new Set<number>();
   for (const c of activeBettors) {
-    if (c.isAllIn && c.totalBet > 0) allInLevels.add(c.totalBet);
+    if (c.totalBet > 0) {
+      betLevels.add(c.totalBet);
+    }
   }
-  allInLevels.add(Math.max(...activeBettors.map(c => c.totalBet)));
 
-  const levels = Array.from(allInLevels).sort((a, b) => a - b);
+  const levels = Array.from(betLevels).sort((a, b) => a - b);
   const pots: SidePot[] = [];
   let previousLevel = 0;
 
