@@ -423,6 +423,25 @@ function preflopStrategy(
   const raiseSize = Math.floor(pot * 2.5 + callAmount);
   const threeBetSize = Math.floor(callAmount * 3);
   
+  // POKERSTARS-STYLE: Short stack survival logic
+  // If stack is less than 3BB (considering antes), push all-in instead of folding
+  const effectiveStackBBs = stack / bigBlind;
+  if (effectiveStackBBs < 3) {
+    // With < 3BB, we should push or fold based on hand strength, but NEVER fold a playable hand
+    // and with < 1.5BB we always push regardless of cards (ICM considerations)
+    if (effectiveStackBBs < 1.5) {
+      return { action: 'allin', reasoning: `Desperate stack (${effectiveStackBBs.toFixed(1)}BB) - must push any two`, confidence: 95 };
+    }
+    // With 1.5-3BB, push with any decent hand (top 50% range)
+    if (hand.category !== 'trash' || hand.highCard >= 10 || hand.pair) {
+      return { action: 'allin', reasoning: `Short stack push (${effectiveStackBBs.toFixed(1)}BB)`, confidence: 85 };
+    }
+    // Even trash hands with < 2BB should push more often than fold
+    if (effectiveStackBBs < 2 && Math.random() > 0.3) {
+      return { action: 'allin', reasoning: `Survival push with ${effectiveStackBBs.toFixed(1)}BB`, confidence: 70 };
+    }
+  }
+  
   // CRITICAL: On BB when not raised, always check with any cards
   if (isBigBlind && !isRaised && callAmount === 0) {
     // Premium hands might still raise for value
