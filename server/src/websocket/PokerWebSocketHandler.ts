@@ -414,6 +414,10 @@ export class PokerWebSocketHandler {
           await this.handleReconnectRequest(ws, message);
           break;
         
+        case 'reload_players':
+          await this.handleReloadPlayers(ws, message);
+          break;
+        
         default:
           logger.warn('Unknown message type', { type: message.type });
           this.sendError(ws, `Unknown message type: ${message.type}`);
@@ -666,6 +670,41 @@ export class PokerWebSocketHandler {
       enabled: data.enabled,
       state 
     });
+  }
+  
+  /**
+   * Handle reload players - useful when bots are added via admin panel
+   */
+  private async handleReloadPlayers(ws: WebSocket, message: unknown): Promise<void> {
+    const parsed = message as { tableId?: string };
+    const { tableId } = parsed;
+    
+    if (!tableId) {
+      this.sendError(ws, 'Table ID required');
+      return;
+    }
+    
+    const table = await this.gameManager.loadTableIfNeeded(tableId);
+    if (!table) {
+      this.sendError(ws, 'Table not found');
+      return;
+    }
+    
+    const result = await table.reloadPlayersFromDatabase();
+    
+    if (!result.success) {
+      this.sendError(ws, result.error || 'Failed to reload players');
+      return;
+    }
+    
+    this.send(ws, { 
+      type: 'players_reloaded', 
+      tableId,
+      playerCount: result.playerCount
+    });
+    
+    // Broadcast new state to all connected clients
+    this.broadcastTableState(tableId);
   }
   
   /**

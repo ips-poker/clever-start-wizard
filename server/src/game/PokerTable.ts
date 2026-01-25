@@ -390,6 +390,61 @@ export class PokerTable {
   }
 
   /**
+   * Reload players from database - useful when bots are added via admin panel
+   * IMPORTANT: Only call this when hand is NOT active to prevent state corruption
+   */
+  public async reloadPlayersFromDatabase(): Promise<{ success: boolean; error?: string; playerCount?: number }> {
+    // Safety check: don't reload during active hand
+    if (this.currentHand !== null) {
+      logger.warn('Cannot reload players during active hand', { tableId: this.id });
+      return { 
+        success: false, 
+        error: 'Cannot reload players during active hand - wait for hand to complete' 
+      };
+    }
+
+    logger.info('Reloading players from database', { tableId: this.id });
+    
+    try {
+      // Clear current players
+      const oldPlayerCount = this.players.size;
+      this.players.clear();
+      this.seats.fill(null);
+      
+      // Reload from database
+      await this.loadPlayersFromDatabase();
+      
+      const newPlayerCount = this.players.size;
+      logger.info('Players reloaded successfully', { 
+        tableId: this.id, 
+        oldCount: oldPlayerCount,
+        newCount: newPlayerCount 
+      });
+      
+      // Emit state update to all clients
+      this.emit('players_reloaded', { 
+        oldCount: oldPlayerCount, 
+        newCount: newPlayerCount 
+      });
+      
+      return { 
+        success: true, 
+        playerCount: newPlayerCount 
+      };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      logger.error('Failed to reload players', { 
+        tableId: this.id, 
+        error: errorMessage 
+      });
+      return { 
+        success: false, 
+        error: `Failed to reload players: ${errorMessage}` 
+      };
+    }
+  }
+
+  /**
    * Ensure a player that is already seated in DB is loaded into memory.
    * Used for tournament seating where the DB may be updated outside the WebSocket flow.
    */

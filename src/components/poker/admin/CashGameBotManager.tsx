@@ -803,6 +803,37 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
     }
   }, [selectedTableId, cashTables, connectBot, addLog]);
 
+  // Reload table players from database
+  const reloadTablePlayers = useCallback(async () => {
+    if (!selectedTableId) return;
+    
+    addLog('action', 'Перезагрузка игроков со стола...');
+    
+    // Send reload message via WebSocket to trigger server reload
+    const ws = new WebSocket('wss://poker.syndicate-poker.ru/ws/poker');
+    
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        type: 'reload_players',
+        tableId: selectedTableId
+      }));
+    };
+    
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'players_reloaded') {
+        addLog('success', `✅ Игроки перезагружены. Всего: ${msg.playerCount}`);
+        toast.success(`Игроки обновлены: ${msg.playerCount}`);
+        loadCashTables();
+      } else if (msg.type === 'error') {
+        addLog('error', 'Ошибка перезагрузки', msg.error);
+      }
+      ws.close();
+    };
+    
+    setTimeout(() => ws.close(), 5000);
+  }, [selectedTableId, addLog, loadCashTables]);
+
   // Disconnect all bots
   const disconnectAllBots = useCallback(() => {
     addLog('action', 'Отключение всех ботов...');
@@ -1215,6 +1246,17 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
                   Всех
                 </Button>
               </div>
+              
+              <Button 
+                size="sm" 
+                variant="secondary"
+                className="w-full"
+                onClick={reloadTablePlayers}
+                disabled={loading || !selectedTableId}
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Обновить стол
+              </Button>
             </CardContent>
           </Card>
 
