@@ -3454,8 +3454,8 @@ export class PokerTable {
       pot: this.currentHand.pot
     });
 
-    // Short delay for card reveal animation
-    await this.delay(500);
+    // POKERSTARS-STYLE: Longer delay for card reveal animation (1 second)
+    await this.delay(1000);
 
     // Step 2: Deal remaining community cards (flop → turn → river)
     // Get deck from engine state
@@ -3482,8 +3482,8 @@ export class PokerTable {
         isAllInShowdown: true
       });
       
-      // Delay for burn card animation (PokerStars: ~300ms)
-      await this.delay(300);
+      // Delay for burn card animation (PokerStars: ~500ms for all-in showdown)
+      await this.delay(500);
       
       communityCards.push(deck.shift()!, deck.shift()!, deck.shift()!);
       
@@ -3498,8 +3498,8 @@ export class PokerTable {
       });
       
       logger.info('All-in showdown: Flop dealt', { cards: communityCards });
-      // POKERSTARS-STYLE: Longer pause after flop (~800ms total for cards + settling)
-      await this.delay(this.timings.phases.flop.perCardDelay * 3 + 500);
+      // POKERSTARS-STYLE: Longer pause after flop during all-in (~1.5s for dramatic effect)
+      await this.delay(1500);
     }
 
     // Deal turn (1 card) - burn 1, deal 1
@@ -3513,8 +3513,8 @@ export class PokerTable {
         isAllInShowdown: true
       });
       
-      // POKERSTARS-STYLE: Longer delay for burn card (~400ms)
-      await this.delay(400);
+      // POKERSTARS-STYLE: Longer delay for burn card during all-in (~600ms)
+      await this.delay(600);
       
       const turnCard = deck.shift()!;
       communityCards.push(turnCard);
@@ -3530,8 +3530,8 @@ export class PokerTable {
       });
       
       logger.info('All-in showdown: Turn dealt', { card: turnCard });
-      // POKERSTARS-STYLE: Longer pause after turn (~600ms)
-      await this.delay(this.timings.phases.turn.preDealDelay + 300);
+      // POKERSTARS-STYLE: Longer pause after turn during all-in (~1.2s for dramatic effect)
+      await this.delay(1200);
     }
 
     // Deal river (1 card) - burn 1, deal 1
@@ -3545,8 +3545,8 @@ export class PokerTable {
         isAllInShowdown: true
       });
       
-      // POKERSTARS-STYLE: Longer delay for burn card (~400ms)
-      await this.delay(400);
+      // POKERSTARS-STYLE: Longer delay for burn card during all-in (~600ms)
+      await this.delay(600);
       
       const riverCard = deck.shift()!;
       communityCards.push(riverCard);
@@ -3562,8 +3562,8 @@ export class PokerTable {
       });
       
       logger.info('All-in showdown: River dealt', { card: riverCard });
-      // POKERSTARS-STYLE: Longer pause after river (~600ms)
-      await this.delay(this.timings.phases.river.preDealDelay + 300);
+      // POKERSTARS-STYLE: Longer pause after river during all-in (~1.2s for dramatic effect)
+      await this.delay(1200);
     }
 
     // Step 3: Move to showdown phase
