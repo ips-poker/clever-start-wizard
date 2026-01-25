@@ -231,6 +231,32 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
     addLog('info', `Найдено ${bots.length} доступных ботов`);
   }, [addLog]);
 
+  // Subscribe to table changes for real-time updates
+  useEffect(() => {
+    if (!selectedTableId) return;
+
+    const channel = supabase
+      .channel(`table-${selectedTableId}-players`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'poker_table_players',
+          filter: `table_id=eq.${selectedTableId}`
+        },
+        () => {
+          // Reload tables when players change
+          loadCashTables();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedTableId, loadCashTables]);
+
   // Create cash bots with diamond wallets
   const createCashBots = async () => {
     setLoading(true);
