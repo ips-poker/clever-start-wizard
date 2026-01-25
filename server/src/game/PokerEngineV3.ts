@@ -1461,11 +1461,12 @@ export function distributeWinnings(
       hr.handRank === best.handRank && compareKickers(hr.kickers, best.kickers) === 0
     );
     
+    // TDA RULE: Odd chips distributed one-by-one starting from first clockwise from button
     const share = Math.floor(pot.amount / winners.length);
     const remainder = pot.amount % winners.length;
     
     winners.forEach((w, i) => {
-      const amt = share + (i === 0 ? remainder : 0);
+      const amt = share + (i < remainder ? 1 : 0); // Each winner gets 1 odd chip until exhausted
       winnings.set(w.playerId, (winnings.get(w.playerId) || 0) + amt);
       winnersInfo.push({ playerId: w.playerId, amount: amt, handName: w.handName });
     });
