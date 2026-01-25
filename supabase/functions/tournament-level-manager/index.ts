@@ -116,10 +116,76 @@ Deno.serve(async (req) => {
         .single();
 
       if (levelError || !nextLevel) {
-        // Нет следующего уровня - турнир должен продолжаться на текущем
-        console.log(`Tournament ${tournament.name}: No next level found, staying at level ${currentLevel}`);
+        // No next level found - try to auto-extend levels
+        console.log(`Tournament ${tournament.name}: No next level found at ${currentLevel + 1}, attempting to extend...`);
         
-        // Просто продлеваем текущий уровень
+        // Call extend_tournament_levels to auto-generate more levels
+        const { data: extendResult, error: extendError } = await supabase
+          .rpc('extend_tournament_levels', {
+            p_tournament_id: tournament.id,
+            p_current_level: currentLevel
+          });
+        
+        if (!extendError && extendResult?.levels_added > 0) {
+          console.log(`Extended tournament ${tournament.name} with ${extendResult.levels_added} new levels`);
+          
+          // Retry fetching the next level
+          const { data: retryNextLevel, error: retryError } = await supabase
+            .from('online_poker_tournament_levels')
+            .select('*')
+            .eq('tournament_id', tournament.id)
+            .eq('level', currentLevel + 1)
+            .single();
+          
+          if (!retryError && retryNextLevel) {
+            // Use the newly created level - continue processing
+            console.log(`Successfully extended to level ${currentLevel + 1}, processing...`);
+            // Jump to processing this level by reassigning and continuing
+            const nextLevelData = retryNextLevel;
+            
+            const duration = nextLevelData.duration || tournament.level_duration || 300;
+            const newEndTime = new Date(Date.now() + duration * 1000);
+            const isBreak = nextLevelData.is_break === true;
+            
+            await supabase
+              .from('online_poker_tournaments')
+              .update({
+                current_level: currentLevel + 1,
+                small_blind: nextLevelData.small_blind,
+                big_blind: nextLevelData.big_blind,
+                ante: nextLevelData.ante || 0,
+                level_end_at: newEndTime.toISOString(),
+                status: isBreak ? 'break' : tournament.status
+              })
+              .eq('id', tournament.id);
+            
+            if (!isBreak) {
+              await supabase
+                .from('poker_tables')
+                .update({
+                  small_blind: nextLevelData.small_blind,
+                  big_blind: nextLevelData.big_blind,
+                  ante: nextLevelData.ante || 0
+                })
+                .eq('tournament_id', tournament.id);
+            }
+            
+            results.push({
+              tournamentId: tournament.id,
+              tournamentName: tournament.name,
+              action: 'level_extended_and_advanced',
+              previousLevel: currentLevel,
+              newLevel: currentLevel + 1,
+              blinds: `${nextLevelData.small_blind}/${nextLevelData.big_blind}`,
+              levelsAdded: extendResult.levels_added
+            });
+            continue;
+          }
+        }
+        
+        // Still no next level - just extend current level time
+        console.log(`Tournament ${tournament.name}: Extension failed, staying at level ${currentLevel}`);
+        
         const { data: currentLevelData } = await supabase
           .from('online_poker_tournament_levels')
           .select('*')
