@@ -2118,6 +2118,20 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     return true;
   }, [tableId, playerId, sendMessage]);
 
+  // Tournament rebuy - notify server after RPC succeeds
+  const tournamentRebuy = useCallback((tournamentId: string, newChips: number) => {
+    if (!playerId) return false;
+    
+    log('💎 Tournament rebuy notification:', { tournamentId, newChips });
+    sendMessage({
+      type: 'tournament_rebuy',
+      tournamentId,
+      playerId,
+      data: { newChips }
+    });
+    return true;
+  }, [playerId, sendMessage]);
+
   // Send chat message
   const sendChatMessage = useCallback((text: string) => {
     if (!tableId || !playerId) return;
@@ -2277,6 +2291,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     sitIn,
     setAutoPostBlinds,
     addChips,
-    sendChatMessage
+    sendChatMessage,
+    tournamentRebuy
   };
 }

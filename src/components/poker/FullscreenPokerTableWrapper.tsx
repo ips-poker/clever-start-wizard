@@ -165,7 +165,9 @@ export function FullscreenPokerTableWrapper({
     // Professional timing data
     betsBeingCollected, phaseTimings,
     // Professional showdown and winner announcement
-    showdownReveals, winnerAnnouncement, clearWinnerAnnouncement
+    showdownReveals, winnerAnnouncement, clearWinnerAnnouncement,
+    // Tournament rebuy
+    tournamentRebuy
   } = pokerTable;
 
   const effectiveSmallBlind = (isTournament ? dbBlinds?.sb : undefined) ?? tableState?.smallBlindAmount ?? 10;
@@ -987,6 +989,10 @@ export function FullscreenPokerTableWrapper({
               clearRebuyAvailable();
             }}
             onLeave={handleLeave}
+            notifyServer={(newChips) => {
+              // CRITICAL: Notify WebSocket server to sync stack and cancel elimination timeout
+              tournamentRebuy(rebuyAvailable.tournamentId, newChips);
+            }}
           />
         )}
 
