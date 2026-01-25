@@ -10,6 +10,7 @@ import {
 } from '@/utils/equityCalculator';
 import { PokerPlayer } from '@/hooks/useNodePokerTable';
 import { TrendingUp, Percent } from 'lucide-react';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 
 interface EquityDisplayProps {
   players: PokerPlayer[];
@@ -113,7 +114,7 @@ export function EquityDisplay({
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-white/70 truncate max-w-20">
-                      {player.name || `Seat ${player.seatNumber}`}
+                      {getMaskedName(player.playerId, player.name || '') || `Seat ${player.seatNumber}`}
                     </span>
                     <span className={`text-sm font-bold ${getEquityColor(playerEquity.equity)}`}>
                       {formatEquity(playerEquity.equity)}

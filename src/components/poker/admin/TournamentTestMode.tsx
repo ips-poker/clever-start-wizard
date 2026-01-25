@@ -285,9 +285,13 @@ export function TournamentTestMode({ tournamentId, tournamentName, onClose }: To
         return;
       }
 
-      const rows = Array.from({ length: testPlayerCount }, (_, idx) => ({
-        name: `TestBot_${Date.now()}_${idx + 1}`,
-        elo_rating: 1000,
+      // Генерируем реалистичные покерные никнеймы для маскировки
+      const { generateUniqueNicknames } = await import('@/utils/pokerNicknameGenerator');
+      const nicknames = generateUniqueNicknames(testPlayerCount);
+      
+      const rows = nicknames.map((nickname) => ({
+        name: nickname,
+        elo_rating: 1000 + Math.floor(Math.random() * 500), // Случайный ELO для реалистичности
         user_id: userId,
       }));
 

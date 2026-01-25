@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { StablePokerCard } from './StablePokerCard';
 import { StableChipStack } from './StableChipStack';
 import { resolveAvatarUrl } from '@/utils/avatarResolver';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 
 interface Player {
   id: string;
@@ -341,7 +342,7 @@ export const OptimizedPlayerSeat = memo(function OptimizedPlayerSeat({
         >
           {!resolvedAvatar && (
             <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-lg drop-shadow-md">
-              {player.name.charAt(0).toUpperCase()}
+              {getMaskedName(player.id, player.name).charAt(0).toUpperCase()}
             </div>
           )}
           
@@ -352,7 +353,7 @@ export const OptimizedPlayerSeat = memo(function OptimizedPlayerSeat({
         {/* Player info */}
         <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-center min-w-[75px]">
           <div className="text-white text-xs font-medium truncate max-w-[85px] drop-shadow-md">
-            {player.name}
+            {getMaskedName(player.id, player.name)}
           </div>
           <StackDisplay stack={player.stack} isAllIn={!!player.isAllIn} />
         </div>

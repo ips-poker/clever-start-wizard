@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { PokerCard, CommunityCards } from './PokerCard';
+import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 
 // Types for hand history
 export interface ReplayAction {
@@ -300,7 +301,7 @@ export function HandReplayer({ hand, onClose, isFullscreen = false }: HandReplay
 
                 {/* Info bar */}
                 <div className="mt-1 px-2 py-1 bg-slate-800 rounded text-center min-w-16">
-                  <p className="text-[10px] text-white/80 truncate">{player.name}</p>
+                  <p className="text-[10px] text-white/80 truncate">{getMaskedName(player.id, player.name)}</p>
                   <p className="text-xs font-bold text-amber-400">{stack.toLocaleString()}</p>
                 </div>
 

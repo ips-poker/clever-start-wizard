@@ -230,8 +230,11 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
     addLog('action', `Создание ${botCount} кэш-ботов с алмазами...`);
 
     try {
+      const { generateUniqueNicknames } = await import('@/utils/pokerNicknameGenerator');
+      const nicknames = generateUniqueNicknames(botCount);
+      
       for (let i = 1; i <= botCount; i++) {
-        const name = `CashBot_${Date.now()}_${i}`;
+        const name = nicknames[i - 1] || `Player_${Date.now()}_${i}`;
         
         // Create player
         const { data: player, error: playerError } = await supabase
