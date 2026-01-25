@@ -741,20 +741,39 @@ export function TelegramPokerLobby({
                               </Button>
                             )}
                             
-                            {/* Status badge for registered/eliminated players */}
-                            {isMine && !canEnter && !canSpectate && (
+                            {/* Status badge for eliminated players + Spectate button */}
+                            {isEliminated && isRunning && (
+                              <>
+                                <Badge variant="secondary" className="py-2 px-3">
+                                  <CircleDot className="h-3 w-3 mr-1" />
+                                  Выбыли
+                                </Badge>
+                                <Button
+                                  onClick={() => handleSpectateTournament(tournament.id)}
+                                  variant="outline"
+                                  className="flex-1"
+                                  size="sm"
+                                >
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Наблюдать
+                                </Button>
+                              </>
+                            )}
+                            
+                            {/* Badge for registered but not running */}
+                            {isMine && !canEnter && !isEliminated && !isRunning && (
                               <Badge variant="secondary" className="flex-1 justify-center py-2">
                                 <CircleDot className="h-3 w-3 mr-1" />
-                                {isEliminated ? 'Выбыли' : 'Зарегистрирован'}
+                                Зарегистрирован
                               </Badge>
                             )}
                             
-                            {/* Spectate button - PokerStars style */}
-                            {canSpectate && (
+                            {/* Spectate button for non-participants */}
+                            {!isMine && !canRegister && isRunning && (
                               <Button
                                 onClick={() => handleSpectateTournament(tournament.id)}
-                                variant={canEnter ? "ghost" : "outline"}
-                                className={canEnter ? "w-auto px-3" : "flex-1"}
+                                variant="outline"
+                                className="flex-1"
                                 size="sm"
                               >
                                 <Eye className="h-4 w-4 mr-2" />
