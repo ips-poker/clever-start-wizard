@@ -24,6 +24,7 @@ export interface Player {
   id: string;
   name: string;
   avatarUrl?: string; // Player avatar from profile
+  userId?: string | null; // Auth user ID - null means bot
   seatNumber: number;
   stack: number;
   status: 'active' | 'sitting_out' | 'disconnected';
@@ -196,11 +197,11 @@ export class PokerTable {
         return;
       }
       
-      // Fetch player names and avatars
+      // Fetch player names, avatars, and user_id (for bot detection)
       const playerIds = dbPlayers.map(p => p.player_id);
       const { data: playerProfiles } = await this.supabase
         .from('players')
-        .select('id, name, avatar_url')
+        .select('id, name, avatar_url, user_id')
         .in('id', playerIds);
       
       const profileMap = new Map(playerProfiles?.map(p => [p.id, p]) || []);
@@ -263,12 +264,13 @@ export class PokerTable {
         const profile = profileMap.get(dbPlayer.player_id);
         
         const playerName = profile?.name || 'Player';
-        const isBot = this.isBotName(playerName);
+        const userId = profile?.user_id || null;
 
         const player: Player = {
           id: dbPlayer.player_id,
           name: playerName,
           avatarUrl: profile?.avatar_url || undefined,
+          userId: userId, // For bot detection
           seatNumber: normalizedSeat,
           stack: dbPlayer.stack,
           status: dbPlayer.status === 'sitting_out' ? 'sitting_out' : 'active',
@@ -277,7 +279,8 @@ export class PokerTable {
           isFolded: false,
           isAllIn: false,
           // POKERSTARS-STYLE: Time bank persists, replenishes slowly
-          timeBank: isBot ? 0 : this.config.timeBankSeconds,
+          // Bots (no userId) get 0 time bank
+          timeBank: !userId ? 0 : this.config.timeBankSeconds,
           timeBankUsedThisAction: 0,
           lastActionTime: null,
           missedTurns: 0,
@@ -320,6 +323,8 @@ export class PokerTable {
           tableId: this.id,
           playerId: dbPlayer.player_id.substring(0, 8),
           name: player.name,
+          userId: player.userId || 'null (BOT)',
+          isBot: this.isBotPlayer(player),
           seatNumber: player.seatNumber,
           stack: dbPlayer.stack
         });
@@ -739,31 +744,33 @@ export class PokerTable {
       return { success: false, error: 'Player already at table' };
     }
     
-    // Try to fetch avatar from database if not provided
+    // Try to fetch avatar and user_id from database
     let resolvedAvatarUrl = avatarUrl;
-    if (!resolvedAvatarUrl) {
-      try {
-        const { data: playerData } = await this.supabase
-          .from('players')
-          .select('avatar_url')
-          .eq('id', playerId)
-          .single();
-        
-        if (playerData?.avatar_url) {
+    let userId: string | null = null;
+    
+    try {
+      const { data: playerData } = await this.supabase
+        .from('players')
+        .select('avatar_url, user_id')
+        .eq('id', playerId)
+        .single();
+      
+      if (playerData) {
+        if (playerData.avatar_url && !resolvedAvatarUrl) {
           resolvedAvatarUrl = playerData.avatar_url;
           logger.info('Fetched avatar from DB', { playerId, avatarUrl: resolvedAvatarUrl });
         }
-      } catch (err) {
-        logger.warn('Failed to fetch avatar', { playerId, error: String(err) });
+        userId = playerData.user_id || null;
       }
+    } catch (err) {
+      logger.warn('Failed to fetch player data', { playerId, error: String(err) });
     }
-    
-    const isBot = this.isBotName(playerName);
 
     const player: Player = {
       id: playerId,
       name: playerName,
       avatarUrl: resolvedAvatarUrl,
+      userId: userId, // For bot detection - null means bot
       seatNumber,
       stack: buyIn,
       status: 'active',
@@ -771,8 +778,8 @@ export class PokerTable {
       currentBet: 0,
       isFolded: false,
       isAllIn: false,
-      // POKERSTARS-STYLE: Time bank persists, replenishes slowly
-      timeBank: isBot ? 0 : this.config.timeBankSeconds,
+      // POKERSTARS-STYLE: Time bank - bots (no userId) get 0
+      timeBank: !userId ? 0 : this.config.timeBankSeconds,
       timeBankUsedThisAction: 0,
       lastActionTime: null,
       missedTurns: 0,
@@ -2054,15 +2061,21 @@ export class PokerTable {
   }
   
   /**
-   * Bot detection: keep it consistent across the table code.
-   * We intentionally treat bots as "no time bank" and let them act quickly.
+   * Bot detection: A player is a bot if they have no userId (not linked to auth account)
+   * OR if their name contains 'bot' (legacy detection)
    */
   private isBotName(name: unknown): boolean {
     return typeof name === 'string' && name.toLowerCase().includes('bot');
   }
 
   private isBotPlayer(player: Player | null | undefined): boolean {
-    return this.isBotName(player?.name);
+    if (!player) return false;
+    // Primary check: no userId means bot (created through admin panel)
+    if (player.userId === null || player.userId === undefined) {
+      return true;
+    }
+    // Fallback: check name for 'bot' keyword
+    return this.isBotName(player.name);
   }
 
   /**
