@@ -238,7 +238,7 @@ function analyzeHand(holeCards: string[]): HandAnalysis {
  */
 function analyzeBoard(communityCards: string[]): BoardAnalysis {
   if (!communityCards || communityCards.length === 0) {
-    return { paired: false, suited: false, flushDraw: false, straightDraw: false, connected: false, highCards: 0, texture: 'dry' };
+    return { paired: false, suited: false, flushDraw: false, straightDraw: false, connected: false, highCards: 0, texture: 'dry', monotone: false, rainbow: true, broadway: 0, lowCards: 0 };
   }
   
   const cards = communityCards.map(parseCard).filter(Boolean) as Array<{ rank: string; suit: string; value: number }>;
@@ -247,6 +247,7 @@ function analyzeBoard(communityCards: string[]): BoardAnalysis {
   const suitCounts = new Map<string, number>();
   cards.forEach(c => suitCounts.set(c.suit, (suitCounts.get(c.suit) || 0) + 1));
   const maxSuit = Math.max(...suitCounts.values());
+  const uniqueSuits = suitCounts.size;
   
   // Count ranks
   const rankCounts = new Map<number, number>();
@@ -267,6 +268,10 @@ function analyzeBoard(communityCards: string[]): BoardAnalysis {
   }
   
   const highCards = cards.filter(c => c.value >= 10).length;
+  const broadway = cards.filter(c => c.value >= 10).length;
+  const lowCards = cards.filter(c => c.value <= 6).length;
+  const monotone = maxSuit >= 3;
+  const rainbow = uniqueSuits === cards.length && cards.length >= 3;
   
   // Determine texture
   let texture: 'dry' | 'wet' | 'dangerous' = 'dry';
@@ -283,7 +288,11 @@ function analyzeBoard(communityCards: string[]): BoardAnalysis {
     straightDraw: maxConnected >= 2 && maxConnected < 4,
     connected: maxConnected >= 2,
     highCards,
-    texture
+    texture,
+    monotone,
+    rainbow,
+    broadway,
+    lowCards
   };
 }
 
@@ -293,8 +302,10 @@ function analyzeBoard(communityCards: string[]): BoardAnalysis {
 function evaluateMadeHand(holeCards: string[], communityCards: string[]): MadeHand {
   const allCards = [...holeCards, ...communityCards].map(parseCard).filter(Boolean) as Array<{ rank: string; suit: string; value: number }>;
   
+  const emptyDraws: DrawAnalysis = { hasFlushDraw: false, hasStraightDraw: false, hasGutshot: false, hasOvercards: false, outs: 0, equity: 0 };
+  
   if (allCards.length < 2) {
-    return { rank: 1, name: 'High Card', strength: 10 };
+    return { rank: 1, name: 'High Card', strength: 10, draws: emptyDraws, kicker: 0 };
   }
   
   // Count suits and ranks
@@ -308,6 +319,12 @@ function evaluateMadeHand(holeCards: string[], communityCards: string[]): MadeHa
   const maxSuit = Math.max(...suitCounts.values());
   const rankCountsArr = Array.from(rankCounts.values()).sort((a, b) => b - a);
   const values = Array.from(rankCounts.keys()).sort((a, b) => b - a);
+  
+  // Calculate kicker (highest non-pair card)
+  const kicker = values.find(v => rankCounts.get(v) === 1) || values[0] || 0;
+  
+  // Get draws analysis
+  const draws = communityCards.length >= 3 ? analyzeDraws(holeCards, communityCards) : emptyDraws;
   
   // Check for flush
   const hasFlush = maxSuit >= 5;
@@ -329,41 +346,41 @@ function evaluateMadeHand(holeCards: string[], communityCards: string[]): MadeHa
   // Determine hand rank
   if (hasFlush && hasStraight) {
     const highValue = Math.max(...values);
-    if (highValue === 14) return { rank: 10, name: 'Royal Flush', strength: 100 };
-    return { rank: 9, name: 'Straight Flush', strength: 98 };
+    if (highValue === 14) return { rank: 10, name: 'Royal Flush', strength: 100, draws, kicker };
+    return { rank: 9, name: 'Straight Flush', strength: 98, draws, kicker };
   }
   
   if (rankCountsArr[0] === 4) {
-    return { rank: 8, name: 'Four of a Kind', strength: 95 };
+    return { rank: 8, name: 'Four of a Kind', strength: 95, draws, kicker };
   }
   
   if (rankCountsArr[0] === 3 && rankCountsArr[1] >= 2) {
-    return { rank: 7, name: 'Full House', strength: 90 };
+    return { rank: 7, name: 'Full House', strength: 90, draws, kicker };
   }
   
   if (hasFlush) {
-    return { rank: 6, name: 'Flush', strength: 82 };
+    return { rank: 6, name: 'Flush', strength: 82, draws, kicker };
   }
   
   if (hasStraight) {
-    return { rank: 5, name: 'Straight', strength: 75 };
+    return { rank: 5, name: 'Straight', strength: 75, draws, kicker };
   }
   
   if (rankCountsArr[0] === 3) {
-    return { rank: 4, name: 'Three of a Kind', strength: 65 };
+    return { rank: 4, name: 'Three of a Kind', strength: 65, draws, kicker };
   }
   
   if (rankCountsArr[0] === 2 && rankCountsArr[1] === 2) {
-    return { rank: 3, name: 'Two Pair', strength: 55 };
+    return { rank: 3, name: 'Two Pair', strength: 55, draws, kicker };
   }
   
   if (rankCountsArr[0] === 2) {
     const pairValue = values.find(v => rankCounts.get(v) === 2) || 0;
-    return { rank: 2, name: 'One Pair', strength: 30 + pairValue * 2 };
+    return { rank: 2, name: 'One Pair', strength: 30 + pairValue * 2, draws, kicker };
   }
   
   const highCard = Math.max(...values);
-  return { rank: 1, name: 'High Card', strength: 10 + highCard };
+  return { rank: 1, name: 'High Card', strength: 10 + highCard, draws, kicker };
 }
 
 /**
@@ -770,15 +787,9 @@ function preflopStrategy(
       }
     }
     
-    // Facing raise in orange/red zone - tight calling range
+    // Facing raise in orange/red zone - fold weak hands
     if (isRaised) {
-      if (hand.category === 'premium') {
-        return { action: 'allin', reasoning: 'Short stack premium vs raise - shove', confidence: 92 };
-      }
-      if (hand.category === 'strong' && callAmount < stack * 0.4) {
-        return { action: 'allin', reasoning: 'Strong hand vs raise - reshove', confidence: 75 };
-      }
-      return { action: 'fold', reasoning: 'Short stack fold to raise', confidence: 65 };
+      return { action: 'fold', reasoning: 'Short stack fold weak hand to raise', confidence: 65 };
     }
   }
   
