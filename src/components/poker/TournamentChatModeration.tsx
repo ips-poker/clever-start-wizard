@@ -251,8 +251,8 @@ export const TournamentChatModeration: React.FC<TournamentChatModerationProps> =
 
   return (
     <div className={cn(
-      "fixed bottom-4 right-4 z-50 w-80 bg-background/95 backdrop-blur-sm rounded-lg border border-border/50 shadow-xl",
-      className
+      "bg-background/95 backdrop-blur-sm rounded-lg border border-border/50 shadow-xl",
+      className?.includes('static') ? className : "fixed bottom-4 right-4 z-50 w-80 " + className
     )}>
       {/* Header */}
       <div className="flex items-center justify-between p-2 border-b border-border/30">
