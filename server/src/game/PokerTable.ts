@@ -498,6 +498,88 @@ export class PokerTable {
   }
 
   /**
+   * TOURNAMENT LEVEL SYNC: Refresh blinds from database
+   * Called when tournament-level-manager updates poker_tables
+   * This ensures the server engine uses the latest blind levels
+   */
+  public async refreshBlindsFromDatabase(): Promise<boolean> {
+    try {
+      const { data: tableData, error } = await this.supabase
+        .from('poker_tables')
+        .select('small_blind, big_blind, ante')
+        .eq('id', this.id)
+        .single();
+      
+      if (error || !tableData) {
+        logger.warn('Failed to refresh blinds from database', { 
+          tableId: this.id, 
+          error: error?.message 
+        });
+        return false;
+      }
+      
+      const oldBlinds = {
+        smallBlind: this.config.smallBlind,
+        bigBlind: this.config.bigBlind,
+        ante: this.config.ante
+      };
+      
+      // Update config
+      this.config.smallBlind = tableData.small_blind;
+      this.config.bigBlind = tableData.big_blind;
+      this.config.ante = tableData.ante || 0;
+      
+      // Update engine config for next hand
+      this.engine.updateBlinds(
+        tableData.small_blind,
+        tableData.big_blind,
+        tableData.ante || 0
+      );
+      
+      // Only log if blinds actually changed
+      if (oldBlinds.smallBlind !== tableData.small_blind || 
+          oldBlinds.bigBlind !== tableData.big_blind) {
+        logger.info('TOURNAMENT LEVEL SYNC: Blinds updated from database', {
+          tableId: this.id,
+          tableName: this.config.name,
+          oldBlinds,
+          newBlinds: {
+            smallBlind: tableData.small_blind,
+            bigBlind: tableData.big_blind,
+            ante: tableData.ante || 0
+          }
+        });
+        
+        // Emit event for clients to update their UI
+        this.emit('blinds_changed', {
+          smallBlind: tableData.small_blind,
+          bigBlind: tableData.big_blind,
+          ante: tableData.ante || 0
+        });
+      }
+      
+      return true;
+    } catch (err) {
+      logger.error('Error refreshing blinds from database', { 
+        tableId: this.id, 
+        error: String(err) 
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Get current blinds config (for external access)
+   */
+  public getBlinds(): { smallBlind: number; bigBlind: number; ante: number } {
+    return {
+      smallBlind: this.config.smallBlind,
+      bigBlind: this.config.bigBlind,
+      ante: this.config.ante
+    };
+  }
+
+  /**
    * Check if a player exists in memory
    */
   public hasPlayer(playerId: string): boolean {
