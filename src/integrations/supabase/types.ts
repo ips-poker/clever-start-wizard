@@ -2712,6 +2712,10 @@ export type Database = {
         }
         Returns: Json
       }
+      repair_tournament_seating: {
+        Args: { p_tournament_id: string }
+        Returns: Json
+      }
       resume_tournament: {
         Args: { tournament_id_param: string }
         Returns: boolean
@@ -2729,6 +2733,10 @@ export type Database = {
         Returns: boolean
       }
       sync_all_player_avatars: { Args: never; Returns: undefined }
+      sync_tournament_stacks: {
+        Args: { p_tournament_id: string }
+        Returns: Json
+      }
       track_sit_out_orbit: {
         Args: { p_new_dealer_seat: number; p_table_id: string }
         Returns: Json

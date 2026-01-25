@@ -2168,6 +2168,27 @@ export class PokerTable {
 
     const isBot = this.isBotPlayer(player);
     
+    // POKERSTARS-STYLE: Players who are sitting out should auto-fold immediately
+    // This prevents the game from waiting for absent players
+    if (player.status === 'sitting_out' && !isBot) {
+      logger.info('POKERSTARS: Auto-folding sitting out player immediately', {
+        playerId: playerId.substring(0, 8),
+        name: player.name,
+        missedTurns: player.missedTurns
+      });
+      
+      // Use minimal delay (100ms) for visual feedback, then auto-fold
+      this.actionTimer = setTimeout(async () => {
+        if (this.currentHand?.currentPlayerSeat === seat && 
+            this.currentHand.phase !== 'showdown') {
+          player.missedTurns++;
+          const canCheck = player.currentBet >= (this.currentHand?.currentBet || 0);
+          await this.action(playerId, canCheck ? 'check' : 'fold');
+        }
+      }, 100);
+      return;
+    }
+    
     // POKERSTARS-STYLE: Use cached actionTimeTotal if available, otherwise calculate fresh
     // This ensures consistency between timer start and state_update events
     const phaseAwareActionTime = this.currentHand?.actionTimeTotal || this.getActionTimeForPhase();
@@ -2443,7 +2464,7 @@ export class PokerTable {
     }
     player.timeBankUsedThisAction = 0;
 
-    // Increment missed turns counter
+    // Increment missed turns counter BEFORE any action
     player.missedTurns++;
 
     logger.info('POKERSTARS: Player timed out completely', { 
@@ -2454,39 +2475,23 @@ export class PokerTable {
       phase: this.currentHand?.phase
     });
 
-    // GRACEFUL TIMEOUT (PokerStars style):
-    // 1. If check is possible -> auto-CHECK
-    // 2. Otherwise -> auto-FOLD
-    const canCheck = player.currentBet >= this.currentHand.currentBet;
-    const autoAction = canCheck ? 'check' : 'fold';
-
-    logger.warn('POKERSTARS: Graceful auto-action', {
-      playerId: playerId.substring(0, 8),
-      action: autoAction,
-      canCheck,
-      playerBet: player.currentBet,
-      currentBet: this.currentHand.currentBet,
-      missedTurns: player.missedTurns
-    });
-
-    await this.action(playerId, autoAction);
-
-    // POKERSTARS-STYLE: After 1 timeout, set player to sitting_out immediately
-    // This matches PokerStars behavior where a single timeout triggers sit-out
+    // POKERSTARS-STYLE: After 1 timeout, set player to sitting_out IMMEDIATELY
+    // CRITICAL: Must happen BEFORE auto-action so future turns auto-fold instantly
     if (player.missedTurns >= 1) {
-      logger.info('POKERSTARS: Player auto sitting out after 1 missed turn', {
+      logger.info('POKERSTARS: Player auto sitting out after timeout', {
         playerId: playerId.substring(0, 8),
         missedTurns: player.missedTurns
       });
       player.status = 'sitting_out';
       player.sitOutAt = Date.now();
       
-      // Update database
+      // Update database synchronously for consistency
       this.supabase
         .from('poker_table_players')
         .update({ 
           status: 'sitting_out',
-          sit_out_at: new Date().toISOString()
+          sit_out_at: new Date().toISOString(),
+          missed_turns: player.missedTurns
         })
         .eq('table_id', this.id)
         .eq('player_id', playerId)
@@ -2501,7 +2506,25 @@ export class PokerTable {
       });
     }
 
-    this.emit('timeout', { playerId, action: autoAction, missedTurns: player.missedTurns });
+    // GRACEFUL TIMEOUT (PokerStars style):
+    // 1. If check is possible -> auto-CHECK
+    // 2. Otherwise -> auto-FOLD
+    const canCheck = player.currentBet >= this.currentHand.currentBet;
+    const autoAction = canCheck ? 'check' : 'fold';
+
+    logger.warn('POKERSTARS: Graceful auto-action', {
+      playerId: playerId.substring(0, 8),
+      action: autoAction,
+      canCheck,
+      playerBet: player.currentBet,
+      currentBet: this.currentHand.currentBet,
+      missedTurns: player.missedTurns,
+      isSittingOut: player.status === 'sitting_out'
+    });
+
+    await this.action(playerId, autoAction);
+
+    this.emit('timeout', { playerId, action: autoAction, missedTurns: player.missedTurns, isSittingOut: player.status === 'sitting_out' });
   }
   
   /**
