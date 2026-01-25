@@ -1150,44 +1150,46 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
           </Card>
 
           {/* Available Bots */}
-          <Card className="flex-1 flex flex-col min-h-0">
+          <Card className="flex flex-col">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 Доступные боты ({availableBots.length})
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto">
-              <div className="space-y-1">
-                {availableBots.map(bot => {
-                  const isSeated = selectedTable?.players.some(p => p.player_id === bot.id);
-                  const connection = botConnectionsRef.current.get(bot.id);
-                  
-                  return (
-                    <div key={bot.id} className="flex items-center justify-between text-xs p-1.5 rounded bg-muted/50">
-                      <div className="flex items-center gap-1">
-                        {connection?.connected && (
-                          <Wifi className="h-2.5 w-2.5 text-green-500" />
+            <CardContent className="p-0">
+              <ScrollArea className="h-[250px]">
+                <div className="space-y-1 p-3">
+                  {availableBots.map(bot => {
+                    const isSeated = selectedTable?.players.some(p => p.player_id === bot.id);
+                    const connection = botConnectionsRef.current.get(bot.id);
+                    
+                    return (
+                      <div key={bot.id} className="flex items-center justify-between text-xs p-1.5 rounded bg-muted/50">
+                        <div className="flex items-center gap-1">
+                          {connection?.connected && (
+                            <Wifi className="h-2.5 w-2.5 text-green-500" />
+                          )}
+                          <span className={isSeated ? 'text-green-600' : ''}>{bot.name}</span>
+                        </div>
+                        {!isSeated ? (
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="h-6 w-6"
+                            onClick={() => sitBotAtTable(bot.id, bot.name)}
+                            disabled={loading}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px]">За столом</Badge>
                         )}
-                        <span className={isSeated ? 'text-green-600' : ''}>{bot.name}</span>
                       </div>
-                      {!isSeated ? (
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          className="h-6 w-6"
-                          onClick={() => sitBotAtTable(bot.id, bot.name)}
-                          disabled={loading}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      ) : (
-                        <Badge variant="outline" className="text-[10px]">За столом</Badge>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
             </CardContent>
           </Card>
         </div>
