@@ -20,6 +20,7 @@ interface TournamentRebuyDialogProps {
   timestamp: number;
   onRebuySuccess: (newChips: number) => void;
   onLeave: () => void;
+  notifyServer?: (newChips: number) => void; // Notify WebSocket server after RPC
 }
 
 export function TournamentRebuyDialog({
@@ -31,7 +32,8 @@ export function TournamentRebuyDialog({
   timeoutSeconds,
   timestamp,
   onRebuySuccess,
-  onLeave
+  onLeave,
+  notifyServer
 }: TournamentRebuyDialogProps) {
   const [timeRemaining, setTimeRemaining] = useState(timeoutSeconds);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -113,7 +115,13 @@ export function TournamentRebuyDialog({
       }
 
       toast.success(`Ребай выполнен! +${tournamentInfo.rebuy_chips.toLocaleString()} фишек`);
-      onRebuySuccess(result.new_chips || tournamentInfo.rebuy_chips);
+      
+      const newChips = result.new_chips || tournamentInfo.rebuy_chips;
+      
+      // CRITICAL: Notify WebSocket server to sync stack in memory and prevent timeout elimination
+      notifyServer?.(newChips);
+      
+      onRebuySuccess(newChips);
       onClose();
     } catch (err) {
       console.error('Rebuy failed:', err);
