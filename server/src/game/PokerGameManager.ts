@@ -29,6 +29,7 @@ export class PokerGameManager {
   private saveInterval: NodeJS.Timeout | null = null;
   private onTableLoadedCallbacks: Set<(table: PokerTable) => void> = new Set();
   private blindsSyncSubscription: any = null;
+  private lastTournamentBalanceSyncAt = 0;
   
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
@@ -94,7 +95,8 @@ export class PokerGameManager {
           maxBuyIn: tableData.max_buy_in,
           // POKERSTARS-STYLE: Cash Game = 15s base, 30s time bank
           actionTimeSeconds: tableData.action_time_seconds || 15,
-          timeBankSeconds: tableData.time_bank_seconds || 30
+          timeBankSeconds: tableData.time_bank_seconds || 30,
+          tournamentId: tableData.tournament_id || undefined,
         };
         
         const table = new PokerTable(config, this.supabase);
@@ -241,6 +243,7 @@ export class PokerGameManager {
         max_buy_in: config.maxBuyIn,
         action_time_seconds: config.actionTimeSeconds,
         time_bank_seconds: config.timeBankSeconds,
+        tournament_id: config.tournamentId ?? null,
         status: 'waiting'
       })
       .select()
@@ -299,7 +302,8 @@ export class PokerGameManager {
         maxBuyIn: tableData.max_buy_in,
         // POKERSTARS-STYLE: Cash Game = 15s base, 30s time bank
         actionTimeSeconds: tableData.action_time_seconds || 15,
-        timeBankSeconds: tableData.time_bank_seconds || 30
+        timeBankSeconds: tableData.time_bank_seconds || 30,
+        tournamentId: tableData.tournament_id || undefined,
       };
       
       const table = new PokerTable(config, this.supabase);
@@ -358,7 +362,39 @@ export class PokerGameManager {
       this.saveAllGames();
       // POKERSTARS: Check for stuck tables every 15 seconds (was 30)
       this.checkStuckTables();
+
+      // Tournament table balancing sync: keep in-memory player lists aligned with DB moves
+      // (DB RPCs can rebalance tables without going through WebSocket flow)
+      this.syncAllTournamentBalancing().catch(err => {
+        logger.warn('Tournament balancing sync failed', { error: String(err) });
+      });
     }, 15000); // Check every 15 seconds for faster recovery
+  }
+
+  /**
+   * Keep VPS in-memory tables aligned with DB rebalancing.
+   * Runs on an interval (throttled) and calls syncTableBalancing per tournament.
+   */
+  private async syncAllTournamentBalancing(): Promise<void> {
+    const now = Date.now();
+    // Throttle to once per 15s (same as autosave interval)
+    if (now - this.lastTournamentBalanceSyncAt < 14000) return;
+    this.lastTournamentBalanceSyncAt = now;
+
+    const tournamentIds = new Set<string>();
+    for (const table of this.tables.values()) {
+      const tid = table.getTournamentId?.();
+      if (tid) tournamentIds.add(tid);
+    }
+
+    if (tournamentIds.size === 0) return;
+
+    for (const tournamentId of tournamentIds) {
+      const res = await this.syncTableBalancing(tournamentId);
+      if (!res.success) {
+        logger.warn('syncTableBalancing reported failure', { tournamentId, error: res.error });
+      }
+    }
   }
   
   /**
