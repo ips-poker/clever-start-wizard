@@ -1,7 +1,7 @@
 // PPPoker-style Compact Cards - Cards positioned BELOW avatar (fanned)
 // Smaller cards for opponents, positioned like in PPPoker reference images
 
-import React, { memo } from 'react';
+import React, { memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
@@ -350,8 +350,20 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
 
-  // Use handId directly as key - AnimatePresence handles animation resets
-  const animationKey = handId || 'waiting';
+  /**
+   * IMPORTANT:
+   * `handId` can transiently be undefined during state reconciliation.
+   * If we use `handId || 'waiting'` as a key, the container remounts and
+   * Framer Motion replays `initial` on every such blip ("триггерит анимация").
+   *
+   * We keep the last known non-null handId and only change keys when a NEW
+   * real handId arrives.
+   */
+  const lastNonNullHandIdRef = useRef<string | undefined>(handId);
+  if (handId && handId !== lastNonNullHandIdRef.current) {
+    lastNonNullHandIdRef.current = handId;
+  }
+  const animationKey = handId ?? lastNonNullHandIdRef.current ?? 'waiting';
   
   // Use showdown size for larger cards during showdown like in reference
   const actualSize = isShowdown ? 'showdown' : size;
