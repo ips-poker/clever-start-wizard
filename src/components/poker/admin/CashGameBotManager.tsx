@@ -462,67 +462,120 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
     setLoading(false);
   };
 
-  // Remove bot from table
+  // Remove bot from table - properly notify server via WebSocket
   const removeBotFromTable = async (playerId: string, playerName: string, tableId: string) => {
     setLoading(true);
     addLog('action', `Снятие ${playerName} со стола...`);
 
     try {
-      // Get current stack
+      // First disconnect bot WebSocket if connected
+      const connection = botConnectionsRef.current.get(playerId);
+      if (connection?.ws) {
+        connection.ws.close();
+        botConnectionsRef.current.delete(playerId);
+      }
+
+      // Send leave_table message to server via WebSocket
+      // This ensures server removes player from memory and handles chip return
+      const wsUrl = getWsUrl(tableId, playerId);
+      addLog('ws', `Отправка leave_table для ${playerName}...`);
+      
+      await new Promise<void>((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          reject(new Error('WebSocket timeout'));
+        }, 5000);
+        
+        const leaveWs = new WebSocket(wsUrl);
+        
+        leaveWs.onopen = () => {
+          leaveWs.send(JSON.stringify({ 
+            type: 'leave_table', 
+            tableId,
+            playerId
+          }));
+          addLog('ws', `leave_table отправлен для ${playerName}`);
+          
+          // Wait a bit for server to process
+          setTimeout(() => {
+            clearTimeout(timeoutId);
+            leaveWs.close();
+            resolve();
+          }, 500);
+        };
+        
+        leaveWs.onerror = (err) => {
+          clearTimeout(timeoutId);
+          addLog('warning', `WebSocket ошибка, удаляем напрямую из БД`, err);
+          leaveWs.close();
+          resolve(); // Continue with DB deletion
+        };
+      });
+
+      // Fallback: also delete from DB directly in case server didn't handle it
+      // (e.g., if server is down or player was never in server memory)
       const { data: tablePlayer } = await supabase
         .from('poker_table_players')
-        .select('stack')
+        .select('stack, status')
         .eq('table_id', tableId)
         .eq('player_id', playerId)
         .single();
 
-      if (tablePlayer && tablePlayer.stack > 0) {
-        // Return chips to diamond wallet
-        const { data: wallet } = await supabase
-          .from('diamond_wallets')
-          .select('id, balance')
-          .eq('player_id', playerId)
-          .single();
-
-        if (wallet) {
-          await supabase
+      if (tablePlayer) {
+        // If still in DB, return chips and delete
+        if (tablePlayer.stack > 0) {
+          const { data: wallet } = await supabase
             .from('diamond_wallets')
-            .update({ balance: wallet.balance + tablePlayer.stack })
-            .eq('player_id', playerId);
+            .select('id, balance')
+            .eq('player_id', playerId)
+            .single();
 
-          await supabase
-            .from('diamond_transactions')
-            .insert({
-              player_id: playerId,
-              wallet_id: wallet.id,
-              amount: tablePlayer.stack,
-              balance_before: wallet.balance,
-              balance_after: wallet.balance + tablePlayer.stack,
-              transaction_type: 'cash_game_cashout',
-              description: `Кэшаут со стола`
-            });
+          if (wallet) {
+            await supabase
+              .from('diamond_wallets')
+              .update({ balance: wallet.balance + tablePlayer.stack })
+              .eq('player_id', playerId);
 
-          addLog('success', `${playerName} получил ${tablePlayer.stack}💎`);
+            await supabase
+              .from('diamond_transactions')
+              .insert({
+                player_id: playerId,
+                wallet_id: wallet.id,
+                amount: tablePlayer.stack,
+                balance_before: wallet.balance,
+                balance_after: wallet.balance + tablePlayer.stack,
+                transaction_type: 'cash_game_cashout',
+                description: `Кэшаут со стола (админ)`
+              });
+
+            addLog('success', `${playerName} получил ${tablePlayer.stack}💎`);
+          }
         }
-      }
 
-      // Disconnect bot if connected
-      const connection = botConnectionsRef.current.get(playerId);
-      if (connection?.ws) {
-        connection.ws.close();
+        await supabase
+          .from('poker_table_players')
+          .delete()
+          .eq('table_id', tableId)
+          .eq('player_id', playerId);
       }
-
-      // Remove from table
-      await supabase
-        .from('poker_table_players')
-        .delete()
-        .eq('table_id', tableId)
-        .eq('player_id', playerId);
 
       await loadCashTables();
+      addLog('success', `${playerName} снят со стола`);
       toast.success(`${playerName} снят со стола`);
     } catch (err) {
-      addLog('error', 'Ошибка', err);
+      addLog('error', 'Ошибка снятия бота', err);
+      
+      // Ultimate fallback - force delete from DB
+      try {
+        await supabase
+          .from('poker_table_players')
+          .delete()
+          .eq('table_id', tableId)
+          .eq('player_id', playerId);
+        await loadCashTables();
+        addLog('warning', `${playerName} удален напрямую из БД`);
+      } catch (e) {
+        addLog('error', 'Не удалось удалить из БД', e);
+      }
     }
     setLoading(false);
   };
