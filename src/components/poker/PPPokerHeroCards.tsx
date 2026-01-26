@@ -14,6 +14,7 @@ interface PPPokerHeroCardsProps {
   gamePhase: string;
   isWinner?: boolean;
   winningCardIndices?: number[]; // Indices of hole cards that participate in winning hand
+  isFolded?: boolean; // PokerStars-style: show folded cards face-down, hover to peek
 }
 
 // 4-color suit configuration (PPPoker default)
@@ -294,10 +295,12 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
   communityCards = [],
   gamePhase,
   isWinner = false,
-  winningCardIndices = []
+  winningCardIndices = [],
+  isFolded = false
 }: PPPokerHeroCardsProps) {
   const { preferences } = usePokerPreferences();
   const useFourColor = preferences.cardStyle === 'fourcolor';
+  const [isHovering, setIsHovering] = useState(false);
 
   // Calculate hand strength
   const handName = useMemo(() => {
@@ -312,14 +315,43 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
   const cardCount = cards.length;
   const cardOverlap = cardCount > 2 ? -8 : -10;
   const isShowdown = gamePhase === 'showdown';
+  
+  // PokerStars-style: folded cards show face-down, hover to peek
+  const showCardsFaceUp = !isFolded || isHovering;
 
   return (
-    <div className="absolute left-full ml-1.5 top-1/2 -translate-y-1/2 flex flex-col items-start gap-0.5 z-10">
+    <div 
+      className="absolute left-full ml-1.5 top-1/2 -translate-y-1/2 flex flex-col items-start gap-0.5 z-10"
+      onMouseEnter={() => isFolded && setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
+      {/* Folded indicator */}
+      {isFolded && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="absolute -top-5 left-0 px-1.5 py-0.5 rounded text-[9px] font-bold whitespace-nowrap z-20"
+          style={{
+            background: 'rgba(239, 68, 68, 0.8)',
+            color: '#ffffff',
+            textShadow: '0 1px 2px rgba(0,0,0,0.5)'
+          }}
+        >
+          FOLD {isHovering ? '' : '👁'}
+        </motion.div>
+      )}
+      
       {/* Cards row with overlap */}
-      <div className="flex">
+      <div 
+        className={cn(
+          "flex transition-all duration-200",
+          isFolded && "cursor-pointer",
+          isFolded && !isHovering && "opacity-60 grayscale"
+        )}
+      >
         {cards.map((card, idx) => {
           const isCardWinning = winningCardIndices.includes(idx);
-          const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
+          const isDimmed = (isShowdown && winningCardIndices.length > 0 && !isCardWinning) || (isFolded && !isHovering);
           
           return (
             <div 
@@ -329,22 +361,27 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
                 zIndex: idx
               }}
             >
-              <HeroCard 
-                card={card} 
-                delay={idx} 
-                isWinning={isShowdown && isCardWinning && isWinner}
-                isDimmed={isDimmed}
-                useFourColor={useFourColor}
-                cardCount={cardCount}
-                animate={!isShowdown}
-              />
+              {showCardsFaceUp ? (
+                <HeroCard 
+                  card={card} 
+                  delay={isFolded ? 0 : idx} 
+                  isWinning={isShowdown && isCardWinning && isWinner}
+                  isDimmed={isDimmed}
+                  useFourColor={useFourColor}
+                  cardCount={cardCount}
+                  animate={!isShowdown && !isFolded}
+                />
+              ) : (
+                // Face-down card (folded state)
+                <FoldedCardBack cardCount={cardCount} />
+              )}
             </div>
           );
         })}
       </div>
       
-      {/* Hand strength badge - PPPoker style */}
-      {handName && (
+      {/* Hand strength badge - only show if not folded */}
+      {handName && !isFolded && (
         isShowdown ? (
           <div
             className="mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap"
@@ -378,6 +415,43 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
           </motion.div>
         )
       )}
+    </div>
+  );
+});
+
+// Folded card back component - smaller, greyed out
+const FoldedCardBack = memo(function FoldedCardBack({ cardCount }: { cardCount: number }) {
+  const cardWidth = cardCount > 2 ? 44 : 52;
+  const cardHeight = cardCount > 2 ? 62 : 74;
+  
+  return (
+    <div
+      className="rounded-lg overflow-hidden relative"
+      style={{
+        width: cardWidth,
+        height: cardHeight,
+        background: 'linear-gradient(135deg, #374151 0%, #1f2937 50%, #374151 100%)',
+        border: '2px solid #4b5563',
+        boxShadow: '0 3px 8px rgba(0,0,0,0.3)',
+        opacity: 0.7
+      }}
+    >
+      <div 
+        className="absolute inset-1.5 rounded"
+        style={{
+          background: `repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 3px,
+            rgba(255,255,255,0.02) 3px,
+            rgba(255,255,255,0.02) 6px
+          )`,
+          border: '1px solid rgba(255,255,255,0.05)'
+        }}
+      />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-xl" style={{ color: 'rgba(255,255,255,0.08)' }}>♠</span>
+      </div>
     </div>
   );
 });
