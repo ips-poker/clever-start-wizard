@@ -24,12 +24,12 @@ export interface AnimationState {
   progress: number;
 }
 
-// Default professional timings (ms)
+// POKERSTARS-STYLE professional timings (ms)
 const DEFAULT_TIMINGS = {
-  flop: { preDealDelay: 600, perCardDelay: 150, postDealDelay: 300 },
-  turn: { preDealDelay: 500, perCardDelay: 0, postDealDelay: 250 },
-  river: { preDealDelay: 500, perCardDelay: 0, postDealDelay: 250 },
-  showdown: { preDealDelay: 300, perCardDelay: 0, postDealDelay: 0 },
+  flop: { preDealDelay: 650, perCardDelay: 200, postDealDelay: 350 },   // POKERSTARS: ~650ms pre, ~200ms/card, ~350ms post
+  turn: { preDealDelay: 550, perCardDelay: 0, postDealDelay: 300 },    // POKERSTARS: ~550ms pre, ~300ms post
+  river: { preDealDelay: 550, perCardDelay: 0, postDealDelay: 300 },   // POKERSTARS: ~550ms pre, ~300ms post
+  showdown: { preDealDelay: 350, perCardDelay: 0, postDealDelay: 0 },  // Quick transition
 };
 
 export function usePhaseAnimation() {

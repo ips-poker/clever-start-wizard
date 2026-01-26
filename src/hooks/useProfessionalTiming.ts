@@ -4,41 +4,42 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-// Professional poker room timing constants (in ms)
+// POKERSTARS-STYLE Professional poker room timing constants (in ms)
+// Updated to match actual PokerStars timings
 export const PROFESSIONAL_TIMINGS = {
   // Phase transition delays
-  afterAction: 400,           // Delay after each player action
-  betCollection: 600,         // Time to collect bets to pot
+  afterAction: 400,           // POKERSTARS: ~400ms after each player action
+  betCollection: 700,         // POKERSTARS: Time to collect bets to pot
   
-  // Card dealing delays
+  // Card dealing delays - POKERSTARS TIMINGS
   flop: {
-    preDeal: 500,             // Pause before dealing flop
-    perCard: 150,             // Time between each flop card
-    postDeal: 300             // Pause after all 3 cards dealt
+    preDeal: 650,             // POKERSTARS: ~600-700ms pause before dealing flop
+    perCard: 200,             // POKERSTARS: ~180-220ms between each flop card
+    postDeal: 350             // POKERSTARS: ~350ms pause after all 3 cards dealt
   },
   turn: {
-    preDeal: 400,             // Pause before turn
+    preDeal: 550,             // POKERSTARS: ~500-600ms pause before turn
     perCard: 0,               // Single card
-    postDeal: 250
+    postDeal: 300             // POKERSTARS: ~300ms pause after turn
   },
   river: {
-    preDeal: 400,             // Pause before river
+    preDeal: 550,             // POKERSTARS: ~500-600ms pause before river
     perCard: 0,               // Single card
-    postDeal: 250
+    postDeal: 300             // POKERSTARS: ~300ms pause after river
   },
   
-  // Showdown timing
+  // Showdown timing - POKERSTARS TIMINGS
   showdown: {
-    revealDelay: 500,         // Delay between each player reveal
-    winnerHighlight: 1500,    // Time to highlight winning hand
-    potCollection: 1000,      // Chips moving to winner
-    displayDuration: 3000     // Total showdown display time
+    revealDelay: 750,         // POKERSTARS: ~700-800ms between each player reveal
+    winnerHighlight: 3000,    // POKERSTARS: ~3s to highlight winning hand
+    potCollection: 1500,      // POKERSTARS: ~1.5s chips moving to winner
+    displayDuration: 4000     // POKERSTARS: ~4s total showdown display time
   },
   
-  // Between hands
+  // Between hands - POKERSTARS TIMINGS
   nextHand: {
-    minDelay: 2000,           // Minimum delay before next hand
-    maxDelay: 3000            // Maximum delay
+    minDelay: 3000,           // POKERSTARS: ~3s minimum delay before next hand
+    maxDelay: 3500            // POKERSTARS: ~3.5s maximum delay
   }
 };
 
