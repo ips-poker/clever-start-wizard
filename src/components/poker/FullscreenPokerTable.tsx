@@ -1440,6 +1440,7 @@ export interface FullscreenPokerTableProps {
 }
 
 export const FullscreenPokerTable = memo(function FullscreenPokerTable({
+  tableState,
   players,
   heroSeat,
   heroCards,
@@ -1602,6 +1603,33 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
     return result;
   }, [players, heroSeat, maxPlayers, preferences.preferredSeatRotation]);
   
+  // POKERSTARS-STYLE: Calculate deal order based on position from dealer
+  // Cards are dealt starting from SB (seat after dealer), going clockwise
+  const dealOrderMap = useMemo(() => {
+    const map = new Map<number, number>(); // seatNumber -> dealOrder
+    
+    // Get list of occupied seats sorted by their dealing order (from dealer clockwise)
+    const occupiedSeats = players
+      .filter(p => p && !p.isFolded && !p.isSittingOut)
+      .map(p => p.seatNumber)
+      .sort((a, b) => {
+        // Distance from dealer in clockwise direction
+        const distA = (a - dealerSeat + maxPlayers) % maxPlayers;
+        const distB = (b - dealerSeat + maxPlayers) % maxPlayers;
+        return distA - distB;
+      });
+    
+    // Assign deal order (0 = first after dealer = SB position, etc.)
+    occupiedSeats.forEach((seat, index) => {
+      map.set(seat, index);
+    });
+    
+    return map;
+  }, [players, dealerSeat, maxPlayers]);
+  
+  // Get handId from tableState for animation reset
+  const tableStateAny = tableState;
+  const handId = tableStateAny?.handId as string | undefined;
 
   return (
     <div className="relative w-full h-full">
@@ -1709,6 +1737,8 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               showdownWinners={winners}
               bigBlind={bigBlind}
               displayFormat={preferences.displayFormat}
+              dealOrder={player?.seatNumber !== undefined ? dealOrderMap.get(player.seatNumber) ?? 0 : 0}
+              handId={handId}
             />
 
             {/* Bet amount (incl. SB/BB fallback) - anchored to avatar center in table coordinates */}
