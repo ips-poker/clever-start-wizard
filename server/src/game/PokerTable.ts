@@ -3542,6 +3542,21 @@ export class PokerTable {
       return;
     }
 
+    // CRITICAL FIX: Update action_started_at to prevent watchdog false positives
+    // All-in showdown can take 6+ seconds with animations, need to tell DB hand is active
+    const allInShowdownStartTime = Date.now();
+    this.currentHand.actionStartTime = allInShowdownStartTime;
+    
+    // Sync to database immediately
+    await this.supabase
+      .from('poker_hands')
+      .update({
+        action_started_at: new Date(allInShowdownStartTime).toISOString(),
+        phase: 'showdown', // Mark as showdown phase to exclude from stuck hand checks
+        current_player_seat: null // No one to act during all-in showdown
+      })
+      .eq('id', this.currentHand.id);
+    
     logger.info('=== POKERSTARS ALL-IN SHOWDOWN ===', {
       tableId: this.id,
       handNumber: this.handNumber,
