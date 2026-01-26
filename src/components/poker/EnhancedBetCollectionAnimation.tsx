@@ -2,10 +2,13 @@
  * Enhanced Bet Collection Animation Component
  * OPTIMIZED for mobile/Telegram performance
  * Simplified chips fly from player positions to center pot
+ * 
+ * IMPORTANT: Uses unified timing configuration from src/config/pokerTimings.ts
  */
 import React, { memo, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { BET_COLLECTION_TIMINGS } from '@/config/pokerTimings';
 
 interface CollectedBet {
   playerId: string;
@@ -83,8 +86,8 @@ const AnimatedChip = memo(function AnimatedChip({
         opacity: [1, 1, 0]
       }}
       transition={{
-        // POKERSTARS-STYLE: Bet collection ~500ms with smooth easing
-        duration: 0.5,
+        // Uses unified timing from config
+        duration: BET_COLLECTION_TIMINGS.slideToCenter / 1000,
         delay,
         ease: [0.4, 0, 0.2, 1],
         times: [0, 0.4, 1]
@@ -133,8 +136,8 @@ export const EnhancedBetCollectionAnimation = memo(function EnhancedBetCollectio
       x: (bet.position.x - 50) * 4,
       y: (bet.position.y - 50) * 4,
       amount: bet.amount,
-      // POKERSTARS-STYLE: ~80ms stagger between each player's chips
-      delay: betIndex * 0.08
+      // Uses unified timing from config
+      delay: betIndex * (BET_COLLECTION_TIMINGS.staggerPerPlayer / 1000)
     }));
 
     setChips(newChips);

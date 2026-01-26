@@ -1,7 +1,13 @@
+/**
+ * PPPoker Table Animations
+ * Premium animation components for poker table
+ * 
+ * IMPORTANT: Uses unified timing configuration from src/config/pokerTimings.ts
+ */
 import React, { memo, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { cn } from '@/lib/utils';
-
+import { CARD_DEAL_TIMINGS } from '@/config/pokerTimings';
 // Animated number counter for chips/pot
 interface AnimatedValueProps {
   value: number;
@@ -326,12 +332,13 @@ export const CardDealAnimation = memo(function CardDealAnimation({
   delay = 0,
   onComplete
 }: CardDealAnimationProps) {
-  // POKERSTARS-STYLE: Card deal animation ~350ms + staggered delay (100ms per card)
-  const CARD_DEAL_DURATION = 350;
+  // Uses unified timing from config
+  const cardDealDuration = CARD_DEAL_TIMINGS.cardDealDuration;
   
   useEffect(() => {
-    const timer = setTimeout(() => onComplete?.(), CARD_DEAL_DURATION + delay * 100);
+    const timer = setTimeout(() => onComplete?.(), cardDealDuration + delay * (CARD_DEAL_TIMINGS.perHoleCard));
     return () => clearTimeout(timer);
+  }, [delay, onComplete]);
   }, [delay, onComplete]);
 
   return (

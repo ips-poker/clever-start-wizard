@@ -2,10 +2,13 @@
  * Bet Collection Animation Component
  * Animates chips from player positions to center pot
  * Triggered when betting round ends and chips are collected
+ * 
+ * IMPORTANT: Uses unified timing configuration from src/config/pokerTimings.ts
  */
 import React, { memo, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { BET_COLLECTION_TIMINGS } from '@/config/pokerTimings';
 
 interface CollectedBet {
   playerId: string;
@@ -59,8 +62,8 @@ const AnimatedChip = memo(function AnimatedChip({
         opacity: 0 
       }}
       transition={{
-        // POKERSTARS-STYLE: Bet collection ~500ms with stagger
-        duration: 0.5,
+        // Uses unified timing from config
+        duration: BET_COLLECTION_TIMINGS.slideToCenter / 1000,
         delay,
         ease: [0.4, 0, 0.2, 1]
       }}
@@ -83,8 +86,8 @@ const AnimatedChip = memo(function AnimatedChip({
 export const BetCollectionAnimation = memo(function BetCollectionAnimation({
   betsToCollect,
   onComplete,
-  // POKERSTARS-STYLE: Default bet collection duration 700ms (synchronized with server timing)
-  duration = 700,
+  // Uses unified timing from config
+  duration = BET_COLLECTION_TIMINGS.totalDuration,
   isCollecting,
   className
 }: BetCollectionAnimationProps) {
