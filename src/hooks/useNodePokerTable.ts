@@ -466,7 +466,23 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     });
 
     // Get handId from server state (may be handId, hand_id, currentHandId, etc.)
-    const handId = (state.handId || (state as any).hand_id || (state as any).currentHandId || (state as any).current_hand_id) as string | undefined;
+    // IMPORTANT: some server snapshots briefly omit handId during actions.
+    // If we let it flicker to undefined, UI components that key off handId remount
+    // and re-run deal animations (observed after BB first action).
+    let handId = (state.handId || (state as any).hand_id || (state as any).currentHandId || (state as any).current_hand_id) as
+      | string
+      | undefined;
+
+    // Preserve last known handId during an active hand.
+    if (!handId && tableStateRef.current?.handId && normalizedPhase !== 'waiting') {
+      handId = tableStateRef.current.handId;
+    }
+
+    // Between hands we prefer a clean slate (avoid carrying old handId into waiting).
+    if (normalizedPhase === 'waiting') {
+      // keep server-provided handId if any, otherwise clear
+      handId = handId ?? undefined;
+    }
 
     return {
       tableId: tblId,
