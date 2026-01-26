@@ -345,17 +345,45 @@ export function FullscreenPokerTableWrapper({
 
   // POKERSTARS-STYLE: Auto sit-in for tournament players returning to table
   // When player opens their tournament table and they're sitting_out, automatically activate them
+  // CRITICAL: Do NOT auto sit-in during an active hand to prevent race conditions with auto-fold
   const hasAutoSitInRef = useRef(false);
+  const lastSitInTimeRef = useRef(0);
+  
   useEffect(() => {
     // Only for tournaments, when player is connected, seated but sitting out
     if (!isTournament || !isConnected || !myPlayer || isSpectator) {
       return;
     }
     
-    // If player is sitting out, auto-activate them (one time per session)
-    if (myPlayer.isSittingOut && !hasAutoSitInRef.current) {
+    // POKERSTARS-STYLE: Determine if a hand is in progress
+    const handInProgress = tableState?.phase && 
+      ['preflop', 'flop', 'turn', 'river', 'showdown'].includes(tableState.phase);
+    
+    // CRITICAL: Do NOT auto sit-in if:
+    // 1. Already auto-sat-in recently (within 5 seconds) - prevent spamming
+    // 2. A hand is in progress - let the current hand complete first
+    // 3. It's the player's turn - they timed out and should stay out until hand ends
+    const now = Date.now();
+    const recentlySatIn = (now - lastSitInTimeRef.current) < 5000;
+    const isPlayersTurn = isMyTurn;
+    
+    // If player is sitting out, auto-activate them ONLY between hands
+    if (myPlayer.isSittingOut && !hasAutoSitInRef.current && !recentlySatIn) {
+      // If hand is in progress, wait for it to end
+      if (handInProgress) {
+        console.log('[Tournament AutoSitIn] Waiting for hand to complete before auto-activating');
+        return;
+      }
+      
+      // If it's somehow the player's turn, don't interrupt
+      if (isPlayersTurn) {
+        console.log('[Tournament AutoSitIn] Player has turn - skipping auto sit-in');
+        return;
+      }
+      
       hasAutoSitInRef.current = true;
-      console.log('[Tournament AutoSitIn] Player returning from sit-out, auto-activating');
+      lastSitInTimeRef.current = now;
+      console.log('[Tournament AutoSitIn] Player returning from sit-out, auto-activating (between hands)');
       
       // Small delay to ensure connection is stable
       setTimeout(() => {
@@ -367,11 +395,12 @@ export function FullscreenPokerTableWrapper({
       }, 500);
     }
     
-    // Reset flag if player goes back to active (allow future returns)
-    if (!myPlayer.isSittingOut) {
+    // Reset flag only when player becomes active AND hand is not in progress
+    // This prevents the loop: timeout → sitting_out → auto sit-in → active → ref reset → timeout...
+    if (!myPlayer.isSittingOut && !handInProgress) {
       hasAutoSitInRef.current = false;
     }
-  }, [isTournament, isConnected, myPlayer, isSpectator, sitIn]);
+  }, [isTournament, isConnected, myPlayer, isSpectator, sitIn, tableState?.phase, isMyTurn]);
 
   // TOURNAMENT: Auto-redirect when player is moved to another table
   useEffect(() => {
