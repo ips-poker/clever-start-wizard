@@ -355,11 +355,10 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   /**
    * POKERSTARS-STYLE SINGLE ANIMATION SYSTEM
    * 
-   * Animation should happen EXACTLY ONCE per handId when animateDeal=true.
-   * - We track which handIds have been animated via animatedHandIdsRef.
-   * - On first render with a new handId + animateDeal=true, we mark it and animate.
-   * - Any subsequent renders with same handId do NOT re-animate.
-   * - animationKey is stable (based on last known handId) to prevent remounts.
+   * CLEAN FIX: Cards are COMPLETELY HIDDEN until deal animation.
+   * - No card backs, no placeholders - nothing shown before animateDeal=true
+   * - Cards appear ONLY with animation synced to shuffle sound
+   * - Animation happens EXACTLY ONCE per handId
    */
 
   // Track last known valid handId to prevent key flickering on undefined
@@ -375,17 +374,15 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   // Track which hands have already been animated (persists across re-renders)
   const animatedHandIdsRef = useRef<Set<string>>(new Set());
 
+  // Has this hand EVER been dealt (animated)?
+  const hasBeenDealt = stableHandId ? animatedHandIdsRef.current.has(stableHandId) : false;
+
   // Determine if we should animate THIS render
-  // Animation only plays when:
-  // 1. We have a valid handId
-  // 2. Parent says animateDeal=true (cards are being dealt now)
-  // 3. Not showdown phase
-  // 4. This handId hasn't been animated yet
   const shouldAnimateThisHand = Boolean(
     stableHandId &&
     animateDeal &&
     !isShowdown &&
-    !animatedHandIdsRef.current.has(stableHandId)
+    !hasBeenDealt
   );
 
   // Mark this handId as animated (happens during render, before return)
@@ -397,6 +394,20 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   if (animatedHandIdsRef.current.size > 10) {
     const arr = Array.from(animatedHandIdsRef.current);
     animatedHandIdsRef.current = new Set(arr.slice(-5));
+  }
+
+  /**
+   * VISIBILITY LOGIC:
+   * - Before deal: COMPLETELY HIDDEN (return null)
+   * - During deal: Animate in
+   * - After deal: Static display (no re-animation)
+   * - Showdown: Always visible
+   */
+  const shouldShowCards = isShowdown || hasBeenDealt || shouldAnimateThisHand;
+  
+  // CLEAN FIX: Return nothing if cards shouldn't be shown yet
+  if (!shouldShowCards) {
+    return null;
   }
   
   // Use showdown size for larger cards during showdown like in reference
