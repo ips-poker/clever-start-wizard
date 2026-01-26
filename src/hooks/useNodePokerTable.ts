@@ -509,6 +509,104 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         console.log('[SHOWDOWN DEBUG] Event received:', data.type, JSON.stringify(data, null, 2));
       }
 
+      // ------------------------------
+      // Unified state application (PokerStars stability)
+      // ------------------------------
+      // IMPORTANT: Many event types carry `data.state`. If we apply those snapshots
+      // without the stability layer, `phase` can briefly flicker to 'waiting' and
+      // `handId` can be omitted for a tick, causing compact cards to unmount/remount
+      // and replay their entrance animation.
+      const applyIncomingState = (incomingState: unknown) => {
+        if (!incomingState || !tableId) return;
+
+        setTableState((prev) => {
+          let newState = transformServerState(incomingState as any, tableId);
+
+          // ------------------------------
+          // POKERSTARS-STYLE STABILITY LAYER
+          // ------------------------------
+          if (prev) {
+            const prevBoardCount = prev.communityCards?.length ?? 0;
+            const prevLooksActive =
+              Boolean(prev.handId) &&
+              (
+                prev.phase !== 'waiting' ||
+                prevBoardCount > 0 ||
+                (prev.pot ?? 0) > 0 ||
+                (prev.currentBet ?? 0) > 0 ||
+                (prev.currentPlayerSeat !== null && prev.currentPlayerSeat !== undefined)
+              );
+
+            // 1) Preserve handId during an active hand if the snapshot omitted it.
+            if (!newState.handId && prev.handId && prevLooksActive) {
+              newState.handId = prev.handId;
+            }
+
+            // 2) If server claims 'waiting' but the snapshot likely represents an active hand,
+            //    infer the phase from the board like PokerStars clients do.
+            if (newState.phase === 'waiting') {
+              const boardCount = newState.communityCards?.length ?? 0;
+              const hasActiveSignals =
+                Boolean(newState.handId || prev.handId) &&
+                (
+                  prevLooksActive ||
+                  boardCount > 0 ||
+                  (newState.pot ?? 0) > 0 ||
+                  (newState.currentBet ?? 0) > 0 ||
+                  (newState.currentPlayerSeat !== null && newState.currentPlayerSeat !== undefined)
+                );
+
+              if (hasActiveSignals) {
+                if (boardCount >= 5) newState.phase = 'river';
+                else if (boardCount === 4) newState.phase = 'turn';
+                else if (boardCount === 3) newState.phase = 'flop';
+                else newState.phase = 'preflop';
+              }
+
+              // 3) Conservative guard: if we were mid-hand previously, never allow a
+              //    single-frame "waiting" to replace the phase.
+              if (newState.phase === 'waiting' && prevLooksActive) {
+                newState.phase = prev.phase;
+              }
+            }
+          }
+
+          // ------------------------------
+          // Showdown annotations stability
+          // ------------------------------
+          const showdownElapsed = Date.now() - showdownStartTimeRef.current;
+          const isWithinShowdownWindow = showdownElapsed < SHOWDOWN_DISPLAY_MS;
+
+          if (prev?.phase === 'showdown' && isWithinShowdownWindow) {
+            const prevById = new Map(prev.players.map((p) => [p.playerId, p] as const));
+            newState.phase = 'showdown';
+            newState.players = newState.players.map((p) => {
+              const old = prevById.get(p.playerId);
+              if (!old) return p;
+              return {
+                ...p,
+                holeCards: (old.holeCards?.length ?? 0) >= 2 ? old.holeCards : p.holeCards,
+                handName: old.handName ?? p.handName,
+                isWinner: old.isWinner ?? p.isWinner ?? false,
+                winningCardIndices:
+                  old.winningCardIndices && old.winningCardIndices.length > 0
+                    ? old.winningCardIndices
+                    : p.winningCardIndices,
+                communityCardIndices:
+                  old.communityCardIndices && old.communityCardIndices.length > 0
+                    ? old.communityCardIndices
+                    : p.communityCardIndices,
+              };
+            });
+          }
+
+          if (prev && JSON.stringify(prev) === JSON.stringify(newState)) {
+            return prev;
+          }
+          return newState;
+        });
+      };
+
 
       switch (data.type) {
         case 'connected':
@@ -526,88 +624,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'state':
         case 'table_state':
           if (data.state && tableId) {
-            setTableState((prev) => {
-              let newState = transformServerState(data.state, tableId);
-
-              // ------------------------------
-              // POKERSTARS-STYLE STABILITY LAYER
-              // ------------------------------
-              // Some server snapshots intermittently report phase='waiting' or omit handId
-              // during an active hand (often right after actions). That unmounts compact cards
-              // and replays their deal animation. We stabilize both phase and handId here.
-              if (prev) {
-                // 1) Preserve handId during an active hand if the snapshot omitted it.
-                //    (This also keeps Framer keys stable.)
-                if (!newState.handId && prev.handId && prev.phase !== 'waiting') {
-                  newState.handId = prev.handId;
-                }
-
-                // 2) If server claims 'waiting' but the snapshot clearly represents an active hand,
-                //    infer the phase from the board like PokerStars clients do.
-                if (newState.phase === 'waiting') {
-                  const boardCount = newState.communityCards?.length ?? 0;
-                  const hasActiveSignals =
-                    Boolean(newState.handId || prev.handId) &&
-                    (
-                      boardCount > 0 ||
-                      (newState.pot ?? 0) > 0 ||
-                      (newState.currentBet ?? 0) > 0 ||
-                      (newState.currentPlayerSeat !== null && newState.currentPlayerSeat !== undefined)
-                    );
-
-                  if (hasActiveSignals) {
-                    if (boardCount >= 5) newState.phase = 'river';
-                    else if (boardCount === 4) newState.phase = 'turn';
-                    else if (boardCount === 3) newState.phase = 'flop';
-                    else newState.phase = 'preflop';
-                  }
-
-                  // 3) If we still ended up with waiting but we were previously mid-hand, keep prev phase.
-                  //    This is a conservative guard against single-frame flicker.
-                  if (
-                    newState.phase === 'waiting' &&
-                    prev.phase !== 'waiting' &&
-                    (newState.handId || prev.handId) &&
-                    (newState.handId ?? prev.handId) === prev.handId
-                  ) {
-                    newState.phase = prev.phase;
-                  }
-                }
-              }
-
-              // If we're currently in showdown, keep showdown annotations stable even if
-              // server keeps sending "state" snapshots without winner indices.
-              // IMPORTANT: Keep winning data for showdown display duration
-              const showdownElapsed = Date.now() - showdownStartTimeRef.current;
-              const isWithinShowdownWindow = showdownElapsed < SHOWDOWN_DISPLAY_MS;
-              
-              if (prev?.phase === 'showdown' && isWithinShowdownWindow) {
-                const prevById = new Map(prev.players.map((p) => [p.playerId, p] as const));
-                newState.phase = 'showdown';
-                newState.players = newState.players.map((p) => {
-                  const old = prevById.get(p.playerId);
-                  if (!old) return p;
-                  return {
-                    ...p,
-                    // Preserve showdown data from prev state (don't let server overwrite)
-                    holeCards: (old.holeCards?.length ?? 0) >= 2 ? old.holeCards : p.holeCards,
-                    handName: old.handName ?? p.handName,
-                    isWinner: old.isWinner ?? p.isWinner ?? false,
-                    winningCardIndices: (old.winningCardIndices && old.winningCardIndices.length > 0)
-                      ? old.winningCardIndices
-                      : p.winningCardIndices,
-                    communityCardIndices: (old.communityCardIndices && old.communityCardIndices.length > 0)
-                      ? old.communityCardIndices
-                      : p.communityCardIndices,
-                  };
-                });
-              }
-
-              if (prev && JSON.stringify(prev) === JSON.stringify(newState)) {
-                return prev;
-              }
-              return newState;
-            });
+            applyIncomingState(data.state);
 
             // Extract my cards and seat from server state (from getPlayerState)
             const stateData = data.state as Record<string, unknown>;
@@ -664,7 +681,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             const stateData = data.state as Record<string, unknown>;
             log('🎯 State received:', JSON.stringify(stateData).substring(0, 500));
             
-            setTableState(transformServerState(data.state, tableId));
+            applyIncomingState(data.state);
             
             if (stateData.myCards) {
               setMyCards(stateData.myCards as string[]);
@@ -709,7 +726,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'playerLeft':
           // Just state update, no special handling
           if (data.state && tableId) {
-            setTableState(transformServerState(data.state, tableId));
+            applyIncomingState(data.state);
           }
           break;
 
@@ -769,7 +786,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           if (data.state && tableId) {
             const stateData = data.state as Record<string, unknown>;
             log('🎴 Hand started state:', JSON.stringify(stateData).substring(0, 500));
-            setTableState(transformServerState(data.state, tableId));
+            applyIncomingState(data.state);
             
             if (stateData.myCards) {
               setMyCards(stateData.myCards as string[]);
@@ -880,7 +897,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               hasConfig: !!stateData.config
             });
             
-            setTableState(transformServerState(data.state, tableId));
+            applyIncomingState(data.state);
             
             // Extract myCards from state - server sends at root level
             if (stateData.myCards) {
@@ -933,7 +950,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             // Update state if included
             if (data.state && tableId) {
               const stateData = data.state as Record<string, unknown>;
-              setTableState(transformServerState(data.state, tableId));
+              applyIncomingState(data.state);
               
               if (stateData.myCards) {
                 setMyCards(stateData.myCards as string[]);
@@ -980,7 +997,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           
           // Update state if included
           if (data.state && tableId) {
-            setTableState(transformServerState(data.state, tableId));
+            applyIncomingState(data.state);
           }
           break;
 
@@ -1583,7 +1600,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // Time bank notification - update state if included
           log('⏱️ Time bank used:', data.data);
           if (data.state && tableId) {
-            setTableState(transformServerState(data.state, tableId));
+            applyIncomingState(data.state);
           }
           break;
 
@@ -1596,7 +1613,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // Player timed out - update state if included
           log('⏱️ Player timeout:', data.data);
           if (data.state && tableId) {
-            setTableState(transformServerState(data.state, tableId));
+            applyIncomingState(data.state);
             
             // Extract my cards from state if present
             const timeoutStateData = data.state as Record<string, unknown>;
@@ -1610,7 +1627,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'reconnect_success':
           log('✅ Reconnect successful!', data);
           if (data.state && tableId) {
-            setTableState(transformServerState(data.state, tableId));
+            applyIncomingState(data.state);
             
             const stateData = data.state as Record<string, unknown>;
             if (stateData.myCards) {

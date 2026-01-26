@@ -568,6 +568,24 @@ const PlayerSeat = memo(function PlayerSeat({
   // HUD hover state - MUST be called before any conditional returns!
   const [showHUD, setShowHUD] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ------------------------------
+  // POKERSTARS: Deal animation must run ONCE per hand
+  // ------------------------------
+  // Even if the server briefly flickers phase/handId after an action, we must not replay
+  // the opponent “fan” entrance. We keep a stable hand id and a per-seat guard.
+  const stableHandIdRef = useRef<string | undefined>(undefined);
+  if (handId) stableHandIdRef.current = handId;
+  const stableHandId = stableHandIdRef.current;
+
+  const didAnimateCompactDealHandIdRef = useRef<string | undefined>(undefined);
+  const shouldAnimateCompactDeal =
+    gamePhase === 'preflop' &&
+    !!stableHandId &&
+    didAnimateCompactDealHandIdRef.current !== stableHandId;
+  if (shouldAnimateCompactDeal) {
+    didAnimateCompactDealHandIdRef.current = stableHandId;
+  }
   
   // Format stack based on display preference
   const formatStack = (stack: number): string => {
@@ -828,13 +846,13 @@ const PlayerSeat = memo(function PlayerSeat({
                 winningCardIndices={playerWinningIndices}
                 size="xs"
                 position={position}
-                handId={handId}
+                handId={stableHandId}
                 // POKERSTARS: Opponents start AFTER hero (200ms offset + 120ms per seat)
                 dealDelay={200 + Math.max(0, dealOrder - 1) * 120}
                 // POKERSTARS FIX: Cards appear on preflop, STAY visible until hand ends
                 // Only animate during preflop, but show static after
-                animateDeal={gamePhase === 'preflop'}
-                showAfterDeal={gamePhase !== 'waiting' && !!handId} // Stay visible after preflop
+                animateDeal={shouldAnimateCompactDeal}
+                showAfterDeal={gamePhase !== 'waiting' && !!stableHandId} // Stay visible after preflop
               />
             </div>
           );
