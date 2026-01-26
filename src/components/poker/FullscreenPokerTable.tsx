@@ -570,22 +570,17 @@ const PlayerSeat = memo(function PlayerSeat({
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // ------------------------------
-  // POKERSTARS: Deal animation must run ONCE per hand
+  // POKERSTARS: Stable handId for card dealing
   // ------------------------------
-  // Even if the server briefly flickers phase/handId after an action, we must not replay
-  // the opponent “fan” entrance. We keep a stable hand id and a per-seat guard.
+  // Keep a stable reference so transient server flickers don't break animations.
+  // The actual "animate once per hand" guard is inside PPPokerCompactCards.
   const stableHandIdRef = useRef<string | undefined>(undefined);
   if (handId) stableHandIdRef.current = handId;
   const stableHandId = stableHandIdRef.current;
 
-  const didAnimateCompactDealHandIdRef = useRef<string | undefined>(undefined);
-  const shouldAnimateCompactDeal =
-    gamePhase === 'preflop' &&
-    !!stableHandId &&
-    didAnimateCompactDealHandIdRef.current !== stableHandId;
-  if (shouldAnimateCompactDeal) {
-    didAnimateCompactDealHandIdRef.current = stableHandId;
-  }
+  // Tell PPPokerCompactCards to animate during preflop
+  // The component itself guards against double-animation for the same handId
+  const shouldAnimateCompactDeal = gamePhase === 'preflop' && !!stableHandId;
   
   // Format stack based on display preference
   const formatStack = (stack: number): string => {
