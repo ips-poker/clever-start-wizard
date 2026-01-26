@@ -15,6 +15,7 @@ interface PPPokerHeroCardsProps {
   isWinner?: boolean;
   winningCardIndices?: number[]; // Indices of hole cards that participate in winning hand
   isFolded?: boolean; // PokerStars-style: show folded cards face-down, hover to peek
+  dealDelay?: number; // POKERSTARS: Base delay for deal synchronization (ms)
 }
 
 // 4-color suit configuration (PPPoker default)
@@ -36,6 +37,7 @@ const SUITS_CLASSIC = {
 const HeroCard = memo(function HeroCard({
   card,
   delay = 0,
+  baseDelay = 0, // POKERSTARS: Base delay to sync with other players
   isWinning = false,
   isDimmed = false,
   useFourColor = true,
@@ -44,6 +46,7 @@ const HeroCard = memo(function HeroCard({
 }: {
   card: string;
   delay?: number;
+  baseDelay?: number;
   isWinning?: boolean;
   isDimmed?: boolean;
   useFourColor?: boolean;
@@ -68,9 +71,9 @@ const HeroCard = memo(function HeroCard({
   const GOLD_BORDER = '#f59e0b';
   const GOLD_GLOW = 'rgba(245,158,11,0.5)';
 
-  // Animation delays
-  const slideDelay = delay * 120;
-  const flipDelay = slideDelay + 180;
+  // Animation delays - POKERSTARS: baseDelay syncs with other players, per-card delay is minimal
+  const slideDelay = baseDelay + (delay * 80); // 80ms between cards (was 120)
+  const flipDelay = slideDelay + 120; // Flip 120ms after slide (was 180)
 
   useEffect(() => {
     if (!animate) {
@@ -296,7 +299,8 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
   gamePhase,
   isWinner = false,
   winningCardIndices = [],
-  isFolded = false
+  isFolded = false,
+  dealDelay = 0 // POKERSTARS: Base delay to sync with other players
 }: PPPokerHeroCardsProps) {
   const { preferences } = usePokerPreferences();
   const useFourColor = preferences.cardStyle === 'fourcolor';
@@ -365,6 +369,7 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
                 <HeroCard 
                   card={card} 
                   delay={isFolded ? 0 : idx} 
+                  baseDelay={dealDelay} // POKERSTARS: Sync with opponent cards
                   isWinning={isShowdown && isCardWinning && isWinner}
                   isDimmed={isDimmed}
                   useFourColor={useFourColor}
