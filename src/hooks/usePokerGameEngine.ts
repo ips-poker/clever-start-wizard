@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { CASH_ACTION_TIMING } from '@/config/pokerTimings';
 
 export interface GameState {
   tableId: string;
@@ -51,9 +52,6 @@ interface ActionResult {
   seatNumber?: number;
   stack?: number;
 }
-
-// POKERSTARS-STYLE: Cash Game = 15s, Tournament = 30s
-const DEFAULT_ACTION_TIME_SECONDS = 15;
 
 export function usePokerGameEngine(tableId: string, playerId: string) {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -161,8 +159,8 @@ export function usePokerGameEngine(tableId: string, playerId: string) {
         setMyCards([]);
       }
 
-      // Get action time from table config or use default 45 seconds
-      const actionTime = table.action_time_seconds || DEFAULT_ACTION_TIME_SECONDS;
+      // Get action time from table config or use default from unified config
+      const actionTime = table.action_time_seconds || CASH_ACTION_TIMING.default;
       
       setGameState({
         tableId,
@@ -189,7 +187,7 @@ export function usePokerGameEngine(tableId: string, playerId: string) {
     }
 
     if (gameState?.actionStartedAt && gameState?.currentPlayerSeat) {
-      const actionTime = gameState?.actionTime || DEFAULT_ACTION_TIME_SECONDS;
+      const actionTime = gameState?.actionTime || CASH_ACTION_TIMING.default;
       
       const updateTimer = () => {
         const started = new Date(gameState.actionStartedAt!).getTime();
