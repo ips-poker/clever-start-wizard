@@ -829,11 +829,12 @@ const PlayerSeat = memo(function PlayerSeat({
                 size="xs"
                 position={position}
                 handId={handId}
-                // CLEAN FIX: Opponents start AFTER hero's deal has begun (post-shuffle), not simultaneously.
-                // dealOrder here is already normalized so hero would be 0.
-                // Opponents effectively start from order=1.
+                // POKERSTARS: Opponents start AFTER hero (200ms offset + 120ms per seat)
                 dealDelay={200 + Math.max(0, dealOrder - 1) * 120}
-                animateDeal={gamePhase === 'preflop'} // CRITICAL: Only animate during preflop deal, not later phases
+                // POKERSTARS FIX: Cards appear on preflop, STAY visible until hand ends
+                // Only animate during preflop, but show static after
+                animateDeal={gamePhase === 'preflop'}
+                showAfterDeal={gamePhase !== 'waiting' && !!handId} // Stay visible after preflop
               />
             </div>
           );
