@@ -508,3 +508,27 @@ export function shouldRemoveForSitOut(
     shouldWarn: orbitsRemaining <= config.warningOrbits && orbitsRemaining > 0
   };
 }
+
+// ============================================
+// CONVENIENT ALIASES FOR SERVER CODE
+// ============================================
+
+/** Alias for cash game timings - same as PROFESSIONAL_TIMINGS */
+export const CASH_TIMINGS = {
+  ACTION_TIME: PROFESSIONAL_TIMINGS.actionTiming,
+  TIME_BANK: PROFESSIONAL_TIMINGS.timeBank,
+  SIT_OUT: PROFESSIONAL_TIMINGS.sitOut,
+  PHASES: PROFESSIONAL_TIMINGS.phases,
+  SHOWDOWN: PROFESSIONAL_TIMINGS.showdown,
+  BET_COLLECTION: PROFESSIONAL_TIMINGS.betCollection,
+} as const;
+
+/** Alias for tournament timings */
+export const TOURNAMENT_CONFIG = {
+  ACTION_TIME: TOURNAMENT_TIMINGS.actionTiming,
+  TIME_BANK: TOURNAMENT_TIMINGS.timeBank,
+  SIT_OUT: TOURNAMENT_TIMINGS.sitOut,
+  PHASES: TOURNAMENT_TIMINGS.phases,
+  SHOWDOWN: TOURNAMENT_TIMINGS.showdown,
+  BET_COLLECTION: TOURNAMENT_TIMINGS.betCollection,
+} as const;

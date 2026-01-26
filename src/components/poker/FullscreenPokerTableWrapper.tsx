@@ -33,6 +33,7 @@ import { POKERSTARS_TIMER } from '@/constants/pokerTimerConfig';
 import { FullHandHistory } from './FullHandHistory';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ThemePageBackground } from './ThemePageBackground';
+import { CASH_ACTION_TIMING, TIME_BANK_CONFIG } from '@/config/pokerTimings';
 
 
 // Syndikate branding
@@ -71,7 +72,7 @@ export function FullscreenPokerTableWrapper({
 }: FullscreenPokerTableWrapperProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [turnTimeRemaining, setTurnTimeRemaining] = useState<number | null>(null);
-  const [turnTimeTotal, setTurnTimeTotal] = useState<number>(15); // Total for current timer slice
+  const [turnTimeTotal, setTurnTimeTotal] = useState<number>(CASH_ACTION_TIMING.default);
   const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPersonalSettings, setShowPersonalSettings] = useState(false);
