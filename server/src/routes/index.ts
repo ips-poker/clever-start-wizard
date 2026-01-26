@@ -8,6 +8,7 @@ import { PokerGameManager } from '../game/PokerGameManager.js';
 import { z } from 'zod';
 import { logger } from '../utils/logger.js';
 import { setupAnalyticsRoutes } from './analytics.js';
+import { CASH_TIMINGS } from '../config/pokerTimings.js';
 
 // Request schemas
 const CreateTableSchema = z.object({
@@ -80,9 +81,9 @@ export function setupRoutes(app: Express, gameManager: PokerGameManager, supabas
       const table = await gameManager.createTable({
         id: crypto.randomUUID(),
         ...config,
-        // POKERSTARS-STYLE: Cash Game = 15s base, 30s time bank
-        actionTimeSeconds: 15,
-        timeBankSeconds: 30
+        // Use unified timing config
+        actionTimeSeconds: CASH_TIMINGS.ACTION_TIME.default,
+        timeBankSeconds: CASH_TIMINGS.TIME_BANK.initial
       });
       
       res.status(201).json({
