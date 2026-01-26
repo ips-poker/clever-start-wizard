@@ -939,7 +939,8 @@ const PlayerSeat = memo(function PlayerSeat({
           cards={heroCards} 
           gamePhase={gamePhase} 
           communityCards={communityCards}
-          handId={handId}
+          // Use stabilized hand id so transient server snapshots don't retrigger hero deal logic
+          handId={stableHandId}
           isWinner={(player as any).isWinner}
           winningCardIndices={(player as any).winningCardIndices || []}
           isFolded={player.isFolded}
