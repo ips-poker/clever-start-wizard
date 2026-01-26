@@ -45,7 +45,7 @@ const SIZE_CONFIG = {
 
 // Helper function to generate pattern CSS
 const getCardBackPattern = (pattern: string, color: string): React.CSSProperties => {
-  const colorWithAlpha = color + '20';
+  const colorWithAlpha = color + '40';
   switch (pattern) {
     case 'grid':
       return { backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px), repeating-linear-gradient(90deg, transparent, transparent 3px, ${colorWithAlpha} 3px, ${colorWithAlpha} 4px)` };
@@ -116,8 +116,8 @@ const MiniCard = memo(function MiniCard({
     const commonStyle: React.CSSProperties = {
       width: cfg.w,
       height: cfg.h,
-      background: `linear-gradient(135deg, ${accentColor}30 0%, ${accentColor}10 50%, ${accentColor}20 100%)`,
-      border: `1px solid ${accentColor}50`,
+      background: '#ffffff',
+      border: `1px solid ${accentColor}60`,
       boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
       transformOrigin: 'bottom center',
       transform: `rotate(${rotation}deg)`
@@ -125,20 +125,30 @@ const MiniCard = memo(function MiniCard({
 
     const Inner = (
       <>
+        {/* White base layer */}
+        <div className="absolute inset-0 bg-white rounded-[3px]" />
+        
+        {/* Colored gradient overlay */}
+        <div 
+          className="absolute inset-0 rounded-[3px]"
+          style={{ background: `linear-gradient(135deg, ${accentColor}25 0%, ${accentColor}10 50%, ${accentColor}20 100%)` }}
+        />
+        
         {/* Pattern */}
         <div 
-          className="absolute inset-0"
+          className="absolute inset-0 rounded-[3px]"
           style={getCardBackPattern(patternType, accentColor)}
         />
         {/* Border frame */}
-        <div className="absolute inset-1 border rounded-sm" style={{ borderColor: `${accentColor}30` }} />
+        <div className="absolute inset-1 border rounded-sm" style={{ borderColor: `${accentColor}40` }} />
         {/* Center S logo */}
         <div className="absolute inset-0 flex items-center justify-center">
           <span 
             style={{ 
               fontSize: cfg.w > 24 ? '0.7rem' : '0.5rem',
               color: accentColor,
-              opacity: 0.5
+              opacity: 0.6,
+              fontWeight: 'bold'
             }}
           >
             S
@@ -339,29 +349,15 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   dealDelay = 0
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
-  
-  // Track handId changes - animation key only updates once per unique handId
-  const processedHandIds = React.useRef(new Set<string>());
-  const [animationKey, setAnimationKey] = React.useState(0);
-  
-  React.useEffect(() => {
-    if (handId && !processedHandIds.current.has(handId)) {
-      processedHandIds.current.add(handId);
-      // Keep set from growing infinitely - clear old entries
-      if (processedHandIds.current.size > 10) {
-        const arr = Array.from(processedHandIds.current);
-        processedHandIds.current = new Set(arr.slice(-5));
-      }
-      setAnimationKey(prev => prev + 1);
-    }
-  }, [handId]);
+
+  // Use handId directly as key - AnimatePresence handles animation resets
+  const animationKey = handId || 'waiting';
   
   // Use showdown size for larger cards during showdown like in reference
   const actualSize = isShowdown ? 'showdown' : size;
   const cfg = SIZE_CONFIG[actualSize] || SIZE_CONFIG[size];
   
   // Cards must exist and look like real cards for showdown display
-  const isRealCard = (c: unknown) => typeof c === 'string' && /^(10|[2-9TJQKA])[cdhs]$/i.test(c.trim());
   const hasAnyCards = Array.isArray(cards) && cards.length >= 2;
   // At showdown, show cards if valid, otherwise show placeholder for unknown cards
   const showCards = isShowdown && hasAnyCards;
