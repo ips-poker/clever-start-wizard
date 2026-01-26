@@ -562,6 +562,21 @@ export class PokerGameManager {
               updated_at: new Date().toISOString()
             })
             .eq('id', hand.table_id);
+          
+          // CRITICAL FIX: Reload table into memory and trigger new hand
+          // This ensures tables don't stay stuck after recovery
+          logger.info('POKERSTARS: Reloading table after stuck hand cleanup', { 
+            tableId: hand.table_id 
+          });
+          
+          const reloadedTable = await this.loadTableIfNeeded(hand.table_id);
+          if (reloadedTable) {
+            // loadTableIfNeeded calls loadPlayersFromDatabase which has setTimeout for checkStartHand
+            logger.info('POKERSTARS: Table reloaded successfully - hand should auto-start', { 
+              tableId: hand.table_id,
+              playerCount: reloadedTable.getPlayerCount()
+            });
+          }
         }
       }
     } catch (err) {
