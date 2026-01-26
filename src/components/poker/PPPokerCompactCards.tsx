@@ -1,7 +1,7 @@
 // PPPoker-style Compact Cards - Cards positioned BELOW avatar (fanned)
 // Smaller cards for opponents, positioned like in PPPoker reference images
 
-import React, { memo } from 'react';
+import React, { memo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
@@ -354,6 +354,13 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
 
+  // Keep a stable handId during an active hand.
+  // Server snapshots sometimes omit handId for a tick; if we use that directly in keys,
+  // the component remounts and replays the deal animation.
+  const stableHandIdRef = useRef<string | undefined>(undefined);
+  if (handId) stableHandIdRef.current = handId;
+  const stableHandId = stableHandIdRef.current;
+
   /**
    * POKERSTARS-STYLE VISIBILITY:
    * - animateDeal=true (preflop): Show with animation
@@ -398,7 +405,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   };
 
   // Animation key based on handId to reset animation on new hand
-  const animationKey = handId ?? 'static';
+  const animationKey = stableHandId ?? handId ?? 'static';
 
   return (
     <AnimatePresence mode="wait">

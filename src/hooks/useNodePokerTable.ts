@@ -527,7 +527,53 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'table_state':
           if (data.state && tableId) {
             setTableState((prev) => {
-              const newState = transformServerState(data.state, tableId);
+              let newState = transformServerState(data.state, tableId);
+
+              // ------------------------------
+              // POKERSTARS-STYLE STABILITY LAYER
+              // ------------------------------
+              // Some server snapshots intermittently report phase='waiting' or omit handId
+              // during an active hand (often right after actions). That unmounts compact cards
+              // and replays their deal animation. We stabilize both phase and handId here.
+              if (prev) {
+                // 1) Preserve handId during an active hand if the snapshot omitted it.
+                //    (This also keeps Framer keys stable.)
+                if (!newState.handId && prev.handId && prev.phase !== 'waiting') {
+                  newState.handId = prev.handId;
+                }
+
+                // 2) If server claims 'waiting' but the snapshot clearly represents an active hand,
+                //    infer the phase from the board like PokerStars clients do.
+                if (newState.phase === 'waiting') {
+                  const boardCount = newState.communityCards?.length ?? 0;
+                  const hasActiveSignals =
+                    Boolean(newState.handId || prev.handId) &&
+                    (
+                      boardCount > 0 ||
+                      (newState.pot ?? 0) > 0 ||
+                      (newState.currentBet ?? 0) > 0 ||
+                      (newState.currentPlayerSeat !== null && newState.currentPlayerSeat !== undefined)
+                    );
+
+                  if (hasActiveSignals) {
+                    if (boardCount >= 5) newState.phase = 'river';
+                    else if (boardCount === 4) newState.phase = 'turn';
+                    else if (boardCount === 3) newState.phase = 'flop';
+                    else newState.phase = 'preflop';
+                  }
+
+                  // 3) If we still ended up with waiting but we were previously mid-hand, keep prev phase.
+                  //    This is a conservative guard against single-frame flicker.
+                  if (
+                    newState.phase === 'waiting' &&
+                    prev.phase !== 'waiting' &&
+                    (newState.handId || prev.handId) &&
+                    (newState.handId ?? prev.handId) === prev.handId
+                  ) {
+                    newState.phase = prev.phase;
+                  }
+                }
+              }
 
               // If we're currently in showdown, keep showdown annotations stable even if
               // server keeps sending "state" snapshots without winner indices.
