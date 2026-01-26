@@ -1904,6 +1904,56 @@ export class PokerTable {
     // PROFESSIONAL TIMING: Add delay after action for visual feedback (pot/bet animation)
     const afterActionDelay = PROFESSIONAL_TIMINGS.afterAction;
     
+    // POKERSTARS/TDA RULE 16: Check for all-in showdown IMMEDIATELY after each action
+    // If all remaining players are all-in (no one can act), proceed directly to showdown
+    if (this.currentHand && engineState) {
+      const remainingPlayers = engineState.players.filter(p => !p.isFolded);
+      const allInPlayers = remainingPlayers.filter(p => p.isAllIn);
+      const canActPlayers = remainingPlayers.filter(p => !p.isAllIn && p.stack > 0);
+      
+      // Условие: все оставшиеся игроки all-in ИЛИ только один может действовать (но не должен)
+      if (canActPlayers.length === 0 && allInPlayers.length >= 2 && remainingPlayers.length >= 2) {
+        logger.info('POKERSTARS: All players all-in after action - proceeding to showdown', {
+          tableId: this.id,
+          handNumber: this.handNumber,
+          actionType,
+          playerId: playerId.substring(0, 8),
+          remainingCount: remainingPlayers.length,
+          allInCount: allInPlayers.length,
+          phase: this.currentHand.phase
+        });
+        
+        // Delay after action, then proceed to all-in showdown
+        await this.delay(afterActionDelay);
+        
+        // Convert to array of PokerTable.Player (match function signature)
+        const tablePlayers = remainingPlayers
+          .map(ep => this.players.get(ep.id))
+          .filter((p): p is Player => p !== undefined);
+        
+        await this.proceedToAllInShowdown(tablePlayers);
+        return { success: true };
+      }
+      
+      // Также проверяем случай когда currentPlayerSeat === -1 (engine уже определил showdown)
+      if (this.currentHand.currentPlayerSeat === -1 && !result.handComplete) {
+        logger.info('POKERSTARS: Engine set currentPlayerSeat to -1 (no action possible) - proceeding to showdown', {
+          tableId: this.id,
+          handNumber: this.handNumber,
+          phase: this.currentHand.phase
+        });
+        
+        await this.delay(afterActionDelay);
+        
+        const tablePlayers = remainingPlayers
+          .map(ep => this.players.get(ep.id))
+          .filter((p): p is Player => p !== undefined);
+        
+        await this.proceedToAllInShowdown(tablePlayers);
+        return { success: true };
+      }
+    }
+    
     // Check if hand is complete
     if (result.handComplete && result.winners) {
       logger.info('Hand complete - distributing winnings', { 

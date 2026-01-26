@@ -483,6 +483,18 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       const data = JSON.parse(event.data) as Record<string, unknown>;
       log('📥 Recv:', data.type, data);
       
+      // DEBUG: Log ALL events for all-in debugging
+      if (data.type?.toString().includes('all_in') || 
+          data.type?.toString().includes('burn') || 
+          data.type?.toString().includes('community')) {
+        console.log('🔍 [ALL-IN DEBUG] Event received:', {
+          type: data.type,
+          hasData: !!data.data,
+          dataKeys: data.data ? Object.keys(data.data as object) : [],
+          fullData: JSON.stringify(data, null, 2)
+        });
+      }
+
       // Extra verbose showdown logs only when debug is enabled
       if (
         DEBUG &&
@@ -1696,6 +1708,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         // POKERSTARS-STYLE: Community cards dealt (especially during all-in showdown)
         case 'community_cards':
           {
+            console.log('🎴 [COMMUNITY CARDS] Handler triggered!', data);
+            
             // Server sends TableEvent: { type, tableId, data: { phase, cards, handNumber, isAllInShowdown }, timestamp }
             const rawData = data as Record<string, unknown>;
             const cardsData = (rawData.data || rawData) as Record<string, unknown>;
@@ -1703,7 +1717,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             const phase = cardsData.phase as string;
             const isAllInShowdown = cardsData.isAllInShowdown as boolean;
             
-            log('🎴 Community cards dealt:', { cards, phase, isAllInShowdown, rawData: JSON.stringify(rawData).substring(0, 200) });
+            console.log('🎴 [COMMUNITY CARDS] Parsed:', { 
+              cards, 
+              phase, 
+              isAllInShowdown,
+              hasCards: !!(cards && cards.length > 0),
+              cardsData 
+            });
             
             if (cards && cards.length > 0 && tableId) {
               setTableState(prev => {
@@ -1761,13 +1781,20 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         // POKERSTARS-STYLE: Burn card animation before community cards
         case 'burn_card':
           {
+            console.log('🔥 [BURN CARD] Handler triggered!', data);
+            
             // Server sends TableEvent: { type, tableId, data: { phase, handNumber, isAllInShowdown }, timestamp }
             const rawData = data as Record<string, unknown>;
             const burnData = (rawData.data || rawData) as Record<string, unknown>;
             const burnPhase = burnData.phase as 'flop' | 'turn' | 'river';
             const isAllInShowdown = burnData.isAllInShowdown as boolean;
             
-            log('🔥 Burn card:', { phase: burnPhase, isAllInShowdown });
+            console.log('🔥 [BURN CARD] Parsed:', { 
+              phase: burnPhase, 
+              isAllInShowdown,
+              hasPhase: !!burnPhase,
+              burnData 
+            });
             
             if (burnPhase) {
               setActiveBurnCard({
@@ -1787,9 +1814,16 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         // POKERSTARS-STYLE: All-in showdown - cards revealed immediately (TDA Rule 16)
         case 'all_in_showdown':
           {
+            console.log('🃏 [ALL-IN SHOWDOWN] Handler triggered!', data);
+            
             const rawData = data as Record<string, unknown>;
             const allInData = (rawData.data || rawData) as Record<string, unknown>;
-            log('🃏 ALL-IN SHOWDOWN - Cards tabled immediately (TDA Rule 16):', allInData);
+            console.log('🃏 [ALL-IN SHOWDOWN] Parsed data:', {
+              hasPlayers: !!(allInData.players),
+              playersCount: Array.isArray(allInData.players) ? allInData.players.length : 0,
+              pot: allInData.pot,
+              fullData: JSON.stringify(allInData, null, 2)
+            });
             
             const players = (allInData.players || []) as Array<{
               playerId: string;
