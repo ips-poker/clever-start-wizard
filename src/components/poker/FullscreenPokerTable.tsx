@@ -905,9 +905,9 @@ const PlayerSeat = memo(function PlayerSeat({
       
       {/* Hero cards - below player, not in avatar container */}
       {/* PokerStars-style: show cards even after fold (dimmed, hover to peek) */}
-      {isHero && heroCards && heroCards.length > 0 && (
+      {isHero && gamePhase && ['preflop', 'flop', 'turn', 'river', 'showdown'].includes(gamePhase) && (
         <PPPokerHeroCards 
-          cards={heroCards} 
+          cards={(heroCards && heroCards.length >= 2) ? heroCards : ['XX', 'XX']} 
           gamePhase={gamePhase} 
           communityCards={communityCards}
           isWinner={(player as any).isWinner}
