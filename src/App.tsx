@@ -78,6 +78,7 @@ function App() {
                 <Route path="/poker-demo" element={<PokerDemo />} />
                 <Route path="/online-poker" element={<OnlinePoker />} />
                 <Route path="/table/:tableId" element={<PokerTable />} />
+                <Route path="/tournament/:tournamentId/table/:tableId" element={<PokerTable />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <MobileBottomNav />
