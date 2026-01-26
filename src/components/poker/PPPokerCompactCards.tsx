@@ -65,11 +65,12 @@ const getCardBackPattern = (pattern: string, color: string): React.CSSProperties
 };
 
 // Single mini card component with dimming support for showdown
+// delay is in milliseconds - total delay before this card appears
 const MiniCard = memo(function MiniCard({
   card,
   faceDown = false,
   size = 'xs',
-  delay = 0,
+  delayMs = 0, // Delay in milliseconds
   isWinning = false,
   isDimmed = false,
   rotation = 0,
@@ -80,7 +81,7 @@ const MiniCard = memo(function MiniCard({
   card: string;
   faceDown?: boolean;
   size?: 'xs' | 'sm' | 'showdown';
-  delay?: number;
+  delayMs?: number;
   isWinning?: boolean;
   isDimmed?: boolean;
   rotation?: number;
@@ -93,89 +94,33 @@ const MiniCard = memo(function MiniCard({
   // Check if card is unknown/placeholder
   const trimmed = (card || '').trim();
   const isCardFormatOk = /^(10|[2-9TJQKA])[cdhs]$/i.test(trimmed);
-  const isUnknown = !trimmed || trimmed === '??' || trimmed.includes('?') || trimmed === 'XX' || !isCardFormatOk;
-
-  const rank = isUnknown
-    ? '?'
-    : (trimmed.toUpperCase().startsWith('10') ? '10' : (trimmed[0]?.toUpperCase() === 'T' ? '10' : trimmed[0]?.toUpperCase() || '?'));
-  const suitRaw = isUnknown ? 's' : (trimmed.toUpperCase().startsWith('10') ? trimmed[2] : trimmed[1]);
-  const suitChar = (suitRaw?.toLowerCase() || 's') as keyof typeof SUITS;
-  const suitSource = useFourColor ? SUITS : SUITS_CLASSIC;
-  const suitInfo = suitSource[suitChar] || suitSource['s'];
+  const isPlaceholder = !isCardFormatOk || trimmed === 'XX' || trimmed === '??' || !card;
   
-  const accentColor = cardBackColors?.accent || '#ff7a00';
-  const patternType = cardBackColors?.pattern || 'grid';
+  // If placeholder, render as face-down
+  const shouldShowFaceDown = faceDown || isPlaceholder;
+  
+  // Parse card
+  const rank = card?.[0] === 'T' ? '10' : (card?.[0] === '1' && card?.[1] === '0' ? '10' : card?.[0] || '?');
+  const suitChar = (card?.slice(-1)?.toLowerCase() || 's') as keyof typeof SUITS;
+  const suitInfo = useFourColor ? SUITS[suitChar] : SUITS_CLASSIC[suitChar];
+  const suitColor = suitInfo?.color || '#1e293b';
 
-  // Colors for dimmed cards
-  const cardBg = isDimmed 
-    ? 'linear-gradient(145deg, #4b5563 0%, #374151 100%)'
-    : 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)';
-  const suitColor = isDimmed ? '#9ca3af' : suitInfo.color;
-  const borderStyle = isWinning 
-    ? '2px solid #fbbf24' 
-    : isDimmed 
-      ? '1px solid #6b7280' 
-      : '1px solid #e2e8f0';
+  // Delay in seconds for framer-motion
+  const delaySeconds = delayMs / 1000;
 
-  // Unknown card at showdown - show special placeholder (not faceDown)
-  if (isUnknown && !faceDown) {
+  // Face-down card (placeholder or hidden)
+  if (shouldShowFaceDown) {
+    const accentColor = cardBackColors?.accent || '#3b82f6';
+    const patternType = cardBackColors?.pattern || 'grid';
+    
     const commonStyle: React.CSSProperties = {
       width: cfg.w,
       height: cfg.h,
-      background: 'linear-gradient(145deg, #374151 0%, #1f2937 100%)',
-      border: '1px solid #4b5563',
-      boxShadow: '0 3px 8px rgba(0,0,0,0.3)',
+      background: `linear-gradient(135deg, ${accentColor}30 0%, ${accentColor}10 50%, ${accentColor}20 100%)`,
+      border: `1px solid ${accentColor}50`,
+      boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
       transformOrigin: 'bottom center',
-      transform: `rotate(${rotation}deg)`,
-      opacity: 0.9,
-    };
-
-    const Content = (
-      <>
-        <span 
-          className="font-bold text-gray-400"
-          style={{ fontSize: cfg.w > 24 ? '1rem' : '0.7rem' }}
-        >
-          ?
-        </span>
-      </>
-    );
-
-    if (!animate) {
-      return (
-        <div
-          className="rounded-[4px] shadow-lg relative overflow-hidden flex items-center justify-center"
-          style={commonStyle}
-        >
-          {Content}
-        </div>
-      );
-    }
-
-    return (
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 0.9, rotate: rotation }}
-        transition={{ delay: delay * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
-        className="rounded-[4px] shadow-lg relative overflow-hidden flex items-center justify-center"
-        style={commonStyle}
-      >
-        {Content}
-      </motion.div>
-    );
-  }
-
-  if (faceDown) {
-    const commonStyle: React.CSSProperties = {
-      width: cfg.w,
-      height: cfg.h,
-      background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
-      border: '1px solid #e5e7eb',
-      boxShadow: isWinning 
-        ? '0 0 12px rgba(251,191,36,0.6), 0 3px 8px rgba(0,0,0,0.3)' 
-        : '0 3px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8)',
-      transformOrigin: 'bottom center',
-      transform: `rotate(${rotation}deg)`,
+      transform: `rotate(${rotation}deg)`
     };
 
     const Inner = (
@@ -185,17 +130,11 @@ const MiniCard = memo(function MiniCard({
           className="absolute inset-0"
           style={getCardBackPattern(patternType, accentColor)}
         />
-        
         {/* Border frame */}
-        <div 
-          className="absolute inset-0.5 rounded-[2px] pointer-events-none"
-          style={{ border: `1px solid ${accentColor}30` }}
-        />
-        
+        <div className="absolute inset-1 border rounded-sm" style={{ borderColor: `${accentColor}30` }} />
         {/* Center S logo */}
         <div className="absolute inset-0 flex items-center justify-center">
           <span 
-            className="font-display font-black"
             style={{ 
               fontSize: cfg.w > 24 ? '0.7rem' : '0.5rem',
               color: accentColor,
@@ -220,7 +159,7 @@ const MiniCard = memo(function MiniCard({
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1, rotate: rotation }}
-        transition={{ delay: delay / 1000, type: 'spring', stiffness: 300, damping: 25 }} // delay in ms -> seconds
+        transition={{ delay: delaySeconds, type: 'spring', stiffness: 300, damping: 25 }}
         className="rounded-[4px] shadow-lg relative overflow-hidden"
         style={commonStyle}
       >
@@ -303,44 +242,52 @@ const MiniCard = memo(function MiniCard({
             : 'linear-gradient(145deg, #ffffff 0%, #fafafa 50%, #f5f5f5 100%)',
           border: isDimmed ? '1px solid #6b7280' : '1px solid #e5e5e5',
           boxShadow: '0 3px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.8)',
-          transformOrigin: 'bottom center',
           transform: `rotate(${rotation}deg)`,
-          opacity: isDimmed ? 0.85 : 1,
+          opacity: isDimmed ? 0.6 : 1
         }}
       >
-        {/* TOP-LEFT corner */}
+        {/* TOP-LEFT */}
         <div className="absolute top-[2px] left-[2px] flex items-center gap-0.5 leading-none">
-          <span className={cn(cfg.rank, 'font-black leading-none')} style={{ color: suitColor }}>{rank}</span>
-          <span className={cn(cfg.suit, 'leading-none')} style={{ color: suitColor }}>{suitInfo.symbol}</span>
+          <span className={cn(cfg.rank, 'font-black leading-none')} style={{ color: isDimmed ? '#9ca3af' : suitColor }}>{rank}</span>
+          <span className={cn(cfg.suit, 'leading-none')} style={{ color: isDimmed ? '#9ca3af' : suitColor }}>{suitInfo.symbol}</span>
         </div>
         
         {/* CENTER */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className={cfg.center} style={{ color: suitColor, opacity: isDimmed ? 0.5 : 0.85 }}>{suitInfo.symbol}</span>
+          <span className={cfg.center} style={{ color: isDimmed ? '#9ca3af' : suitColor, opacity: 0.85 }}>{suitInfo.symbol}</span>
         </div>
         
-        {/* BOTTOM-RIGHT corner */}
+        {/* BOTTOM-RIGHT */}
         <div className="absolute bottom-[2px] right-[2px] flex items-center gap-0.5 leading-none rotate-180">
-          <span className={cn(cfg.rank, 'font-black leading-none')} style={{ color: suitColor }}>{rank}</span>
-          <span className={cn(cfg.suit, 'leading-none')} style={{ color: suitColor }}>{suitInfo.symbol}</span>
+          <span className={cn(cfg.rank, 'font-black leading-none')} style={{ color: isDimmed ? '#9ca3af' : suitColor }}>{rank}</span>
+          <span className={cn(cfg.suit, 'leading-none')} style={{ color: isDimmed ? '#9ca3af' : suitColor }}>{suitInfo.symbol}</span>
         </div>
         
         {/* Glossy effect */}
-        {!isDimmed && (
-          <div 
-            className="absolute inset-0 pointer-events-none rounded-[3px]"
-            style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 35%, rgba(0,0,0,0.02) 100%)' }}
-          />
-        )}
+        <div 
+          className="absolute inset-0 pointer-events-none rounded-[3px]"
+          style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 35%, rgba(0,0,0,0.02) 100%)' }}
+        />
       </div>
     );
   }
 
+  // Animated card
   return (
     <motion.div
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: isDimmed ? 0.85 : 1, rotate: rotation }}
-      transition={{ delay: delay * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
+      initial={{ scale: 0, opacity: 0, y: -20 }}
+      animate={{ 
+        scale: 1, 
+        opacity: isDimmed ? 0.6 : 1, 
+        y: 0,
+        rotate: rotation 
+      }}
+      transition={{ 
+        delay: delaySeconds, 
+        type: 'spring', 
+        stiffness: 300, 
+        damping: 25 
+      }}
       className="rounded-[4px] shadow-lg relative"
       style={{
         width: cfg.w,
@@ -353,30 +300,28 @@ const MiniCard = memo(function MiniCard({
         transformOrigin: 'bottom center'
       }}
     >
-      {/* TOP-LEFT corner */}
+      {/* TOP-LEFT */}
       <div className="absolute top-[2px] left-[2px] flex items-center gap-0.5 leading-none">
-        <span className={cn(cfg.rank, 'font-black leading-none')} style={{ color: suitColor }}>{rank}</span>
-        <span className={cn(cfg.suit, 'leading-none')} style={{ color: suitColor }}>{suitInfo.symbol}</span>
+        <span className={cn(cfg.rank, 'font-black leading-none')} style={{ color: isDimmed ? '#9ca3af' : suitColor }}>{rank}</span>
+        <span className={cn(cfg.suit, 'leading-none')} style={{ color: isDimmed ? '#9ca3af' : suitColor }}>{suitInfo.symbol}</span>
       </div>
       
       {/* CENTER */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className={cfg.center} style={{ color: suitColor, opacity: isDimmed ? 0.5 : 0.85 }}>{suitInfo.symbol}</span>
+        <span className={cfg.center} style={{ color: isDimmed ? '#9ca3af' : suitColor, opacity: 0.85 }}>{suitInfo.symbol}</span>
       </div>
       
-      {/* BOTTOM-RIGHT corner */}
+      {/* BOTTOM-RIGHT */}
       <div className="absolute bottom-[2px] right-[2px] flex items-center gap-0.5 leading-none rotate-180">
-        <span className={cn(cfg.rank, 'font-black leading-none')} style={{ color: suitColor }}>{rank}</span>
-        <span className={cn(cfg.suit, 'leading-none')} style={{ color: suitColor }}>{suitInfo.symbol}</span>
+        <span className={cn(cfg.rank, 'font-black leading-none')} style={{ color: isDimmed ? '#9ca3af' : suitColor }}>{rank}</span>
+        <span className={cn(cfg.suit, 'leading-none')} style={{ color: isDimmed ? '#9ca3af' : suitColor }}>{suitInfo.symbol}</span>
       </div>
       
       {/* Glossy effect */}
-      {!isDimmed && (
-        <div 
-          className="absolute inset-0 pointer-events-none rounded-[3px]"
-          style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 35%, rgba(0,0,0,0.02) 100%)' }}
-        />
-      )}
+      <div 
+        className="absolute inset-0 pointer-events-none rounded-[3px]"
+        style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 35%, rgba(0,0,0,0.02) 100%)' }}
+      />
     </motion.div>
   );
 });
@@ -394,50 +339,17 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   dealDelay = 0
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
-  const [isDealt, setIsDealt] = React.useState(false);
   const lastHandIdRef = React.useRef<string | null>(null);
-  const dealTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const [animationKey, setAnimationKey] = React.useState(0);
   
-  // POKERSTARS-STYLE: Sequential deal animation sync
-  // Reset and delay card appearance when handId changes (new hand started)
+  // Reset animation when handId changes (new hand started)
+  // This forces cards to re-animate from initial state
   React.useEffect(() => {
-    // Clear any pending timer
-    if (dealTimerRef.current) {
-      clearTimeout(dealTimerRef.current);
-      dealTimerRef.current = null;
-    }
-    
-    // New hand detected - reset and delay
     if (handId && handId !== lastHandIdRef.current) {
-      console.log('[PPPokerCompactCards] New hand detected:', { handId, dealDelay, prevHandId: lastHandIdRef.current });
       lastHandIdRef.current = handId;
-      setIsDealt(false);
-      
-      // Delay card appearance based on deal order (120ms per player from dealer)
-      dealTimerRef.current = setTimeout(() => {
-        console.log('[PPPokerCompactCards] Cards dealt after delay:', { handId, dealDelay });
-        setIsDealt(true);
-      }, dealDelay);
-      
-      return () => {
-        if (dealTimerRef.current) {
-          clearTimeout(dealTimerRef.current);
-        }
-      };
-    } else if (!handId && !lastHandIdRef.current) {
-      // No handId tracking at all - show immediately (fallback)
-      setIsDealt(true);
+      setAnimationKey(prev => prev + 1);
     }
-  }, [handId, dealDelay]);
-  
-  // Cleanup on unmount
-  React.useEffect(() => {
-    return () => {
-      if (dealTimerRef.current) {
-        clearTimeout(dealTimerRef.current);
-      }
-    };
-  }, []);
+  }, [handId]);
   
   // Use showdown size for larger cards during showdown like in reference
   const actualSize = isShowdown ? 'showdown' : size;
@@ -445,58 +357,37 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   
   // Cards must exist and look like real cards for showdown display
   const isRealCard = (c: unknown) => typeof c === 'string' && /^(10|[2-9TJQKA])[cdhs]$/i.test(c.trim());
-  const hasValidCards = Array.isArray(cards) && cards.length >= 2 && cards.every(isRealCard);
   const hasAnyCards = Array.isArray(cards) && cards.length >= 2;
   // At showdown, show cards if valid, otherwise show placeholder for unknown cards
   const showCards = isShowdown && hasAnyCards;
   const useFourColor = preferences.cardStyle === 'fourcolor';
   
-  // Note: avoid logging on showdown to prevent performance issues / flicker
-  
   // For PLO4, show all 4 cards; for Hold'em show 2
   const cardCount = cards?.length || 2;
   // At showdown, display actual cards (even if some are '??')
   const displayCards = showCards ? cards : Array(Math.min(cardCount, 4)).fill('XX');
-  
-  // Determine card orientation based on player position
-  const isOnRightSide = position.x > 50;
-  const isOnTop = position.y < 40;
-  const isOnBottom = position.y > 60;
 
-  // Fan direction: cards fan TOWARDS center of table
-  // - Left side players: fan right
-  // - Right side players: fan left
-  // - Top players: fan down
-  // - Bottom players: fan up
+  // Fan direction
   const getFanRotation = (idx: number, total: number) => {
     if (isShowdown) return 0;
-    const baseAngle = total === 4 ? 8 : total === 3 ? 10 : 12; // Smaller fan
+    const baseAngle = total === 4 ? 8 : total === 3 ? 10 : 12;
     const halfTotal = (total - 1) / 2;
     return (idx - halfTotal) * baseAngle;
   };
 
-  // Calculate rotation to point cards towards table center
-  // All positions use same fan style as bottom players
   const getContainerRotation = () => {
     if (isShowdown) return 0;
-    // Same rotation for all positions - fan pointing up like bottom players
     return 0;
   };
-
-  // Don't render cards until dealt (for sync with deal sounds)
-  if (!isDealt && !isShowdown) {
-    return null;
-  }
 
   return (
     <AnimatePresence mode="wait">
       <motion.div 
-        key={handId || 'cards'}
+        key={`cards-${animationKey}`}
         className="relative flex items-center"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.8 }}
-        transition={{ duration: 0.2 }}
+        initial={{ opacity: 1 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
       >
         {/* Cards container - fanned, rotated to point towards table */}
         <div 
@@ -516,9 +407,14 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
             // Fanned rotation when not showdown
             const rotation = getFanRotation(idx, displayCards.length);
             
+            // POKERSTARS-STYLE: Sequential deal timing
+            // dealDelay = base delay for this player (0ms, 120ms, 240ms from dealer)
+            // idx * 80ms = additional delay for second card
+            const cardDelayMs = dealDelay + (idx * 80);
+            
             return (
               <div 
-                key={idx} 
+                key={`${animationKey}-${idx}`} 
                 className="relative"
                 style={{
                   marginLeft: idx > 0 ? (isShowdown ? 2 : -cfg.w * 0.45) : 0,
@@ -529,7 +425,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                   card={showCards ? card : 'XX'} 
                   faceDown={!showCards}
                   size={actualSize as any} 
-                  delay={dealDelay + (idx * 80)} // Base delay from deal order + per-card offset (80ms)
+                  delayMs={cardDelayMs}
                   isWinning={isShowdown && isCardWinning && isWinner}
                   isDimmed={isDimmed}
                   rotation={rotation}
