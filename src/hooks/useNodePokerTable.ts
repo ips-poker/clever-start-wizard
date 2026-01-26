@@ -218,6 +218,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
 
+  // Prevent duplicate hand_started resets that cause repeated card re-animations
+  const lastHandStartedAtRef = useRef<number>(0);
+  const lastHandStartedHandIdRef = useRef<string | null>(null);
+
   // Showdown token to ensure timers don't clear a newer hand/showdown
   const showdownTokenRef = useRef(0);
   // Timestamp when showdown started - used to ensure minimum display
@@ -665,6 +669,30 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
         case 'hand_started':
         case 'handStarted':  // Server sends camelCase
+          // Deduplicate: servers may emit hand_started multiple times during reconciliation.
+          // Without this guard we briefly reset phase to 'waiting' repeatedly, which unmounts
+          // compact cards and replays their deal animation 2-3 times.
+          {
+            const now = Date.now();
+            const stateData = (data.state as Record<string, unknown> | undefined);
+            const incomingHandId = (stateData?.handId || (stateData as any)?.hand_id || (stateData as any)?.currentHandId || (stateData as any)?.current_hand_id) as string | undefined;
+
+            // If we already processed this exact hand id, ignore.
+            if (incomingHandId && incomingHandId === lastHandStartedHandIdRef.current) {
+              log('🧯 Duplicate hand_started ignored (same handId):', incomingHandId);
+              break;
+            }
+
+            // If we just processed a hand start very recently, ignore (covers missing handId).
+            if (!incomingHandId && now - lastHandStartedAtRef.current < 1200) {
+              log('🧯 Duplicate hand_started ignored (time window)');
+              break;
+            }
+
+            lastHandStartedAtRef.current = now;
+            if (incomingHandId) lastHandStartedHandIdRef.current = incomingHandId;
+          }
+
           // Clear showdown and ALL player cards when new hand starts
           log('🎴 New hand started - clearing showdown and player cards');
           showdownTokenRef.current += 1;
