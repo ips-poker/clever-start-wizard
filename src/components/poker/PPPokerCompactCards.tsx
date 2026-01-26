@@ -340,8 +340,21 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
   
-  // Simple stable key based on handId - no state/effect needed
-  const animationKey = handId || 'no-hand';
+  // Track handId changes - animation key only updates once per unique handId
+  const processedHandIds = React.useRef(new Set<string>());
+  const [animationKey, setAnimationKey] = React.useState(0);
+  
+  React.useEffect(() => {
+    if (handId && !processedHandIds.current.has(handId)) {
+      processedHandIds.current.add(handId);
+      // Keep set from growing infinitely - clear old entries
+      if (processedHandIds.current.size > 10) {
+        const arr = Array.from(processedHandIds.current);
+        processedHandIds.current = new Set(arr.slice(-5));
+      }
+      setAnimationKey(prev => prev + 1);
+    }
+  }, [handId]);
   
   // Use showdown size for larger cards during showdown like in reference
   const actualSize = isShowdown ? 'showdown' : size;
