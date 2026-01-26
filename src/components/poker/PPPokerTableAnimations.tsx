@@ -7,7 +7,13 @@
 import React, { memo, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { CARD_DEAL_TIMINGS } from '@/config/pokerTimings';
+import { 
+  CARD_DEAL_TIMINGS, 
+  BET_COLLECTION_TIMINGS, 
+  SHOWDOWN_TIMINGS, 
+  TIMER_THRESHOLDS,
+  HAND_TRANSITION_TIMINGS 
+} from '@/config/pokerTimings';
 // Animated number counter for chips/pot
 interface AnimatedValueProps {
   value: number;
@@ -118,7 +124,7 @@ export const ActionIndicator = memo(function ActionIndicator({
   const style = ACTION_STYLES[action];
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(false), 2000);
+    const timer = setTimeout(() => setIsVisible(false), HAND_TRANSITION_TIMINGS.afterAction * 5);
     return () => clearTimeout(timer);
   }, []);
 
@@ -162,7 +168,7 @@ export const PotCollectionAnimation = memo(function PotCollectionAnimation({
   onComplete
 }: PotCollectionProps) {
   useEffect(() => {
-    const timer = setTimeout(() => onComplete?.(), 600);
+    const timer = setTimeout(() => onComplete?.(), BET_COLLECTION_TIMINGS.totalDuration);
     return () => clearTimeout(timer);
   }, [onComplete]);
 
@@ -175,8 +181,8 @@ export const PotCollectionAnimation = memo(function PotCollectionAnimation({
           initial={{ x: pos.x, y: pos.y, scale: 1, opacity: 1 }}
           animate={{ x: to.x, y: to.y, scale: 0.5, opacity: 0 }}
           transition={{
-            duration: 0.5,
-            delay: i * 0.05,
+            duration: BET_COLLECTION_TIMINGS.slideToCenter / 1000,
+            delay: i * (BET_COLLECTION_TIMINGS.staggerPerPlayer / 1000),
             ease: [0.25, 0.46, 0.45, 0.94]
           }}
         >
@@ -210,7 +216,7 @@ export const WinDistributionAnimation = memo(function WinDistributionAnimation({
   const chipCount = Math.min(12, Math.max(4, Math.floor(amount / 200)));
 
   useEffect(() => {
-    const timer = setTimeout(() => onComplete?.(), 800);
+    const timer = setTimeout(() => onComplete?.(), SHOWDOWN_TIMINGS.potCollection);
     return () => clearTimeout(timer);
   }, [onComplete]);
 
@@ -239,7 +245,7 @@ export const WinDistributionAnimation = memo(function WinDistributionAnimation({
               opacity: [0, 1, 1, 0.8]
             }}
             transition={{
-              duration: 0.6,
+              duration: SHOWDOWN_TIMINGS.potCollection / 1000,
               delay: i * 0.03,
               ease: 'easeOut'
             }}
@@ -276,9 +282,8 @@ export const TimerRing = memo(function TimerRing({
   const circumference = (size - 4) * Math.PI;
   const strokeDashoffset = circumference * (1 - progress);
 
-  // POKERSTARS-STYLE: Green > 10s, Yellow 5-10s, Red < 5s
-  const isCritical = remaining <= 5;
-  const isWarning = remaining <= 10 && !isCritical;
+  const isCritical = remaining <= TIMER_THRESHOLDS.criticalSeconds;
+  const isWarning = remaining <= TIMER_THRESHOLDS.warningSeconds && !isCritical;
   const color = isCritical ? '#ef4444' : isWarning ? '#f59e0b' : '#22c55e';
 
   return (
@@ -359,7 +364,7 @@ export const CardDealAnimation = memo(function CardDealAnimation({
         type: 'spring',
         stiffness: 280,
         damping: 24,
-        delay: delay * 0.1  // POKERSTARS: ~100ms stagger between cards
+        delay: delay * (CARD_DEAL_TIMINGS.perHoleCard / 1000)
       }}
     >
       <div 

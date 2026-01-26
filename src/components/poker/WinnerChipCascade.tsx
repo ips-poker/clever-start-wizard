@@ -6,6 +6,7 @@
 import React, { memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PPPokerChip } from './RealisticPokerChip';
+import { SHOWDOWN_TIMINGS } from '@/config/pokerTimings';
 
 interface WinnerChipCascadeProps {
   isActive: boolean;
@@ -80,8 +81,7 @@ const FlyingChip = memo(function FlyingChip({
         opacity: [1, 1, 0]
       }}
       transition={{
-        // POKERSTARS-STYLE: Slower chip flight for clear visibility (1.2s)
-        duration: 1.2,
+        duration: SHOWDOWN_TIMINGS.potSlideToWinner / 1000,
         delay,
         ease: [0.25, 0.1, 0.25, 1], // Smooth easing
         times: [0, 0.75, 1]
@@ -124,7 +124,7 @@ export const WinnerChipCascade = memo(function WinnerChipCascade({
   const handleChipComplete = () => {
     completedCount++;
     if (completedCount >= chips.length) {
-      setTimeout(() => onComplete?.(), 100);
+      setTimeout(() => onComplete?.(), 100); // Small buffer after last chip
     }
   };
 
@@ -160,7 +160,11 @@ export const WinnerChipCascade = memo(function WinnerChipCascade({
         }}
         initial={{ y: 20, opacity: 0, scale: 0.8 }}
         animate={{ y: -35, opacity: [0, 1, 1, 0], scale: 1 }}
-        transition={{ duration: 1.8, delay: 0.6, times: [0, 0.15, 0.75, 1] }}
+        transition={{ 
+          duration: SHOWDOWN_TIMINGS.winnerCelebration / 1000, 
+          delay: SHOWDOWN_TIMINGS.potSlideToWinner / 1000 * 0.5, 
+          times: [0, 0.15, 0.75, 1] 
+        }}
       >
         <div 
           className="px-2 py-0.5 rounded-md font-bold text-sm whitespace-nowrap"
@@ -186,7 +190,10 @@ export const WinnerChipCascade = memo(function WinnerChipCascade({
         }}
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: [0, 1.5], opacity: [0, 0.6, 0] }}
-        transition={{ duration: 0.6, delay: 0.5 }}
+        transition={{ 
+          duration: SHOWDOWN_TIMINGS.potCollection / 1000, 
+          delay: SHOWDOWN_TIMINGS.potSlideToWinner / 1000 * 0.4 
+        }}
       >
         <div
           className="w-16 h-16 rounded-full"
