@@ -588,7 +588,8 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
   // Connect bot to WebSocket
   const connectBot = useCallback((playerId: string, playerName: string, tableId: string, seatNumber: number, totalPlayers: number, dealerSeat: number) => {
     const wsUrl = getWsUrl(tableId, playerId);
-    addLog('ws', `🔌 Подключение ${playerName}...`);
+    addLog('ws', `🔌 Подключение ${playerName} к ${wsUrl}...`);
+    console.log(`[BotWS] Connecting ${playerName} to: ${wsUrl}`);
     
     const ws = new WebSocket(wsUrl);
     const aggression = 30 + Math.random() * 50;
