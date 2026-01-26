@@ -2514,6 +2514,10 @@ export type Database = {
         }
         Returns: Json
       }
+      ensure_bot_wallet_for_seating: {
+        Args: { p_player_id: string; p_required_amount: number }
+        Returns: boolean
+      }
       ensure_diamond_wallet: { Args: { p_player_id: string }; Returns: number }
       ensure_player_balance: { Args: { p_player_id: string }; Returns: number }
       extend_tournament_levels: {
