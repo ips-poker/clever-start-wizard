@@ -339,17 +339,9 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   dealDelay = 0
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
-  const lastHandIdRef = React.useRef<string | null>(null);
-  const [animationKey, setAnimationKey] = React.useState(0);
   
-  // Reset animation when handId changes (new hand started)
-  // This forces cards to re-animate from initial state
-  React.useEffect(() => {
-    if (handId && handId !== lastHandIdRef.current) {
-      lastHandIdRef.current = handId;
-      setAnimationKey(prev => prev + 1);
-    }
-  }, [handId]);
+  // Simple stable key based on handId - no state/effect needed
+  const animationKey = handId || 'no-hand';
   
   // Use showdown size for larger cards during showdown like in reference
   const actualSize = isShowdown ? 'showdown' : size;
