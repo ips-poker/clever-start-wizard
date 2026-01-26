@@ -823,6 +823,7 @@ const PlayerSeat = memo(function PlayerSeat({
                 cards={displayCards}
                 faceDown={!shouldReveal}
                 isShowdown={shouldReveal}
+                gamePhase={gamePhase}
                 handName={shouldReveal ? (showdownData?.handName || (player as any).handName) : undefined}
                 isWinner={(player as any).isWinner}
                 winningCardIndices={playerWinningIndices}
