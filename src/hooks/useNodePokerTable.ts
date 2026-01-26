@@ -347,6 +347,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       };
     });
 
+    // Read basic fields early so phase normalization can infer street for unknown server phases.
+    const communityCards = (state.communityCards || (state as any).community_cards || []) as string[];
+    const pot = Number(state.pot ?? 0);
+    const currentBet = Number(state.currentBet ?? 0);
+    const currentPlayerSeat = (state.currentPlayerSeat ?? (state as any).current_player_seat ?? null) as number | null;
+
     // Server sends phase at root level after rebuilding
     // Also check config for old format fallback
     const rawPhase = (state.phase || config?.phase || 'waiting') as string;
@@ -361,14 +367,24 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         return p as TableState['phase'];
       }
 
+      // Some servers send transient phases like "betting", "action", etc.
+      // If we have signs of an active hand, infer street from community card count.
+      const hasActiveHand =
+        pot > 0 ||
+        currentBet > 0 ||
+        mappedPlayers.some((pl) => (pl.holeCards?.length ?? 0) > 0);
+
+      if (hasActiveHand) {
+        const cc = communityCards.length;
+        if (cc >= 5) return 'river';
+        if (cc === 4) return 'turn';
+        if (cc >= 3) return 'flop';
+        return 'preflop';
+      }
+
       // Unknown phase from server -> treat as waiting (safe default)
       return 'waiting';
     })();
-
-    const pot = (state.pot ?? 0) as number;
-    const currentBet = (state.currentBet ?? 0) as number;
-    const currentPlayerSeat = (state.currentPlayerSeat ?? (state as any).current_player_seat ?? null) as number | null;
-    const communityCards = (state.communityCards || (state as any).community_cards || []) as string[];
 
     // Seats: accept both camelCase and snake_case from server
     const dealerSeat = Number(state.dealerSeat ?? (state as any).dealer_seat ?? (state as any).buttonSeat ?? (state as any).button_seat ?? 0);
