@@ -1904,56 +1904,6 @@ export class PokerTable {
     // PROFESSIONAL TIMING: Add delay after action for visual feedback (pot/bet animation)
     const afterActionDelay = PROFESSIONAL_TIMINGS.afterAction;
     
-    // POKERSTARS/TDA RULE 16: Check for all-in showdown IMMEDIATELY after each action
-    // If all remaining players are all-in (no one can act), proceed directly to showdown
-    if (this.currentHand && engineState) {
-      const remainingPlayers = engineState.players.filter(p => !p.isFolded);
-      const allInPlayers = remainingPlayers.filter(p => p.isAllIn);
-      const canActPlayers = remainingPlayers.filter(p => !p.isAllIn && p.stack > 0);
-      
-      // Условие: все оставшиеся игроки all-in ИЛИ только один может действовать (но не должен)
-      if (canActPlayers.length === 0 && allInPlayers.length >= 2 && remainingPlayers.length >= 2) {
-        logger.info('POKERSTARS: All players all-in after action - proceeding to showdown', {
-          tableId: this.id,
-          handNumber: this.handNumber,
-          actionType,
-          playerId: playerId.substring(0, 8),
-          remainingCount: remainingPlayers.length,
-          allInCount: allInPlayers.length,
-          phase: this.currentHand.phase
-        });
-        
-        // Delay after action, then proceed to all-in showdown
-        await this.delay(afterActionDelay);
-        
-        // Convert to array of PokerTable.Player (match function signature)
-        const tablePlayers = remainingPlayers
-          .map(ep => this.players.get(ep.id))
-          .filter((p): p is Player => p !== undefined);
-        
-        await this.proceedToAllInShowdown(tablePlayers);
-        return { success: true };
-      }
-      
-      // Также проверяем случай когда currentPlayerSeat === -1 (engine уже определил showdown)
-      if (this.currentHand.currentPlayerSeat === -1 && !result.handComplete) {
-        logger.info('POKERSTARS: Engine set currentPlayerSeat to -1 (no action possible) - proceeding to showdown', {
-          tableId: this.id,
-          handNumber: this.handNumber,
-          phase: this.currentHand.phase
-        });
-        
-        await this.delay(afterActionDelay);
-        
-        const tablePlayers = remainingPlayers
-          .map(ep => this.players.get(ep.id))
-          .filter((p): p is Player => p !== undefined);
-        
-        await this.proceedToAllInShowdown(tablePlayers);
-        return { success: true };
-      }
-    }
-    
     // Check if hand is complete
     if (result.handComplete && result.winners) {
       logger.info('Hand complete - distributing winnings', { 
@@ -1965,6 +1915,59 @@ export class PokerTable {
       await this.delay(afterActionDelay);
       await this.completeHand(result.winners);
       
+    // POKERSTARS/TDA RULE 16: Check for all-in showdown BEFORE processing phase changes
+    // If all remaining players are all-in (no one can act), proceed directly to showdown
+    // This must come BEFORE result.phaseAdvanced check to prevent normal card dealing
+    } else if (this.currentHand && engineState && !result.handComplete) {
+      const remainingPlayers = engineState.players.filter(p => !p.isFolded);
+      const allInPlayers = remainingPlayers.filter(p => p.isAllIn);
+      const canActPlayers = remainingPlayers.filter(p => !p.isAllIn && p.stack > 0);
+      
+      // Check if we need all-in showdown:
+      // 1. All remaining players are all-in (no one can act)
+      // 2. OR engine set currentPlayerSeat to -1 (indicating no action possible)
+      const shouldTriggerAllInShowdown = 
+        (canActPlayers.length === 0 && allInPlayers.length >= 2 && remainingPlayers.length >= 2) ||
+        (this.currentHand.currentPlayerSeat === -1);
+      
+      if (shouldTriggerAllInShowdown) {
+        logger.info('POKERSTARS: All-in showdown triggered', {
+          tableId: this.id,
+          handNumber: this.handNumber,
+          actionType,
+          playerId: playerId.substring(0, 8),
+          remainingCount: remainingPlayers.length,
+          allInCount: allInPlayers.length,
+          canActCount: canActPlayers.length,
+          phase: this.currentHand.phase,
+          currentPlayerSeat: this.currentHand.currentPlayerSeat,
+          reason: this.currentHand.currentPlayerSeat === -1 ? 'currentPlayerSeat === -1' : 'all players all-in'
+        });
+        
+        // Delay after action, then proceed to all-in showdown
+        await this.delay(afterActionDelay);
+        
+        // CRITICAL: Save current phase to know where to start dealing from
+        const phaseBeforeShowdown = this.currentHand.phase;
+        
+        // Convert to array of PokerTable.Player (match function signature)
+        const tablePlayers = remainingPlayers
+          .map(ep => this.players.get(ep.id))
+          .filter((p): p is Player => p !== undefined);
+        
+        // CRITICAL: Reset community cards to current phase state if engine already dealt ahead
+        // This prevents showing cards that weren't dealt yet during all-in showdown
+        if (phaseBeforeShowdown === 'preflop') {
+          this.currentHand.communityCards = [];
+        } else if (phaseBeforeShowdown === 'flop') {
+          this.currentHand.communityCards = this.currentHand.communityCards.slice(0, 3);
+        } else if (phaseBeforeShowdown === 'turn') {
+          this.currentHand.communityCards = this.currentHand.communityCards.slice(0, 4);
+        }
+        
+        await this.proceedToAllInShowdown(tablePlayers);
+        return { success: true };
+      }
     } else if (result.phaseAdvanced && this.currentHand) {
       // PROFESSIONAL TIMING: Phase transition with delays
       const newPhase = this.currentHand.phase as 'flop' | 'turn' | 'river' | 'showdown';
