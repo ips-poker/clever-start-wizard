@@ -1480,6 +1480,14 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   winnerAnnouncement,
   activeBurnCard
 }: FullscreenPokerTableProps) {
+  // DEBUG: Log tableState to verify handId is received
+  console.log('[FullscreenPokerTable] RENDER:', { 
+    handId: (tableState as any)?.handId,
+    phase,
+    dealerSeat,
+    playerCount: players.length
+  });
+  
   // Use dynamic positions based on max seats
   // wideMode prop explicitly indicates Telegram Mini App context
   const maxPlayers = maxSeats;
