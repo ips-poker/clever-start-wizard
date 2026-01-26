@@ -1,8 +1,8 @@
 // PPPoker-style Compact Cards - Cards positioned BELOW avatar (fanned)
 // Smaller cards for opponents, positioned like in PPPoker reference images
 
-import React, { memo, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React, { memo, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
 
@@ -10,7 +10,6 @@ interface PPPokerCompactCardsProps {
   cards?: string[];
   faceDown?: boolean;
   isShowdown?: boolean;
-  gamePhase?: string; // Used to hide cards after hand ends (e.g. waiting)
   handName?: string;
   isWinner?: boolean;
   winningCardIndices?: number[]; // Indices of cards that participate in winning hand
@@ -342,7 +341,6 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   cards,
   faceDown = false,
   isShowdown = false,
-  gamePhase,
   handName,
   isWinner = false,
   winningCardIndices = [],
@@ -355,76 +353,59 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   const { currentCardBack, preferences } = usePokerPreferences();
 
   /**
-   * POKERSTARS-STYLE ANIMATION SYSTEM - CLEAN FIX V2
+   * POKERSTARS-STYLE SINGLE ANIMATION SYSTEM
    * 
-   * 1. Cards COMPLETELY HIDDEN until deal animation triggers
-   * 2. Animation happens EXACTLY ONCE per handId (on first animateDeal=true in preflop)
-   * 3. After animation, cards stay visible (static) until hand ends
-   * 4. On showdown: if cards are revealed (not faceDown), show them; otherwise hide
-   * 5. When new hand starts (new handId), reset visibility
+   * CLEAN FIX: Cards are COMPLETELY HIDDEN until deal animation.
+   * - No card backs, no placeholders - nothing shown before animateDeal=true
+   * - Cards appear ONLY with animation synced to shuffle sound
+   * - Animation happens EXACTLY ONCE per handId
    */
 
-  // Track the current handId for this component instance
-  const currentHandIdRef = useRef<string | undefined>(undefined);
-  const hasAnimatedRef = useRef<boolean>(false);
-  const isVisibleRef = useRef<boolean>(false);
-
-  // Detect new hand - reset state
-  if (handId && handId !== currentHandIdRef.current) {
-    currentHandIdRef.current = handId;
-    hasAnimatedRef.current = false;
-    isVisibleRef.current = false;
+  // Track last known valid handId to prevent key flickering on undefined
+  const lastNonNullHandIdRef = useRef<string | undefined>(handId);
+  if (handId && handId !== lastNonNullHandIdRef.current) {
+    lastNonNullHandIdRef.current = handId;
   }
+  
+  // Stable key: prefer current handId, fallback to last known, then static
+  const stableHandId = handId ?? lastNonNullHandIdRef.current;
+  const animationKey = stableHandId ?? 'static-cards';
 
-  // Hand finished / table idle: hide and fully reset (prevents old cards sticking around)
-  // NOTE: FullscreenPokerTable uses "waiting" for idle; we also require no handId to avoid
-  // hiding during transitional server states where pot/blinds can be present.
-  if (gamePhase === 'waiting' && !handId) {
-    currentHandIdRef.current = undefined;
-    hasAnimatedRef.current = false;
-    isVisibleRef.current = false;
-    return null;
-  }
+  // Track which hands have already been animated (persists across re-renders)
+  const animatedHandIdsRef = useRef<Set<string>>(new Set());
 
-  /**
-   * ANIMATION TRIGGER LOGIC:
-   * - animateDeal=true means parent says "it's preflop, do deal animation"
-   * - We only animate ONCE per hand (hasAnimatedRef guards this)
-   */
-  const shouldAnimateNow = Boolean(
+  // Has this hand EVER been dealt (animated)?
+  const hasBeenDealt = stableHandId ? animatedHandIdsRef.current.has(stableHandId) : false;
+
+  // Determine if we should animate THIS render
+  const shouldAnimateThisHand = Boolean(
+    stableHandId &&
     animateDeal &&
     !isShowdown &&
-    !hasAnimatedRef.current &&
-    handId
+    !hasBeenDealt
   );
 
-  // If we're animating now, mark as animated and visible
-  if (shouldAnimateNow) {
-    hasAnimatedRef.current = true;
-    isVisibleRef.current = true;
+  // Mark this handId as animated (happens during render, before return)
+  if (shouldAnimateThisHand && stableHandId) {
+    animatedHandIdsRef.current.add(stableHandId);
   }
-
-  // Once animated, stay visible (until new hand resets)
-  const hasBeenDealt = hasAnimatedRef.current || isVisibleRef.current;
+  
+  // Cleanup: remove very old handIds to prevent memory leak (keep last 10)
+  if (animatedHandIdsRef.current.size > 10) {
+    const arr = Array.from(animatedHandIdsRef.current);
+    animatedHandIdsRef.current = new Set(arr.slice(-5));
+  }
 
   /**
-   * VISIBILITY LOGIC - CLEAN FIX V3:
-   * 
-   * Compact cards (fanned mini-cards on avatar) should ONLY show during active play:
-   * - During preflop/flop/turn/river: show faceDown cards (card backs) if dealt
-   * - On SHOWDOWN: HIDE compact cards entirely - showdown uses larger revealed cards overlay
-   * - This prevents "double cards" on showdown (both compact AND showdown cards visible)
+   * VISIBILITY LOGIC:
+   * - Before deal: COMPLETELY HIDDEN (return null)
+   * - During deal: Animate in
+   * - After deal: Static display (no re-animation)
+   * - Showdown: Always visible
    */
+  const shouldShowCards = isShowdown || hasBeenDealt || shouldAnimateThisHand;
   
-  // On showdown, ALWAYS hide compact cards - showdown overlay handles card display
-  if (isShowdown) {
-    return null;
-  }
-  
-  // During play: show only if dealt
-  const shouldShowCards = hasBeenDealt;
-  
-  // Return nothing if cards shouldn't be shown
+  // CLEAN FIX: Return nothing if cards shouldn't be shown yet
   if (!shouldShowCards) {
     return null;
   }
@@ -435,12 +416,14 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   
   // Cards must exist and look like real cards for showdown display
   const hasAnyCards = Array.isArray(cards) && cards.length >= 2;
+  // At showdown, show cards if valid, otherwise show placeholder for unknown cards
+  const showCards = isShowdown && hasAnyCards;
   const useFourColor = preferences.cardStyle === 'fourcolor';
   
   // For PLO4, show all 4 cards; for Hold'em show 2
   const cardCount = cards?.length || 2;
-  // Display actual cards or placeholders
-  const displayCards = hasAnyCards ? cards : Array(Math.min(cardCount, 4)).fill('XX');
+  // At showdown, display actual cards (even if some are '??')
+  const displayCards = showCards ? cards : Array(Math.min(cardCount, 4)).fill('XX');
 
   // Fan direction
   const getFanRotation = (idx: number, total: number) => {
@@ -456,7 +439,14 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   };
 
   return (
-      <div className="relative flex items-center">
+    <AnimatePresence mode="wait">
+      <motion.div 
+        key={`cards-${animationKey}`}
+        className="relative flex items-center"
+        initial={{ opacity: 1 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
         {/* Cards container - fanned, rotated to point towards table */}
         <div 
           className="relative flex"
@@ -482,16 +472,16 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
             
             return (
               <div 
-                key={idx}
+                key={`${animationKey}-${idx}`} 
                 className="relative"
                 style={{
                   marginLeft: idx > 0 ? (isShowdown ? 2 : -cfg.w * 0.45) : 0,
                   zIndex: idx + 1
                 }}
               >
-              <MiniCard 
-                  card={isShowdown && hasAnyCards ? card : 'XX'} 
-                  faceDown={!(isShowdown && hasAnyCards)}
+                <MiniCard 
+                  card={showCards ? card : 'XX'} 
+                  faceDown={!showCards}
                   size={actualSize as any} 
                   delayMs={cardDelayMs}
                   isWinning={isShowdown && isCardWinning && isWinner}
@@ -499,7 +489,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                   rotation={rotation}
                   cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
                   useFourColor={useFourColor}
-                  animate={shouldAnimateNow && !isShowdown}
+                  animate={shouldAnimateThisHand}
                 />
               </div>
             );
@@ -522,7 +512,8 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
             </span>
           </div>
         )}
-      </div>
+      </motion.div>
+    </AnimatePresence>
   );
 });
 
