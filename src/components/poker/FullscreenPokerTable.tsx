@@ -1140,65 +1140,8 @@ const SyndikateTableFelt = memo(function SyndikateTableFelt({
   );
 });
 
-// ============= COMMUNITY CARDS with personalization =============
-const CommunityCards = memo(function CommunityCards({ 
-  cards, 
-  phase,
-  winningCardIndices = []
-}: { 
-  cards: string[]; 
-  phase: string;
-  winningCardIndices?: number[];
-}) {
-  const { currentCardBack, preferences } = usePokerPreferences();
-  const visibleCount = phase === 'flop' ? 3 : phase === 'turn' ? 4 : (phase === 'river' || phase === 'showdown') ? 5 : 0;
-  const isShowdown = phase === 'showdown';
-  const hasWinningInfo = winningCardIndices.length > 0;
-
-  return (
-    <div className="flex items-center justify-center gap-1">
-      {[0, 1, 2, 3, 4].map((idx) => {
-        const isVisible = idx < visibleCount;
-        const card = cards[idx];
-        const isWinning = winningCardIndices.includes(idx);
-        const isDimmed = isShowdown && hasWinningInfo && !isWinning;
-        
-        return (
-          <AnimatePresence key={idx}>
-            {isVisible && card ? (
-              <motion.div
-                initial={{ y: -80, opacity: 0, rotateX: 90 }}
-                animate={{ y: 0, opacity: isDimmed ? 0.6 : 1, rotateX: 0 }}
-                exit={{ y: 20, opacity: 0 }}
-                transition={{ 
-                  delay: idx * (preferences.fastAnimations ? 0.08 : 0.15), 
-                  type: 'spring', 
-                  stiffness: preferences.fastAnimations ? 300 : 200, 
-                  damping: 20 
-                }}
-              >
-                <PremiumCard 
-                  card={card} 
-                  size="md" 
-                  delay={0} 
-                  isWinning={isShowdown && isWinning}
-                  cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
-                  cardStyle={preferences.cardStyle}
-                />
-              </motion.div>
-            ) : (
-              <div 
-                key={`empty-${idx}`}
-                className="rounded-md border border-dashed border-white/10"
-                style={{ width: 48, height: 66 }}
-              />
-            )}
-          </AnimatePresence>
-        );
-      })}
-    </div>
-  );
-});
+// NOTE: CommunityCards component removed - using ProfessionalCommunityCards instead
+// for unified timing configuration from src/config/pokerTimings.ts
 
 // ============= POT DISPLAY - PPPoker style with premium 3D chips =============
 const PotDisplay = memo(function PotDisplay({ 
