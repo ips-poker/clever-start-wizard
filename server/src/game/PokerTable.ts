@@ -1923,6 +1923,24 @@ export class PokerTable {
       const allInPlayers = remainingPlayers.filter(p => p.isAllIn);
       const canActPlayers = remainingPlayers.filter(p => !p.isAllIn && p.stack > 0);
       
+      // DIAGNOSTIC: Log player state for all-in showdown detection
+      logger.info('DIAGNOSTIC: Checking all-in showdown conditions', {
+        tableId: this.id,
+        handNumber: this.handNumber,
+        phase: this.currentHand.phase,
+        currentPlayerSeat: this.currentHand.currentPlayerSeat,
+        remainingCount: remainingPlayers.length,
+        allInCount: allInPlayers.length,
+        canActCount: canActPlayers.length,
+        remainingPlayers: remainingPlayers.map(p => ({
+          id: p.id.substring(0, 8),
+          seat: p.seatNumber,
+          stack: p.stack,
+          isAllIn: p.isAllIn,
+          currentBet: p.currentBet
+        }))
+      });
+      
       // Check if we need all-in showdown:
       // 1. All remaining players are all-in (no one can act)
       // 2. OR engine set currentPlayerSeat to -1 (indicating no action possible)
