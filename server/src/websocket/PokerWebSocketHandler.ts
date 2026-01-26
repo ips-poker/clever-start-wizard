@@ -1392,6 +1392,26 @@ export class PokerWebSocketHandler {
           if (startResult && (startResult as any).success) {
             this.tournamentManager.startTournament(tournamentId);
             metrics.recordTournamentStarted();
+            
+            // POKERSTARS-STYLE: Force immediate table balance after seating
+            // The RPC already calls professional_balance_tables internally,
+            // but we call it again here to ensure ±1 distribution even if
+            // some tables started hands before balance completed
+            try {
+              const { data: balanceResult, error: balanceError } = await this.supabase.rpc('professional_balance_tables', {
+                p_tournament_id: tournamentId
+              });
+              if (balanceResult?.players_moved > 0) {
+                logger.info('POKERSTARS: Post-start balance applied', { 
+                  tournamentId, 
+                  playersMoved: balanceResult.players_moved,
+                  finalMaxDiff: balanceResult.final_max_diff
+                });
+              }
+            } catch (balanceErr) {
+              logger.warn('Post-start balance failed (non-critical)', { tournamentId, error: balanceErr });
+            }
+            
             actionResult = { success: true };
           } else {
             actionResult = { success: false, error: (startResult as any)?.error || 'Unknown error' };
