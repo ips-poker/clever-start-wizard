@@ -12,6 +12,7 @@ interface PPPokerHeroCardsProps {
   cards: string[];
   communityCards?: string[];
   gamePhase: string;
+  handId?: string; // Used to reliably reset deal visibility per hand
   isWinner?: boolean;
   winningCardIndices?: number[]; // Indices of hole cards that participate in winning hand
   isFolded?: boolean; // PokerStars-style: show folded cards face-down, hover to peek
@@ -297,6 +298,7 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
   cards,
   communityCards = [],
   gamePhase,
+  handId,
   isWinner = false,
   winningCardIndices = [],
   isFolded = false,
@@ -316,8 +318,8 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
     return undefined;
   }, [cards, communityCards]);
 
-  // Generate a simple "hand signature" to detect new hands
-  const handSignature = cards.join('-');
+  // Use handId if available (best), fallback to cards signature
+  const handSignature = handId ?? cards.join('-');
   
   // CLEAN FIX: Track when cards should appear
   // Cards become visible when:

@@ -829,7 +829,10 @@ const PlayerSeat = memo(function PlayerSeat({
                 size="xs"
                 position={position}
                 handId={handId}
-                dealDelay={dealOrder * 120} // POKERSTARS: 120ms per player in deal sequence
+                // CLEAN FIX: Opponents start AFTER hero's deal has begun (post-shuffle), not simultaneously.
+                // dealOrder here is already normalized so hero would be 0.
+                // Opponents effectively start from order=1.
+                dealDelay={200 + Math.max(0, dealOrder - 1) * 120}
                 animateDeal={gamePhase === 'preflop'} // CRITICAL: Only animate during preflop deal, not later phases
               />
             </div>
@@ -910,10 +913,12 @@ const PlayerSeat = memo(function PlayerSeat({
           cards={heroCards} 
           gamePhase={gamePhase} 
           communityCards={communityCards}
+          handId={handId}
           isWinner={(player as any).isWinner}
           winningCardIndices={(player as any).winningCardIndices || []}
           isFolded={player.isFolded}
-          dealDelay={dealOrder * 120} // POKERSTARS: Sync with opponent cards
+          // CLEAN FIX: Hero must appear first.
+          dealDelay={0}
         />
       )}
       
@@ -1635,6 +1640,24 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
     
     return map;
   }, [players, dealerSeat, maxPlayers]);
+
+  /**
+   * CLEAN DEAL ORDER (UI only):
+   * User expectation: hero cards appear first, then opponent compact cards start AFTER hero.
+   * We keep server/game logic intact; this ONLY affects animation delays.
+   */
+  const dealOrderMapFromHero = useMemo(() => {
+    if (heroSeat === null) return dealOrderMap;
+    const heroOrder = dealOrderMap.get(heroSeat);
+    const count = dealOrderMap.size;
+    if (heroOrder === undefined || count <= 1) return dealOrderMap;
+
+    const map = new Map<number, number>();
+    dealOrderMap.forEach((order, seat) => {
+      map.set(seat, (order - heroOrder + count) % count);
+    });
+    return map;
+  }, [dealOrderMap, heroSeat]);
   
   // Get handId from tableState for animation reset
   const tableStateAny = tableState;
@@ -1758,7 +1781,11 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               showdownWinners={winners}
               bigBlind={bigBlind}
               displayFormat={preferences.displayFormat}
-              dealOrder={player?.seatNumber !== undefined ? dealOrderMap.get(player.seatNumber) ?? 0 : 0}
+              dealOrder={
+                player?.seatNumber !== undefined
+                  ? dealOrderMapFromHero.get(player.seatNumber) ?? 0
+                  : 0
+              }
               handId={handId}
             />
 
