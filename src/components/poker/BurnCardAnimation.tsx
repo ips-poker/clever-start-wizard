@@ -49,7 +49,8 @@ export const BurnCardAnimation = memo(function BurnCardAnimation({
           }}
           exit={{ opacity: 0 }}
           transition={{
-            duration: 0.35,
+            // POKERSTARS-STYLE: Burn card animation ~400ms
+            duration: 0.4,
             ease: [0.4, 0, 0.2, 1]
           }}
           onAnimationComplete={onComplete}
