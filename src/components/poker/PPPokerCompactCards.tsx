@@ -395,32 +395,49 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
   const [isDealt, setIsDealt] = React.useState(false);
-  const lastHandIdRef = React.useRef(handId);
+  const lastHandIdRef = React.useRef<string | null>(null);
+  const dealTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   
-  // Reset deal state when handId changes (new hand started)
+  // POKERSTARS-STYLE: Sequential deal animation sync
+  // Reset and delay card appearance when handId changes (new hand started)
   React.useEffect(() => {
+    // Clear any pending timer
+    if (dealTimerRef.current) {
+      clearTimeout(dealTimerRef.current);
+      dealTimerRef.current = null;
+    }
+    
+    // New hand detected - reset and delay
     if (handId && handId !== lastHandIdRef.current) {
+      console.log('[PPPokerCompactCards] New hand detected:', { handId, dealDelay, prevHandId: lastHandIdRef.current });
       lastHandIdRef.current = handId;
       setIsDealt(false);
       
-      // Delay card appearance to sync with deal sounds
-      const timer = setTimeout(() => {
+      // Delay card appearance based on deal order (120ms per player from dealer)
+      dealTimerRef.current = setTimeout(() => {
+        console.log('[PPPokerCompactCards] Cards dealt after delay:', { handId, dealDelay });
         setIsDealt(true);
       }, dealDelay);
       
-      return () => clearTimeout(timer);
-    } else if (!handId) {
-      // No handId tracking - show immediately
+      return () => {
+        if (dealTimerRef.current) {
+          clearTimeout(dealTimerRef.current);
+        }
+      };
+    } else if (!handId && !lastHandIdRef.current) {
+      // No handId tracking at all - show immediately (fallback)
       setIsDealt(true);
     }
   }, [handId, dealDelay]);
   
-  // Initialize as dealt if no handId tracking
+  // Cleanup on unmount
   React.useEffect(() => {
-    if (!handId) {
-      setIsDealt(true);
-    }
-  }, [handId]);
+    return () => {
+      if (dealTimerRef.current) {
+        clearTimeout(dealTimerRef.current);
+      }
+    };
+  }, []);
   
   // Use showdown size for larger cards during showdown like in reference
   const actualSize = isShowdown ? 'showdown' : size;
