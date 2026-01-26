@@ -362,24 +362,15 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
    * - animationKey is stable (based on last known handId) to prevent remounts.
    */
 
-  // Track last known valid handId to prevent key flickering on transient undefined
+  // Track last known valid handId to prevent key flickering on undefined
   const lastNonNullHandIdRef = useRef<string | undefined>(handId);
-  useEffect(() => {
-    if (handId) lastNonNullHandIdRef.current = handId;
-  }, [handId]);
-
-  // IMPORTANT: If we're in the *deal window* (animateDeal=true) but the server hasn't
-  // attached handId yet, rendering face-down cards now causes a *double appearance*:
-  // 1) static cards (no animation) under previous handId
-  // 2) then animated cards when the real handId arrives
-  // => wait until handId exists.
-  if (animateDeal && !handId && !isShowdown) {
-    return null;
+  if (handId && handId !== lastNonNullHandIdRef.current) {
+    lastNonNullHandIdRef.current = handId;
   }
-
+  
   // Stable key: prefer current handId, fallback to last known, then static
-  const stableHandIdForKey = handId ?? lastNonNullHandIdRef.current;
-  const animationKey = stableHandIdForKey ?? 'static-cards';
+  const stableHandId = handId ?? lastNonNullHandIdRef.current;
+  const animationKey = stableHandId ?? 'static-cards';
 
   // Track which hands have already been animated (persists across re-renders)
   const animatedHandIdsRef = useRef<Set<string>>(new Set());
@@ -391,15 +382,15 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   // 3. Not showdown phase
   // 4. This handId hasn't been animated yet
   const shouldAnimateThisHand = Boolean(
-    handId &&
+    stableHandId &&
     animateDeal &&
     !isShowdown &&
-    !animatedHandIdsRef.current.has(handId)
+    !animatedHandIdsRef.current.has(stableHandId)
   );
 
   // Mark this handId as animated (happens during render, before return)
-  if (shouldAnimateThisHand && handId) {
-    animatedHandIdsRef.current.add(handId);
+  if (shouldAnimateThisHand && stableHandId) {
+    animatedHandIdsRef.current.add(stableHandId);
   }
   
   // Cleanup: remove very old handIds to prevent memory leak (keep last 10)

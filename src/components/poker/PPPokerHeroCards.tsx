@@ -55,7 +55,7 @@ const HeroCard = memo(function HeroCard({
 }) {
   const [isFlipped, setIsFlipped] = useState(!animate);
   const [isDealt, setIsDealt] = useState(!animate);
-
+  
   const rank = card?.[0] === 'T' ? '10' : card?.[0] || '?';
   const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS_FOURCOLOR;
   const suitInfo = useFourColor ? SUITS_FOURCOLOR[suitChar] : SUITS_CLASSIC[suitChar];
