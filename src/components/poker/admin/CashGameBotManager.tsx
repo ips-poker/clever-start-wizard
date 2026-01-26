@@ -215,7 +215,13 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
   // Load available bots - search for bots without user_id (they are managed bots)
   const loadAvailableBots = useCallback(async () => {
     // Bots are players without user_id (not linked to auth accounts)
-    // Also exclude players who already have active tournament participations
+    // Exclude bots already seated at any table
+    const { data: seatedPlayerIds } = await supabase
+      .from('poker_table_players')
+      .select('player_id');
+    
+    const seatedIds = new Set((seatedPlayerIds || []).map(p => p.player_id));
+    
     const { data, error } = await supabase
       .from('players')
       .select('id, name')
@@ -228,8 +234,12 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
       return;
     }
 
-    // Filter out TestBot_ prefix if needed for cleaner list
-    const bots = data?.filter(p => !p.name.startsWith('TestBot_')) || [];
+    // Filter out TestBot_ prefix and already seated bots
+    const bots = data?.filter(p => 
+      !p.name.startsWith('TestBot_') && 
+      !seatedIds.has(p.id)
+    ) || [];
+    
     setAvailableBots(bots);
     addLog('info', `Найдено ${bots.length} доступных ботов`);
   }, [addLog]);
