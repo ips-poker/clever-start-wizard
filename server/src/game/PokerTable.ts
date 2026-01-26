@@ -2083,6 +2083,7 @@ export class PokerTable {
       });
       
       this.emit('state_update', {
+        handId: this.currentHand.id, // POKERSTARS: For card deal animation sync
         pot: this.currentHand.pot,
         currentBet: 0, // Bets reset after phase
         currentPlayerSeat: this.currentHand.currentPlayerSeat,
@@ -2137,6 +2138,7 @@ export class PokerTable {
       });
       
       this.emit('state_update', {
+        handId: this.currentHand?.id, // POKERSTARS: For card deal animation sync
         pot: this.currentHand?.pot || 0,
         currentBet: this.currentHand?.currentBet || 0,
         currentPlayerSeat: this.currentHand?.currentPlayerSeat,
@@ -2703,6 +2705,7 @@ export class PokerTable {
         
         // Emit state update so client knows we're in time bank phase
         this.emit('state_update', {
+          handId: this.currentHand.id, // POKERSTARS: For card deal animation sync
           pot: this.currentHand.pot,
           currentBet: this.currentHand.currentBet,
           currentPlayerSeat: this.currentHand.currentPlayerSeat,
@@ -4222,6 +4225,7 @@ export class PokerTable {
     
     // Emit state update to clear client displays
     this.emit('state_update', {
+      handId: null, // No active hand
       pot: 0,
       currentBet: 0,
       currentPlayerSeat: null,
@@ -4673,6 +4677,7 @@ export class PokerTable {
     
     // Emit state update
     this.emit('state_update', {
+      handId: null, // No active hand
       pot: 0,
       currentBet: 0,
       currentPlayerSeat: null,
