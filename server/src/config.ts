@@ -22,10 +22,10 @@ export const config = {
   
   // Game settings - POKERSTARS-STYLE DEFAULTS
   // Cash Game: 15s base, 30s time bank (+5s every 10 hands)
-  // Tournament: 30s base, 60s time bank (fixed per level)
+  // Tournament: 25s base, 60s time bank (PokerStars-style)
   defaultActionTimeSeconds: parseInt(process.env.ACTION_TIME_SECONDS || '15', 10), // PokerStars Cash: 15s
   defaultTimeBankSeconds: parseInt(process.env.TIME_BANK_SECONDS || '30', 10),     // PokerStars Cash: 30s
-  tournamentActionTimeSeconds: parseInt(process.env.TOURNAMENT_ACTION_TIME_SECONDS || '30', 10), // PokerStars Tournament: 30s
+  tournamentActionTimeSeconds: parseInt(process.env.TOURNAMENT_ACTION_TIME_SECONDS || '25', 10), // PokerStars Tournament: 25s
   tournamentTimeBankSeconds: parseInt(process.env.TOURNAMENT_TIME_BANK_SECONDS || '60', 10),     // PokerStars Tournament: 60s
   timeBankReplenishAmount: parseInt(process.env.TIME_BANK_REPLENISH_AMOUNT || '5', 10), // +5 seconds
   timeBankReplenishHands: parseInt(process.env.TIME_BANK_REPLENISH_HANDS || '10', 10),  // Every 10 hands

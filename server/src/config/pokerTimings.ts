@@ -133,8 +133,8 @@ export interface ProfessionalTimings {
 // CASH GAME TIMINGS (STANDARD)
 // ============================================
 export const PROFESSIONAL_TIMINGS: ProfessionalTimings = {
-  // POKERSTARS: ~400ms after each action for smooth feel
-  afterAction: 400,
+  // PokerStars-fast: slightly snappier pacing
+  afterAction: 350,
   
   phases: {
     flop: {
@@ -160,11 +160,12 @@ export const PROFESSIONAL_TIMINGS: ProfessionalTimings = {
   },
   
   showdown: {
-    perPlayerReveal: 750,    // POKERSTARS: ~700-800ms delay between each player reveal
-    winnerHighlight: 3000,   // POKERSTARS: ~3s to highlight winning hand
-    potCollection: 800,      // Pot slides from center
-    potSlideToWinner: 1500,  // POKERSTARS: ~1.5s chips slide to winner
-    winnerCelebration: 2000, // Winner overlay display
+    // PokerStars-fast (synchronized with frontend src/config/pokerTimings.ts)
+    perPlayerReveal: 400,    // Faster per-player reveal
+    winnerHighlight: 1800,   // Shorter winner highlight
+    potCollection: 500,      // Pot slides from center
+    potSlideToWinner: 1200,  // Keep readable chip movement (min ~1.2s)
+    winnerCelebration: 1200, // Winner overlay display
   },
   
   betCollection: {
@@ -173,9 +174,10 @@ export const PROFESSIONAL_TIMINGS: ProfessionalTimings = {
     pauseAfterCollection: 250, // Brief pause before next phase
   },
   
-  betweenHands: 3200,        // POKERSTARS: ~3-3.5 seconds between hands
-  shuffleAnimation: 500,     // Shuffle sound/animation
-  minimumHandDisplay: 2500,  // POKERSTARS: Minimum time to see showdown result
+  // PokerStars-fast: reduce downtime between hands
+  betweenHands: 1800,
+  shuffleAnimation: 400,
+  minimumHandDisplay: 1500,
   preDealHoleCards: 350,     // POKERSTARS: Pause before dealing hole cards
   perHoleCard: 100,          // POKERSTARS: Time per hole card dealt
   

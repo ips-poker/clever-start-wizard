@@ -40,7 +40,8 @@ export const SHOWDOWN_TIMINGS = {
   cardFlipDuration: 250,    // Card flip animation (was 350)
   winnerHighlight: 1800,    // Winner hand highlight duration (was 3000)
   potCollection: 500,       // Pot slides from center (was 800)
-  potSlideToWinner: 800,    // Chips slide to winner (was 1500)
+  // Keep chip movement readable (min ~1.2s), while still faster than classic PokerStars pacing
+  potSlideToWinner: 1200,   // Chips slide to winner (was 1500)
   winnerCelebration: 1200,  // Winner overlay display (was 2000)
   displayDuration: 2200,    // Total showdown display time (was 4000)
 } as const;
