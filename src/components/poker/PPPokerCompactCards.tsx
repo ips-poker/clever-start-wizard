@@ -361,6 +361,27 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   if (handId) stableHandIdRef.current = handId;
   const stableHandId = stableHandIdRef.current;
 
+  // =====================================================
+  // POKERSTARS-STYLE: Animation ONCE per handId guard
+  // =====================================================
+  // Track which handId we already animated. If animateDeal fires for
+  // the same handId (due to server flicker or re-mount), skip animation.
+  const didAnimateForHandIdRef = useRef<string | undefined>(undefined);
+  
+  // Determine if we should actually animate
+  const shouldActuallyAnimate = (() => {
+    if (!animateDeal || isShowdown) return false;
+    if (!stableHandId) return false;
+    // Already animated for this hand?
+    if (didAnimateForHandIdRef.current === stableHandId) return false;
+    return true;
+  })();
+  
+  // Mark as animated immediately (before render commits)
+  if (shouldActuallyAnimate && stableHandId) {
+    didAnimateForHandIdRef.current = stableHandId;
+  }
+
   /**
    * POKERSTARS-STYLE VISIBILITY:
    * - animateDeal=true (preflop): Show with animation
@@ -373,8 +394,8 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
     return null;
   }
   
-  // Only animate during preflop deal
-  const shouldAnimate = animateDeal && !isShowdown;
+  // Only animate during preflop deal AND if not already animated
+  const shouldAnimate = shouldActuallyAnimate;
   
   // Use showdown size for larger cards during showdown like in reference
   const actualSize = isShowdown ? 'showdown' : size;
