@@ -1696,12 +1696,14 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         // POKERSTARS-STYLE: Community cards dealt (especially during all-in showdown)
         case 'community_cards':
           {
-            const cardsData = data as Record<string, unknown>;
+            // Server sends TableEvent: { type, tableId, data: { phase, cards, handNumber, isAllInShowdown }, timestamp }
+            const rawData = data as Record<string, unknown>;
+            const cardsData = (rawData.data || rawData) as Record<string, unknown>;
             const cards = cardsData.cards as string[];
             const phase = cardsData.phase as string;
             const isAllInShowdown = cardsData.isAllInShowdown as boolean;
             
-            log('🎴 Community cards dealt:', { cards, phase, isAllInShowdown });
+            log('🎴 Community cards dealt:', { cards, phase, isAllInShowdown, rawData: JSON.stringify(rawData).substring(0, 200) });
             
             if (cards && cards.length > 0 && tableId) {
               setTableState(prev => {
@@ -1759,19 +1761,26 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         // POKERSTARS-STYLE: Burn card animation before community cards
         case 'burn_card':
           {
-            const burnData = data as Record<string, unknown>;
+            // Server sends TableEvent: { type, tableId, data: { phase, handNumber, isAllInShowdown }, timestamp }
+            const rawData = data as Record<string, unknown>;
+            const burnData = (rawData.data || rawData) as Record<string, unknown>;
             const burnPhase = burnData.phase as 'flop' | 'turn' | 'river';
-            log('🔥 Burn card:', burnPhase);
+            const isAllInShowdown = burnData.isAllInShowdown as boolean;
             
-            setActiveBurnCard({
-              phase: burnPhase,
-              timestamp: Date.now()
-            });
+            log('🔥 Burn card:', { phase: burnPhase, isAllInShowdown });
             
-            // Auto-clear after animation completes (~400ms)
-            setTimeout(() => {
-              setActiveBurnCard(null);
-            }, 400);
+            if (burnPhase) {
+              setActiveBurnCard({
+                phase: burnPhase,
+                timestamp: Date.now()
+              });
+              
+              // Auto-clear after animation completes (~500ms for PokerStars-style all-in)
+              const clearDelay = isAllInShowdown ? 500 : 400;
+              setTimeout(() => {
+                setActiveBurnCard(null);
+              }, clearDelay);
+            }
           }
           break;
 
