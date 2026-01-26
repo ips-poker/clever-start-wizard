@@ -315,22 +315,46 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
    * - Parent passes gamePhase to control visibility
    */
   
-  // Track which handId has been animated to prevent re-animation
-  const animatedHandIdRef = useRef<string | undefined>(undefined);
-  
-  // Use handId if available, fallback to cards signature
-  const handSignature = handId ?? cards.join('-');
-  
-  // Check if this hand was already animated
-  const wasAlreadyAnimated = animatedHandIdRef.current === handSignature;
-  
-  // Mark as animated when preflop starts
-  if (gamePhase === 'preflop' && !wasAlreadyAnimated) {
-    animatedHandIdRef.current = handSignature;
+  // =====================================================
+  // POKERSTARS-STYLE: STABLE HAND KEY + NO UNMOUNTING
+  // =====================================================
+  // Problem we saw in practice:
+  // - transient snapshots can drop handId or briefly change phase
+  // - if we use handId ?? cards.join('-'), the signature can switch mid-hand
+  // - if the component returns null, refs reset and the deal animation repeats
+  //
+  // Fix:
+  // 1) Freeze a "visual hand key" for the whole hand (until phase becomes waiting)
+  // 2) Never unmount the hero cards container; hide it with CSS
+
+  const visualHandKeyRef = useRef<string | undefined>(undefined);
+  const animatedHandKeyRef = useRef<string | undefined>(undefined);
+
+  const cardsKey = Array.isArray(cards) ? cards.join('-') : '';
+
+  // Reset between hands
+  if (gamePhase === 'waiting') {
+    visualHandKeyRef.current = undefined;
+    animatedHandKeyRef.current = undefined;
+  } else {
+    // Freeze key on first non-waiting render of a hand.
+    // IMPORTANT: once set, do NOT switch from cardsKey -> handId mid-hand.
+    if (!visualHandKeyRef.current) {
+      visualHandKeyRef.current = handId ?? cardsKey;
+    }
   }
-  
-  // Animate only during first preflop for this hand
-  const shouldAnimate = gamePhase === 'preflop' && !wasAlreadyAnimated;
+
+  const visualHandKey = visualHandKeyRef.current;
+  const wasAlreadyAnimated = Boolean(visualHandKey) && animatedHandKeyRef.current === visualHandKey;
+
+  const hasCards = Array.isArray(cards) && cards.length >= 2;
+  const isShowdown = gamePhase === 'showdown';
+
+  // Animate only once per visual hand
+  const shouldAnimate = gamePhase === 'preflop' && hasCards && !wasAlreadyAnimated;
+  if (shouldAnimate && visualHandKey) {
+    animatedHandKeyRef.current = visualHandKey;
+  }
   
   // Calculate hand strength
   const handName = useMemo(() => {
@@ -340,17 +364,15 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
     return undefined;
   }, [cards, communityCards]);
 
-  if (!cards || cards.length < 2) return null;
-
-  const cardCount = cards.length;
+  const cardCount = cards?.length ?? 0;
   const cardOverlap = cardCount > 2 ? -8 : -10;
-  const isShowdown = gamePhase === 'showdown';
-  
-  // Show cards: during preflop (animate), after preflop (static), showdown, or folded
-  const shouldShowCards = gamePhase === 'preflop' || wasAlreadyAnimated || isShowdown || isFolded;
-  if (!shouldShowCards) {
-    return null;
-  }
+
+  // Show cards: during preflop (animate), after preflop (static), showdown, or folded.
+  // Hide completely in waiting (between hands) and when we don't have cards yet.
+  const wantVisible =
+    gamePhase !== 'waiting' &&
+    hasCards &&
+    (gamePhase === 'preflop' || wasAlreadyAnimated || isShowdown || isFolded);
   
   // PokerStars-style: folded cards show face-down, hover to peek
   const showCardsFaceUp = !isFolded || isHovering;
@@ -358,6 +380,12 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
   return (
     <div 
       className="absolute left-full ml-1.5 top-1/2 -translate-y-1/2 flex flex-col items-start gap-0.5 z-10"
+      style={{
+        visibility: wantVisible ? 'visible' : 'hidden',
+        opacity: wantVisible ? 1 : 0,
+        pointerEvents: wantVisible ? 'auto' : 'none',
+        transition: 'opacity 0.15s ease-out'
+      }}
       onMouseEnter={() => isFolded && setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
