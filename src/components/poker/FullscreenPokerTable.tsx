@@ -575,12 +575,25 @@ const PlayerSeat = memo(function PlayerSeat({
   // Keep a stable reference so transient server flickers don't break animations.
   // The actual "animate once per hand" guard is inside PPPokerCompactCards.
   const stableHandIdRef = useRef<string | undefined>(undefined);
-  if (handId) stableHandIdRef.current = handId;
+  
+  // CRITICAL: Only update stableHandId when we get a NEW valid handId
+  // This prevents flickering when server briefly sends undefined
+  if (handId && handId !== stableHandIdRef.current) {
+    stableHandIdRef.current = handId;
+  }
+  // Clear on waiting phase with no handId (between hands)
+  if (gamePhase === 'waiting' && !handId) {
+    stableHandIdRef.current = undefined;
+  }
   const stableHandId = stableHandIdRef.current;
 
-  // Tell PPPokerCompactCards to animate during preflop
-  // The component itself guards against double-animation for the same handId
+  // POKERSTARS-STYLE: Animation signals
+  // animateDeal: triggers initial fan animation (only during preflop)
+  // showAfterDeal: keeps cards visible after animation (throughout the hand)
   const shouldAnimateCompactDeal = gamePhase === 'preflop' && !!stableHandId;
+  
+  // Cards stay visible from preflop through showdown, hidden only in waiting
+  const shouldShowAfterDeal = gamePhase !== 'waiting' && !!stableHandId;
   
   // Format stack based on display preference
   const formatStack = (stack: number): string => {
@@ -844,10 +857,9 @@ const PlayerSeat = memo(function PlayerSeat({
                 handId={stableHandId}
                 // POKERSTARS: Opponents start AFTER hero (200ms offset + 120ms per seat)
                 dealDelay={200 + Math.max(0, dealOrder - 1) * 120}
-                // POKERSTARS FIX: Cards appear on preflop, STAY visible until hand ends
-                // Only animate during preflop, but show static after
+                // POKERSTARS: Cards animate on preflop, stay static after, clear between hands
                 animateDeal={shouldAnimateCompactDeal}
-                showAfterDeal={gamePhase !== 'waiting' && !!stableHandId} // Stay visible after preflop
+                showAfterDeal={shouldShowAfterDeal}
               />
             </div>
           );

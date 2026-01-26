@@ -354,48 +354,59 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
 
-  // Keep a stable handId during an active hand.
-  // Server snapshots sometimes omit handId for a tick; if we use that directly in keys,
-  // the component remounts and replays the deal animation.
+  // =====================================================
+  // POKERSTARS-STYLE: STABLE VISIBILITY & ANIMATION GUARDS
+  // =====================================================
+  // CRITICAL: Never return null - use CSS visibility instead.
+  // When component unmounts, ALL refs reset, causing re-animation.
+  
+  // 1) Stable handId - persists even if server briefly omits it
   const stableHandIdRef = useRef<string | undefined>(undefined);
   if (handId) stableHandIdRef.current = handId;
   const stableHandId = stableHandIdRef.current;
-
-  // =====================================================
-  // POKERSTARS-STYLE: Animation ONCE per handId guard
-  // =====================================================
-  // Track which handId we already animated. If animateDeal fires for
-  // the same handId (due to server flicker or re-mount), skip animation.
-  const didAnimateForHandIdRef = useRef<string | undefined>(undefined);
   
-  // Determine if we should actually animate
-  const shouldActuallyAnimate = (() => {
+  // 2) Track which handId has ALREADY been animated - NEVER re-animate same hand
+  const animatedHandIdRef = useRef<string | undefined>(undefined);
+  
+  // 3) Track if cards were ever shown for this hand (sticky visibility)
+  const shownForHandIdRef = useRef<string | undefined>(undefined);
+  
+  // Determine visibility: show if animating, post-deal, or showdown
+  const wantVisible = animateDeal || showAfterDeal || isShowdown;
+  
+  // Mark as "shown" for this hand once any show signal arrives
+  if (wantVisible && stableHandId) {
+    shownForHandIdRef.current = stableHandId;
+  }
+  
+  // STICKY VISIBILITY: Once shown for a handId, stay visible until handId changes
+  const isSticky = stableHandId && shownForHandIdRef.current === stableHandId;
+  const shouldShow = wantVisible || isSticky;
+  
+  // ANIMATION GUARD: Animate ONLY if:
+  // - animateDeal is true (preflop signal)
+  // - Not already animated for this handId
+  // - Not in showdown
+  const shouldAnimate = (() => {
     if (!animateDeal || isShowdown) return false;
     if (!stableHandId) return false;
-    // Already animated for this hand?
-    if (didAnimateForHandIdRef.current === stableHandId) return false;
+    if (animatedHandIdRef.current === stableHandId) return false;
     return true;
   })();
   
-  // Mark as animated immediately (before render commits)
-  if (shouldActuallyAnimate && stableHandId) {
-    didAnimateForHandIdRef.current = stableHandId;
-  }
-
-  /**
-   * POKERSTARS-STYLE VISIBILITY:
-   * - animateDeal=true (preflop): Show with animation
-   * - showAfterDeal=true (flop/turn/river): Show static
-   * - isShowdown=true: Show face-up
-   * - Neither: Hidden
-   */
-  const shouldShow = animateDeal || showAfterDeal || isShowdown;
-  if (!shouldShow) {
-    return null;
+  // Mark as animated IMMEDIATELY (before React commits)
+  if (shouldAnimate && stableHandId) {
+    animatedHandIdRef.current = stableHandId;
   }
   
-  // Only animate during preflop deal AND if not already animated
-  const shouldAnimate = shouldActuallyAnimate;
+  // Reset refs when handId actually changes (new hand)
+  const prevHandIdRef = useRef<string | undefined>(undefined);
+  if (stableHandId && prevHandIdRef.current && prevHandIdRef.current !== stableHandId) {
+    // New hand detected - allow fresh animation
+    animatedHandIdRef.current = undefined;
+    shownForHandIdRef.current = undefined;
+  }
+  prevHandIdRef.current = stableHandId;
   
   // Use showdown size for larger cards during showdown like in reference
   const actualSize = isShowdown ? 'showdown' : size;
@@ -428,82 +439,88 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   // Animation key based on handId to reset animation on new hand
   const animationKey = stableHandId ?? handId ?? 'static';
 
+  // =====================================================
+  // CSS VISIBILITY INSTEAD OF UNMOUNT
+  // =====================================================
+  // CRITICAL: We render ALWAYS but hide with CSS.
+  // This preserves refs across server state flickers.
+  
   return (
-    <AnimatePresence mode="wait">
-      <motion.div 
-        key={`cards-${animationKey}`}
-        className="relative flex items-center"
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+    <div
+      className="relative flex items-center"
+      style={{
+        visibility: shouldShow ? 'visible' : 'hidden',
+        opacity: shouldShow ? 1 : 0,
+        pointerEvents: shouldShow ? 'auto' : 'none',
+        transition: 'opacity 0.15s ease-out'
+      }}
+    >
+      {/* Cards container - fanned, rotated to point towards table */}
+      <div 
+        className="relative flex"
+        style={{ 
+          flexDirection: 'row',
+          transform: `rotate(${getContainerRotation()}deg)`,
+          transformOrigin: 'center center'
+        }}
       >
-        {/* Cards container - fanned, rotated to point towards table */}
-        <div 
-          className="relative flex"
-          style={{ 
-            flexDirection: 'row',
-            transform: `rotate(${getContainerRotation()}deg)`,
-            transformOrigin: 'center center'
-          }}
-        >
-          {displayCards.map((card, idx) => {
-            // Determine if this card is part of winning hand
-            const isCardWinning = winningCardIndices.includes(idx);
-            // At showdown with winning cards specified, dim non-winning cards
-            const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
-            
-            // Fanned rotation when not showdown
-            const rotation = getFanRotation(idx, displayCards.length);
-            
-            // POKERSTARS-STYLE: Sequential deal timing
-            // dealDelay = base delay for this player (0ms, 120ms, 240ms from dealer)
-            // idx * 80ms = additional delay for second card
-            const cardDelayMs = dealDelay + (idx * 80);
-            
-            return (
-              <div 
-                key={`${animationKey}-${idx}`} 
-                className="relative"
-                style={{
-                  marginLeft: idx > 0 ? (isShowdown ? 2 : -cfg.w * 0.45) : 0,
-                  zIndex: idx + 1
-                }}
-              >
-                <MiniCard 
-                  card={showCards ? card : 'XX'} 
-                  faceDown={!showCards}
-                  size={actualSize as any} 
-                  delayMs={cardDelayMs}
-                  isWinning={isShowdown && isCardWinning && isWinner}
-                  isDimmed={isDimmed}
-                  rotation={rotation}
-                  cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
-                  useFourColor={useFourColor}
-                  animate={shouldAnimate}
-                />
-              </div>
-            );
-          })}
-        </div>
-        
-        {/* Hand name badge at showdown */}
-        {isShowdown && handName && (
-          <div
-            className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap z-30"
-          >
-            <span 
-              className="text-[11px] font-bold"
+        {displayCards.map((card, idx) => {
+          // Determine if this card is part of winning hand
+          const isCardWinning = winningCardIndices.includes(idx);
+          // At showdown with winning cards specified, dim non-winning cards
+          const isDimmed = isShowdown && winningCardIndices.length > 0 && !isCardWinning;
+          
+          // Fanned rotation when not showdown
+          const rotation = getFanRotation(idx, displayCards.length);
+          
+          // POKERSTARS-STYLE: Sequential deal timing
+          // dealDelay = base delay for this player (0ms, 120ms, 240ms from dealer)
+          // idx * 80ms = additional delay for second card
+          const cardDelayMs = dealDelay + (idx * 80);
+          
+          return (
+            <div 
+              key={`${animationKey}-${idx}`} 
+              className="relative"
               style={{
-                color: '#22c55e',
-                textShadow: '0 1px 4px rgba(0,0,0,0.8)'
+                marginLeft: idx > 0 ? (isShowdown ? 2 : -cfg.w * 0.45) : 0,
+                zIndex: idx + 1
               }}
             >
-              {handName}
-            </span>
-          </div>
-        )}
-      </motion.div>
-    </AnimatePresence>
+              <MiniCard 
+                card={showCards ? card : 'XX'} 
+                faceDown={!showCards}
+                size={actualSize as any} 
+                delayMs={cardDelayMs}
+                isWinning={isShowdown && isCardWinning && isWinner}
+                isDimmed={isDimmed}
+                rotation={rotation}
+                cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
+                useFourColor={useFourColor}
+                animate={shouldAnimate}
+              />
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Hand name badge at showdown */}
+      {isShowdown && handName && (
+        <div
+          className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap z-30"
+        >
+          <span 
+            className="text-[11px] font-bold"
+            style={{
+              color: '#22c55e',
+              textShadow: '0 1px 4px rgba(0,0,0,0.8)'
+            }}
+          >
+            {handName}
+          </span>
+        </div>
+      )}
+    </div>
   );
 });
 
