@@ -1937,7 +1937,7 @@ export class PokerTable {
           seat: p.seatNumber,
           stack: p.stack,
           isAllIn: p.isAllIn,
-          currentBet: p.currentBet
+          betAmount: p.betAmount
         }))
       });
       
