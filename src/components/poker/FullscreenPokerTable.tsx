@@ -492,6 +492,9 @@ interface PlayerSeatProps {
   showdownWinners?: Array<{ playerId: string; amount: number; handName?: string }>;
   bigBlind?: number;
   displayFormat?: 'bb' | 'chips';
+  // POKERSTARS-STYLE: Sequential card dealing sync
+  dealOrder?: number; // Order in which this player receives cards (0 = first from dealer)
+  handId?: string;    // Unique hand ID to reset animations on new hands
 }
 
 // ============= ACTION BADGE - PPPoker style status above player =============
@@ -554,7 +557,10 @@ const PlayerSeat = memo(function PlayerSeat({
   showdownPlayers,
   showdownWinners,
   bigBlind = 20,
-  displayFormat = 'chips'
+  displayFormat = 'chips',
+  // POKERSTARS-STYLE: Sequential card dealing
+  dealOrder = 0,
+  handId
 }: PlayerSeatProps & { lastAction?: string }) {
   // Avatar sizes - same for all players
   const avatarSize = 56;
@@ -822,6 +828,8 @@ const PlayerSeat = memo(function PlayerSeat({
                 winningCardIndices={playerWinningIndices}
                 size="xs"
                 position={position}
+                handId={handId}
+                dealDelay={dealOrder * 120} // POKERSTARS: 120ms per player in deal sequence
               />
             </div>
           );
@@ -904,6 +912,7 @@ const PlayerSeat = memo(function PlayerSeat({
           isWinner={(player as any).isWinner}
           winningCardIndices={(player as any).winningCardIndices || []}
           isFolded={player.isFolded}
+          dealDelay={dealOrder * 120} // POKERSTARS: Sync with opponent cards
         />
       )}
       
