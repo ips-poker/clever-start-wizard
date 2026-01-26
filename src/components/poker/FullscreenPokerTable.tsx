@@ -830,6 +830,7 @@ const PlayerSeat = memo(function PlayerSeat({
                 position={position}
                 handId={handId}
                 dealDelay={dealOrder * 120} // POKERSTARS: 120ms per player in deal sequence
+                animateDeal={gamePhase === 'preflop'} // CRITICAL: Only animate during preflop deal, not later phases
               />
             </div>
           );

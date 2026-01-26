@@ -33,16 +33,16 @@ export const PHASE_TIMINGS = {
 } as const;
 
 // ============================================
-// SHOWDOWN TIMINGS (ms)
+// SHOWDOWN TIMINGS (ms) - POKERSTARS-FAST
 // ============================================
 export const SHOWDOWN_TIMINGS = {
-  perPlayerReveal: 750,     // Delay between each player reveal
-  cardFlipDuration: 350,    // Card flip animation
-  winnerHighlight: 3000,    // Winner hand highlight duration
-  potCollection: 800,       // Pot slides from center
-  potSlideToWinner: 1500,   // Chips slide to winner
-  winnerCelebration: 2000,  // Winner overlay display
-  displayDuration: 4000,    // Total showdown display time
+  perPlayerReveal: 400,     // Delay between each player reveal (was 750)
+  cardFlipDuration: 250,    // Card flip animation (was 350)
+  winnerHighlight: 1800,    // Winner hand highlight duration (was 3000)
+  potCollection: 500,       // Pot slides from center (was 800)
+  potSlideToWinner: 800,    // Chips slide to winner (was 1500)
+  winnerCelebration: 1200,  // Winner overlay display (was 2000)
+  displayDuration: 2200,    // Total showdown display time (was 4000)
 } as const;
 
 // ============================================
@@ -67,13 +67,13 @@ export const CARD_DEAL_TIMINGS = {
 } as const;
 
 // ============================================
-// HAND TRANSITION TIMINGS (ms)
+// HAND TRANSITION TIMINGS (ms) - POKERSTARS-FAST
 // ============================================
 export const HAND_TRANSITION_TIMINGS = {
-  afterAction: 400,         // After each player action
-  betweenHands: 3200,       // Between hands
-  shuffleAnimation: 500,    // Shuffle animation
-  minimumHandDisplay: 2500, // Minimum time to see showdown
+  afterAction: 350,         // After each player action (was 400)
+  betweenHands: 1800,       // Between hands (was 3200) - PokerStars ~1.5-2s
+  shuffleAnimation: 400,    // Shuffle animation (was 500)
+  minimumHandDisplay: 1500, // Minimum time to see showdown (was 2500)
 } as const;
 
 // ============================================
