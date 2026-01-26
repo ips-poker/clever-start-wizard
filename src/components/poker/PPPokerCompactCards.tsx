@@ -1,8 +1,8 @@
 // PPPoker-style Compact Cards - Cards positioned BELOW avatar (fanned)
 // Smaller cards for opponents, positioned like in PPPoker reference images
 
-import React, { memo, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { memo, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
 
@@ -10,6 +10,7 @@ interface PPPokerCompactCardsProps {
   cards?: string[];
   faceDown?: boolean;
   isShowdown?: boolean;
+  gamePhase?: string; // Used to hide cards after hand ends (e.g. waiting)
   handName?: string;
   isWinner?: boolean;
   winningCardIndices?: number[]; // Indices of cards that participate in winning hand
@@ -341,6 +342,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   cards,
   faceDown = false,
   isShowdown = false,
+  gamePhase,
   handName,
   isWinner = false,
   winningCardIndices = [],
@@ -374,8 +376,15 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
     isVisibleRef.current = false;
   }
 
-  // Stable key for animation (prevents flicker on undefined handId)
-  const animationKey = handId ?? currentHandIdRef.current ?? 'static';
+  // Hand finished / table idle: hide and fully reset (prevents old cards sticking around)
+  // NOTE: FullscreenPokerTable uses "waiting" for idle; we also require no handId to avoid
+  // hiding during transitional server states where pot/blinds can be present.
+  if (gamePhase === 'waiting' && !handId) {
+    currentHandIdRef.current = undefined;
+    hasAnimatedRef.current = false;
+    isVisibleRef.current = false;
+    return null;
+  }
 
   /**
    * ANIMATION TRIGGER LOGIC:
@@ -450,14 +459,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   };
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div 
-        key={`cards-${animationKey}`}
-        className="relative flex items-center"
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
+      <div className="relative flex items-center">
         {/* Cards container - fanned, rotated to point towards table */}
         <div 
           className="relative flex"
@@ -483,7 +485,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
             
             return (
               <div 
-                key={`${animationKey}-${idx}`} 
+                key={idx}
                 className="relative"
                 style={{
                   marginLeft: idx > 0 ? (isShowdown ? 2 : -cfg.w * 0.45) : 0,
@@ -500,7 +502,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                   rotation={rotation}
                   cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
                   useFourColor={useFourColor}
-                  animate={shouldAnimateNow}
+                  animate={shouldAnimateNow && !isShowdown}
                 />
               </div>
             );
@@ -523,8 +525,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
             </span>
           </div>
         )}
-      </motion.div>
-    </AnimatePresence>
+      </div>
   );
 });
 
