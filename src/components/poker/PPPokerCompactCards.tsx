@@ -352,40 +352,51 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
 
-  // Never animate on the very first mount (prevents the "first appearance" flash).
-  const hasMountedRef = useRef(false);
-  useEffect(() => {
-    hasMountedRef.current = true;
-  }, []);
-
   /**
-   * IMPORTANT:
-   * `handId` can transiently be undefined during state reconciliation.
-   * If we use `handId || 'waiting'` as a key, the container remounts and
-   * Framer Motion replays `initial` on every such blip ("триггерит анимация").
-   *
-   * We keep the last known non-null handId and only change keys when a NEW
-   * real handId arrives.
+   * POKERSTARS-STYLE SINGLE ANIMATION SYSTEM
+   * 
+   * Animation should happen EXACTLY ONCE per handId when animateDeal=true.
+   * - We track which handIds have been animated via animatedHandIdsRef.
+   * - On first render with a new handId + animateDeal=true, we mark it and animate.
+   * - Any subsequent renders with same handId do NOT re-animate.
+   * - animationKey is stable (based on last known handId) to prevent remounts.
    */
+
+  // Track last known valid handId to prevent key flickering on undefined
   const lastNonNullHandIdRef = useRef<string | undefined>(handId);
   if (handId && handId !== lastNonNullHandIdRef.current) {
     lastNonNullHandIdRef.current = handId;
   }
-  const animationKey = handId ?? lastNonNullHandIdRef.current ?? 'waiting';
+  
+  // Stable key: prefer current handId, fallback to last known, then static
+  const stableHandId = handId ?? lastNonNullHandIdRef.current;
+  const animationKey = stableHandId ?? 'static-cards';
 
-  // Prevent re-playing deal animation multiple times for the SAME handId
-  // (e.g. brief phase='waiting' resets / multiple state snapshots).
+  // Track which hands have already been animated (persists across re-renders)
   const animatedHandIdsRef = useRef<Set<string>>(new Set());
-  const stableHandId = (handId ?? lastNonNullHandIdRef.current) as string | undefined;
-  const shouldAnimateThisHand =
-    !!stableHandId &&
+
+  // Determine if we should animate THIS render
+  // Animation only plays when:
+  // 1. We have a valid handId
+  // 2. Parent says animateDeal=true (cards are being dealt now)
+  // 3. Not showdown phase
+  // 4. This handId hasn't been animated yet
+  const shouldAnimateThisHand = Boolean(
+    stableHandId &&
     animateDeal &&
     !isShowdown &&
-    hasMountedRef.current &&
-    !animatedHandIdsRef.current.has(stableHandId);
+    !animatedHandIdsRef.current.has(stableHandId)
+  );
 
+  // Mark this handId as animated (happens during render, before return)
   if (shouldAnimateThisHand && stableHandId) {
     animatedHandIdsRef.current.add(stableHandId);
+  }
+  
+  // Cleanup: remove very old handIds to prevent memory leak (keep last 10)
+  if (animatedHandIdsRef.current.size > 10) {
+    const arr = Array.from(animatedHandIdsRef.current);
+    animatedHandIdsRef.current = new Set(arr.slice(-5));
   }
   
   // Use showdown size for larger cards during showdown like in reference

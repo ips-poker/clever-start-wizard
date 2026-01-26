@@ -226,8 +226,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const showdownTokenRef = useRef(0);
   // Timestamp when showdown started - used to ensure minimum display
   const showdownStartTimeRef = useRef<number>(0);
-  const SHOWDOWN_DISPLAY_MS = 3000; // 3 seconds for real showdown
-  const FOLD_WIN_DISPLAY_MS = 500; // 0.5 second for fold wins (faster)
+  const SHOWDOWN_DISPLAY_MS = 2000; // PokerStars-fast: 2 seconds (was 3s)
+  const FOLD_WIN_DISPLAY_MS = 400; // 0.4 second for fold wins (was 0.5s)
 
   // Keep latest snapshots for stable WebSocket handlers (avoid stale closures)
   const tableStateRef = useRef<TableState | null>(null);
