@@ -172,7 +172,7 @@ export default function PokerTable() {
     setCurrentTableId(newTableId);
     // Update URL without full reload
     const params = new URLSearchParams(searchParams);
-    navigate(`/poker-table/${newTableId}?${params.toString()}`, { replace: true });
+    navigate(`/table/${newTableId}?${params.toString()}`, { replace: true });
   }, [navigate, searchParams]);
 
   const handleLeaveTable = () => {
