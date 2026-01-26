@@ -17,7 +17,8 @@ interface PPPokerCompactCardsProps {
   position?: { x: number; y: number }; // Player position for determining card placement
   handId?: string; // Unique hand identifier for animation reset
   dealDelay?: number; // Delay in ms before cards appear (for deal animation sync)
-  animateDeal?: boolean; // Master switch for deal animation (lets parent prevent triple triggers)
+  animateDeal?: boolean; // Trigger deal animation (only true during preflop)
+  showAfterDeal?: boolean; // Keep cards visible after deal animation (true during flop/turn/river)
 }
 
 // Four-color suit configuration
@@ -348,23 +349,25 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   position = { x: 50, y: 50 },
   handId,
   dealDelay = 0,
-  animateDeal = true
+  animateDeal = false,
+  showAfterDeal = false // Keep visible after preflop
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
 
   /**
-   * POKERSTARS-STYLE SIMPLE LOGIC:
-   * - Cards hidden (null) until animateDeal=true 
-   * - animateDeal=true triggers ONE animation
-   * - After that, cards stay static until hand ends
-   * - Parent controls animateDeal (only true during preflop deal)
+   * POKERSTARS-STYLE VISIBILITY:
+   * - animateDeal=true (preflop): Show with animation
+   * - showAfterDeal=true (flop/turn/river): Show static
+   * - isShowdown=true: Show face-up
+   * - Neither: Hidden
    */
-
-  // Simple: if animateDeal is false and not showdown, hide cards
-  // Parent (FullscreenPokerTable) sets animateDeal=true only during preflop
-  if (!animateDeal && !isShowdown) {
+  const shouldShow = animateDeal || showAfterDeal || isShowdown;
+  if (!shouldShow) {
     return null;
   }
+  
+  // Only animate during preflop deal
+  const shouldAnimate = animateDeal && !isShowdown;
   
   // Use showdown size for larger cards during showdown like in reference
   const actualSize = isShowdown ? 'showdown' : size;
@@ -448,7 +451,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                   rotation={rotation}
                   cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
                   useFourColor={useFourColor}
-                  animate={animateDeal && !isShowdown}
+                  animate={shouldAnimate}
                 />
               </div>
             );
