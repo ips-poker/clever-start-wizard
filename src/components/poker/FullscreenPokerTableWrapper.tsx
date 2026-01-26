@@ -1021,6 +1021,7 @@ export function FullscreenPokerTableWrapper({
             phaseTimings={phaseTimings}
             showdownReveals={showdownReveals}
             winnerAnnouncement={winnerAnnouncement}
+            activeBurnCard={activeBurnCard}
           />
         </div>
 
