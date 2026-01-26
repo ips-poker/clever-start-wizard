@@ -33,12 +33,15 @@ interface ProfessionalShowdownProps {
   className?: string;
 }
 
-// POKERSTARS-STYLE Professional timings (synchronized with server/src/config/pokerTimings.ts)
+// Import unified timings from config
+import { SHOWDOWN_TIMINGS, CARD_DEAL_TIMINGS } from '@/config/pokerTimings';
+
+// Use unified timings
 const TIMINGS = {
-  playerRevealDelay: 750,    // POKERSTARS: ~700-800ms between each player's cards reveal
-  cardFlipDuration: 350,     // Time for card flip animation
-  winnerHighlightDelay: 1000, // Delay before showing winner highlight
-  potCollectionDelay: 1500,  // POKERSTARS: ~1.5s for pot collection after winner
+  playerRevealDelay: SHOWDOWN_TIMINGS.perPlayerReveal,
+  cardFlipDuration: CARD_DEAL_TIMINGS.cardFlipDuration,
+  winnerHighlightDelay: 1000,
+  potCollectionDelay: SHOWDOWN_TIMINGS.potSlideToWinner,
 };
 
 // Card with flip animation

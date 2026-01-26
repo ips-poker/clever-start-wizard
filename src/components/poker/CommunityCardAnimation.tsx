@@ -1,11 +1,14 @@
 /**
  * Premium Community Card Animation
  * Professional-grade card dealing animations for Flop, Turn, River
+ * 
+ * IMPORTANT: Uses unified timing configuration from src/config/pokerTimings.ts
  */
 
 import React, { memo, useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
+import { PHASE_TIMINGS, CARD_DEAL_TIMINGS } from '@/config/pokerTimings';
 
 // 4-color deck suits
 const SUITS_FOURCOLOR = {
@@ -197,19 +200,31 @@ const AnimatedCard = memo(function AnimatedCard({
       return;
     }
 
-    // POKERSTARS-STYLE: Flop ~200ms per card stagger
-    const baseDelay = phase === 'flop' ? index * 200 : 0;
+    // Uses unified timing from config
+    const baseDelay = phase === 'flop' ? index * PHASE_TIMINGS.flop.perCardDelay : 0;
     
-    // Flip after slide - POKERSTARS: ~450ms for flop, ~500ms for turn, ~550ms for river
+    // Flip after slide
+    const flipDelay = phase === 'flop' 
+      ? PHASE_TIMINGS.flop.preDealDelay - 200 
+      : phase === 'turn' 
+        ? PHASE_TIMINGS.turn.preDealDelay - 50 
+        : PHASE_TIMINGS.river.preDealDelay;
+    
     const flipTimer = setTimeout(() => {
       setIsFlipped(true);
-    }, baseDelay + (phase === 'flop' ? 450 : phase === 'turn' ? 500 : 550));
+    }, baseDelay + flipDelay);
 
-    // Mark as dealt - POKERSTARS: ~750ms for flop, ~850ms for turn, ~900ms for river
+    // Mark as dealt
+    const dealtDelay = phase === 'flop'
+      ? PHASE_TIMINGS.flop.preDealDelay + PHASE_TIMINGS.flop.postDealDelay
+      : phase === 'turn'
+        ? PHASE_TIMINGS.turn.preDealDelay + PHASE_TIMINGS.turn.postDealDelay + 250
+        : PHASE_TIMINGS.river.preDealDelay + PHASE_TIMINGS.river.postDealDelay + 300;
+    
     const dealtTimer = setTimeout(() => {
       setIsDealt(true);
       onDealt?.();
-    }, baseDelay + (phase === 'flop' ? 750 : phase === 'turn' ? 850 : 900));
+    }, baseDelay + dealtDelay);
 
     return () => {
       clearTimeout(flipTimer);

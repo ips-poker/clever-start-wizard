@@ -1,47 +1,21 @@
 /**
  * Professional Timing Hook
  * Manages PokerStars-style animation timing for poker phases
+ * 
+ * IMPORTANT: Uses unified timing configuration from src/config/pokerTimings.ts
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { 
+  PROFESSIONAL_TIMINGS,
+  PHASE_TIMINGS,
+  SHOWDOWN_TIMINGS,
+  BET_COLLECTION_TIMINGS,
+  HAND_TRANSITION_TIMINGS,
+  getCardDealDelay
+} from '@/config/pokerTimings';
 
-// POKERSTARS-STYLE Professional poker room timing constants (in ms)
-// Updated to match actual PokerStars timings
-export const PROFESSIONAL_TIMINGS = {
-  // Phase transition delays
-  afterAction: 400,           // POKERSTARS: ~400ms after each player action
-  betCollection: 700,         // POKERSTARS: Time to collect bets to pot
-  
-  // Card dealing delays - POKERSTARS TIMINGS
-  flop: {
-    preDeal: 650,             // POKERSTARS: ~600-700ms pause before dealing flop
-    perCard: 200,             // POKERSTARS: ~180-220ms between each flop card
-    postDeal: 350             // POKERSTARS: ~350ms pause after all 3 cards dealt
-  },
-  turn: {
-    preDeal: 550,             // POKERSTARS: ~500-600ms pause before turn
-    perCard: 0,               // Single card
-    postDeal: 300             // POKERSTARS: ~300ms pause after turn
-  },
-  river: {
-    preDeal: 550,             // POKERSTARS: ~500-600ms pause before river
-    perCard: 0,               // Single card
-    postDeal: 300             // POKERSTARS: ~300ms pause after river
-  },
-  
-  // Showdown timing - POKERSTARS TIMINGS
-  showdown: {
-    revealDelay: 750,         // POKERSTARS: ~700-800ms between each player reveal
-    winnerHighlight: 3000,    // POKERSTARS: ~3s to highlight winning hand
-    potCollection: 1500,      // POKERSTARS: ~1.5s chips moving to winner
-    displayDuration: 4000     // POKERSTARS: ~4s total showdown display time
-  },
-  
-  // Between hands - POKERSTARS TIMINGS
-  nextHand: {
-    minDelay: 3000,           // POKERSTARS: ~3s minimum delay before next hand
-    maxDelay: 3500            // POKERSTARS: ~3.5s maximum delay
-  }
-};
+// Re-export for backward compatibility
+export { PROFESSIONAL_TIMINGS } from '@/config/pokerTimings';
 
 interface TimingState {
   isCollectingBets: boolean;

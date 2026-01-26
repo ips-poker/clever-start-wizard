@@ -1,10 +1,13 @@
 /**
  * Burn Card Animation - PokerStars-style visual burn card effect
  * Shows a card sliding off to the side before dealing community cards
+ * 
+ * IMPORTANT: Uses unified timing configuration from src/config/pokerTimings.ts
  */
 
 import React, { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CARD_DEAL_TIMINGS } from '@/config/pokerTimings';
 
 interface BurnCardAnimationProps {
   isActive: boolean;
@@ -49,8 +52,8 @@ export const BurnCardAnimation = memo(function BurnCardAnimation({
           }}
           exit={{ opacity: 0 }}
           transition={{
-            // POKERSTARS-STYLE: Burn card animation ~400ms
-            duration: 0.4,
+            // Uses unified timing from config
+            duration: CARD_DEAL_TIMINGS.burnCardDuration / 1000,
             ease: [0.4, 0, 0.2, 1]
           }}
           onAnimationComplete={onComplete}

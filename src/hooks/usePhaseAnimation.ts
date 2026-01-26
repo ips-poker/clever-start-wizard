@@ -2,8 +2,11 @@
  * Professional Phase Animation Hook
  * Manages timing and sequencing of poker phase transitions
  * Based on PokerStars/PPPoker animation standards
+ * 
+ * IMPORTANT: Uses unified timing configuration from src/config/pokerTimings.ts
  */
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { PHASE_TIMINGS } from '@/config/pokerTimings';
 
 export interface PhaseTimings {
   preDealDelay: number;
@@ -24,13 +27,8 @@ export interface AnimationState {
   progress: number;
 }
 
-// POKERSTARS-STYLE professional timings (ms)
-const DEFAULT_TIMINGS = {
-  flop: { preDealDelay: 650, perCardDelay: 200, postDealDelay: 350 },   // POKERSTARS: ~650ms pre, ~200ms/card, ~350ms post
-  turn: { preDealDelay: 550, perCardDelay: 0, postDealDelay: 300 },    // POKERSTARS: ~550ms pre, ~300ms post
-  river: { preDealDelay: 550, perCardDelay: 0, postDealDelay: 300 },   // POKERSTARS: ~550ms pre, ~300ms post
-  showdown: { preDealDelay: 350, perCardDelay: 0, postDealDelay: 0 },  // Quick transition
-};
+// Use unified timings from config
+const DEFAULT_TIMINGS = PHASE_TIMINGS;
 
 export function usePhaseAnimation() {
   const [animationState, setAnimationState] = useState<AnimationState>({
