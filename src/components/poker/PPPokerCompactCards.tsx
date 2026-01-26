@@ -220,7 +220,7 @@ const MiniCard = memo(function MiniCard({
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1, rotate: rotation }}
-        transition={{ delay: delay * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
+        transition={{ delay: delay / 1000, type: 'spring', stiffness: 300, damping: 25 }} // delay in ms -> seconds
         className="rounded-[4px] shadow-lg relative overflow-hidden"
         style={commonStyle}
       >
@@ -529,7 +529,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                   card={showCards ? card : 'XX'} 
                   faceDown={!showCards}
                   size={actualSize as any} 
-                  delay={idx}
+                  delay={dealDelay + (idx * 80)} // Base delay from deal order + per-card offset (80ms)
                   isWinning={isShowdown && isCardWinning && isWinner}
                   isDimmed={isDimmed}
                   rotation={rotation}
