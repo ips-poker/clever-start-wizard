@@ -8,11 +8,6 @@ import { cn } from '@/lib/utils';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
 import { getHandStrengthName } from '@/utils/handEvaluator';
 
-const isRealCard = (c: string): boolean => {
-  const trimmed = (c || '').trim();
-  return /^(10|[2-9TJQKA])[cdhs]$/i.test(trimmed);
-};
-
 interface PPPokerHeroCardsProps {
   cards: string[];
   communityCards?: string[];
@@ -61,20 +56,9 @@ const HeroCard = memo(function HeroCard({
   const [isFlipped, setIsFlipped] = useState(!animate);
   const [isDealt, setIsDealt] = useState(!animate);
 
-  const trimmed = (card || '').trim();
-  const isPlaceholder = !isRealCard(trimmed);
-
-  const rank = (() => {
-    if (isPlaceholder) return '?';
-    if (trimmed.startsWith('10')) return '10';
-    if (trimmed[0] === 'T') return '10';
-    return trimmed[0] || '?';
-  })();
-
-  const suitChar = ((isPlaceholder ? 's' : trimmed.slice(-1).toLowerCase()) || 's') as keyof typeof SUITS_FOURCOLOR;
-  const suitInfo = (
-    useFourColor ? SUITS_FOURCOLOR[suitChar] : SUITS_CLASSIC[suitChar]
-  ) ?? (useFourColor ? SUITS_FOURCOLOR.s : SUITS_CLASSIC.s);
+  const rank = card?.[0] === 'T' ? '10' : card?.[0] || '?';
+  const suitChar = (card?.[1]?.toLowerCase() || 's') as keyof typeof SUITS_FOURCOLOR;
+  const suitInfo = useFourColor ? SUITS_FOURCOLOR[suitChar] : SUITS_CLASSIC[suitChar];
   
   // Card sizes - PPPoker style proportions
   const cardWidth = cardCount > 2 ? 48 : 56;
@@ -98,20 +82,14 @@ const HeroCard = memo(function HeroCard({
       return;
     }
 
-    // When cards are not yet known (placeholders), we want the *deal slide-in* but
-    // keep them face-down. Once real cards arrive, we flip them in-place.
-    setIsFlipped(false);
-
     const slideTimer = setTimeout(() => setIsDealt(true), slideDelay);
-    const flipTimer = isPlaceholder
-      ? null
-      : setTimeout(() => setIsFlipped(true), flipDelay);
+    const flipTimer = setTimeout(() => setIsFlipped(true), flipDelay);
 
     return () => {
       clearTimeout(slideTimer);
-      if (flipTimer) clearTimeout(flipTimer);
+      clearTimeout(flipTimer);
     };
-  }, [animate, slideDelay, flipDelay, isPlaceholder]);
+  }, [animate, slideDelay, flipDelay]);
 
   // Colors for dimmed vs bright cards
   const cardBg = isDimmed 
