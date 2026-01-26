@@ -766,9 +766,9 @@ const PlayerSeat = memo(function PlayerSeat({
         {player.waitForBB && !player.isSittingOut && (
           <WaitForBBIndicator size="sm" />
         )}
-        {/* Opponent compact cards (fanned) */}
-        {/* IMPORTANT: We do NOT render compact cards during showdown / hand-end display to avoid them lingering until next hand */}
-        {!isHero && !player.isFolded && gamePhase && ['preflop', 'flop', 'turn', 'river'].includes(gamePhase) && (() => {
+        {/* Opponent cards - positioned at corner of avatar */}
+        {/* Only show cards during active hand phases (preflop through showdown), NOT waiting */}
+        {!isHero && !player.isFolded && gamePhase && ['preflop', 'flop', 'turn', 'river', 'showdown'].includes(gamePhase) && (() => {
           // Get cards from showdownPlayers if available (revealed at showdown)
           const showdownData = showdownPlayers?.find(sp => sp.playerId === player.playerId || sp.seatNumber === seatNumber);
           const revealedCards = showdownData?.holeCards;
@@ -780,8 +780,8 @@ const PlayerSeat = memo(function PlayerSeat({
           // Use revealed cards from showdownPlayers first, then player.holeCards
           const displayCards = hasRevealedCards ? revealedCards : (playerHasCards ? player.holeCards : ['??', '??']);
           
-          // Compact cards are always face-down; showdown reveal is handled elsewhere.
-          const shouldReveal = false;
+          // Reveal if showdown AND we have real cards to show
+          const shouldReveal = gamePhase === 'showdown' && (hasRevealedCards || playerHasCards);
           
           // Get winning card indices - from player object (calculated by hook)
           const playerWinningIndices = (player as any).winningCardIndices || [];

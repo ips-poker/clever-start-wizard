@@ -355,30 +355,29 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   /**
    * POKERSTARS-STYLE SINGLE ANIMATION SYSTEM
    * 
-   * CLEAN FIX v2:
-   * 1. Cards are COMPLETELY HIDDEN until deal animation starts
-   * 2. Animation happens EXACTLY ONCE per handId during preflop
-   * 3. After preflop, fanned cards stay visible (no re-animation)
-   * 4. At showdown: fanned face-down cards are HIDDEN, only showdown cards shown
-   * 5. When a new hand starts (new handId), state resets
+   * CLEAN FIX: Cards are COMPLETELY HIDDEN until deal animation.
+   * - No card backs, no placeholders - nothing shown before animateDeal=true
+   * - Cards appear ONLY with animation synced to shuffle sound
+   * - Animation happens EXACTLY ONCE per handId
    */
 
-  // Track which hands have been dealt (animated)
-  const animatedHandIdsRef = useRef<Set<string>>(new Set());
-  const lastHandIdRef = useRef<string | undefined>(undefined);
-  
-  // Detect new hand - reset tracking
-  if (handId && handId !== lastHandIdRef.current) {
-    lastHandIdRef.current = handId;
+  // Track last known valid handId to prevent key flickering on undefined
+  const lastNonNullHandIdRef = useRef<string | undefined>(handId);
+  if (handId && handId !== lastNonNullHandIdRef.current) {
+    lastNonNullHandIdRef.current = handId;
   }
   
-  const stableHandId = handId ?? lastHandIdRef.current;
+  // Stable key: prefer current handId, fallback to last known, then static
+  const stableHandId = handId ?? lastNonNullHandIdRef.current;
   const animationKey = stableHandId ?? 'static-cards';
+
+  // Track which hands have already been animated (persists across re-renders)
+  const animatedHandIdsRef = useRef<Set<string>>(new Set());
 
   // Has this hand EVER been dealt (animated)?
   const hasBeenDealt = stableHandId ? animatedHandIdsRef.current.has(stableHandId) : false;
 
-  // Should we animate THIS render? Only on preflop, only once
+  // Determine if we should animate THIS render
   const shouldAnimateThisHand = Boolean(
     stableHandId &&
     animateDeal &&
@@ -386,55 +385,45 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
     !hasBeenDealt
   );
 
-  // Mark as animated
+  // Mark this handId as animated (happens during render, before return)
   if (shouldAnimateThisHand && stableHandId) {
     animatedHandIdsRef.current.add(stableHandId);
   }
   
-  // Cleanup old handIds (memory leak prevention)
+  // Cleanup: remove very old handIds to prevent memory leak (keep last 10)
   if (animatedHandIdsRef.current.size > 10) {
     const arr = Array.from(animatedHandIdsRef.current);
     animatedHandIdsRef.current = new Set(arr.slice(-5));
   }
 
   /**
-   * VISIBILITY LOGIC v2:
-   * 
-   * SHOWDOWN MODE: Show ONLY if we have actual revealed cards (not faceDown).
-   *   - Fanned face-down cards should be HIDDEN at showdown
-   *   - Showdown cards (revealed) are displayed in showdown style
-   * 
-   * NORMAL MODE (preflop/flop/turn/river):
-   *   - Before deal: HIDDEN (return null)
-   *   - During/after deal: Show fanned face-down cards
+   * VISIBILITY LOGIC:
+   * - Before deal: COMPLETELY HIDDEN (return null)
+   * - During deal: Animate in
+   * - After deal: Static display (no re-animation)
+   * - Showdown: Always visible
    */
+  const shouldShowCards = isShowdown || hasBeenDealt || shouldAnimateThisHand;
   
-  const hasRealCards = Array.isArray(cards) && cards.length >= 2 && 
-    cards.some(c => c && c !== 'XX' && c !== '??');
-  
-  if (isShowdown) {
-    // At showdown, only show if we have real revealed cards
-    if (!hasRealCards) {
-      return null; // Hide fanned face-down cards at showdown
-    }
-    // Continue to render showdown cards below
-  } else {
-    // Normal mode: hide until dealt
-    if (!hasBeenDealt && !shouldAnimateThisHand) {
-      return null;
-    }
+  // CLEAN FIX: Return nothing if cards shouldn't be shown yet
+  if (!shouldShowCards) {
+    return null;
   }
   
-  // Use showdown size for larger cards during showdown
+  // Use showdown size for larger cards during showdown like in reference
   const actualSize = isShowdown ? 'showdown' : size;
   const cfg = SIZE_CONFIG[actualSize] || SIZE_CONFIG[size];
+  
+  // Cards must exist and look like real cards for showdown display
+  const hasAnyCards = Array.isArray(cards) && cards.length >= 2;
+  // At showdown, show cards if valid, otherwise show placeholder for unknown cards
+  const showCards = isShowdown && hasAnyCards;
   const useFourColor = preferences.cardStyle === 'fourcolor';
   
-  // Card count and display
+  // For PLO4, show all 4 cards; for Hold'em show 2
   const cardCount = cards?.length || 2;
-  const displayCards = (isShowdown && hasRealCards) 
-    ? cards 
-    : Array(Math.min(cardCount, 4)).fill('XX');
+  // At showdown, display actual cards (even if some are '??')
+  const displayCards = showCards ? cards : Array(Math.min(cardCount, 4)).fill('XX');
 
   // Fan direction
   const getFanRotation = (idx: number, total: number) => {
@@ -490,9 +479,9 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                   zIndex: idx + 1
                 }}
               >
-              <MiniCard 
-                  card={(isShowdown && hasRealCards) ? card : 'XX'} 
-                  faceDown={!(isShowdown && hasRealCards)}
+                <MiniCard 
+                  card={showCards ? card : 'XX'} 
+                  faceDown={!showCards}
                   size={actualSize as any} 
                   delayMs={cardDelayMs}
                   isWinning={isShowdown && isCardWinning && isWinner}
