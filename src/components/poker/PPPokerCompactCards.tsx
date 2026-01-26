@@ -1,7 +1,7 @@
 // PPPoker-style Compact Cards - Cards positioned BELOW avatar (fanned)
 // Smaller cards for opponents, positioned like in PPPoker reference images
 
-import React, { memo, useRef } from 'react';
+import React, { memo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
@@ -17,6 +17,7 @@ interface PPPokerCompactCardsProps {
   position?: { x: number; y: number }; // Player position for determining card placement
   handId?: string; // Unique hand identifier for animation reset
   dealDelay?: number; // Delay in ms before cards appear (for deal animation sync)
+  animateDeal?: boolean; // Master switch for deal animation (lets parent prevent triple triggers)
 }
 
 // Four-color suit configuration
@@ -346,9 +347,16 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   size = 'xs',
   position = { x: 50, y: 50 },
   handId,
-  dealDelay = 0
+  dealDelay = 0,
+  animateDeal = true
 }: PPPokerCompactCardsProps) {
   const { currentCardBack, preferences } = usePokerPreferences();
+
+  // Never animate on the very first mount (prevents the "first appearance" flash).
+  const hasMountedRef = useRef(false);
+  useEffect(() => {
+    hasMountedRef.current = true;
+  }, []);
 
   /**
    * IMPORTANT:
@@ -364,6 +372,21 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
     lastNonNullHandIdRef.current = handId;
   }
   const animationKey = handId ?? lastNonNullHandIdRef.current ?? 'waiting';
+
+  // Prevent re-playing deal animation multiple times for the SAME handId
+  // (e.g. brief phase='waiting' resets / multiple state snapshots).
+  const animatedHandIdsRef = useRef<Set<string>>(new Set());
+  const stableHandId = (handId ?? lastNonNullHandIdRef.current) as string | undefined;
+  const shouldAnimateThisHand =
+    !!stableHandId &&
+    animateDeal &&
+    !isShowdown &&
+    hasMountedRef.current &&
+    !animatedHandIdsRef.current.has(stableHandId);
+
+  if (shouldAnimateThisHand && stableHandId) {
+    animatedHandIdsRef.current.add(stableHandId);
+  }
   
   // Use showdown size for larger cards during showdown like in reference
   const actualSize = isShowdown ? 'showdown' : size;
@@ -444,7 +467,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                   rotation={rotation}
                   cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
                   useFourColor={useFourColor}
-                  animate={!isShowdown}
+                  animate={shouldAnimateThisHand}
                 />
               </div>
             );
