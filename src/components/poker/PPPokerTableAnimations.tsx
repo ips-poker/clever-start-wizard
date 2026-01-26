@@ -326,8 +326,11 @@ export const CardDealAnimation = memo(function CardDealAnimation({
   delay = 0,
   onComplete
 }: CardDealAnimationProps) {
+  // POKERSTARS-STYLE: Card deal animation ~350ms + staggered delay (100ms per card)
+  const CARD_DEAL_DURATION = 350;
+  
   useEffect(() => {
-    const timer = setTimeout(() => onComplete?.(), 400 + delay * 100);
+    const timer = setTimeout(() => onComplete?.(), CARD_DEAL_DURATION + delay * 100);
     return () => clearTimeout(timer);
   }, [delay, onComplete]);
 
@@ -348,9 +351,9 @@ export const CardDealAnimation = memo(function CardDealAnimation({
       }}
       transition={{
         type: 'spring',
-        stiffness: 300,
-        damping: 25,
-        delay: delay * 0.1
+        stiffness: 280,
+        damping: 24,
+        delay: delay * 0.1  // POKERSTARS: ~100ms stagger between cards
       }}
     >
       <div 

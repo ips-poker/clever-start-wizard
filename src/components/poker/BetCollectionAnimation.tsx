@@ -59,7 +59,8 @@ const AnimatedChip = memo(function AnimatedChip({
         opacity: 0 
       }}
       transition={{
-        duration: 0.4,
+        // POKERSTARS-STYLE: Bet collection ~500ms with stagger
+        duration: 0.5,
         delay,
         ease: [0.4, 0, 0.2, 1]
       }}
@@ -82,7 +83,8 @@ const AnimatedChip = memo(function AnimatedChip({
 export const BetCollectionAnimation = memo(function BetCollectionAnimation({
   betsToCollect,
   onComplete,
-  duration = 500,
+  // POKERSTARS-STYLE: Default bet collection duration 700ms (synchronized with server timing)
+  duration = 700,
   isCollecting,
   className
 }: BetCollectionAnimationProps) {
@@ -110,7 +112,8 @@ export const BetCollectionAnimation = memo(function BetCollectionAnimation({
       x: (bet.position.x - 50) * 3, // Scale factor for visual
       y: (bet.position.y - 50) * 3,
       amount: bet.amount,
-      delay: index * 0.05 // 50ms stagger between each player's chips
+      // POKERSTARS-STYLE: ~80ms stagger between each player's chips
+      delay: index * 0.08
     }));
 
     setChips(newChips);

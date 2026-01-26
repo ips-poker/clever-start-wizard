@@ -52,9 +52,11 @@ const AnimatedCard = memo(function AnimatedCard({
   const GOLD_BORDER = '#f59e0b';
   const GOLD_GLOW = 'rgba(245,158,11,0.5)';
 
-  // Animation configuration based on phase
+  // POKERSTARS-STYLE Animation configuration based on phase
+  // Synchronized with server/src/config/pokerTimings.ts
   const getAnimationConfig = () => {
-    const baseDelay = phase === 'flop' ? index * 0.15 : 0;
+    // POKERSTARS: Flop ~200ms per card stagger
+    const baseDelay = phase === 'flop' ? index * 0.2 : 0;
     
     switch (phase) {
       case 'flop':
@@ -75,6 +77,7 @@ const AnimatedCard = memo(function AnimatedCard({
             opacity: 1,
             transition: {
               delay: baseDelay,
+              // POKERSTARS: ~400ms slide duration
               duration: 0.4,
               ease: [0.25, 0.46, 0.45, 0.94]
             }
@@ -83,14 +86,15 @@ const AnimatedCard = memo(function AnimatedCard({
             rotateY: 0,
             transition: {
               delay: baseDelay + 0.35,
-              duration: 0.3,
+              // POKERSTARS: ~350ms flip duration
+              duration: 0.35,
               ease: "easeOut"
             }
           },
           bounce: {
             y: [0, -8, 0],
             transition: {
-              delay: baseDelay + 0.55,
+              delay: baseDelay + 0.6,
               duration: 0.25,
               ease: "easeOut"
             }
@@ -113,14 +117,15 @@ const AnimatedCard = memo(function AnimatedCard({
             scale: 1,
             opacity: 1,
             transition: {
-              duration: 0.5,
+              // POKERSTARS: ~550ms slide for turn/river
+              duration: 0.55,
               ease: [0.34, 1.56, 0.64, 1]
             }
           },
           flip: {
             rotateY: 0,
             transition: {
-              delay: 0.4,
+              delay: 0.45,
               duration: 0.35,
               ease: "easeOut"
             }
@@ -128,7 +133,7 @@ const AnimatedCard = memo(function AnimatedCard({
           bounce: {
             y: [0, -12, 0],
             transition: {
-              delay: 0.65,
+              delay: 0.7,
               duration: 0.3,
               ease: "easeOut"
             }
@@ -151,22 +156,23 @@ const AnimatedCard = memo(function AnimatedCard({
             scale: 1,
             opacity: 1,
             transition: {
-              duration: 0.6,
+              // POKERSTARS: ~550ms slide for turn/river
+              duration: 0.55,
               ease: [0.22, 1, 0.36, 1]
             }
           },
           flip: {
             rotateY: 0,
             transition: {
-              delay: 0.5,
-              duration: 0.4,
+              delay: 0.45,
+              duration: 0.35,
               ease: "easeOut"
             }
           },
           bounce: {
             y: [0, -15, 0],
             transition: {
-              delay: 0.8,
+              delay: 0.75,
               duration: 0.35,
               ease: "easeOut"
             }
@@ -191,18 +197,19 @@ const AnimatedCard = memo(function AnimatedCard({
       return;
     }
 
-    const baseDelay = phase === 'flop' ? index * 150 : 0;
+    // POKERSTARS-STYLE: Flop ~200ms per card stagger
+    const baseDelay = phase === 'flop' ? index * 200 : 0;
     
-    // Flip after slide
+    // Flip after slide - POKERSTARS: ~450ms for flop, ~500ms for turn, ~550ms for river
     const flipTimer = setTimeout(() => {
       setIsFlipped(true);
-    }, baseDelay + (phase === 'flop' ? 400 : phase === 'turn' ? 450 : 550));
+    }, baseDelay + (phase === 'flop' ? 450 : phase === 'turn' ? 500 : 550));
 
-    // Mark as dealt
+    // Mark as dealt - POKERSTARS: ~750ms for flop, ~850ms for turn, ~900ms for river
     const dealtTimer = setTimeout(() => {
       setIsDealt(true);
       onDealt?.();
-    }, baseDelay + (phase === 'flop' ? 700 : phase === 'turn' ? 800 : 950));
+    }, baseDelay + (phase === 'flop' ? 750 : phase === 'turn' ? 850 : 900));
 
     return () => {
       clearTimeout(flipTimer);
@@ -260,8 +267,9 @@ const AnimatedCard = memo(function AnimatedCard({
         opacity: 1,
       }}
       transition={{
-        duration: phase === 'flop' ? 0.4 : phase === 'turn' ? 0.5 : 0.6,
-        delay: phase === 'flop' ? index * 0.15 : 0,
+        // POKERSTARS-STYLE: Card slide durations
+        duration: phase === 'flop' ? 0.4 : 0.55,
+        delay: phase === 'flop' ? index * 0.2 : 0,
         ease: [0.25, 0.46, 0.45, 0.94]
       }}
     >

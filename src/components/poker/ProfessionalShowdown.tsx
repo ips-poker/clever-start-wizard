@@ -33,12 +33,12 @@ interface ProfessionalShowdownProps {
   className?: string;
 }
 
-// Professional timings
+// POKERSTARS-STYLE Professional timings (synchronized with server/src/config/pokerTimings.ts)
 const TIMINGS = {
-  playerRevealDelay: 500,    // Delay between each player's cards
-  cardFlipDuration: 300,     // Time for card flip animation
-  winnerHighlightDelay: 800, // Delay before showing winner highlight
-  potCollectionDelay: 1500,  // Delay for pot collection after winner
+  playerRevealDelay: 750,    // POKERSTARS: ~700-800ms between each player's cards reveal
+  cardFlipDuration: 350,     // Time for card flip animation
+  winnerHighlightDelay: 1000, // Delay before showing winner highlight
+  potCollectionDelay: 1500,  // POKERSTARS: ~1.5s for pot collection after winner
 };
 
 // Card with flip animation
