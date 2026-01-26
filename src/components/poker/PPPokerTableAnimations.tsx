@@ -336,10 +336,9 @@ export const CardDealAnimation = memo(function CardDealAnimation({
   const cardDealDuration = CARD_DEAL_TIMINGS.cardDealDuration;
   
   useEffect(() => {
-    const timer = setTimeout(() => onComplete?.(), cardDealDuration + delay * (CARD_DEAL_TIMINGS.perHoleCard));
+    const timer = setTimeout(() => onComplete?.(), cardDealDuration + delay * CARD_DEAL_TIMINGS.perHoleCard);
     return () => clearTimeout(timer);
-  }, [delay, onComplete]);
-  }, [delay, onComplete]);
+  }, [delay, onComplete, cardDealDuration]);
 
   return (
     <motion.div
