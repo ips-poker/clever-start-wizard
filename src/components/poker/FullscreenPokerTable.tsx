@@ -1630,6 +1630,18 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   // Get handId from tableState for animation reset
   const tableStateAny = tableState;
   const handId = tableStateAny?.handId as string | undefined;
+  
+  // Debug: log handId and dealOrderMap for synchronization verification
+  React.useEffect(() => {
+    if (handId) {
+      console.log('[FullscreenPokerTable] Hand sync data:', {
+        handId,
+        dealerSeat,
+        dealOrderMap: Object.fromEntries(dealOrderMap),
+        playerCount: players.length
+      });
+    }
+  }, [handId, dealerSeat, dealOrderMap, players.length]);
 
   return (
     <div className="relative w-full h-full">
