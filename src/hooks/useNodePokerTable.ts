@@ -1693,6 +1693,41 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           }
           break;
 
+        // POKERSTARS-STYLE: Community cards dealt (especially during all-in showdown)
+        case 'community_cards':
+          {
+            const cardsData = data as Record<string, unknown>;
+            const cards = cardsData.cards as string[];
+            const phase = cardsData.phase as string;
+            const isAllInShowdown = cardsData.isAllInShowdown as boolean;
+            
+            log('🎴 Community cards dealt:', { cards, phase, isAllInShowdown });
+            
+            if (cards && cards.length > 0 && tableId) {
+              setTableState(prev => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  phase: (phase as TableState['phase']) || prev.phase,
+                  communityCards: cards,
+                  pot: (cardsData.pot as number) ?? prev.pot
+                };
+              });
+              
+              // Update showdownResult communityCards for hand evaluation
+              if (isAllInShowdown) {
+                setShowdownResult(prev => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    communityCards: cards
+                  };
+                });
+              }
+            }
+          }
+          break;
+
         // PROFESSIONAL TIMING: Phase change with card dealing delays
         case 'phase_change':
           {
@@ -1737,6 +1772,79 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             setTimeout(() => {
               setActiveBurnCard(null);
             }, 400);
+          }
+          break;
+
+        // POKERSTARS-STYLE: All-in showdown - cards revealed immediately (TDA Rule 16)
+        case 'all_in_showdown':
+          {
+            const rawData = data as Record<string, unknown>;
+            const allInData = (rawData.data || rawData) as Record<string, unknown>;
+            log('🃏 ALL-IN SHOWDOWN - Cards tabled immediately (TDA Rule 16):', allInData);
+            
+            const players = (allInData.players || []) as Array<{
+              playerId: string;
+              name: string;
+              seatNumber: number;
+              holeCards: string[];
+              stack: number;
+              isAllIn: boolean;
+            }>;
+            const pot = (allInData.pot as number) || 0;
+            
+            // Immediately set phase to showdown and reveal all cards
+            setTableState(prev => {
+              if (!prev) return prev;
+              
+              // Update each player's hole cards with the revealed cards
+              const updatedPlayers = prev.players.map(p => {
+                const allInPlayer = players.find(ap => ap.playerId === p.playerId);
+                if (allInPlayer && allInPlayer.holeCards && allInPlayer.holeCards.length >= 2) {
+                  return {
+                    ...p,
+                    holeCards: allInPlayer.holeCards,
+                    isAllIn: allInPlayer.isAllIn ?? p.isAllIn
+                  };
+                }
+                return p;
+              });
+              
+              return {
+                ...prev,
+                phase: 'showdown',
+                pot: pot || prev.pot,
+                players: updatedPlayers
+              };
+            });
+            
+            // Also populate showdownReveals for animation effects
+            setShowdownReveals(players.map((p, index) => ({
+              playerId: p.playerId,
+              playerName: p.name,
+              seatNumber: p.seatNumber,
+              holeCards: p.holeCards,
+              handName: undefined, // Will be calculated after community cards
+              bestCards: undefined,
+              revealIndex: index,
+              revealDelay: 0, // Immediate reveal in all-in showdown
+              isWinner: false // Will be updated after hand evaluation
+            })));
+            
+            // Update showdownResult with revealed players for FullscreenPokerTable compatibility
+            setShowdownResult({
+              winners: [], // Winners determined later after hand evaluation
+              pot: pot,
+              showdownPlayers: players.map(p => ({
+                playerId: p.playerId,
+                name: p.name,
+                seatNumber: p.seatNumber,
+                holeCards: p.holeCards,
+                isFolded: false,
+                handName: undefined,
+                bestCards: undefined
+              })),
+              communityCards: tableStateRef.current?.communityCards || []
+            });
           }
           break;
 
