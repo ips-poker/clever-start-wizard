@@ -929,11 +929,16 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'time_bank_activated':
           log('⏱️ Time Bank ACTIVATED:', data);
           {
-            const tbData = data as {
+            // Handle both wrapped and unwrapped data formats
+            const rawData = (data as any)?.data ?? data;
+            const tbData = rawData as {
               playerId: string;
               timeUsed: number;
               remaining: number;
             };
+            
+            const timeUsed = tbData?.timeUsed ?? 0;
+            const remaining = tbData?.remaining ?? 0;
             
             // Immediately update to time bank phase for instant visual change
             setTableState((prev) => {
@@ -943,12 +948,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 isTimeBankPhase: true,
                 // Reset action start time for time bank countdown
                 actionStartTime: Date.now(),
-                actionTimeTotal: tbData.timeUsed
+                actionTimeTotal: timeUsed > 0 ? timeUsed : 30
               };
             });
             
             // Show toast notification for time bank activation
-            console.log(`⏱️ Time Bank активирован: ${tbData.timeUsed}s`);
+            console.log(`⏱️ Time Bank активирован: ${timeUsed}s (осталось: ${remaining}s)`);
           }
           break;
 
