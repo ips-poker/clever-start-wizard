@@ -1,7 +1,7 @@
 // PPPoker-style Compact Cards - Cards positioned BELOW avatar (fanned)
 // Smaller cards for opponents, positioned like in PPPoker reference images
 
-import React, { memo, useEffect, useRef } from 'react';
+import React, { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
@@ -353,60 +353,16 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   const { currentCardBack, preferences } = usePokerPreferences();
 
   /**
-   * POKERSTARS-STYLE SINGLE ANIMATION SYSTEM
-   * 
-   * CLEAN FIX: Cards are COMPLETELY HIDDEN until deal animation.
-   * - No card backs, no placeholders - nothing shown before animateDeal=true
-   * - Cards appear ONLY with animation synced to shuffle sound
-   * - Animation happens EXACTLY ONCE per handId
+   * POKERSTARS-STYLE SIMPLE LOGIC:
+   * - Cards hidden (null) until animateDeal=true 
+   * - animateDeal=true triggers ONE animation
+   * - After that, cards stay static until hand ends
+   * - Parent controls animateDeal (only true during preflop deal)
    */
 
-  // Track last known valid handId to prevent key flickering on undefined
-  const lastNonNullHandIdRef = useRef<string | undefined>(handId);
-  if (handId && handId !== lastNonNullHandIdRef.current) {
-    lastNonNullHandIdRef.current = handId;
-  }
-  
-  // Stable key: prefer current handId, fallback to last known, then static
-  const stableHandId = handId ?? lastNonNullHandIdRef.current;
-  const animationKey = stableHandId ?? 'static-cards';
-
-  // Track which hands have already been animated (persists across re-renders)
-  const animatedHandIdsRef = useRef<Set<string>>(new Set());
-
-  // Has this hand EVER been dealt (animated)?
-  const hasBeenDealt = stableHandId ? animatedHandIdsRef.current.has(stableHandId) : false;
-
-  // Determine if we should animate THIS render
-  const shouldAnimateThisHand = Boolean(
-    stableHandId &&
-    animateDeal &&
-    !isShowdown &&
-    !hasBeenDealt
-  );
-
-  // Mark this handId as animated (happens during render, before return)
-  if (shouldAnimateThisHand && stableHandId) {
-    animatedHandIdsRef.current.add(stableHandId);
-  }
-  
-  // Cleanup: remove very old handIds to prevent memory leak (keep last 10)
-  if (animatedHandIdsRef.current.size > 10) {
-    const arr = Array.from(animatedHandIdsRef.current);
-    animatedHandIdsRef.current = new Set(arr.slice(-5));
-  }
-
-  /**
-   * VISIBILITY LOGIC:
-   * - Before deal: COMPLETELY HIDDEN (return null)
-   * - During deal: Animate in
-   * - After deal: Static display (no re-animation)
-   * - Showdown: Always visible
-   */
-  const shouldShowCards = isShowdown || hasBeenDealt || shouldAnimateThisHand;
-  
-  // CLEAN FIX: Return nothing if cards shouldn't be shown yet
-  if (!shouldShowCards) {
+  // Simple: if animateDeal is false and not showdown, hide cards
+  // Parent (FullscreenPokerTable) sets animateDeal=true only during preflop
+  if (!animateDeal && !isShowdown) {
     return null;
   }
   
@@ -437,6 +393,9 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
     if (isShowdown) return 0;
     return 0;
   };
+
+  // Animation key based on handId to reset animation on new hand
+  const animationKey = handId ?? 'static';
 
   return (
     <AnimatePresence mode="wait">
@@ -489,7 +448,7 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                   rotation={rotation}
                   cardBackColors={{ accent: currentCardBack.accentColor, pattern: currentCardBack.pattern }}
                   useFourColor={useFourColor}
-                  animate={shouldAnimateThisHand}
+                  animate={animateDeal && !isShowdown}
                 />
               </div>
             );

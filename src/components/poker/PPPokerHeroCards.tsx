@@ -307,9 +307,31 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
   const { preferences } = usePokerPreferences();
   const useFourColor = preferences.cardStyle === 'fourcolor';
   const [isHovering, setIsHovering] = useState(false);
-  const lastHandIdRef = useRef<string | undefined>(undefined);
-  const animatedHandIdsRef = useRef<Set<string>>(new Set());
-
+  /**
+   * POKERSTARS-STYLE SIMPLE LOGIC:
+   * - Cards hidden (null) until gamePhase='preflop' 
+   * - Preflop triggers ONE flip animation per hand
+   * - After preflop, cards stay static until hand ends
+   * - Parent passes gamePhase to control visibility
+   */
+  
+  // Track which handId has been animated to prevent re-animation
+  const animatedHandIdRef = useRef<string | undefined>(undefined);
+  
+  // Use handId if available, fallback to cards signature
+  const handSignature = handId ?? cards.join('-');
+  
+  // Check if this hand was already animated
+  const wasAlreadyAnimated = animatedHandIdRef.current === handSignature;
+  
+  // Mark as animated when preflop starts
+  if (gamePhase === 'preflop' && !wasAlreadyAnimated) {
+    animatedHandIdRef.current = handSignature;
+  }
+  
+  // Animate only during first preflop for this hand
+  const shouldAnimate = gamePhase === 'preflop' && !wasAlreadyAnimated;
+  
   // Calculate hand strength
   const handName = useMemo(() => {
     if (cards.length >= 2 && communityCards.length >= 3) {
@@ -318,51 +340,17 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
     return undefined;
   }, [cards, communityCards]);
 
-  // Use handId if available (best), fallback to cards signature
-  const handSignature = handId ?? cards.join('-');
-  
-  // CLEAN FIX: Track animation per handId using ref (prevents re-animation on re-renders)
-  // Reset only when handSignature actually changes (new hand)
-  useEffect(() => {
-    if (handSignature && handSignature !== lastHandIdRef.current) {
-      lastHandIdRef.current = handSignature;
-      // Don't add to animatedHandIds yet - will be added when animation starts
-    }
-  }, [handSignature]);
-  
-  // Check if this hand has already been animated
-  const hasBeenDealt = handSignature ? animatedHandIdsRef.current.has(handSignature) : false;
-  
-  // Should animate only once per hand during preflop
-  const shouldAnimateNow = gamePhase === 'preflop' && cards.length >= 2 && !hasBeenDealt;
-  
-  // Mark as animated when we start animation
-  useEffect(() => {
-    if (shouldAnimateNow && handSignature) {
-      animatedHandIdsRef.current.add(handSignature);
-      // Keep only last 10 hands to prevent memory leak
-      if (animatedHandIdsRef.current.size > 10) {
-        const first = animatedHandIdsRef.current.values().next().value;
-        if (first) animatedHandIdsRef.current.delete(first);
-      }
-    }
-  }, [shouldAnimateNow, handSignature]);
-
   if (!cards || cards.length < 2) return null;
 
   const cardCount = cards.length;
   const cardOverlap = cardCount > 2 ? -8 : -10;
   const isShowdown = gamePhase === 'showdown';
   
-  // CLEAN FIX: Don't show anything until dealt or showdown
-  // shouldAnimateNow means we're about to animate (so show cards)
-  const shouldShowCards = hasBeenDealt || shouldAnimateNow || isShowdown || isFolded;
+  // Show cards: during preflop (animate), after preflop (static), showdown, or folded
+  const shouldShowCards = gamePhase === 'preflop' || wasAlreadyAnimated || isShowdown || isFolded;
   if (!shouldShowCards) {
     return null;
   }
-  
-  // Animate only during first preflop appearance for this hand
-  const shouldAnimate = shouldAnimateNow;
   
   // PokerStars-style: folded cards show face-down, hover to peek
   const showCardsFaceUp = !isFolded || isHovering;
