@@ -141,10 +141,11 @@ export function CashGameBotManager({ onClose }: CashGameBotManagerProps) {
   const botConnectionsRef = useRef<Map<string, BotConnection>>(new Map());
 
   const getWsUrl = (tableId: string, playerId: string) => {
+    // POKERSTARS-STYLE: Use proper WebSocket URL with Nginx proxy
     const isLocalhost = window.location.hostname === 'localhost';
     const base = isLocalhost 
       ? 'ws://89.104.74.121:3001'
-      : 'wss://89.104.74.121';
+      : 'wss://poker.syndicate-poker.ru'; // Correct production URL via Nginx
     return `${base}/ws/poker?tableId=${tableId}&playerId=${playerId}`;
   };
 
