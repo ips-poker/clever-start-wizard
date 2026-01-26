@@ -408,24 +408,21 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   const hasBeenDealt = hasAnimatedRef.current || isVisibleRef.current;
 
   /**
-   * VISIBILITY LOGIC:
-   * - Showdown with revealed cards (not faceDown): SHOW
-   * - Showdown with faceDown: HIDE (player folded or cards unknown)
-   * - Not showdown + dealt: SHOW (static after animation)
-   * - Not dealt yet: HIDE
+   * VISIBILITY LOGIC - CLEAN FIX V3:
+   * 
+   * Compact cards (fanned mini-cards on avatar) should ONLY show during active play:
+   * - During preflop/flop/turn/river: show faceDown cards (card backs) if dealt
+   * - On SHOWDOWN: HIDE compact cards entirely - showdown uses larger revealed cards overlay
+   * - This prevents "double cards" on showdown (both compact AND showdown cards visible)
    */
-  let shouldShowCards = false;
   
+  // On showdown, ALWAYS hide compact cards - showdown overlay handles card display
   if (isShowdown) {
-    // At showdown, only show if cards are revealed (not face-down)
-    // If faceDown=true, the player folded or cards are unknown - hide them
-    const hasValidCards = Array.isArray(cards) && cards.length >= 2 && 
-      cards.some(c => c && c !== 'XX' && c !== '??');
-    shouldShowCards = !faceDown && hasValidCards;
-  } else {
-    // During play: show only if dealt
-    shouldShowCards = hasBeenDealt;
+    return null;
   }
+  
+  // During play: show only if dealt
+  const shouldShowCards = hasBeenDealt;
   
   // Return nothing if cards shouldn't be shown
   if (!shouldShowCards) {
