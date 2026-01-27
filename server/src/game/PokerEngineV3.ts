@@ -2112,10 +2112,17 @@ export class PokerEngineV3 {
   
   /**
    * Start a new hand
+   * Enhanced with Button Ante, Big Blind Ante, Straddle, Mississippi Straddle support
    */
   startNewHand(
     players: { id: string; name: string; seatNumber: number; stack: number; status: string; isDealer: boolean }[],
-    dealerSeat: number
+    dealerSeat: number,
+    options?: {
+      isBombPot?: boolean;
+      bombPotAmount?: number;
+      straddleSeat?: number;
+      straddleAmount?: number;
+    }
   ): {
     handId: string;
     phase: string;
@@ -2127,6 +2134,8 @@ export class PokerEngineV3 {
     bigBlindSeat: number;
     currentPlayerSeat: number | null;
     minRaise: number;
+    straddleSeat?: number;
+    isBombPot?: boolean;
     players: { id: string; seatNumber: number; holeCards: string[]; currentBet: number }[];
   } {
     // Prepare deck
@@ -2202,31 +2211,92 @@ export class PokerEngineV3 {
       firstToAct: positions.firstToActSeat
     });
     
-    // Post blinds
-    const blindsResult = postBlinds(
-      gamePlayers,
-      positions.sbSeat,
-      positions.bbSeat,
-      this.config.smallBlind,
-      this.config.bigBlind
-    );
+    let pot = 0;
+    let currentBet = 0;
+    let playersAfterBlinds = gamePlayers;
+    let straddleSeatUsed: number | undefined = undefined;
     
-    console.log('[Engine] Blinds posted:', {
-      pot: blindsResult.pot,
-      currentBet: blindsResult.currentBet
-    });
-    
-    // Collect antes if configured
-    let pot = blindsResult.pot;
-    let playersAfterBlinds = blindsResult.updatedPlayers;
-    
-    if (this.config.ante > 0) {
-      const antesResult = collectAntes(playersAfterBlinds, this.config.ante);
-      pot += antesResult.pot;
-      playersAfterBlinds = antesResult.updatedPlayers;
-      console.log('[Engine] Antes collected:', antesResult.pot);
+    // BOMB POT MODE: Skip blinds, all players put in bomb pot amount
+    if (options?.isBombPot && options.bombPotAmount) {
+      console.log('[Engine] BOMB POT: All players post', options.bombPotAmount);
+      
+      playersAfterBlinds = gamePlayers.map(p => {
+        if (p.isFolded || p.isSittingOut) return p;
+        
+        const bombBet = Math.min(options.bombPotAmount!, p.stack);
+        pot += bombBet;
+        
+        return {
+          ...p,
+          stack: p.stack - bombBet,
+          betAmount: bombBet,
+          totalBetThisHand: bombBet,
+          isAllIn: p.stack - bombBet === 0
+        };
+      });
+      
+      currentBet = 0; // No betting in bomb pot preflop - goes straight to flop
+    } else {
+      // NORMAL HAND: Post blinds
+      const blindsResult = postBlinds(
+        gamePlayers,
+        positions.sbSeat,
+        positions.bbSeat,
+        this.config.smallBlind,
+        this.config.bigBlind
+      );
+      
+      pot = blindsResult.pot;
+      currentBet = blindsResult.currentBet;
+      playersAfterBlinds = blindsResult.updatedPlayers;
+      
+      console.log('[Engine] Blinds posted:', {
+        pot: blindsResult.pot,
+        currentBet: blindsResult.currentBet
+      });
+      
+      // Collect ANTES (different modes)
+      if (this.config.ante > 0 || this.config.buttonAnteEnabled || this.config.bigBlindAnteEnabled) {
+        const anteOptions = {
+          bigBlindAnteEnabled: this.config.bigBlindAnteEnabled,
+          bigBlindAnteSeat: positions.bbSeat,
+          bigBlindAnteAmount: this.config.bigBlindAnteAmount || this.config.ante,
+          buttonAnteEnabled: this.config.buttonAnteEnabled,
+          buttonAnteSeat: positions.dealerSeat,
+          buttonAnteAmount: this.config.buttonAnteAmount || this.config.ante
+        };
+        
+        const antesResult = collectAntes(playersAfterBlinds, this.config.ante, anteOptions);
+        pot += antesResult.pot;
+        playersAfterBlinds = antesResult.updatedPlayers;
+        
+        console.log('[Engine] Antes collected:', {
+          amount: antesResult.pot,
+          mode: this.config.bigBlindAnteEnabled ? 'BB_ANTE' : 
+                this.config.buttonAnteEnabled ? 'BUTTON_ANTE' : 'STANDARD'
+        });
+      }
+      
+      // STRADDLE: If a straddle was posted
+      if (options?.straddleSeat !== undefined && options?.straddleAmount) {
+        const straddleResult = postStraddle(
+          playersAfterBlinds,
+          options.straddleSeat,
+          options.straddleAmount
+        );
+        
+        pot += straddleResult.pot;
+        currentBet = straddleResult.currentBet;
+        playersAfterBlinds = straddleResult.updatedPlayers;
+        straddleSeatUsed = options.straddleSeat;
+        
+        console.log('[Engine] STRADDLE posted:', {
+          seat: options.straddleSeat,
+          amount: options.straddleAmount,
+          newCurrentBet: currentBet
+        });
+      }
     }
-    
     // Deal hole cards
     const cardsPerPlayer = this.getCardsPerPlayer();
     let deckIndex = 0;
@@ -2244,32 +2314,79 @@ export class PokerEngineV3 {
     // Generate hand ID
     const handId = crypto.randomUUID();
     
-    // CRITICAL FIX: After posting blinds, recalculate first to act
-    // If the original first player is now all-in from posting blind, find next active player
+    // BOMB POT: Skip preflop, start from flop
+    // First to act is SB position (or first active player after dealer)
+    let startPhase: GamePhase = 'preflop';
     let actualFirstToAct = positions.firstToActSeat;
-    const firstPlayer = playersWithCards.find(p => p.seatNumber === positions.firstToActSeat);
+    let communityCards: string[] = [];
     
-    if (firstPlayer?.isAllIn) {
-      // Find next active player who can still act (not all-in, not folded)
-      const activePlayers = playersWithCards
-        .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0)
-        .sort((a, b) => a.seatNumber - b.seatNumber);
+    if (options?.isBombPot) {
+      // BOMB POT: Deal flop immediately, skip preflop betting
+      startPhase = 'flop';
+      communityCards = deck.slice(deckIndex, deckIndex + 3);
+      deckIndex += 3;
+      currentBet = 0; // No bets on flop start
       
-      if (activePlayers.length > 0) {
-        // In heads-up: if SB is all-in, BB gets action
-        // In multi-way: find next player clockwise from dealer
-        const afterFirst = activePlayers.find(p => p.seatNumber > positions.firstToActSeat);
-        actualFirstToAct = afterFirst ? afterFirst.seatNumber : activePlayers[0].seatNumber;
-        
-        console.log('[Engine] First to act was all-in from blind, reassigning:', {
-          originalFirst: positions.firstToActSeat,
-          newFirst: actualFirstToAct,
-          reason: 'blind_all_in'
+      // First to act in bomb pot: SB or first active after dealer
+      const sortedByPosition = playersWithCards
+        .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0)
+        .sort((a, b) => {
+          // Clockwise from dealer
+          const aPos = (a.seatNumber - positions.dealerSeat + gamePlayers.length) % gamePlayers.length;
+          const bPos = (b.seatNumber - positions.dealerSeat + gamePlayers.length) % gamePlayers.length;
+          return aPos - bPos;
         });
+      
+      actualFirstToAct = sortedByPosition.length > 0 ? sortedByPosition[0].seatNumber : -1;
+      
+      console.log('[Engine] BOMB POT: Starting at flop', {
+        communityCards,
+        firstToAct: actualFirstToAct,
+        pot
+      });
+    } else {
+      // NORMAL HAND or STRADDLE
+      // Recalculate first to act considering straddle
+      if (straddleSeatUsed !== undefined) {
+        // With straddle: First to act is player after straddle position
+        // For Mississippi straddle (from button): first to act is SB
+        if (this.config.mississippiStraddleEnabled && straddleSeatUsed === positions.dealerSeat) {
+          actualFirstToAct = positions.sbSeat;
+          console.log('[Engine] MISSISSIPPI STRADDLE: First to act is SB', { sbSeat: positions.sbSeat });
+        } else {
+          // Regular UTG straddle: first to act is player after straddler
+          const sortedPlayers = playersWithCards
+            .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0)
+            .sort((a, b) => a.seatNumber - b.seatNumber);
+          
+          const afterStraddle = sortedPlayers.find(p => p.seatNumber > straddleSeatUsed!);
+          actualFirstToAct = afterStraddle ? afterStraddle.seatNumber : sortedPlayers[0]?.seatNumber ?? -1;
+        }
       } else {
-        // Everyone is all-in, no action needed - will proceed to showdown
-        actualFirstToAct = -1; // No one to act
-        console.log('[Engine] All players are all-in after blinds, proceeding to showdown');
+        // No straddle: use standard first to act
+        const firstPlayer = playersWithCards.find(p => p.seatNumber === positions.firstToActSeat);
+        
+        if (firstPlayer?.isAllIn) {
+          // Find next active player who can still act (not all-in, not folded)
+          const activePlayers = playersWithCards
+            .filter(p => !p.isFolded && !p.isAllIn && p.stack > 0)
+            .sort((a, b) => a.seatNumber - b.seatNumber);
+          
+          if (activePlayers.length > 0) {
+            const afterFirst = activePlayers.find(p => p.seatNumber > positions.firstToActSeat);
+            actualFirstToAct = afterFirst ? afterFirst.seatNumber : activePlayers[0].seatNumber;
+            
+            console.log('[Engine] First to act was all-in from blind, reassigning:', {
+              originalFirst: positions.firstToActSeat,
+              newFirst: actualFirstToAct,
+              reason: 'blind_all_in'
+            });
+          } else {
+            // Everyone is all-in, no action needed - will proceed to showdown
+            actualFirstToAct = -1;
+            console.log('[Engine] All players are all-in after blinds, proceeding to showdown');
+          }
+        }
       }
     }
     
@@ -2278,10 +2395,10 @@ export class PokerEngineV3 {
       tableId: '',
       handId,
       handNumber: 1,
-      phase: 'preflop',
+      phase: startPhase,
       pot,
-      currentBet: blindsResult.currentBet,
-      communityCards: [],
+      currentBet,
+      communityCards,
       dealerSeat: positions.dealerSeat,
       smallBlindSeat: positions.sbSeat,
       bigBlindSeat: positions.bbSeat,
@@ -2306,15 +2423,17 @@ export class PokerEngineV3 {
     
     return {
       handId,
-      phase: 'preflop',
+      phase: startPhase,
       pot,
-      communityCards: [],
-      currentBet: blindsResult.currentBet,
+      communityCards,
+      currentBet,
       dealerSeat: positions.dealerSeat,
       smallBlindSeat: positions.sbSeat,
       bigBlindSeat: positions.bbSeat,
       currentPlayerSeat: actualFirstToAct,
       minRaise: this.config.bigBlind,
+      straddleSeat: straddleSeatUsed,
+      isBombPot: options?.isBombPot,
       players: playersWithCards.map(p => ({
         id: p.id,
         seatNumber: p.seatNumber,

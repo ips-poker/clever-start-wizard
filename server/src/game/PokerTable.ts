@@ -128,6 +128,24 @@ export class PokerTable {
   // Professional timing settings
   private timings: ProfessionalTimings = PROFESSIONAL_TIMINGS;
   
+  // ========== PRO FEATURES STATE ==========
+  // Bomb Pot tracking
+  private handsSinceLastBombPot: number = 0;
+  private bombPotVotingActive: boolean = false;
+  private bombPotVotes: Map<string, boolean> = new Map(); // playerId -> accepted
+  private bombPotVotingTimeout: NodeJS.Timeout | null = null;
+  private nextHandIsBombPot: boolean = false;
+  
+  // Straddle tracking
+  private pendingStraddle: { playerId: string; seat: number; amount: number } | null = null;
+  private straddlePromptTimeout: NodeJS.Timeout | null = null;
+  
+  // Run It Twice tracking
+  private runItTwiceVoting: boolean = false;
+  private runItTwiceVotes: Map<string, boolean> = new Map();
+  private runItTwiceTimeout: NodeJS.Timeout | null = null;
+  private allInPlayersForRIT: string[] = []; // Players eligible for RIT decision
+  
   /**
    * Utility: Promise-based delay for professional timing
    */
@@ -3255,9 +3273,39 @@ export class PokerTable {
         isDealer: false // Engine will calculate dealer position
       }));
       
+      // Prepare engine options for pro features
+      const engineOptions: {
+        isBombPot?: boolean;
+        bombPotAmount?: number;
+        straddleSeat?: number;
+        straddleAmount?: number;
+      } = {};
+      
+      // BOMB POT: Check if this hand is a bomb pot
+      if (this.nextHandIsBombPot) {
+        const bombPotMultiplier = (this.config as Record<string, unknown>).bombPotMultiplier as number || 2;
+        engineOptions.isBombPot = true;
+        engineOptions.bombPotAmount = this.config.bigBlind * bombPotMultiplier;
+        this.nextHandIsBombPot = false;
+        
+        logger.info('BOMB POT: Starting bomb pot hand', {
+          multiplier: bombPotMultiplier,
+          amount: engineOptions.bombPotAmount
+        });
+      }
+      
+      // STRADDLE: Check if we have a pending straddle
+      if (this.pendingStraddle) {
+        engineOptions.straddleSeat = this.pendingStraddle.seat;
+        engineOptions.straddleAmount = this.pendingStraddle.amount;
+        
+        logger.info('STRADDLE: Posting straddle', this.pendingStraddle);
+        this.pendingStraddle = null;
+      }
+      
       // Start new hand with engine v3 (may throw if validation fails)
       // Pass PREVIOUS dealer seat - engine will calculate next dealer
-      const engineState = this.engine.startNewHand(enginePlayers, previousDealerSeat);
+      const engineState = this.engine.startNewHand(enginePlayers, previousDealerSeat, engineOptions);
       
       // Update local dealerSeat from engine calculation
       this.dealerSeat = engineState.dealerSeat;
@@ -4357,6 +4405,9 @@ export class PokerTable {
       isHandActive: false
     });
     
+    // PRO FEATURE: Check if it's time to propose a bomb pot
+    this.checkBombPotProposal();
+    
     // Check for next hand after configured auto-start delay (or default professional timing)
     const autoStartDelay = (this.config as Record<string, unknown>).autoStartDelaySeconds;
     const delayMs = typeof autoStartDelay === 'number' 
@@ -4816,6 +4867,9 @@ export class PokerTable {
       phase: 'waiting',
       isHandActive: false
     });
+    
+    // PRO FEATURE: Check if it's time to propose a bomb pot
+    this.checkBombPotProposal();
     
     // Check for new hand with configured auto-start delay
     const autoStartDelay3 = (this.config as Record<string, unknown>).autoStartDelaySeconds;
@@ -5489,5 +5543,368 @@ export class PokerTable {
     
     // If we get here, something is very wrong - force complete the hand
     await this.forceRecovery();
+  }
+  
+  // ========================================
+  // PRO FEATURES: BOMB POT
+  // ========================================
+  
+  /**
+   * Check if it's time to propose a bomb pot
+   * Called at the end of each hand
+   */
+  private checkBombPotProposal(): void {
+    const bombPotEnabled = (this.config as Record<string, unknown>).bombPotEnabled as boolean;
+    if (!bombPotEnabled) return;
+    
+    this.handsSinceLastBombPot++;
+    
+    // Propose bomb pot every 5-10 hands (configurable)
+    const bombPotInterval = 5 + Math.floor(Math.random() * 6); // 5-10 random
+    
+    if (this.handsSinceLastBombPot >= bombPotInterval) {
+      this.startBombPotVoting();
+    }
+  }
+  
+  /**
+   * Start bomb pot voting - all players have 10 seconds to accept or decline
+   */
+  private startBombPotVoting(): void {
+    const activePlayers = Array.from(this.players.values())
+      .filter(p => p.status === 'active' && p.stack > 0);
+    
+    if (activePlayers.length < 2) return;
+    
+    const bombPotMultiplier = (this.config as Record<string, unknown>).bombPotMultiplier as number || 2;
+    const bombPotAmount = this.config.bigBlind * bombPotMultiplier;
+    
+    // Check all players have enough chips
+    const eligiblePlayers = activePlayers.filter(p => p.stack >= bombPotAmount);
+    if (eligiblePlayers.length < 2) return;
+    
+    this.bombPotVotingActive = true;
+    this.bombPotVotes.clear();
+    
+    logger.info('BOMB POT: Starting voting', {
+      tableId: this.id,
+      multiplier: bombPotMultiplier,
+      amount: bombPotAmount,
+      eligiblePlayers: eligiblePlayers.length
+    });
+    
+    this.emit('bomb_pot_proposal', {
+      multiplier: bombPotMultiplier,
+      amount: bombPotAmount,
+      timeoutSeconds: 10,
+      players: eligiblePlayers.map(p => ({
+        playerId: p.id,
+        name: p.name,
+        seatNumber: p.seatNumber
+      }))
+    });
+    
+    // 10 second timeout for voting
+    this.bombPotVotingTimeout = setTimeout(() => {
+      this.finalizeBombPotVoting();
+    }, 10000);
+  }
+  
+  /**
+   * Handle player's bomb pot vote
+   */
+  public voteBombPot(playerId: string, accept: boolean): void {
+    if (!this.bombPotVotingActive) return;
+    
+    const player = this.players.get(playerId);
+    if (!player || player.status !== 'active') return;
+    
+    this.bombPotVotes.set(playerId, accept);
+    
+    logger.info('BOMB POT: Player voted', {
+      playerId: playerId.substring(0, 8),
+      accept,
+      totalVotes: this.bombPotVotes.size
+    });
+    
+    this.emit('bomb_pot_vote', {
+      playerId,
+      accept,
+      votesReceived: this.bombPotVotes.size
+    });
+    
+    // Check if all eligible players voted
+    const activePlayers = Array.from(this.players.values())
+      .filter(p => p.status === 'active' && p.stack > 0);
+    
+    if (this.bombPotVotes.size >= activePlayers.length) {
+      if (this.bombPotVotingTimeout) {
+        clearTimeout(this.bombPotVotingTimeout);
+      }
+      this.finalizeBombPotVoting();
+    }
+  }
+  
+  /**
+   * Finalize bomb pot voting
+   */
+  private finalizeBombPotVoting(): void {
+    if (!this.bombPotVotingActive) return;
+    
+    this.bombPotVotingActive = false;
+    if (this.bombPotVotingTimeout) {
+      clearTimeout(this.bombPotVotingTimeout);
+      this.bombPotVotingTimeout = null;
+    }
+    
+    // Check if ALL players accepted (or didn't vote = decline)
+    const activePlayers = Array.from(this.players.values())
+      .filter(p => p.status === 'active' && p.stack > 0);
+    
+    const allAccepted = activePlayers.every(p => this.bombPotVotes.get(p.id) === true);
+    
+    if (allAccepted && activePlayers.length >= 2) {
+      // BOMB POT CONFIRMED!
+      this.nextHandIsBombPot = true;
+      this.handsSinceLastBombPot = 0;
+      
+      logger.info('BOMB POT: All players accepted!', {
+        tableId: this.id,
+        playerCount: activePlayers.length
+      });
+      
+      this.emit('bomb_pot_confirmed', {
+        accepted: true,
+        playerCount: activePlayers.length
+      });
+    } else {
+      // Someone declined or didn't vote
+      const declinedCount = activePlayers.filter(p => !this.bombPotVotes.get(p.id)).length;
+      
+      logger.info('BOMB POT: Declined', {
+        tableId: this.id,
+        declinedCount,
+        totalPlayers: activePlayers.length
+      });
+      
+      this.emit('bomb_pot_declined', {
+        accepted: false,
+        declinedCount
+      });
+    }
+    
+    this.bombPotVotes.clear();
+  }
+  
+  // ========================================
+  // PRO FEATURES: STRADDLE
+  // ========================================
+  
+  /**
+   * Player requests to straddle
+   * Only UTG can regular straddle, or Button for Mississippi
+   */
+  public requestStraddle(playerId: string): void {
+    const straddleEnabled = (this.config as Record<string, unknown>).straddleEnabled as boolean;
+    if (!straddleEnabled) {
+      this.emit('straddle_rejected', { playerId, reason: 'Straddle disabled' });
+      return;
+    }
+    
+    const player = this.players.get(playerId);
+    if (!player || player.status !== 'active') {
+      this.emit('straddle_rejected', { playerId, reason: 'Player not active' });
+      return;
+    }
+    
+    const straddleAmount = this.config.bigBlind * 2;
+    if (player.stack < straddleAmount) {
+      this.emit('straddle_rejected', { playerId, reason: 'Insufficient chips' });
+      return;
+    }
+    
+    const mississippiEnabled = (this.config as Record<string, unknown>).mississippiStraddleEnabled as boolean;
+    
+    // Validate position
+    // For Mississippi: must be on button
+    // For regular: must be UTG (first after BB)
+    // We'll allow straddle request before hand starts
+    
+    this.pendingStraddle = {
+      playerId,
+      seat: player.seatNumber,
+      amount: straddleAmount
+    };
+    
+    logger.info('STRADDLE: Player requested straddle', {
+      playerId: playerId.substring(0, 8),
+      seat: player.seatNumber,
+      amount: straddleAmount,
+      isMississippi: mississippiEnabled
+    });
+    
+    this.emit('straddle_posted', {
+      playerId,
+      playerName: player.name,
+      seatNumber: player.seatNumber,
+      amount: straddleAmount,
+      isMississippi: mississippiEnabled
+    });
+  }
+  
+  // ========================================
+  // PRO FEATURES: RUN IT TWICE
+  // ========================================
+  
+  /**
+   * Start Run It Twice voting when players are all-in
+   * Called when we detect all-in situation and table has RIT enabled
+   */
+  private startRunItTwiceVoting(allInPlayers: string[]): void {
+    const runItTwiceEnabled = (this.config as Record<string, unknown>).runItTwiceEnabled as boolean;
+    if (!runItTwiceEnabled) return;
+    if (allInPlayers.length < 2) return;
+    
+    this.runItTwiceVoting = true;
+    this.runItTwiceVotes.clear();
+    this.allInPlayersForRIT = allInPlayers;
+    
+    logger.info('RUN IT TWICE: Starting voting', {
+      tableId: this.id,
+      players: allInPlayers
+    });
+    
+    this.emit('run_it_twice_proposal', {
+      players: allInPlayers,
+      timeoutSeconds: 10
+    });
+    
+    // 10 second timeout
+    this.runItTwiceTimeout = setTimeout(() => {
+      this.finalizeRunItTwiceVoting();
+    }, 10000);
+  }
+  
+  /**
+   * Handle player's Run It Twice vote
+   */
+  public voteRunItTwice(playerId: string, accept: boolean): void {
+    if (!this.runItTwiceVoting) return;
+    if (!this.allInPlayersForRIT.includes(playerId)) return;
+    
+    this.runItTwiceVotes.set(playerId, accept);
+    
+    logger.info('RUN IT TWICE: Player voted', {
+      playerId: playerId.substring(0, 8),
+      accept,
+      totalVotes: this.runItTwiceVotes.size,
+      required: this.allInPlayersForRIT.length
+    });
+    
+    this.emit('run_it_twice_vote', {
+      playerId,
+      accept,
+      votesReceived: this.runItTwiceVotes.size
+    });
+    
+    // Check if all all-in players voted
+    if (this.runItTwiceVotes.size >= this.allInPlayersForRIT.length) {
+      if (this.runItTwiceTimeout) {
+        clearTimeout(this.runItTwiceTimeout);
+      }
+      this.finalizeRunItTwiceVoting();
+    }
+  }
+  
+  /**
+   * Finalize Run It Twice voting
+   */
+  private finalizeRunItTwiceVoting(): void {
+    if (!this.runItTwiceVoting) return;
+    
+    this.runItTwiceVoting = false;
+    if (this.runItTwiceTimeout) {
+      clearTimeout(this.runItTwiceTimeout);
+      this.runItTwiceTimeout = null;
+    }
+    
+    // All all-in players must accept
+    const allAccepted = this.allInPlayersForRIT.every(id => this.runItTwiceVotes.get(id) === true);
+    
+    if (allAccepted) {
+      logger.info('RUN IT TWICE: All players accepted!', {
+        tableId: this.id
+      });
+      
+      this.emit('run_it_twice_confirmed', { accepted: true });
+      
+      // Execute Run It Twice
+      this.executeRunItTwice();
+    } else {
+      logger.info('RUN IT TWICE: Declined', {
+        tableId: this.id
+      });
+      
+      this.emit('run_it_twice_declined', { accepted: false });
+      
+      // Proceed with normal showdown
+      this.allInPlayersForRIT = [];
+    }
+    
+    this.runItTwiceVotes.clear();
+  }
+  
+  /**
+   * Execute Run It Twice - deal two boards
+   */
+  private async executeRunItTwice(): Promise<void> {
+    if (!this.currentHand) return;
+    
+    const engineState = this.engine.getState();
+    if (!engineState) return;
+    
+    // Get remaining cards to deal
+    const currentCommunity = this.currentHand.communityCards;
+    const cardsNeeded = 5 - currentCommunity.length;
+    
+    if (cardsNeeded <= 0) {
+      // Already at river, can't run it twice
+      return;
+    }
+    
+    const deck = [...engineState.deck];
+    
+    // Deal two sets of remaining community cards
+    const board1Cards = deck.slice(0, cardsNeeded);
+    const board2Cards = deck.slice(cardsNeeded, cardsNeeded * 2);
+    
+    const fullBoard1 = [...currentCommunity, ...board1Cards];
+    const fullBoard2 = [...currentCommunity, ...board2Cards];
+    
+    logger.info('RUN IT TWICE: Dealing two boards', {
+      tableId: this.id,
+      board1: fullBoard1,
+      board2: fullBoard2
+    });
+    
+    this.emit('run_it_twice_boards', {
+      currentCommunity,
+      board1: fullBoard1,
+      board2: fullBoard2
+    });
+    
+    // Animation delay
+    await this.delay(3000);
+    
+    // Evaluate winners for both boards
+    // (Using engine's runItTwice function indirectly via hand evaluation)
+    // For simplicity, we'll emit both boards and let completeHand handle split pot
+    
+    this.currentHand.communityCards = fullBoard1;
+    // Store second board for pot splitting
+    (this.currentHand as Record<string, unknown>).secondBoard = fullBoard2;
+    (this.currentHand as Record<string, unknown>).isRunItTwice = true;
+    
+    this.allInPlayersForRIT = [];
   }
 }

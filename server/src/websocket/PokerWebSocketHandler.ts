@@ -464,6 +464,18 @@ export class PokerWebSocketHandler {
           await this.handleUpdateTableSettings(ws, message);
           break;
         
+        // PRO FEATURES: Bomb Pot, Straddle, Run It Twice
+        case 'bomb_pot_vote':
+          await this.handleBombPotVote(ws, message);
+          break;
+        
+        case 'straddle_request':
+          await this.handleStraddleRequest(ws, message);
+          break;
+        
+        case 'run_it_twice_vote':
+          await this.handleRunItTwiceVote(ws, message);
+          break;
         
         default:
           logger.warn('Unknown message type', { type: message.type });
@@ -2118,5 +2130,97 @@ export class PokerWebSocketHandler {
         });
       }
     })();
+  }
+  
+  // ========================================
+  // PRO FEATURES HANDLERS
+  // ========================================
+  
+  /**
+   * Handle bomb pot vote from player
+   */
+  private async handleBombPotVote(ws: WebSocket, message: unknown): Promise<void> {
+    const { tableId, playerId, accept } = message as {
+      tableId?: string;
+      playerId?: string;
+      accept?: boolean;
+    };
+    
+    if (!tableId || !playerId || accept === undefined) {
+      this.sendError(ws, 'Invalid bomb pot vote request');
+      return;
+    }
+    
+    const table = this.gameManager.getTable(tableId);
+    if (!table) {
+      this.sendError(ws, 'Table not found');
+      return;
+    }
+    
+    table.voteBombPot(playerId, accept);
+    
+    logger.info('Bomb pot vote received', {
+      tableId,
+      playerId: playerId.substring(0, 8),
+      accept
+    });
+  }
+  
+  /**
+   * Handle straddle request from player
+   */
+  private async handleStraddleRequest(ws: WebSocket, message: unknown): Promise<void> {
+    const { tableId, playerId } = message as {
+      tableId?: string;
+      playerId?: string;
+    };
+    
+    if (!tableId || !playerId) {
+      this.sendError(ws, 'Invalid straddle request');
+      return;
+    }
+    
+    const table = this.gameManager.getTable(tableId);
+    if (!table) {
+      this.sendError(ws, 'Table not found');
+      return;
+    }
+    
+    table.requestStraddle(playerId);
+    
+    logger.info('Straddle request received', {
+      tableId,
+      playerId: playerId.substring(0, 8)
+    });
+  }
+  
+  /**
+   * Handle run it twice vote from player
+   */
+  private async handleRunItTwiceVote(ws: WebSocket, message: unknown): Promise<void> {
+    const { tableId, playerId, accept } = message as {
+      tableId?: string;
+      playerId?: string;
+      accept?: boolean;
+    };
+    
+    if (!tableId || !playerId || accept === undefined) {
+      this.sendError(ws, 'Invalid run it twice vote request');
+      return;
+    }
+    
+    const table = this.gameManager.getTable(tableId);
+    if (!table) {
+      this.sendError(ws, 'Table not found');
+      return;
+    }
+    
+    table.voteRunItTwice(playerId, accept);
+    
+    logger.info('Run it twice vote received', {
+      tableId,
+      playerId: playerId.substring(0, 8),
+      accept
+    });
   }
 }

@@ -198,6 +198,29 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     celebrationDuration: number;
     timestamp: number;
   } | null>(null);
+  
+  // PRO FEATURES: Bomb Pot state
+  const [bombPotProposal, setBombPotProposal] = useState<{
+    multiplier: number;
+    amount: number;
+    timeoutSeconds: number;
+    players: { playerId: string; name: string; seatNumber: number }[];
+  } | null>(null);
+  
+  // PRO FEATURES: Run It Twice state
+  const [runItTwiceProposal, setRunItTwiceProposal] = useState<{
+    players: string[];
+    timeoutSeconds: number;
+  } | null>(null);
+  
+  // PRO FEATURES: Straddle state
+  const [straddlePosted, setStraddlePosted] = useState<{
+    playerId: string;
+    playerName: string;
+    seatNumber: number;
+    amount: number;
+    isMississippi: boolean;
+  } | null>(null);
 
   // POKERSTARS-STYLE: Burn card animation state
   const [activeBurnCard, setActiveBurnCard] = useState<{
@@ -1700,6 +1723,37 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               anteAmount: (settings.ante as number) ?? prev.anteAmount,
             };
           });
+          break;
+        
+        // PRO FEATURES: Bomb Pot
+        case 'bomb_pot_proposal':
+          log('💣 Bomb Pot proposal:', data);
+          setBombPotProposal(data as any);
+          break;
+        
+        case 'bomb_pot_confirmed':
+        case 'bomb_pot_declined':
+          log('💣 Bomb Pot result:', data.type);
+          setBombPotProposal(null);
+          break;
+        
+        // PRO FEATURES: Run It Twice
+        case 'run_it_twice_proposal':
+          log('🔄 Run It Twice proposal:', data);
+          setRunItTwiceProposal(data as any);
+          break;
+        
+        case 'run_it_twice_confirmed':
+        case 'run_it_twice_declined':
+          log('🔄 Run It Twice result:', data.type);
+          setRunItTwiceProposal(null);
+          break;
+        
+        // PRO FEATURES: Straddle
+        case 'straddle_posted':
+          log('⚡ Straddle posted:', data);
+          setStraddlePosted(data as any);
+          setTimeout(() => setStraddlePosted(null), 3000);
           break;
 
         case 'table_settings_changed':
