@@ -491,19 +491,19 @@ export function FullscreenPokerTableWrapper({
         // New hand - shuffle first, then deal cards quickly
         sounds.playShuffle();
         // Deal sounds synced with faster animations
-        setTimeout(() => sounds.playDeal(), 150);  // First hole card
-        setTimeout(() => sounds.playDeal(), 250);  // Second hole card
+        setTimeout(() => sounds.playDeal(), 90);   // First hole card
+        setTimeout(() => sounds.playDeal(), 150);  // Second hole card
       } else if (phase === 'flop') {
         // Flop - 3 cards quickly
-        setTimeout(() => sounds.playDeal(), 50);   // First flop card
-        setTimeout(() => sounds.playDeal(), 150);  // Second flop card  
-        setTimeout(() => sounds.playDeal(), 250);  // Third flop card
+        setTimeout(() => sounds.playDeal(), 30);   // First flop card
+        setTimeout(() => sounds.playDeal(), 110);  // Second flop card  
+        setTimeout(() => sounds.playDeal(), 190);  // Third flop card
       } else if (phase === 'turn') {
         // Turn - 1 card
-        setTimeout(() => sounds.playDeal(), 100);
+        setTimeout(() => sounds.playDeal(), 70);
       } else if (phase === 'river') {
         // River - 1 card
-        setTimeout(() => sounds.playDeal(), 100);
+        setTimeout(() => sounds.playDeal(), 70);
       }
       // Showdown is silent - win sound plays when pot is collected
     }

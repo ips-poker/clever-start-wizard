@@ -60,21 +60,21 @@ export const BET_COLLECTION_TIMINGS = {
 // CARD DEALING TIMINGS (ms)
 // ============================================
 export const CARD_DEAL_TIMINGS = {
-  preDealHoleCards: 150,    // Pause before dealing hole cards (faster)
-  perHoleCard: 50,          // Per hole card dealt (faster)
-  cardDealDuration: 200,    // Single card deal animation (faster)
+  preDealHoleCards: 120,    // Pause before dealing hole cards (faster)
+  perHoleCard: 35,          // Per hole card dealt (faster)
+  cardDealDuration: 160,    // Single card deal animation (faster)
   cardFlipDuration: 250,    // Card flip animation (was 350)
-  burnCardDuration: 240,    // Burn card animation (faster)
+  burnCardDuration: 200,    // Burn card animation (faster)
 } as const;
 
 // ============================================
 // HAND TRANSITION TIMINGS (ms) - POKERSTARS-FAST
 // ============================================
 export const HAND_TRANSITION_TIMINGS = {
-  afterAction: 250,         // After each player action (faster)
-  betweenHands: 1200,       // Between hands (faster)
-  shuffleAnimation: 200,    // Shuffle animation (faster)
-  minimumHandDisplay: 1200, // Minimum time to see showdown (faster)
+  afterAction: 200,         // After each player action (faster)
+  betweenHands: 900,        // Between hands (faster)
+  shuffleAnimation: 120,    // Shuffle animation (faster)
+  minimumHandDisplay: 1000, // Minimum time to see showdown (faster)
 } as const;
 
 // ============================================

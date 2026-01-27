@@ -485,8 +485,8 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
           
           // POKERSTARS-STYLE: Sequential deal timing
           // dealDelay = base delay for this player (0ms, 120ms, 240ms from dealer)
-          // idx * 80ms = additional delay for second card
-          const cardDelayMs = dealDelay + (idx * 80);
+          // idx * 60ms = additional delay for second card (faster cadence)
+          const cardDelayMs = dealDelay + (idx * 60);
           
           return (
             <div 

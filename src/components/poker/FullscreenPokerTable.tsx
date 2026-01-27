@@ -578,6 +578,8 @@ const PlayerSeat = memo(function PlayerSeat({
   const [dealPulse, setDealPulse] = useState(false);
   const [dealCompleted, setDealCompleted] = useState(false);
   const dealStartedForHandRef = useRef<string | undefined>(undefined);
+  const dealPulseStartTimeoutRef = useRef<number | undefined>(undefined);
+  const dealPulseEndTimeoutRef = useRef<number | undefined>(undefined);
   // Bind dealPulse to a specific visualHandId to avoid 1-frame carry-over flashes
   // when React state from the previous hand survives for a render.
   const dealPulseForHandRef = useRef<string | undefined>(undefined);
@@ -587,6 +589,17 @@ const PlayerSeat = memo(function PlayerSeat({
   // If React state briefly carries over (1 render) between hands, we must not
   // let opponents become visible until *this* hand's deal pulse actually ends.
   const dealCompletedForHandRef = useRef<string | undefined>(undefined);
+
+  const clearDealPulseTimers = () => {
+    if (dealPulseStartTimeoutRef.current !== undefined) {
+      window.clearTimeout(dealPulseStartTimeoutRef.current);
+      dealPulseStartTimeoutRef.current = undefined;
+    }
+    if (dealPulseEndTimeoutRef.current !== undefined) {
+      window.clearTimeout(dealPulseEndTimeoutRef.current);
+      dealPulseEndTimeoutRef.current = undefined;
+    }
+  };
 
   // -------------------------------------------------
   // POKERSTARS: Visual hand key for compact opponent cards
@@ -609,6 +622,7 @@ const PlayerSeat = memo(function PlayerSeat({
   let forceHideOppCardsThisRender = false;
 
   if (gamePhase === 'waiting') {
+    clearDealPulseTimers();
     visualHandIdRef.current = undefined;
     visualHandServerIdRef.current = undefined;
     // Also clear mount/animation bindings between hands.
@@ -627,6 +641,7 @@ const PlayerSeat = memo(function PlayerSeat({
 
     // Case A: we already use server id; if it changes => DEFINITELY a new hand.
     if (hasServerKey && handId !== visualHandServerIdRef.current) {
+      clearDealPulseTimers();
       visualHandIdRef.current = handId;
       visualHandServerIdRef.current = handId;
       dealStartedForHandRef.current = undefined;
@@ -646,6 +661,7 @@ const PlayerSeat = memo(function PlayerSeat({
         visualHandIdRef.current = handId;
         visualHandServerIdRef.current = handId;
         if (looksLikeStaleCarryOver) {
+          clearDealPulseTimers();
           dealStartedForHandRef.current = undefined;
           opponentCardsMountedForHandRef.current = undefined;
           dealPulseForHandRef.current = undefined;
@@ -668,6 +684,7 @@ const PlayerSeat = memo(function PlayerSeat({
   useEffect(() => {
     // Between hands: hard reset.
     if (gamePhase === 'waiting') {
+      clearDealPulseTimers();
       dealStartedForHandRef.current = undefined;
       dealCompletedForHandRef.current = undefined;
       dealPulseForHandRef.current = undefined;
@@ -684,6 +701,7 @@ const PlayerSeat = memo(function PlayerSeat({
     dealStartedForHandRef.current = visualHandId;
 
     // Reset for new hand
+    clearDealPulseTimers();
     dealCompletedForHandRef.current = undefined;
     dealPulseForHandRef.current = undefined;
     opponentCardsMountedForHandRef.current = undefined;
@@ -701,19 +719,21 @@ const PlayerSeat = memo(function PlayerSeat({
 
     const handKeyAtSchedule = visualHandId;
 
-    const pulseStart = window.setTimeout(() => {
+    dealPulseStartTimeoutRef.current = window.setTimeout(() => {
+      // Guard against late timers from previous hands
+      if (dealStartedForHandRef.current !== handKeyAtSchedule) return;
       dealPulseForHandRef.current = handKeyAtSchedule;
       setDealPulse(true);
     }, startDelayMs);
-    const pulseEnd = window.setTimeout(() => {
+    dealPulseEndTimeoutRef.current = window.setTimeout(() => {
+      if (dealStartedForHandRef.current !== handKeyAtSchedule) return;
       setDealPulse(false);
       setDealCompleted(true);
       dealCompletedForHandRef.current = handKeyAtSchedule;
     }, startDelayMs + pulseDurationMs);
 
     return () => {
-      window.clearTimeout(pulseStart);
-      window.clearTimeout(pulseEnd);
+      clearDealPulseTimers();
     };
   }, [gamePhase, visualHandId]);
 
