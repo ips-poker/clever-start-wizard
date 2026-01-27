@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Zap, Minus, Plus, Check, X } from 'lucide-react';
 import { usePokerSounds } from '@/hooks/usePokerSounds';
+import { StraddleControls } from './StraddleControls';
 
 interface ProActionPanelProps {
   isMyTurn: boolean;
@@ -21,6 +22,18 @@ interface ProActionPanelProps {
   onRaise: (amount: number) => void;
   onAllIn: () => void;
   disabled?: boolean;
+  // Straddle props
+  straddleEnabled?: boolean;
+  mississippiStraddleEnabled?: boolean;
+  bigBlind?: number;
+  phase?: string;
+  handId?: string | null;
+  currentPlayerSeat?: number | null;
+  mySeat?: number | null;
+  dealerSeat?: number | null;
+  onStraddleRequest?: () => void;
+  autoStraddleEnabled?: boolean;
+  onAutoStraddleChange?: (enabled: boolean) => void;
 }
 
 // Format chip amount
@@ -207,7 +220,19 @@ export const ProActionPanel = memo(function ProActionPanel({
   onCall,
   onRaise,
   onAllIn,
-  disabled = false
+  disabled = false,
+  // Straddle props
+  straddleEnabled = false,
+  mississippiStraddleEnabled = false,
+  bigBlind = 20,
+  phase = 'waiting',
+  handId = null,
+  currentPlayerSeat = null,
+  mySeat = null,
+  dealerSeat = null,
+  onStraddleRequest,
+  autoStraddleEnabled = false,
+  onAutoStraddleChange
 }: ProActionPanelProps) {
   const [raiseAmount, setRaiseAmount] = useState(minRaise);
   const [showSlider, setShowSlider] = useState(false);
@@ -336,7 +361,26 @@ export const ProActionPanel = memo(function ProActionPanel({
           <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-background/25 to-transparent" />
         </div>
 
-        <div className="relative z-10">
+        <div className="relative z-10 space-y-3">
+          {/* Straddle Controls - shown when straddle is enabled */}
+          {(straddleEnabled || mississippiStraddleEnabled) && onStraddleRequest && onAutoStraddleChange && (
+            <StraddleControls
+              straddleEnabled={straddleEnabled}
+              mississippiStraddleEnabled={mississippiStraddleEnabled}
+              bigBlind={bigBlind}
+              playerStack={myStack}
+              phase={phase}
+              handId={handId}
+              currentPlayerSeat={currentPlayerSeat}
+              mySeat={mySeat}
+              dealerSeat={dealerSeat}
+              onStraddleRequest={onStraddleRequest}
+              autoStraddleEnabled={autoStraddleEnabled}
+              onAutoStraddleChange={onAutoStraddleChange}
+            />
+          )}
+          
+          {/* Pre-action checkboxes */}
           <div className="flex items-center justify-center gap-6 flex-wrap">
             <PreActionCheckbox
               label="Fold"
