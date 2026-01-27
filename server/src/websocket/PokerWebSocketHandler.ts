@@ -86,6 +86,23 @@ const TournamentSubscribeSchema = z.object({
   tournamentId: z.string().uuid()
 });
 
+// Update table settings schema
+const UpdateTableSettingsSchema = z.object({
+  type: z.literal('update_table_settings'),
+  tableId: z.string().uuid(),
+  playerId: z.string().uuid(),
+  settings: z.object({
+    actionTimeSeconds: z.number().int().min(5).max(60).optional(),
+    timeBankSeconds: z.number().int().min(0).max(120).optional(),
+    smallBlind: z.number().int().min(1).optional(),
+    bigBlind: z.number().int().min(2).optional(),
+    ante: z.number().int().min(0).optional(),
+    straddleEnabled: z.boolean().optional(),
+    autoStartEnabled: z.boolean().optional(),
+    autoStartDelaySeconds: z.number().int().min(1).max(30).optional(),
+  })
+});
+
 const TournamentActionSchema = z.object({
   type: z.enum(['tournament_start', 'tournament_pause', 'tournament_resume', 'tournament_rebuy', 'tournament_addon']),
   tournamentId: z.string().uuid(),
@@ -418,6 +435,12 @@ export class PokerWebSocketHandler {
           await this.handleReloadPlayers(ws, message);
           break;
         
+        // Update table settings (timing, blinds, etc.) - host only
+        case 'update_table_settings':
+          await this.handleUpdateTableSettings(ws, message);
+          break;
+        
+        
         default:
           logger.warn('Unknown message type', { type: message.type });
           this.sendError(ws, `Unknown message type: ${message.type}`);
@@ -705,6 +728,105 @@ export class PokerWebSocketHandler {
     
     // Broadcast new state to all connected clients
     this.broadcastToTable(tableId, { type: 'state_update', state: table.getPublicState() });
+  }
+  
+  /**
+   * Handle update table settings (timing, blinds, etc.)
+   * Only table creator can update settings
+   * Changes apply from next hand
+   */
+  private async handleUpdateTableSettings(ws: WebSocket, message: unknown): Promise<void> {
+    const result = UpdateTableSettingsSchema.safeParse(message);
+    if (!result.success) {
+      logger.warn('Invalid update_table_settings request', { issues: result.error.issues });
+      this.sendError(ws, 'Invalid settings update request');
+      return;
+    }
+    
+    const { tableId, playerId, settings } = result.data;
+    
+    // Load table
+    const table = await this.gameManager.loadTableIfNeeded(tableId);
+    if (!table) {
+      this.sendError(ws, 'Table not found');
+      return;
+    }
+    
+    // Check if player is the table creator
+    const { data: tableData, error: tableError } = await this.supabase
+      .from('poker_tables')
+      .select('created_by')
+      .eq('id', tableId)
+      .single();
+    
+    if (tableError || !tableData) {
+      this.sendError(ws, 'Failed to verify table ownership');
+      return;
+    }
+    
+    if (tableData.created_by !== playerId) {
+      this.sendError(ws, 'Only table creator can update settings');
+      return;
+    }
+    
+    // Build update object for database
+    const dbUpdate: Record<string, unknown> = {};
+    if (settings.actionTimeSeconds !== undefined) {
+      dbUpdate.action_time_seconds = settings.actionTimeSeconds;
+    }
+    if (settings.timeBankSeconds !== undefined) {
+      dbUpdate.time_bank_seconds = settings.timeBankSeconds;
+    }
+    if (settings.smallBlind !== undefined) {
+      dbUpdate.small_blind = settings.smallBlind;
+    }
+    if (settings.bigBlind !== undefined) {
+      dbUpdate.big_blind = settings.bigBlind;
+    }
+    if (settings.ante !== undefined) {
+      dbUpdate.ante = settings.ante;
+    }
+    if (settings.straddleEnabled !== undefined) {
+      dbUpdate.straddle_enabled = settings.straddleEnabled;
+    }
+    if (settings.autoStartEnabled !== undefined) {
+      dbUpdate.auto_start_enabled = settings.autoStartEnabled;
+    }
+    if (settings.autoStartDelaySeconds !== undefined) {
+      dbUpdate.auto_start_delay_seconds = settings.autoStartDelaySeconds;
+    }
+    
+    // Update database
+    const { error: updateError } = await this.supabase
+      .from('poker_tables')
+      .update(dbUpdate)
+      .eq('id', tableId);
+    
+    if (updateError) {
+      logger.error('Failed to update table settings in DB', { tableId, error: updateError.message });
+      this.sendError(ws, 'Failed to save settings');
+      return;
+    }
+    
+    // Update table config in memory (applies from next hand)
+    table.updateSettings(settings);
+    
+    logger.info('Table settings updated', { tableId, playerId, settings });
+    
+    // Send confirmation to the requester
+    this.send(ws, { 
+      type: 'settings_updated', 
+      tableId,
+      settings 
+    });
+    
+    // Broadcast to all players that settings changed
+    this.broadcastToTable(tableId, { 
+      type: 'table_settings_changed', 
+      tableId,
+      settings,
+      updatedBy: playerId
+    });
   }
   
   /**

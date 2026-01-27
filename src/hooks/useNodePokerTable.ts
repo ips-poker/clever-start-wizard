@@ -1677,6 +1677,29 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'pong':
           break;
 
+        case 'settings_updated':
+          // Confirmation that our settings update was saved
+          log('✅ Settings updated:', data.settings);
+          break;
+
+        case 'table_settings_changed':
+          // Another player (host) changed table settings
+          log('⚙️ Table settings changed:', data.settings);
+          // Update local tableState with new settings
+          setTableState((prev) => {
+            if (!prev) return prev;
+            const settings = data.settings as Record<string, unknown> | undefined;
+            if (!settings) return prev;
+            return {
+              ...prev,
+              actionTimer: (settings.actionTimeSeconds as number) ?? prev.actionTimer,
+              smallBlindAmount: (settings.smallBlind as number) ?? prev.smallBlindAmount,
+              bigBlindAmount: (settings.bigBlind as number) ?? prev.bigBlindAmount,
+              anteAmount: (settings.ante as number) ?? prev.anteAmount,
+            };
+          });
+          break;
+
         case 'time_bank_used':
           // Time bank notification - update state if included
           log('⏱️ Time bank used:', data.data);
@@ -2701,6 +2724,22 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     addChips,
     sendChatMessage,
     tournamentRebuy,
+    
+    // Settings
+    updateTableSettings: useCallback((settings: {
+      actionTimeSeconds?: number;
+      timeBankSeconds?: number;
+      smallBlind?: number;
+      bigBlind?: number;
+      ante?: number;
+    }) => {
+      return sendMessage({
+        type: 'update_table_settings',
+        tableId,
+        playerId,
+        settings
+      });
+    }, [sendMessage, tableId, playerId]),
     
     // Tournament table movement
     playerMovedToTable,

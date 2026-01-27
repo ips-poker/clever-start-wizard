@@ -169,6 +169,43 @@ export class PokerTable {
   }
   
   /**
+   * Update table settings dynamically
+   * Settings apply from the next hand (not current hand)
+   */
+  public updateSettings(settings: {
+    actionTimeSeconds?: number;
+    timeBankSeconds?: number;
+    smallBlind?: number;
+    bigBlind?: number;
+    ante?: number;
+    straddleEnabled?: boolean;
+    autoStartEnabled?: boolean;
+    autoStartDelaySeconds?: number;
+  }): void {
+    if (settings.actionTimeSeconds !== undefined) {
+      this.config.actionTimeSeconds = settings.actionTimeSeconds;
+    }
+    if (settings.timeBankSeconds !== undefined) {
+      this.config.timeBankSeconds = settings.timeBankSeconds;
+    }
+    if (settings.smallBlind !== undefined) {
+      this.config.smallBlind = settings.smallBlind;
+    }
+    if (settings.bigBlind !== undefined) {
+      this.config.bigBlind = settings.bigBlind;
+    }
+    if (settings.ante !== undefined) {
+      this.config.ante = settings.ante;
+    }
+    // Note: straddle and autoStart would need additional engine support
+    
+    logger.info('Table settings updated in memory', {
+      tableId: this.id,
+      newSettings: settings
+    });
+  }
+
+  /**
    * Get the tournament ID if this is a tournament table
    */
   public getTournamentId(): string | undefined {
