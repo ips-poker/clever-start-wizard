@@ -2877,6 +2877,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       // Bomb Pot
       bombPotEnabled?: boolean;
       bombPotMultiplier?: number;
+      bombPotInterval?: number;
       bombPotDoubleBoard?: boolean;
       // Chat
       chatEnabled?: boolean;
