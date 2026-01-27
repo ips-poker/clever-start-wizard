@@ -352,14 +352,14 @@ export function TableSettingsPanel({
 
               {/* Straddle */}
               <SettingsSection title="Стрэддл" icon={Zap} collapsed>
-                <SettingRow label="Straddle" description="Добровольный 3-й блайнд">
+                <SettingRow label="Straddle" description="Добровольный 3-й блайнд (2x BB)">
                   <Switch
                     checked={settings.straddleEnabled}
                     onCheckedChange={(v) => updateSetting('straddleEnabled', v)}
                     disabled={!isHost}
                   />
                 </SettingRow>
-                <SettingRow label="Mississippi Straddle" description="Стрэддл с любой позиции">
+                <SettingRow label="Mississippi Straddle" description="Стрэддл с баттона (2-3x BB), первый ход у SB">
                   <Switch
                     checked={settings.mississippiStraddleEnabled}
                     onCheckedChange={(v) => updateSetting('mississippiStraddleEnabled', v)}
@@ -423,7 +423,7 @@ export function TableSettingsPanel({
 
               {/* Bomb Pot */}
               <SettingsSection title="Bomb Pot" icon={Bomb} collapsed>
-                <SettingRow label="Bomb Pot" description="Все ставят перед флопом">
+                <SettingRow label="Bomb Pot" description="Предложение бомбочки раз в 5-10 раздач">
                   <Switch
                     checked={settings.bombPotEnabled}
                     onCheckedChange={(v) => updateSetting('bombPotEnabled', v)}
@@ -432,6 +432,11 @@ export function TableSettingsPanel({
                 </SettingRow>
                 {settings.bombPotEnabled && (
                   <>
+                    <p className="text-[10px] text-white/40 px-2 py-1 bg-white/5 rounded">
+                      💣 Все игроки ставят фишки, сразу флоп, торги как обычно. 
+                      10 сек на решение, отказ = обычная раздача. 
+                      После бомбочки баттон остаётся на месте.
+                    </p>
                     <SettingRow label="Множитель" description={`${settings.bombPotMultiplier}x BB`}>
                       <Slider
                         value={[settings.bombPotMultiplier || 2]}
@@ -443,7 +448,7 @@ export function TableSettingsPanel({
                         disabled={!isHost}
                       />
                     </SettingRow>
-                    <SettingRow label="Double Board" description="Два борда">
+                    <SettingRow label="Double Board" description="Два борда (делим банк)">
                       <Switch
                         checked={settings.bombPotDoubleBoard}
                         onCheckedChange={(v) => updateSetting('bombPotDoubleBoard', v)}
