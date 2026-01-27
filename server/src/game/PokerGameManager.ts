@@ -37,6 +37,7 @@ export interface TableConfig {
   // Bomb pot settings
   bombPotEnabled?: boolean;
   bombPotMultiplier?: number;
+  bombPotInterval?: number;
   bombPotDoubleBoard?: boolean;
   
   // Chat settings
