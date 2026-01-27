@@ -578,6 +578,9 @@ const PlayerSeat = memo(function PlayerSeat({
   const [dealPulse, setDealPulse] = useState(false);
   const [dealCompleted, setDealCompleted] = useState(false);
   const dealStartedForHandRef = useRef<string | undefined>(undefined);
+  // If React state briefly carries over (1 render) between hands, we must not
+  // let opponents become visible until *this* hand's deal pulse actually ends.
+  const dealCompletedForHandRef = useRef<string | undefined>(undefined);
 
   // -------------------------------------------------
   // POKERSTARS: Visual hand key for compact opponent cards
@@ -653,6 +656,7 @@ const PlayerSeat = memo(function PlayerSeat({
     // Between hands: hard reset.
     if (gamePhase === 'waiting') {
       dealStartedForHandRef.current = undefined;
+      dealCompletedForHandRef.current = undefined;
       setDealPulse(false);
       setDealCompleted(false);
       return;
@@ -665,6 +669,7 @@ const PlayerSeat = memo(function PlayerSeat({
     dealStartedForHandRef.current = visualHandId;
 
     // Reset for new hand
+    dealCompletedForHandRef.current = undefined;
     setDealPulse(false);
     setDealCompleted(false);
 
@@ -677,10 +682,13 @@ const PlayerSeat = memo(function PlayerSeat({
       CARD_DEAL_TIMINGS.perHoleCard * 2 +
       200;
 
+    const handKeyAtSchedule = visualHandId;
+
     const pulseStart = window.setTimeout(() => setDealPulse(true), startDelayMs);
     const pulseEnd = window.setTimeout(() => {
       setDealPulse(false);
       setDealCompleted(true);
+      dealCompletedForHandRef.current = handKeyAtSchedule;
     }, startDelayMs + pulseDurationMs);
 
     return () => {
@@ -695,7 +703,11 @@ const PlayerSeat = memo(function PlayerSeat({
   const effectiveDealPulse = forceHideOppCardsThisRender ? false : dealPulse;
   const effectiveDealCompleted = forceHideOppCardsThisRender ? false : dealCompleted;
   const shouldAnimateCompactDeal = effectiveDealPulse;
-  const shouldShowAfterDeal = effectiveDealCompleted && gamePhase !== 'waiting';
+  const isDealCompletedForThisHand =
+    effectiveDealCompleted &&
+    !!visualHandId &&
+    dealCompletedForHandRef.current === visualHandId;
+  const shouldShowAfterDeal = isDealCompletedForThisHand && gamePhase !== 'waiting';
   
   // Format stack based on display preference
   const formatStack = (stack: number): string => {
