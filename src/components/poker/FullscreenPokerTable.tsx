@@ -570,19 +570,27 @@ const PlayerSeat = memo(function PlayerSeat({
   const [showHUD, setShowHUD] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ------------------------------
-  // POKERSTARS: Stable handId for card dealing
-  // ------------------------------
-  // Keep a stable reference so transient server flickers don't break animations.
-  // The actual "animate once per hand" guard is inside PPPokerCompactCards.
-  const stableHandIdRef = useRef<string | undefined>(undefined);
-  
-  // CRITICAL: Only update stableHandId when we get a NEW valid handId
-  // This prevents flickering when server briefly sends undefined
-  if (handId && handId !== stableHandIdRef.current) {
-    stableHandIdRef.current = handId;
+  // -------------------------------------------------
+  // POKERSTARS: Visual hand key for compact opponent cards
+  // -------------------------------------------------
+  // We MUST NOT rely on server `handId` being present on every snapshot.
+  // Also, we must NOT keep the previous handId between hands, otherwise
+  // opponent mini-cards can appear instantly (before shuffle) because the
+  // UI still thinks it's the previous hand.
+  //
+  // Approach:
+  // - Clear the visual key on `waiting`.
+  // - Freeze a per-hand key on first non-waiting render.
+  // - If server handId isn't available yet, generate a local key.
+  // - Never swap local -> server key mid-hand (would re-trigger animations).
+  const visualHandIdRef = useRef<string | undefined>(undefined);
+  if (gamePhase === 'waiting') {
+    visualHandIdRef.current = undefined;
+  } else if (!visualHandIdRef.current) {
+    visualHandIdRef.current =
+      handId ?? `local-${Date.now()}-${seatNumber}-${Math.random().toString(16).slice(2)}`;
   }
-  const stableHandId = stableHandIdRef.current;
+  const visualHandId = visualHandIdRef.current;
 
   // -------------------------------------------------
   // POKERSTARS-STYLE: One-shot deal pulse (per hand)
@@ -597,16 +605,22 @@ const PlayerSeat = memo(function PlayerSeat({
   const [dealPulse, setDealPulse] = useState(false);
   const [dealCompleted, setDealCompleted] = useState(false);
 
-  // Always clear deal state when we're between hands.
-  // This prevents "leftover" opponent cards from staying visible while the next hand is initializing.
-  useEffect(() => {
-    if (gamePhase !== 'waiting') return;
-    setDealPulse(false);
-    setDealCompleted(false);
-  }, [gamePhase]);
+  const dealStartedForHandRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    if (!stableHandId) return;
+    // Between hands: hard reset.
+    if (gamePhase === 'waiting') {
+      dealStartedForHandRef.current = undefined;
+      setDealPulse(false);
+      setDealCompleted(false);
+      return;
+    }
+
+    // Only start the pulse on the FIRST preflop frame of a new hand.
+    if (gamePhase !== 'preflop') return;
+    if (!visualHandId) return;
+    if (dealStartedForHandRef.current === visualHandId) return;
+    dealStartedForHandRef.current = visualHandId;
 
     // Reset for new hand
     setDealPulse(false);
@@ -614,9 +628,6 @@ const PlayerSeat = memo(function PlayerSeat({
 
     // Align with shuffle -> deal
     const startDelayMs = HAND_TRANSITION_TIMINGS.shuffleAnimation;
-    const pulseStart = window.setTimeout(() => {
-      setDealPulse(true);
-    }, startDelayMs);
 
     // Pulse duration: long enough for 2-card fan animation to finish
     const pulseDurationMs =
@@ -624,6 +635,7 @@ const PlayerSeat = memo(function PlayerSeat({
       CARD_DEAL_TIMINGS.perHoleCard * 2 +
       200;
 
+    const pulseStart = window.setTimeout(() => setDealPulse(true), startDelayMs);
     const pulseEnd = window.setTimeout(() => {
       setDealPulse(false);
       setDealCompleted(true);
@@ -633,7 +645,7 @@ const PlayerSeat = memo(function PlayerSeat({
       window.clearTimeout(pulseStart);
       window.clearTimeout(pulseEnd);
     };
-  }, [stableHandId]);
+  }, [gamePhase, visualHandId]);
 
   // Drive opponent mini-cards:
   // - animate only during dealPulse (once per hand)
@@ -900,7 +912,7 @@ const PlayerSeat = memo(function PlayerSeat({
                 winningCardIndices={playerWinningIndices}
                 size="xs"
                 position={position}
-                handId={stableHandId}
+                handId={visualHandId}
                 // POKERSTARS: Opponents start AFTER hero (200ms offset + 120ms per seat)
                 dealDelay={200 + Math.max(0, dealOrder - 1) * 120}
                 // POKERSTARS: Cards animate on preflop, stay static after, clear between hands
@@ -985,8 +997,8 @@ const PlayerSeat = memo(function PlayerSeat({
           cards={heroCards} 
           gamePhase={gamePhase} 
           communityCards={communityCards}
-          // Use stabilized hand id so transient server snapshots don't retrigger hero deal logic
-          handId={stableHandId}
+          // Use a frozen visual hand key so transient server snapshots don't retrigger hero deal logic
+          handId={visualHandId}
           isWinner={(player as any).isWinner}
           winningCardIndices={(player as any).winningCardIndices || []}
           isFolded={player.isFolded}

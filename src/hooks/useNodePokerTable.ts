@@ -527,10 +527,17 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // ------------------------------
           if (prev) {
             const prevBoardCount = prev.communityCards?.length ?? 0;
+            // IMPORTANT:
+            // We should not treat *any* non-waiting phase as an "active hand" signal.
+            // Otherwise, a late "waiting" snapshot between hands can be ignored forever
+            // (client gets stuck in preflop), which makes opponent mini-cards stay visible
+            // and causes deal animations to behave incorrectly.
+            //
+            // Active hand signals must be *data-driven* (pot/board/turn), not phase-driven.
             const prevLooksActive =
               Boolean(prev.handId) &&
               (
-                prev.phase !== 'waiting' ||
+                prev.phase === 'showdown' ||
                 prevBoardCount > 0 ||
                 (prev.pot ?? 0) > 0 ||
                 (prev.currentBet ?? 0) > 0 ||
