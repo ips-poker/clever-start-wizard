@@ -172,7 +172,9 @@ export function FullscreenPokerTableWrapper({
     // Burn card animation
     activeBurnCard,
     // Tournament table movement
-    playerMovedToTable, clearPlayerMovedToTable
+    playerMovedToTable, clearPlayerMovedToTable,
+    // Table settings
+    updateTableSettings
   } = pokerTable;
 
   const effectiveSmallBlind = (isTournament ? dbBlinds?.sb : undefined) ?? tableState?.smallBlindAmount ?? 10;
@@ -702,8 +704,26 @@ export function FullscreenPokerTableWrapper({
 
   const handleSettingsSave = useCallback((settings: any) => {
     console.log('Saving settings:', settings);
+    
+    // Send to server via WebSocket
+    const success = updateTableSettings({
+      actionTimeSeconds: settings.actionTimeSeconds,
+      timeBankSeconds: settings.timeBankSeconds,
+      smallBlind: settings.smallBlind,
+      bigBlind: settings.bigBlind,
+      ante: settings.ante,
+    });
+    
+    if (success) {
+      toast.success('Настройки сохранены', {
+        description: 'Изменения применятся со следующей раздачи'
+      });
+    } else {
+      toast.error('Не удалось сохранить настройки');
+    }
+    
     setShowSettings(false);
-  }, []);
+  }, [updateTableSettings]);
   
   // Handle seat rotation change
   const handleRotationChange = useCallback((rotation: number) => {
