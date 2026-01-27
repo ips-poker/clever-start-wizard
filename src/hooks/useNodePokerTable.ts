@@ -213,6 +213,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     timeoutSeconds: number;
   } | null>(null);
   
+  // PRO FEATURES: Run It Twice boards (when approved)
+  const [runItTwiceBoards, setRunItTwiceBoards] = useState<{
+    currentCommunity: string[];
+    board1: string[];
+    board2: string[];
+  } | null>(null);
+  
   // PRO FEATURES: Straddle state
   const [straddlePosted, setStraddlePosted] = useState<{
     playerId: string;
@@ -1749,6 +1756,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           setRunItTwiceProposal(null);
           break;
         
+        case 'run_it_twice_boards':
+          log('🔄 Run It Twice boards dealt:', data);
+          setRunItTwiceBoards(data as any);
+          // Clear after hand completes
+          setTimeout(() => setRunItTwiceBoards(null), 10000);
+          break;
+        
         // PRO FEATURES: Straddle
         case 'straddle_posted':
           log('⚡ Straddle posted:', data);
@@ -2755,6 +2769,33 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     };
   }, [tableId, playerId]);
 
+  // PRO FEATURES: Action callbacks
+  const voteBombPot = useCallback((accept: boolean) => {
+    return sendMessage({
+      type: 'bomb_pot_vote',
+      tableId,
+      playerId,
+      accept
+    });
+  }, [sendMessage, tableId, playerId]);
+
+  const voteRunItTwice = useCallback((accept: boolean) => {
+    return sendMessage({
+      type: 'run_it_twice_vote',
+      tableId,
+      playerId,
+      accept
+    });
+  }, [sendMessage, tableId, playerId]);
+
+  const requestStraddle = useCallback(() => {
+    return sendMessage({
+      type: 'straddle_request',
+      tableId,
+      playerId
+    });
+  }, [sendMessage, tableId, playerId]);
+
   return {
     // Connection
     connectionStatus,
@@ -2783,6 +2824,15 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     winnerAnnouncement,
     clearWinnerAnnouncement: () => setWinnerAnnouncement(null),
     activeBurnCard, // POKERSTARS-STYLE: Burn card animation state
+
+    // PRO FEATURES: Bomb Pot, Straddle, Run It Twice
+    bombPotProposal,
+    runItTwiceProposal,
+    runItTwiceBoards,
+    straddlePosted,
+    voteBombPot,
+    voteRunItTwice,
+    requestStraddle,
 
     // Computed
     isMyTurn,
