@@ -747,6 +747,34 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             const stateData = (data.state as Record<string, unknown> | undefined);
             const incomingHandId = (stateData?.handId || (stateData as any)?.hand_id || (stateData as any)?.currentHandId || (stateData as any)?.current_hand_id) as string | undefined;
 
+            // EXTRA HARD GUARD:
+            // Some servers can incorrectly emit `hand_started` mid-hand (e.g. after an action)
+            // with missing/unchanged handId. If we honor it, we reset phase to 'waiting'
+            // which makes opponent mini-cards replay their fan animation.
+            const cur = tableStateRef.current;
+            const curBoardCount = cur?.communityCards?.length ?? 0;
+            const curLooksActive =
+              Boolean(cur?.handId) &&
+              (
+                cur?.phase === 'showdown' ||
+                curBoardCount > 0 ||
+                (cur?.pot ?? 0) > 0 ||
+                (cur?.currentBet ?? 0) > 0 ||
+                (cur?.currentPlayerSeat !== null && cur?.currentPlayerSeat !== undefined)
+              );
+
+            // If the event carries the same handId as the currently active hand -> always ignore.
+            if (incomingHandId && cur?.handId && incomingHandId === cur.handId) {
+              log('🧯 Duplicate hand_started ignored (matches current active handId):', incomingHandId);
+              break;
+            }
+
+            // If handId is missing BUT we already look mid-hand -> ignore.
+            if (!incomingHandId && curLooksActive) {
+              log('🧯 Duplicate/invalid hand_started ignored (no handId during active hand)');
+              break;
+            }
+
             // If we already processed this exact hand id, ignore.
             if (incomingHandId && incomingHandId === lastHandStartedHandIdRef.current) {
               log('🧯 Duplicate hand_started ignored (same handId):', incomingHandId);
