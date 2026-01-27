@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -45,6 +45,32 @@ export interface TableSettings {
   autoStartEnabled: boolean;
   autoStartDelaySeconds: number;
 }
+
+const DEFAULT_TABLE_SETTINGS: Partial<TableSettings> = {
+  smallBlind: 10,
+  bigBlind: 20,
+  ante: 0,
+  actionTimeSeconds: 15,
+  timeBankSeconds: 30,
+  straddleEnabled: false,
+  mississippiStraddleEnabled: false,
+  maxStraddleCount: 1,
+  buttonAnteEnabled: false,
+  buttonAnteAmount: 0,
+  bigBlindAnteEnabled: false,
+  bigBlindAnteAmount: 0,
+  bombPotEnabled: false,
+  bombPotMultiplier: 2,
+  bombPotDoubleBoard: false,
+  chatEnabled: true,
+  chatSlowMode: false,
+  chatSlowModeInterval: 5,
+  runItTwiceEnabled: false,
+  rakePercent: 0,
+  rakeCap: 0,
+  autoStartEnabled: true,
+  autoStartDelaySeconds: 3,
+};
 
 interface TableSettingsPanelProps {
   settings: Partial<TableSettings>;
@@ -135,36 +161,62 @@ export function TableSettingsPanel({
   isHost = true 
 }: TableSettingsPanelProps) {
   const [settings, setSettings] = useState<Partial<TableSettings>>({
-    smallBlind: 10,
-    bigBlind: 20,
-    ante: 0,
-    actionTimeSeconds: 15,
-    timeBankSeconds: 30,
-    straddleEnabled: false,
-    mississippiStraddleEnabled: false,
-    maxStraddleCount: 1,
-    buttonAnteEnabled: false,
-    buttonAnteAmount: 0,
-    bigBlindAnteEnabled: false,
-    bigBlindAnteAmount: 0,
-    bombPotEnabled: false,
-    bombPotMultiplier: 2,
-    bombPotDoubleBoard: false,
-    chatEnabled: true,
-    chatSlowMode: false,
-    chatSlowModeInterval: 5,
-    runItTwiceEnabled: false,
-    rakePercent: 0,
-    rakeCap: 0,
-    autoStartEnabled: true,
-    autoStartDelaySeconds: 3,
+    ...DEFAULT_TABLE_SETTINGS,
     ...initialSettings
   });
+
+  // If user starts editing, we should not overwrite their values mid-edit.
+  // But after a reload, the WS state may arrive a moment later; we want to sync once.
+  const [isDirty, setIsDirty] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    // opening the panel => allow a fresh sync from props
+    setIsDirty(false);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (isDirty) return;
+
+    setSettings({
+      ...DEFAULT_TABLE_SETTINGS,
+      ...initialSettings,
+    });
+    // Depend on individual fields to avoid re-sync on every new object identity
+  }, [
+    isOpen,
+    isDirty,
+    initialSettings.smallBlind,
+    initialSettings.bigBlind,
+    initialSettings.ante,
+    initialSettings.actionTimeSeconds,
+    initialSettings.timeBankSeconds,
+    initialSettings.straddleEnabled,
+    initialSettings.mississippiStraddleEnabled,
+    initialSettings.maxStraddleCount,
+    initialSettings.buttonAnteEnabled,
+    initialSettings.buttonAnteAmount,
+    initialSettings.bigBlindAnteEnabled,
+    initialSettings.bigBlindAnteAmount,
+    initialSettings.bombPotEnabled,
+    initialSettings.bombPotMultiplier,
+    initialSettings.bombPotDoubleBoard,
+    initialSettings.chatEnabled,
+    initialSettings.chatSlowMode,
+    initialSettings.chatSlowModeInterval,
+    initialSettings.runItTwiceEnabled,
+    initialSettings.rakePercent,
+    initialSettings.rakeCap,
+    initialSettings.autoStartEnabled,
+    initialSettings.autoStartDelaySeconds,
+  ]);
 
   const updateSetting = useCallback(<K extends keyof TableSettings>(
     key: K, 
     value: TableSettings[K]
   ) => {
+    setIsDirty(true);
     setSettings(prev => ({ ...prev, [key]: value }));
   }, []);
 
