@@ -808,6 +808,7 @@ export function FullscreenPokerTableWrapper({
       // Bomb Pot
       bombPotEnabled: settings.bombPotEnabled,
       bombPotMultiplier: settings.bombPotMultiplier,
+      bombPotInterval: settings.bombPotInterval,
       bombPotDoubleBoard: settings.bombPotDoubleBoard,
       // Chat
       chatEnabled: settings.chatEnabled,
