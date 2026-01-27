@@ -527,6 +527,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // ------------------------------
           if (prev) {
             const prevBoardCount = prev.communityCards?.length ?? 0;
+            const prevHasAnyBets = (prev.players || []).some((p) => (p.betAmount ?? 0) > 0);
+            const newHasAnyBets = (newState.players || []).some((p) => (p.betAmount ?? 0) > 0);
             // IMPORTANT:
             // We should not treat *any* non-waiting phase as an "active hand" signal.
             // Otherwise, a late "waiting" snapshot between hands can be ignored forever
@@ -541,7 +543,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 prevBoardCount > 0 ||
                 (prev.pot ?? 0) > 0 ||
                 (prev.currentBet ?? 0) > 0 ||
-                (prev.currentPlayerSeat !== null && prev.currentPlayerSeat !== undefined)
+                (prev.currentPlayerSeat !== null && prev.currentPlayerSeat !== undefined) ||
+                // Extra guard: during preflop, server snapshots can temporarily omit pot/currentBet/turn,
+                // but SB/BB bets are still present. Treat that as active ONLY if we weren't already waiting.
+                (prev.phase !== 'waiting' && prevHasAnyBets)
               );
 
             // 1) Preserve handId during an active hand if the snapshot omitted it.
@@ -560,7 +565,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                   boardCount > 0 ||
                   (newState.pot ?? 0) > 0 ||
                   (newState.currentBet ?? 0) > 0 ||
-                  (newState.currentPlayerSeat !== null && newState.currentPlayerSeat !== undefined)
+                  (newState.currentPlayerSeat !== null && newState.currentPlayerSeat !== undefined) ||
+                  // Same as above: if we see bets, we are almost certainly mid-hand.
+                  // This prevents a 1-tick waiting flicker right after the first action.
+                  newHasAnyBets
                 );
 
               if (hasActiveSignals) {
