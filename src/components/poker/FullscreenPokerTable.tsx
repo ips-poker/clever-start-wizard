@@ -578,6 +578,12 @@ const PlayerSeat = memo(function PlayerSeat({
   const [dealPulse, setDealPulse] = useState(false);
   const [dealCompleted, setDealCompleted] = useState(false);
   const dealStartedForHandRef = useRef<string | undefined>(undefined);
+  // Bind dealPulse to a specific visualHandId to avoid 1-frame carry-over flashes
+  // when React state from the previous hand survives for a render.
+  const dealPulseForHandRef = useRef<string | undefined>(undefined);
+  // Once opponent cards mount for a hand, keep them mounted until `waiting`
+  // to prevent remount-induced re-animations after actions/state flicker.
+  const opponentCardsMountedForHandRef = useRef<string | undefined>(undefined);
   // If React state briefly carries over (1 render) between hands, we must not
   // let opponents become visible until *this* hand's deal pulse actually ends.
   const dealCompletedForHandRef = useRef<string | undefined>(undefined);
@@ -605,6 +611,9 @@ const PlayerSeat = memo(function PlayerSeat({
   if (gamePhase === 'waiting') {
     visualHandIdRef.current = undefined;
     visualHandServerIdRef.current = undefined;
+    // Also clear mount/animation bindings between hands.
+    opponentCardsMountedForHandRef.current = undefined;
+    dealPulseForHandRef.current = undefined;
   } else if (!visualHandIdRef.current) {
     if (handId) {
       visualHandIdRef.current = handId;
@@ -621,6 +630,8 @@ const PlayerSeat = memo(function PlayerSeat({
       visualHandIdRef.current = handId;
       visualHandServerIdRef.current = handId;
       dealStartedForHandRef.current = undefined;
+      opponentCardsMountedForHandRef.current = undefined;
+      dealPulseForHandRef.current = undefined;
       forceHideOppCardsThisRender = true;
     }
 
@@ -636,6 +647,8 @@ const PlayerSeat = memo(function PlayerSeat({
         visualHandServerIdRef.current = handId;
         if (looksLikeStaleCarryOver) {
           dealStartedForHandRef.current = undefined;
+          opponentCardsMountedForHandRef.current = undefined;
+          dealPulseForHandRef.current = undefined;
           forceHideOppCardsThisRender = true;
         }
       }
@@ -657,6 +670,8 @@ const PlayerSeat = memo(function PlayerSeat({
     if (gamePhase === 'waiting') {
       dealStartedForHandRef.current = undefined;
       dealCompletedForHandRef.current = undefined;
+      dealPulseForHandRef.current = undefined;
+      opponentCardsMountedForHandRef.current = undefined;
       setDealPulse(false);
       setDealCompleted(false);
       return;
@@ -670,6 +685,8 @@ const PlayerSeat = memo(function PlayerSeat({
 
     // Reset for new hand
     dealCompletedForHandRef.current = undefined;
+    dealPulseForHandRef.current = undefined;
+    opponentCardsMountedForHandRef.current = undefined;
     setDealPulse(false);
     setDealCompleted(false);
 
@@ -680,11 +697,14 @@ const PlayerSeat = memo(function PlayerSeat({
     const pulseDurationMs =
       CARD_DEAL_TIMINGS.cardDealDuration +
       CARD_DEAL_TIMINGS.perHoleCard * 2 +
-      200;
+      150;
 
     const handKeyAtSchedule = visualHandId;
 
-    const pulseStart = window.setTimeout(() => setDealPulse(true), startDelayMs);
+    const pulseStart = window.setTimeout(() => {
+      dealPulseForHandRef.current = handKeyAtSchedule;
+      setDealPulse(true);
+    }, startDelayMs);
     const pulseEnd = window.setTimeout(() => {
       setDealPulse(false);
       setDealCompleted(true);
@@ -700,7 +720,9 @@ const PlayerSeat = memo(function PlayerSeat({
   // Drive opponent mini-cards:
   // - animate only during dealPulse (once per hand)
   // - remain visible after deal (even in preflop) but never animate again
-  const effectiveDealPulse = forceHideOppCardsThisRender ? false : dealPulse;
+  const isDealPulseForThisHand =
+    !!visualHandId && dealPulseForHandRef.current === visualHandId && dealPulse;
+  const effectiveDealPulse = forceHideOppCardsThisRender ? false : isDealPulseForThisHand;
   const effectiveDealCompleted = forceHideOppCardsThisRender ? false : dealCompleted;
   const shouldAnimateCompactDeal = effectiveDealPulse;
   const isDealCompletedForThisHand =
@@ -709,10 +731,24 @@ const PlayerSeat = memo(function PlayerSeat({
     dealCompletedForHandRef.current === visualHandId;
   const shouldShowAfterDeal = isDealCompletedForThisHand && gamePhase !== 'waiting';
   
-  // NEW: hard guard for the parent — if neither pulse nor completed, never mount children
-  const shouldRenderOpponentCards =
-    !forceHideOppCardsThisRender &&
-    (effectiveDealPulse || isDealCompletedForThisHand || gamePhase === 'showdown');
+  // Mount-latch: start mounting only at shuffle/deal moment, then keep mounted for this hand.
+  // This removes the pre-shuffle flash (no early mount) AND prevents re-animations after actions
+  // (no remount within a hand).
+  const canStartMountOpponentCards =
+    effectiveDealPulse || isDealCompletedForThisHand || gamePhase === 'showdown';
+
+  let opponentCardsMountedThisHand =
+    !!visualHandId && opponentCardsMountedForHandRef.current === visualHandId;
+
+  if (gamePhase === 'waiting' || !visualHandId) {
+    opponentCardsMountedForHandRef.current = undefined;
+    opponentCardsMountedThisHand = false;
+  } else if (!opponentCardsMountedThisHand && canStartMountOpponentCards) {
+    opponentCardsMountedForHandRef.current = visualHandId;
+    opponentCardsMountedThisHand = true;
+  }
+
+  const shouldRenderOpponentCards = !forceHideOppCardsThisRender && opponentCardsMountedThisHand;
   
   // Format stack based on display preference
   const formatStack = (stack: number): string => {
@@ -975,8 +1011,8 @@ const PlayerSeat = memo(function PlayerSeat({
                 size="xs"
                 position={position}
                 handId={visualHandId}
-                // POKERSTARS: Opponents start AFTER hero offset + 60ms per seat (faster!)
-                dealDelay={100 + Math.max(0, dealOrder - 1) * 60}
+                // POKERSTARS: Opponents start AFTER hero offset + tighter per-seat cadence
+                dealDelay={80 + Math.max(0, dealOrder - 1) * 45}
                 // POKERSTARS: Cards animate on preflop, stay static after, clear between hands
                 animateDeal={shouldAnimateCompactDeal}
                 showAfterDeal={shouldShowAfterDeal}
