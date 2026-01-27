@@ -43,6 +43,7 @@ import { getHandStrengthName } from '@/utils/handEvaluator';
 // POKERSTARS-STYLE SIT-OUT INDICATORS
 import { SitOutIndicator, SitOutOverlay } from './SitOutIndicator';
 import { WaitForBBIndicator } from './WaitForBBIndicator';
+import { CARD_DEAL_TIMINGS, HAND_TRANSITION_TIMINGS } from '@/config/pokerTimings';
 
 // ============= SUIT CONFIGURATION =============
 const SUITS = {
@@ -581,19 +582,56 @@ const PlayerSeat = memo(function PlayerSeat({
   if (handId && handId !== stableHandIdRef.current) {
     stableHandIdRef.current = handId;
   }
-  // Clear on waiting phase with no handId (between hands)
-  if (gamePhase === 'waiting' && !handId) {
-    stableHandIdRef.current = undefined;
-  }
   const stableHandId = stableHandIdRef.current;
 
-  // POKERSTARS-STYLE: Animation signals
-  // animateDeal: triggers initial fan animation (only during preflop)
-  // showAfterDeal: keeps cards visible after animation (throughout the hand)
-  const shouldAnimateCompactDeal = gamePhase === 'preflop' && !!stableHandId;
-  
-  // Cards stay visible from preflop through showdown, hidden only in waiting
-  const shouldShowAfterDeal = gamePhase !== 'waiting' && !!stableHandId;
+  // -------------------------------------------------
+  // POKERSTARS-STYLE: One-shot deal pulse (per hand)
+  // -------------------------------------------------
+  // Problem:
+  // - If we tie animateDeal to `gamePhase === 'preflop'`, it can retrigger after actions
+  //   when transient server snapshots flicker phase/handId.
+  // Fix:
+  // - Generate a short "deal pulse" only once per handId.
+  // - Keep cards hidden until the pulse starts (shuffle/deal moment).
+
+  const [dealPulse, setDealPulse] = useState(false);
+  const [dealCompleted, setDealCompleted] = useState(false);
+
+  useEffect(() => {
+    if (!stableHandId) return;
+
+    // Reset for new hand
+    setDealPulse(false);
+    setDealCompleted(false);
+
+    // Align with shuffle -> deal
+    const startDelayMs = HAND_TRANSITION_TIMINGS.shuffleAnimation;
+    const pulseStart = window.setTimeout(() => {
+      setDealPulse(true);
+    }, startDelayMs);
+
+    // Pulse duration: long enough for 2-card fan animation to finish
+    const pulseDurationMs =
+      CARD_DEAL_TIMINGS.cardDealDuration +
+      CARD_DEAL_TIMINGS.perHoleCard * 2 +
+      200;
+
+    const pulseEnd = window.setTimeout(() => {
+      setDealPulse(false);
+      setDealCompleted(true);
+    }, startDelayMs + pulseDurationMs);
+
+    return () => {
+      window.clearTimeout(pulseStart);
+      window.clearTimeout(pulseEnd);
+    };
+  }, [stableHandId]);
+
+  // Drive opponent mini-cards:
+  // - animate only during dealPulse (once per hand)
+  // - remain visible after deal (even in preflop) but never animate again
+  const shouldAnimateCompactDeal = dealPulse;
+  const shouldShowAfterDeal = dealCompleted && gamePhase !== 'waiting';
   
   // Format stack based on display preference
   const formatStack = (stack: number): string => {
