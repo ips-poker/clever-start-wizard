@@ -1680,21 +1680,46 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           break;
 
         case 'settings_updated':
-          // Confirmation that our settings update was saved
+          // Confirmation that our settings update was saved - also update local state
           log('✅ Settings updated:', data.settings);
+          // CRITICAL: Host also needs to update their local state
+          setTableState((prev) => {
+            if (!prev) return prev;
+            const settings = data.settings as Record<string, unknown> | undefined;
+            if (!settings) return prev;
+            
+            const newActionTime = (settings.actionTimeSeconds as number) ?? prev.actionTimer;
+            
+            return {
+              ...prev,
+              actionTimer: newActionTime,
+              actionTimeTotal: newActionTime,
+              timeBankSeconds: (settings.timeBankSeconds as number) ?? prev.timeBankSeconds,
+              smallBlindAmount: (settings.smallBlind as number) ?? prev.smallBlindAmount,
+              bigBlindAmount: (settings.bigBlind as number) ?? prev.bigBlindAmount,
+              anteAmount: (settings.ante as number) ?? prev.anteAmount,
+            };
+          });
           break;
 
         case 'table_settings_changed':
           // Another player (host) changed table settings
           log('⚙️ Table settings changed:', data.settings);
           // Update local tableState with new settings
+          // CRITICAL: Must update BOTH actionTimer AND actionTimeTotal for timer sync
           setTableState((prev) => {
             if (!prev) return prev;
             const settings = data.settings as Record<string, unknown> | undefined;
             if (!settings) return prev;
+            
+            const newActionTime = (settings.actionTimeSeconds as number) ?? prev.actionTimer;
+            
             return {
               ...prev,
-              actionTimer: (settings.actionTimeSeconds as number) ?? prev.actionTimer,
+              // Update all timing-related fields for immediate sync
+              actionTimer: newActionTime,
+              actionTimeTotal: newActionTime, // CRITICAL: This is used by timer UI
+              timeBankSeconds: (settings.timeBankSeconds as number) ?? prev.timeBankSeconds,
               smallBlindAmount: (settings.smallBlind as number) ?? prev.smallBlindAmount,
               bigBlindAmount: (settings.bigBlind as number) ?? prev.bigBlindAmount,
               anteAmount: (settings.ante as number) ?? prev.anteAmount,
