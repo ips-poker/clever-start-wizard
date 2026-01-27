@@ -529,9 +529,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // POKERSTARS-STYLE STABILITY LAYER
           // ------------------------------
           if (prev) {
+            const RECENT_HAND_START_GUARD_MS = 8000;
+            const now = Date.now();
             const prevBoardCount = prev.communityCards?.length ?? 0;
             const prevHasAnyBets = (prev.players || []).some((p) => (p.betAmount ?? 0) > 0);
             const newHasAnyBets = (newState.players || []).some((p) => (p.betAmount ?? 0) > 0);
+            const isWithinRecentHandStart = now - lastHandStartedAtRef.current < RECENT_HAND_START_GUARD_MS;
             // IMPORTANT:
             // We should not treat *any* non-waiting phase as an "active hand" signal.
             // Otherwise, a late "waiting" snapshot between hands can be ignored forever
@@ -549,7 +552,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 (prev.currentPlayerSeat !== null && prev.currentPlayerSeat !== undefined) ||
                 // Extra guard: during preflop, server snapshots can temporarily omit pot/currentBet/turn,
                 // but SB/BB bets are still present. Treat that as active ONLY if we weren't already waiting.
-                (prev.phase !== 'waiting' && prevHasAnyBets)
+                (prev.phase !== 'waiting' && prevHasAnyBets) ||
+                // Temporal guard: right after hand start, some servers emit a "blank" tick (no bets/pot/turn)
+                // during the first action after BB. Still treat it as active so we don't drop handId/phase.
+                (prev.phase !== 'waiting' && prevBoardCount === 0 && isWithinRecentHandStart)
               );
 
             // 1) Preserve handId during an active hand if the snapshot omitted it.
@@ -560,7 +566,6 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             // 2) If server claims 'waiting' but the snapshot likely represents an active hand,
             //    infer the phase from the board like PokerStars clients do.
             if (newState.phase === 'waiting') {
-              const now = Date.now();
               const boardCount = newState.communityCards?.length ?? 0;
               const effectiveHandId = newState.handId || prev.handId;
               const sameHandAsPrev = Boolean(effectiveHandId && prev.handId && effectiveHandId === prev.handId);
@@ -569,7 +574,6 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               // right after the first action (especially after BB). That resets the UI and can
               // replay opponent mini-card fan animation. If this happens shortly after hand start,
               // keep the previous phase.
-              const RECENT_HAND_START_GUARD_MS = 8000;
               const isRecentSameHandWaitingFlicker =
                 sameHandAsPrev &&
                 prev.phase !== 'waiting' &&
