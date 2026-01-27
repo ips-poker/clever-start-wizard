@@ -5607,7 +5607,6 @@ export class PokerTable {
   
   /**
    * Start bomb pot voting - all players have 10 seconds to accept or decline
-   * OPTIMIZED: Only human players trigger voting. If all bots, skip voting entirely.
    */
   private startBombPotVoting(): void {
     const activePlayers = Array.from(this.players.values())
@@ -5622,22 +5621,6 @@ export class PokerTable {
     const eligiblePlayers = activePlayers.filter(p => p.stack >= bombPotAmount);
     if (eligiblePlayers.length < 2) return;
     
-    // OPTIMIZATION: Count human players (with userId)
-    // If no human players eligible, skip voting entirely
-    const humanPlayers = eligiblePlayers.filter(p => p.userId);
-    
-    if (humanPlayers.length === 0) {
-      // All bots - skip bomb pot voting, just continue with normal hand
-      logger.info('BOMB POT: Skipping voting - no human players', {
-        tableId: this.id,
-        eligiblePlayers: eligiblePlayers.length,
-        humanPlayers: 0
-      });
-      // Reset counter so it tries again in N hands
-      this.handsSinceLastBombPot = 0;
-      return;
-    }
-    
     this.bombPotVotingActive = true;
     this.bombPotVotes.clear();
     
@@ -5645,8 +5628,7 @@ export class PokerTable {
       tableId: this.id,
       multiplier: bombPotMultiplier,
       amount: bombPotAmount,
-      eligiblePlayers: eligiblePlayers.length,
-      humanPlayers: humanPlayers.length
+      eligiblePlayers: eligiblePlayers.length
     });
     
     this.emit('bomb_pot_proposal', {
