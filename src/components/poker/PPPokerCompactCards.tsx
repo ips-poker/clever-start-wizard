@@ -363,6 +363,11 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   
   // 1) Stable handId - persists even if server briefly omits it
   const stableHandIdRef = useRef<string | undefined>(undefined);
+
+  // 1b) Once we start dealing for a hand, we MUST NOT swap IDs mid-hand
+  // (e.g. local -> server handId arriving late), otherwise refs reset and
+  // the deal animation can replay after an action/state_update.
+  const dealLockedHandIdRef = useRef<string | undefined>(undefined);
   
   // 2) Track which handId has ALREADY been animated - NEVER re-animate
   const animatedHandIdRef = useRef<string | undefined>(undefined);
@@ -373,11 +378,26 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   // STEP 1: Detect new hand FIRST (before updating stableHandIdRef)
   const incomingHandId = handId;
   const previousStableHandId = stableHandIdRef.current;
+
+  // If we're effectively hidden OR we got a bogus early `showAfterDeal` (flash case),
+  // hard-reset refs so the next hand always starts clean.
+  const isTrulyHidden = !animateDeal && !showAfterDeal && !isShowdown;
+  const isBogusAfterDeal = showAfterDeal && !animateDeal && !isShowdown && !dealLockedHandIdRef.current;
+  if (isTrulyHidden || isBogusAfterDeal) {
+    stableHandIdRef.current = undefined;
+    animatedHandIdRef.current = undefined;
+    dealLockedHandIdRef.current = undefined;
+    prevHandIdRef.current = undefined;
+  }
   
-  // New hand detection: handId changed AND is a new valid ID
-  const isNewHand = incomingHandId && 
-                    previousStableHandId && 
-                    incomingHandId !== previousStableHandId;
+  // New hand detection: only when NOT locked (pre-deal). If we're locked,
+  // treat incoming handId changes as late server hydration, not a new hand.
+  const isLocked = Boolean(dealLockedHandIdRef.current);
+  const isNewHand =
+    !isLocked &&
+    incomingHandId &&
+    previousStableHandId &&
+    incomingHandId !== previousStableHandId;
   
   // STEP 2: Reset refs on new hand
   if (isNewHand) {
@@ -385,19 +405,26 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   }
   
   // STEP 3: Update stable handId (persist if server flickers to undefined)
+  // BUT once deal started, freeze it to prevent re-animations.
   if (incomingHandId) {
-    stableHandIdRef.current = incomingHandId;
+    const canAdoptIncomingId = !stableHandIdRef.current || !dealLockedHandIdRef.current;
+    if (canAdoptIncomingId) {
+      stableHandIdRef.current = incomingHandId;
+    }
   }
   const stableHandId = stableHandIdRef.current;
   
   // Track for next render
   prevHandIdRef.current = stableHandId;
   
-  // STEP 4: Determine visibility (NO sticky visibility)
-  // Sticky-visibility caused the bug:
-  // when a new hand starts but the new handId hasn't arrived yet,
-  // the component can keep showing the previous hand's mini-cards.
-  const wantVisible = animateDeal || showAfterDeal || isShowdown;
+  // STEP 4: Determine visibility
+  // IMPORTANT: `showAfterDeal` is allowed ONLY after we have seen a real deal start
+  // for this hand. This prevents the "flash" where cards appear statically before
+  // the actual shuffle/deal animation begins.
+  const hasSeenDealForThisHand =
+    !!stableHandId && dealLockedHandIdRef.current === stableHandId;
+
+  const wantVisible = animateDeal || (showAfterDeal && hasSeenDealForThisHand) || isShowdown;
   const shouldShow = wantVisible;
   
   // STEP 5: ANIMATION GUARD - THE FIX
@@ -411,6 +438,11 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
                         !!stableHandId && 
                         !alreadyAnimatedThisHand && 
                         !isShowdown;
+
+  // Lock this hand as soon as deal starts (even if animation is suppressed later).
+  if (animateDeal && stableHandId && !dealLockedHandIdRef.current) {
+    dealLockedHandIdRef.current = stableHandId;
+  }
   
   // STEP 6: Mark as animated IMMEDIATELY (sync, before render)
   // This is the KEY fix - we mark BEFORE MiniCard renders with animate=true
