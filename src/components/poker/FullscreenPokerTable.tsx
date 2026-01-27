@@ -589,6 +589,8 @@ const PlayerSeat = memo(function PlayerSeat({
   // If React state briefly carries over (1 render) between hands, we must not
   // let opponents become visible until *this* hand's deal pulse actually ends.
   const dealCompletedForHandRef = useRef<string | undefined>(undefined);
+  // Once we send the first animateDeal=true pulse, NEVER do it again this hand.
+  const animateSentForHandRef = useRef<string | undefined>(undefined);
 
   const clearDealPulseTimers = () => {
     if (dealPulseStartTimeoutRef.current !== undefined) {
@@ -628,6 +630,7 @@ const PlayerSeat = memo(function PlayerSeat({
     // Also clear mount/animation bindings between hands.
     opponentCardsMountedForHandRef.current = undefined;
     dealPulseForHandRef.current = undefined;
+    animateSentForHandRef.current = undefined;
   } else if (!visualHandIdRef.current) {
     if (handId) {
       visualHandIdRef.current = handId;
@@ -688,6 +691,7 @@ const PlayerSeat = memo(function PlayerSeat({
       dealStartedForHandRef.current = undefined;
       dealCompletedForHandRef.current = undefined;
       dealPulseForHandRef.current = undefined;
+      animateSentForHandRef.current = undefined;
       opponentCardsMountedForHandRef.current = undefined;
       setDealPulse(false);
       setDealCompleted(false);
@@ -704,6 +708,7 @@ const PlayerSeat = memo(function PlayerSeat({
     clearDealPulseTimers();
     dealCompletedForHandRef.current = undefined;
     dealPulseForHandRef.current = undefined;
+    animateSentForHandRef.current = undefined;
     opponentCardsMountedForHandRef.current = undefined;
     setDealPulse(false);
     setDealCompleted(false);
@@ -742,7 +747,15 @@ const PlayerSeat = memo(function PlayerSeat({
   // - remain visible after deal (even in preflop) but never animate again
   const isDealPulseForThisHand =
     !!visualHandId && dealPulseForHandRef.current === visualHandId && dealPulse;
-  const effectiveDealPulse = forceHideOppCardsThisRender ? false : isDealPulseForThisHand;
+  // After the FIRST pulse for this hand, we NEVER send animateDeal=true again.
+  const alreadySentAnimation = animateSentForHandRef.current === visualHandId;
+  const effectiveDealPulse = forceHideOppCardsThisRender
+    ? false
+    : isDealPulseForThisHand && !alreadySentAnimation;
+  // Lock immediately (synchronously) to prevent repeat renders from sending another pulse.
+  if (effectiveDealPulse && visualHandId && animateSentForHandRef.current !== visualHandId) {
+    animateSentForHandRef.current = visualHandId;
+  }
   const effectiveDealCompleted = forceHideOppCardsThisRender ? false : dealCompleted;
   const shouldAnimateCompactDeal = effectiveDealPulse;
   const isDealCompletedForThisHand =
