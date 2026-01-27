@@ -93,6 +93,15 @@ export interface HandState {
   playersActedThisRound: Set<string>; // Track who has acted in current betting round
   // POKERSTARS-STYLE HAND HISTORY: Log all actions for export
   actionLog: ActionLogEntry[];
+  
+  // ========== PRO FEATURES ==========
+  // Run It Twice
+  isRunItTwice?: boolean;
+  secondBoard?: string[];
+  
+  // Bomb Pot
+  isBombPot?: boolean;
+  straddleSeat?: number;
 }
 
 type TableEventCallback = (event: TableEvent) => void;
@@ -238,72 +247,72 @@ export class PokerTable {
       this.config.ante = settings.ante;
     }
     
-    // Straddle - store in config for future engine support
+    // Straddle
     if (settings.straddleEnabled !== undefined) {
-      (this.config as Record<string, unknown>).straddleEnabled = settings.straddleEnabled;
+      this.config.straddleEnabled = settings.straddleEnabled;
     }
     if (settings.mississippiStraddleEnabled !== undefined) {
-      (this.config as Record<string, unknown>).mississippiStraddleEnabled = settings.mississippiStraddleEnabled;
+      this.config.mississippiStraddleEnabled = settings.mississippiStraddleEnabled;
     }
     if (settings.maxStraddleCount !== undefined) {
-      (this.config as Record<string, unknown>).maxStraddleCount = settings.maxStraddleCount;
+      this.config.maxStraddleCount = settings.maxStraddleCount;
     }
     
-    // Advanced Ante - store for future engine support
+    // Advanced Ante
     if (settings.buttonAnteEnabled !== undefined) {
-      (this.config as Record<string, unknown>).buttonAnteEnabled = settings.buttonAnteEnabled;
+      this.config.buttonAnteEnabled = settings.buttonAnteEnabled;
     }
     if (settings.buttonAnteAmount !== undefined) {
-      (this.config as Record<string, unknown>).buttonAnteAmount = settings.buttonAnteAmount;
+      this.config.buttonAnteAmount = settings.buttonAnteAmount;
     }
     if (settings.bigBlindAnteEnabled !== undefined) {
-      (this.config as Record<string, unknown>).bigBlindAnteEnabled = settings.bigBlindAnteEnabled;
+      this.config.bigBlindAnteEnabled = settings.bigBlindAnteEnabled;
     }
     if (settings.bigBlindAnteAmount !== undefined) {
-      (this.config as Record<string, unknown>).bigBlindAnteAmount = settings.bigBlindAnteAmount;
+      this.config.bigBlindAnteAmount = settings.bigBlindAnteAmount;
     }
     
-    // Bomb Pot - store for future engine support
+    // Bomb Pot
     if (settings.bombPotEnabled !== undefined) {
-      (this.config as Record<string, unknown>).bombPotEnabled = settings.bombPotEnabled;
+      this.config.bombPotEnabled = settings.bombPotEnabled;
     }
     if (settings.bombPotMultiplier !== undefined) {
-      (this.config as Record<string, unknown>).bombPotMultiplier = settings.bombPotMultiplier;
+      this.config.bombPotMultiplier = settings.bombPotMultiplier;
     }
     if (settings.bombPotDoubleBoard !== undefined) {
-      (this.config as Record<string, unknown>).bombPotDoubleBoard = settings.bombPotDoubleBoard;
+      this.config.bombPotDoubleBoard = settings.bombPotDoubleBoard;
     }
     
-    // Chat settings - store for chat handler
+    // Chat settings
     if (settings.chatEnabled !== undefined) {
-      (this.config as Record<string, unknown>).chatEnabled = settings.chatEnabled;
+      this.config.chatEnabled = settings.chatEnabled;
     }
     if (settings.chatSlowMode !== undefined) {
-      (this.config as Record<string, unknown>).chatSlowMode = settings.chatSlowMode;
+      this.config.chatSlowMode = settings.chatSlowMode;
     }
     if (settings.chatSlowModeInterval !== undefined) {
-      (this.config as Record<string, unknown>).chatSlowModeInterval = settings.chatSlowModeInterval;
+      this.config.chatSlowModeInterval = settings.chatSlowModeInterval;
     }
     
-    // Run it twice - store for future engine support
+    // Run it twice
     if (settings.runItTwiceEnabled !== undefined) {
-      (this.config as Record<string, unknown>).runItTwiceEnabled = settings.runItTwiceEnabled;
+      this.config.runItTwiceEnabled = settings.runItTwiceEnabled;
     }
     
     // Rake settings
     if (settings.rakePercent !== undefined) {
-      (this.config as Record<string, unknown>).rakePercent = settings.rakePercent;
+      this.config.rakePercent = settings.rakePercent;
     }
     if (settings.rakeCap !== undefined) {
-      (this.config as Record<string, unknown>).rakeCap = settings.rakeCap;
+      this.config.rakeCap = settings.rakeCap;
     }
     
     // Auto-start
     if (settings.autoStartEnabled !== undefined) {
-      (this.config as Record<string, unknown>).autoStartEnabled = settings.autoStartEnabled;
+      this.config.autoStartEnabled = settings.autoStartEnabled;
     }
     if (settings.autoStartDelaySeconds !== undefined) {
-      (this.config as Record<string, unknown>).autoStartDelaySeconds = settings.autoStartDelaySeconds;
+      this.config.autoStartDelaySeconds = settings.autoStartDelaySeconds;
     }
     
     logger.info('Table settings updated in memory', {
@@ -3283,7 +3292,7 @@ export class PokerTable {
       
       // BOMB POT: Check if this hand is a bomb pot
       if (this.nextHandIsBombPot) {
-        const bombPotMultiplier = (this.config as Record<string, unknown>).bombPotMultiplier as number || 2;
+        const bombPotMultiplier = this.config.bombPotMultiplier || 2;
         engineOptions.isBombPot = true;
         engineOptions.bombPotAmount = this.config.bigBlind * bombPotMultiplier;
         this.nextHandIsBombPot = false;
@@ -4409,7 +4418,7 @@ export class PokerTable {
     this.checkBombPotProposal();
     
     // Check for next hand after configured auto-start delay (or default professional timing)
-    const autoStartDelay = (this.config as Record<string, unknown>).autoStartDelaySeconds;
+    const autoStartDelay = this.config.autoStartDelaySeconds;
     const delayMs = typeof autoStartDelay === 'number' 
       ? autoStartDelay * 1000 
       : this.timings.betweenHands;
@@ -4758,7 +4767,7 @@ export class PokerTable {
       // Clean up pending leave players
       await this.cleanupPendingLeavePlayers();
       
-      const autoStartDelay1 = (this.config as Record<string, unknown>).autoStartDelaySeconds;
+      const autoStartDelay1 = this.config.autoStartDelaySeconds;
       const delayMs1 = typeof autoStartDelay1 === 'number' ? autoStartDelay1 * 1000 : this.timings.betweenHands;
       setTimeout(() => this.checkStartHand(), delayMs1);
       return;
@@ -4788,7 +4797,7 @@ export class PokerTable {
       
       await this.cleanupPendingLeavePlayers();
       
-      const autoStartDelay2 = (this.config as Record<string, unknown>).autoStartDelaySeconds;
+      const autoStartDelay2 = this.config.autoStartDelaySeconds;
       const delayMs2 = typeof autoStartDelay2 === 'number' ? autoStartDelay2 * 1000 : this.timings.betweenHands;
       setTimeout(() => this.checkStartHand(), delayMs2);
       return;
@@ -4872,7 +4881,7 @@ export class PokerTable {
     this.checkBombPotProposal();
     
     // Check for new hand with configured auto-start delay
-    const autoStartDelay3 = (this.config as Record<string, unknown>).autoStartDelaySeconds;
+    const autoStartDelay3 = this.config.autoStartDelaySeconds;
     const delayMs3 = typeof autoStartDelay3 === 'number' ? autoStartDelay3 * 1000 : this.timings.betweenHands;
     setTimeout(() => {
       this.checkStartHand();
@@ -5554,7 +5563,7 @@ export class PokerTable {
    * Called at the end of each hand
    */
   private checkBombPotProposal(): void {
-    const bombPotEnabled = (this.config as Record<string, unknown>).bombPotEnabled as boolean;
+    const bombPotEnabled = this.config.bombPotEnabled;
     if (!bombPotEnabled) return;
     
     this.handsSinceLastBombPot++;
@@ -5576,7 +5585,7 @@ export class PokerTable {
     
     if (activePlayers.length < 2) return;
     
-    const bombPotMultiplier = (this.config as Record<string, unknown>).bombPotMultiplier as number || 2;
+    const bombPotMultiplier = this.config.bombPotMultiplier || 2;
     const bombPotAmount = this.config.bigBlind * bombPotMultiplier;
     
     // Check all players have enough chips
@@ -5705,7 +5714,7 @@ export class PokerTable {
    * Only UTG can regular straddle, or Button for Mississippi
    */
   public requestStraddle(playerId: string): void {
-    const straddleEnabled = (this.config as Record<string, unknown>).straddleEnabled as boolean;
+    const straddleEnabled = this.config.straddleEnabled;
     if (!straddleEnabled) {
       this.emit('straddle_rejected', { playerId, reason: 'Straddle disabled' });
       return;
@@ -5723,7 +5732,7 @@ export class PokerTable {
       return;
     }
     
-    const mississippiEnabled = (this.config as Record<string, unknown>).mississippiStraddleEnabled as boolean;
+    const mississippiEnabled = this.config.mississippiStraddleEnabled;
     
     // Validate position
     // For Mississippi: must be on button
@@ -5761,7 +5770,7 @@ export class PokerTable {
    * Called when we detect all-in situation and table has RIT enabled
    */
   private startRunItTwiceVoting(allInPlayers: string[]): void {
-    const runItTwiceEnabled = (this.config as Record<string, unknown>).runItTwiceEnabled as boolean;
+    const runItTwiceEnabled = this.config.runItTwiceEnabled;
     if (!runItTwiceEnabled) return;
     if (allInPlayers.length < 2) return;
     
@@ -5902,8 +5911,8 @@ export class PokerTable {
     
     this.currentHand.communityCards = fullBoard1;
     // Store second board for pot splitting
-    (this.currentHand as Record<string, unknown>).secondBoard = fullBoard2;
-    (this.currentHand as Record<string, unknown>).isRunItTwice = true;
+    this.currentHand.secondBoard = fullBoard2;
+    this.currentHand.isRunItTwice = true;
     
     this.allInPlayersForRIT = [];
   }
