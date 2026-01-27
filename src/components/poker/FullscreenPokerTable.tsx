@@ -642,34 +642,15 @@ const PlayerSeat = memo(function PlayerSeat({
   } else if (handId) {
     const hasServerKey = Boolean(visualHandServerIdRef.current);
 
-    // Case A: we already use server id; if it changes, it's usually a new hand.
-    // BUT: some servers can "correct" the handId after atomic_start_hand (DB hand_id)
-    // and that correction can arrive only on the first action's state_update.
-    // If we treat it as a new hand, we replay the opponent mini-card deal animation.
+    // Case A: we already use server id; if it changes => DEFINITELY a new hand.
     if (hasServerKey && handId !== visualHandServerIdRef.current) {
-      const currentVisualKey = visualHandIdRef.current;
-      const dealStartedForThisHand =
-        Boolean(currentVisualKey) && dealStartedForHandRef.current === currentVisualKey;
-
-      const looksLikeSameHandIdCorrection =
-        gamePhase === 'preflop' &&
-        dealStartedForThisHand &&
-        // If we've already started the deal pulse for this hand, we must not restart it.
-        (dealPulseForHandRef.current === currentVisualKey || dealCompletedForHandRef.current === currentVisualKey);
-
-      if (looksLikeSameHandIdCorrection) {
-        // Treat as an ID correction: keep visualHandIdRef stable (animation key),
-        // but remember the new server hand id.
-        visualHandServerIdRef.current = handId;
-      } else {
-        clearDealPulseTimers();
-        visualHandIdRef.current = handId;
-        visualHandServerIdRef.current = handId;
-        dealStartedForHandRef.current = undefined;
-        opponentCardsMountedForHandRef.current = undefined;
-        dealPulseForHandRef.current = undefined;
-        forceHideOppCardsThisRender = true;
-      }
+      clearDealPulseTimers();
+      visualHandIdRef.current = handId;
+      visualHandServerIdRef.current = handId;
+      dealStartedForHandRef.current = undefined;
+      opponentCardsMountedForHandRef.current = undefined;
+      dealPulseForHandRef.current = undefined;
+      forceHideOppCardsThisRender = true;
     }
 
     // Case B: we were on a local key; upgrade to server id ONLY if we haven't started dealing yet.
