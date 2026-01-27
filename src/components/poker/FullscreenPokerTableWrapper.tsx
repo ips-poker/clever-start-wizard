@@ -34,6 +34,7 @@ import { FullHandHistory } from './FullHandHistory';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ThemePageBackground } from './ThemePageBackground';
 import { CASH_ACTION_TIMING, TIME_BANK_CONFIG } from '@/config/pokerTimings';
+import { ProFeaturesOverlay } from './ProFeaturesOverlay';
 
 
 // Syndikate branding
@@ -237,7 +238,14 @@ export function FullscreenPokerTableWrapper({
     // Tournament table movement
     playerMovedToTable, clearPlayerMovedToTable,
     // Table settings
-    updateTableSettings
+    updateTableSettings,
+    // PRO FEATURES: Bomb Pot, Straddle, Run It Twice
+    bombPotProposal,
+    runItTwiceProposal,
+    straddlePosted,
+    voteBombPot,
+    voteRunItTwice,
+    requestStraddle
   } = pokerTable;
 
   const effectiveSmallBlind = (isTournament ? dbBlinds?.sb : undefined) ?? tableState?.smallBlindAmount ?? 10;
@@ -272,6 +280,16 @@ export function FullscreenPokerTableWrapper({
   }, [tableState?.players]);
 
   useEffect(() => { sounds.setEnabled(soundEnabled); }, [soundEnabled]);
+
+  // Show straddle notification when posted
+  useEffect(() => {
+    if (straddlePosted) {
+      const msg = straddlePosted.isMississippi 
+        ? `⚡ ${straddlePosted.playerName} делает Mississippi Straddle: ${straddlePosted.amount}`
+        : `⚡ ${straddlePosted.playerName} делает Straddle: ${straddlePosted.amount}`;
+      toast.info(msg, { duration: 3000 });
+    }
+  }, [straddlePosted]);
 
   // POKERSTARS-STYLE TIMER: Server-authoritative timing
   // Server sends: timeRemaining, actionStartTime, isTimeBankPhase
@@ -1167,7 +1185,23 @@ export function FullscreenPokerTableWrapper({
           />
         )}
         
-        {/* Buy-in Dialog */}
+        {/* PRO FEATURES: Bomb Pot, Straddle, Run It Twice Overlays */}
+        {myPlayer && !isSpectator && (
+          <ProFeaturesOverlay
+            tableId={tableId}
+            playerId={playerId}
+            playerStack={myPlayer.stack}
+            bombPotProposal={bombPotProposal}
+            runItTwiceProposal={runItTwiceProposal}
+            straddleEnabled={fullTableSettings?.straddleEnabled as boolean ?? false}
+            canStraddle={tableState?.phase === 'waiting' && !tableState?.handId}
+            bigBlind={effectiveBigBlind}
+            onBombPotVote={voteBombPot}
+            onRunItTwiceVote={voteRunItTwice}
+            onStraddleRequest={requestStraddle}
+          />
+        )}
+        
         <BuyInDialog
           isOpen={showBuyInDialog}
           onClose={() => setShowBuyInDialog(false)}
