@@ -3269,70 +3269,6 @@ export class PokerTable {
         }
       }
       
-      // CRITICAL: Emit hand_started with hole cards for each player
-      // Cards are sent player-specific via getPlayerState() in WebSocket handler
-      this.emit('hand_started', {
-        handId: this.currentHand.id,
-        handNumber: this.handNumber,
-        dealerSeat: this.dealerSeat,
-        smallBlindSeat: this.currentHand.smallBlindSeat,
-        bigBlindSeat: this.currentHand.bigBlindSeat,
-        pot: this.currentHand.pot,
-        currentBet: this.currentHand.currentBet,
-        currentPlayerSeat: this.currentHand.currentPlayerSeat,
-        phase: 'preflop',
-        players: activePlayers.map(p => ({
-          id: p.id,
-          name: p.name,
-          seatNumber: p.seatNumber,
-          stack: p.stack,
-          currentBet: p.currentBet,
-          // IMPORTANT: holeCards are sent via getPlayerState() - each player sees only their own
-          hasCards: p.holeCards.length > 0
-        }))
-      });
-      
-      // Also emit cards_dealt event with individual cards for each subscribed player
-      // This will be handled by WebSocket to send personalized card data
-      logger.info('Hand started - cards dealt', {
-        tableId: this.id,
-        handNumber: this.handNumber,
-        playersWithCards: activePlayers.filter(p => p.holeCards.length > 0).map(p => ({
-          id: p.id.substring(0, 8),
-          cardCount: p.holeCards.length
-        }))
-      });
-      
-      // POKERSTARS TOURNAMENT-STYLE: Emit auto-fold for sitting-out players
-      // They received cards but immediately folded
-      if (sitOutAutoFoldPlayers.length > 0) {
-        for (const sitOutPlayer of sitOutAutoFoldPlayers) {
-          // Record auto-fold in action log
-          this.currentHand.actionLog.push({
-            playerId: sitOutPlayer.id,
-            playerName: sitOutPlayer.name,
-            seatNumber: sitOutPlayer.seatNumber,
-            phase: 'preflop',
-            actionType: 'auto_fold_sit_out',
-            amount: 0,
-            timestamp: Date.now(),
-            actionOrder: this.currentHand.actionLog.length
-          });
-          
-          this.emit('player_auto_fold', {
-            playerId: sitOutPlayer.id,
-            reason: 'sitting_out',
-            holeCards: sitOutPlayer.holeCards // Cards were dealt but player folded
-          });
-          
-          logger.info('POKERSTARS TOURNAMENT: Sit-out player auto-folded', {
-            playerId: sitOutPlayer.id.substring(0, 8),
-            seatNumber: sitOutPlayer.seatNumber,
-            holeCards: sitOutPlayer.holeCards
-          });
-        }
-      }
-      
       // POKERSTARS-STYLE: Use atomic_start_hand RPC for race condition protection
       // This atomically closes any stale hands and creates new one in single transaction
       try {
@@ -3425,6 +3361,72 @@ export class PokerTable {
             tableId: this.id
           });
           throw new Error(atomicResult?.error || 'Atomic hand start failed');
+        }
+
+        // CRITICAL:
+        // Emit `hand_started` ONLY AFTER atomic_start_hand finishes.
+        // Otherwise, the server can change currentHand.id (atomicHandId) mid-hand,
+        // and the frontend will interpret it as a brand new hand and replay deal animations
+        // (exactly the “repeat once after first action after BB” symptom).
+        // Cards are sent player-specific via getPlayerState() in WebSocket handler.
+        this.emit('hand_started', {
+          handId: this.currentHand.id,
+          handNumber: this.currentHand.handNumber,
+          dealerSeat: this.dealerSeat,
+          smallBlindSeat: this.currentHand.smallBlindSeat,
+          bigBlindSeat: this.currentHand.bigBlindSeat,
+          pot: this.currentHand.pot,
+          currentBet: this.currentHand.currentBet,
+          currentPlayerSeat: this.currentHand.currentPlayerSeat,
+          phase: this.currentHand.phase || 'preflop',
+          players: activePlayers.map(p => ({
+            id: p.id,
+            name: p.name,
+            seatNumber: p.seatNumber,
+            stack: p.stack,
+            currentBet: p.currentBet,
+            hasCards: p.holeCards.length > 0
+          }))
+        });
+
+        logger.info('Hand started - cards dealt', {
+          tableId: this.id,
+          handId: this.currentHand.id,
+          handNumber: this.currentHand.handNumber,
+          playersWithCards: activePlayers.filter(p => p.holeCards.length > 0).map(p => ({
+            id: p.id.substring(0, 8),
+            cardCount: p.holeCards.length
+          }))
+        });
+
+        // POKERSTARS TOURNAMENT-STYLE: Emit auto-fold for sitting-out players
+        // They received cards but immediately folded
+        if (sitOutAutoFoldPlayers.length > 0) {
+          for (const sitOutPlayer of sitOutAutoFoldPlayers) {
+            // Record auto-fold in action log
+            this.currentHand.actionLog.push({
+              playerId: sitOutPlayer.id,
+              playerName: sitOutPlayer.name,
+              seatNumber: sitOutPlayer.seatNumber,
+              phase: 'preflop',
+              actionType: 'auto_fold_sit_out',
+              amount: 0,
+              timestamp: Date.now(),
+              actionOrder: this.currentHand.actionLog.length
+            });
+
+            this.emit('player_auto_fold', {
+              playerId: sitOutPlayer.id,
+              reason: 'sitting_out',
+              holeCards: sitOutPlayer.holeCards // Cards were dealt but player folded
+            });
+
+            logger.info('POKERSTARS TOURNAMENT: Sit-out player auto-folded', {
+              playerId: sitOutPlayer.id.substring(0, 8),
+              seatNumber: sitOutPlayer.seatNumber,
+              holeCards: sitOutPlayer.holeCards
+            });
+          }
         }
         
         // CRITICAL FIX: Insert poker_hand_players records for each active player
