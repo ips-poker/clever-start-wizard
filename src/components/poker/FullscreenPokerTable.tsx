@@ -597,6 +597,14 @@ const PlayerSeat = memo(function PlayerSeat({
   const [dealPulse, setDealPulse] = useState(false);
   const [dealCompleted, setDealCompleted] = useState(false);
 
+  // Always clear deal state when we're between hands.
+  // This prevents "leftover" opponent cards from staying visible while the next hand is initializing.
+  useEffect(() => {
+    if (gamePhase !== 'waiting') return;
+    setDealPulse(false);
+    setDealCompleted(false);
+  }, [gamePhase]);
+
   useEffect(() => {
     if (!stableHandId) return;
 
