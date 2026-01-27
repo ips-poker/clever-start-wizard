@@ -1408,6 +1408,7 @@ export type Database = {
           big_blind_ante_enabled: boolean | null
           bomb_pot_double_board: boolean | null
           bomb_pot_enabled: boolean | null
+          bomb_pot_interval: number | null
           bomb_pot_multiplier: number | null
           button_ante_amount: number | null
           button_ante_enabled: boolean | null
@@ -1447,6 +1448,7 @@ export type Database = {
           big_blind_ante_enabled?: boolean | null
           bomb_pot_double_board?: boolean | null
           bomb_pot_enabled?: boolean | null
+          bomb_pot_interval?: number | null
           bomb_pot_multiplier?: number | null
           button_ante_amount?: number | null
           button_ante_enabled?: boolean | null
@@ -1486,6 +1488,7 @@ export type Database = {
           big_blind_ante_enabled?: boolean | null
           bomb_pot_double_board?: boolean | null
           bomb_pot_enabled?: boolean | null
+          bomb_pot_interval?: number | null
           bomb_pot_multiplier?: number | null
           button_ante_amount?: number | null
           button_ante_enabled?: boolean | null
