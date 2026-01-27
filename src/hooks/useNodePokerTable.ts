@@ -2754,11 +2754,38 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     
     // Settings
     updateTableSettings: useCallback((settings: {
+      // Core timing
       actionTimeSeconds?: number;
       timeBankSeconds?: number;
+      // Blinds & Ante
       smallBlind?: number;
       bigBlind?: number;
       ante?: number;
+      // Straddle
+      straddleEnabled?: boolean;
+      mississippiStraddleEnabled?: boolean;
+      maxStraddleCount?: number;
+      // Advanced Ante
+      buttonAnteEnabled?: boolean;
+      buttonAnteAmount?: number;
+      bigBlindAnteEnabled?: boolean;
+      bigBlindAnteAmount?: number;
+      // Bomb Pot
+      bombPotEnabled?: boolean;
+      bombPotMultiplier?: number;
+      bombPotDoubleBoard?: boolean;
+      // Chat
+      chatEnabled?: boolean;
+      chatSlowMode?: boolean;
+      chatSlowModeInterval?: number;
+      // Run it twice
+      runItTwiceEnabled?: boolean;
+      // Rake
+      rakePercent?: number;
+      rakeCap?: number;
+      // Auto-start
+      autoStartEnabled?: boolean;
+      autoStartDelaySeconds?: number;
     }) => {
       return sendMessage({
         type: 'update_table_settings',

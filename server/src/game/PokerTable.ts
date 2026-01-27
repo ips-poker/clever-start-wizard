@@ -183,15 +183,33 @@ export class PokerTable {
     bigBlind?: number;
     ante?: number;
     straddleEnabled?: boolean;
+    mississippiStraddleEnabled?: boolean;
+    maxStraddleCount?: number;
+    buttonAnteEnabled?: boolean;
+    buttonAnteAmount?: number;
+    bigBlindAnteEnabled?: boolean;
+    bigBlindAnteAmount?: number;
+    bombPotEnabled?: boolean;
+    bombPotMultiplier?: number;
+    bombPotDoubleBoard?: boolean;
+    chatEnabled?: boolean;
+    chatSlowMode?: boolean;
+    chatSlowModeInterval?: number;
+    runItTwiceEnabled?: boolean;
+    rakePercent?: number;
+    rakeCap?: number;
     autoStartEnabled?: boolean;
     autoStartDelaySeconds?: number;
   }): void {
+    // Core timing
     if (settings.actionTimeSeconds !== undefined) {
       this.config.actionTimeSeconds = settings.actionTimeSeconds;
     }
     if (settings.timeBankSeconds !== undefined) {
       this.config.timeBankSeconds = settings.timeBankSeconds;
     }
+    
+    // Blinds & Ante
     if (settings.smallBlind !== undefined) {
       this.config.smallBlind = settings.smallBlind;
     }
@@ -201,7 +219,74 @@ export class PokerTable {
     if (settings.ante !== undefined) {
       this.config.ante = settings.ante;
     }
-    // Note: straddle and autoStart would need additional engine support
+    
+    // Straddle - store in config for future engine support
+    if (settings.straddleEnabled !== undefined) {
+      (this.config as Record<string, unknown>).straddleEnabled = settings.straddleEnabled;
+    }
+    if (settings.mississippiStraddleEnabled !== undefined) {
+      (this.config as Record<string, unknown>).mississippiStraddleEnabled = settings.mississippiStraddleEnabled;
+    }
+    if (settings.maxStraddleCount !== undefined) {
+      (this.config as Record<string, unknown>).maxStraddleCount = settings.maxStraddleCount;
+    }
+    
+    // Advanced Ante - store for future engine support
+    if (settings.buttonAnteEnabled !== undefined) {
+      (this.config as Record<string, unknown>).buttonAnteEnabled = settings.buttonAnteEnabled;
+    }
+    if (settings.buttonAnteAmount !== undefined) {
+      (this.config as Record<string, unknown>).buttonAnteAmount = settings.buttonAnteAmount;
+    }
+    if (settings.bigBlindAnteEnabled !== undefined) {
+      (this.config as Record<string, unknown>).bigBlindAnteEnabled = settings.bigBlindAnteEnabled;
+    }
+    if (settings.bigBlindAnteAmount !== undefined) {
+      (this.config as Record<string, unknown>).bigBlindAnteAmount = settings.bigBlindAnteAmount;
+    }
+    
+    // Bomb Pot - store for future engine support
+    if (settings.bombPotEnabled !== undefined) {
+      (this.config as Record<string, unknown>).bombPotEnabled = settings.bombPotEnabled;
+    }
+    if (settings.bombPotMultiplier !== undefined) {
+      (this.config as Record<string, unknown>).bombPotMultiplier = settings.bombPotMultiplier;
+    }
+    if (settings.bombPotDoubleBoard !== undefined) {
+      (this.config as Record<string, unknown>).bombPotDoubleBoard = settings.bombPotDoubleBoard;
+    }
+    
+    // Chat settings - store for chat handler
+    if (settings.chatEnabled !== undefined) {
+      (this.config as Record<string, unknown>).chatEnabled = settings.chatEnabled;
+    }
+    if (settings.chatSlowMode !== undefined) {
+      (this.config as Record<string, unknown>).chatSlowMode = settings.chatSlowMode;
+    }
+    if (settings.chatSlowModeInterval !== undefined) {
+      (this.config as Record<string, unknown>).chatSlowModeInterval = settings.chatSlowModeInterval;
+    }
+    
+    // Run it twice - store for future engine support
+    if (settings.runItTwiceEnabled !== undefined) {
+      (this.config as Record<string, unknown>).runItTwiceEnabled = settings.runItTwiceEnabled;
+    }
+    
+    // Rake settings
+    if (settings.rakePercent !== undefined) {
+      (this.config as Record<string, unknown>).rakePercent = settings.rakePercent;
+    }
+    if (settings.rakeCap !== undefined) {
+      (this.config as Record<string, unknown>).rakeCap = settings.rakeCap;
+    }
+    
+    // Auto-start
+    if (settings.autoStartEnabled !== undefined) {
+      (this.config as Record<string, unknown>).autoStartEnabled = settings.autoStartEnabled;
+    }
+    if (settings.autoStartDelaySeconds !== undefined) {
+      (this.config as Record<string, unknown>).autoStartDelaySeconds = settings.autoStartDelaySeconds;
+    }
     
     logger.info('Table settings updated in memory', {
       tableId: this.id,

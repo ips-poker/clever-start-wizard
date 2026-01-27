@@ -92,12 +92,36 @@ const UpdateTableSettingsSchema = z.object({
   tableId: z.string().uuid(),
   playerId: z.string().uuid(),
   settings: z.object({
+    // Core timing
     actionTimeSeconds: z.number().int().min(5).max(60).optional(),
     timeBankSeconds: z.number().int().min(0).max(120).optional(),
+    // Blinds & Ante
     smallBlind: z.number().int().min(1).optional(),
     bigBlind: z.number().int().min(2).optional(),
     ante: z.number().int().min(0).optional(),
+    // Straddle
     straddleEnabled: z.boolean().optional(),
+    mississippiStraddleEnabled: z.boolean().optional(),
+    maxStraddleCount: z.number().int().min(1).max(5).optional(),
+    // Advanced Ante
+    buttonAnteEnabled: z.boolean().optional(),
+    buttonAnteAmount: z.number().int().min(0).optional(),
+    bigBlindAnteEnabled: z.boolean().optional(),
+    bigBlindAnteAmount: z.number().int().min(0).optional(),
+    // Bomb Pot
+    bombPotEnabled: z.boolean().optional(),
+    bombPotMultiplier: z.number().int().min(2).max(10).optional(),
+    bombPotDoubleBoard: z.boolean().optional(),
+    // Chat
+    chatEnabled: z.boolean().optional(),
+    chatSlowMode: z.boolean().optional(),
+    chatSlowModeInterval: z.number().int().min(1).max(60).optional(),
+    // Run it twice
+    runItTwiceEnabled: z.boolean().optional(),
+    // Rake
+    rakePercent: z.number().min(0).max(10).optional(),
+    rakeCap: z.number().int().min(0).optional(),
+    // Auto-start
     autoStartEnabled: z.boolean().optional(),
     autoStartDelaySeconds: z.number().int().min(1).max(30).optional(),
   })
@@ -777,14 +801,18 @@ export class PokerWebSocketHandler {
       return;
     }
     
-    // Build update object for database
+    // Build update object for database - map all settings to DB columns
     const dbUpdate: Record<string, unknown> = {};
+    
+    // Core timing
     if (settings.actionTimeSeconds !== undefined) {
       dbUpdate.action_time_seconds = settings.actionTimeSeconds;
     }
     if (settings.timeBankSeconds !== undefined) {
       dbUpdate.time_bank_seconds = settings.timeBankSeconds;
     }
+    
+    // Blinds & Ante
     if (settings.smallBlind !== undefined) {
       dbUpdate.small_blind = settings.smallBlind;
     }
@@ -794,9 +822,68 @@ export class PokerWebSocketHandler {
     if (settings.ante !== undefined) {
       dbUpdate.ante = settings.ante;
     }
+    
+    // Straddle
     if (settings.straddleEnabled !== undefined) {
       dbUpdate.straddle_enabled = settings.straddleEnabled;
     }
+    if (settings.mississippiStraddleEnabled !== undefined) {
+      dbUpdate.mississippi_straddle_enabled = settings.mississippiStraddleEnabled;
+    }
+    if (settings.maxStraddleCount !== undefined) {
+      dbUpdate.max_straddle_count = settings.maxStraddleCount;
+    }
+    
+    // Advanced Ante
+    if (settings.buttonAnteEnabled !== undefined) {
+      dbUpdate.button_ante_enabled = settings.buttonAnteEnabled;
+    }
+    if (settings.buttonAnteAmount !== undefined) {
+      dbUpdate.button_ante_amount = settings.buttonAnteAmount;
+    }
+    if (settings.bigBlindAnteEnabled !== undefined) {
+      dbUpdate.big_blind_ante_enabled = settings.bigBlindAnteEnabled;
+    }
+    if (settings.bigBlindAnteAmount !== undefined) {
+      dbUpdate.big_blind_ante_amount = settings.bigBlindAnteAmount;
+    }
+    
+    // Bomb Pot
+    if (settings.bombPotEnabled !== undefined) {
+      dbUpdate.bomb_pot_enabled = settings.bombPotEnabled;
+    }
+    if (settings.bombPotMultiplier !== undefined) {
+      dbUpdate.bomb_pot_multiplier = settings.bombPotMultiplier;
+    }
+    if (settings.bombPotDoubleBoard !== undefined) {
+      dbUpdate.bomb_pot_double_board = settings.bombPotDoubleBoard;
+    }
+    
+    // Chat
+    if (settings.chatEnabled !== undefined) {
+      dbUpdate.chat_enabled = settings.chatEnabled;
+    }
+    if (settings.chatSlowMode !== undefined) {
+      dbUpdate.chat_slow_mode = settings.chatSlowMode;
+    }
+    if (settings.chatSlowModeInterval !== undefined) {
+      dbUpdate.chat_slow_mode_interval = settings.chatSlowModeInterval;
+    }
+    
+    // Run it twice
+    if (settings.runItTwiceEnabled !== undefined) {
+      dbUpdate.run_it_twice_enabled = settings.runItTwiceEnabled;
+    }
+    
+    // Rake
+    if (settings.rakePercent !== undefined) {
+      dbUpdate.rake_percent = settings.rakePercent;
+    }
+    if (settings.rakeCap !== undefined) {
+      dbUpdate.rake_cap = settings.rakeCap;
+    }
+    
+    // Auto-start
     if (settings.autoStartEnabled !== undefined) {
       dbUpdate.auto_start_enabled = settings.autoStartEnabled;
     }
