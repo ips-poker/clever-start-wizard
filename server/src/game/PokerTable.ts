@@ -218,6 +218,7 @@ export class PokerTable {
     bigBlindAnteAmount?: number;
     bombPotEnabled?: boolean;
     bombPotMultiplier?: number;
+    bombPotInterval?: number;
     bombPotDoubleBoard?: boolean;
     chatEnabled?: boolean;
     chatSlowMode?: boolean;
