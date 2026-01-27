@@ -1189,6 +1189,7 @@ export function FullscreenPokerTableWrapper({
         )}
         
         {/* PRO FEATURES: Bomb Pot, Straddle, Run It Twice Overlays */}
+        {/* Straddle can be requested during showdown or between hands (phase waiting or showdown without active turn) */}
         {myPlayer && !isSpectator && (
           <ProFeaturesOverlay
             tableId={tableId}
@@ -1197,7 +1198,15 @@ export function FullscreenPokerTableWrapper({
             bombPotProposal={bombPotProposal}
             runItTwiceProposal={runItTwiceProposal}
             straddleEnabled={fullTableSettings?.straddleEnabled as boolean ?? false}
-            canStraddle={tableState?.phase === 'waiting' && !tableState?.handId}
+            mississippiStraddleEnabled={fullTableSettings?.mississippiStraddleEnabled as boolean ?? false}
+            canStraddle={
+              // Allow straddle during waiting phase (between hands)
+              (tableState?.phase === 'waiting' && !tableState?.handId) ||
+              // Allow straddle during showdown phase (while results are displayed)
+              (tableState?.phase === 'showdown') ||
+              // Allow straddle when there's no active action (currentPlayerSeat is null)
+              (!tableState?.currentPlayerSeat && tableState?.phase !== 'preflop')
+            }
             bigBlind={effectiveBigBlind}
             onBombPotVote={voteBombPot}
             onRunItTwiceVote={voteRunItTwice}
