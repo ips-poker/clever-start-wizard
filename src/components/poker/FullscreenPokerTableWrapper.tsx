@@ -87,6 +87,9 @@ export function FullscreenPokerTableWrapper({
   const [actualBuyIn, setActualBuyIn] = useState<number>(buyIn);
   const [isTimeBankActive, setIsTimeBankActive] = useState(false);
   
+  // Full table settings fetched from DB for the settings panel
+  const [fullTableSettings, setFullTableSettings] = useState<Record<string, unknown> | null>(null);
+  
   // Tournament blinds can desync in WS state; DB poker_tables is authoritative for current SB/BB/ante.
   const [dbBlinds, setDbBlinds] = useState<{ sb: number; bb: number; ante: number } | null>(null);
   
@@ -152,6 +155,66 @@ export function FullscreenPokerTableWrapper({
       supabase.removeChannel(channel);
     };
   }, [isTournament, tableId]);
+
+  // Fetch full table settings when settings panel is opened
+  useEffect(() => {
+    if (!showSettings) return;
+    
+    const fetchFullSettings = async () => {
+      const { data, error } = await supabase
+        .from('poker_tables')
+        .select(`
+          small_blind, big_blind, ante,
+          action_time_seconds, time_bank_seconds,
+          straddle_enabled, mississippi_straddle_enabled, max_straddle_count,
+          button_ante_enabled, button_ante_amount,
+          big_blind_ante_enabled, big_blind_ante_amount,
+          bomb_pot_enabled, bomb_pot_multiplier, bomb_pot_double_board,
+          chat_enabled, chat_slow_mode, chat_slow_mode_interval,
+          run_it_twice_enabled,
+          rake_percent, rake_cap,
+          auto_start_enabled, auto_start_delay_seconds
+        `)
+        .eq('id', tableId)
+        .single();
+      
+      if (error) {
+        console.error('[Settings] Failed to fetch table settings:', error);
+        return;
+      }
+      
+      if (data) {
+        // Map DB snake_case to camelCase for frontend
+        setFullTableSettings({
+          smallBlind: data.small_blind,
+          bigBlind: data.big_blind,
+          ante: data.ante ?? 0,
+          actionTimeSeconds: data.action_time_seconds ?? 15,
+          timeBankSeconds: data.time_bank_seconds ?? 30,
+          straddleEnabled: data.straddle_enabled ?? false,
+          mississippiStraddleEnabled: data.mississippi_straddle_enabled ?? false,
+          maxStraddleCount: data.max_straddle_count ?? 1,
+          buttonAnteEnabled: data.button_ante_enabled ?? false,
+          buttonAnteAmount: data.button_ante_amount ?? 0,
+          bigBlindAnteEnabled: data.big_blind_ante_enabled ?? false,
+          bigBlindAnteAmount: data.big_blind_ante_amount ?? 0,
+          bombPotEnabled: data.bomb_pot_enabled ?? false,
+          bombPotMultiplier: data.bomb_pot_multiplier ?? 2,
+          bombPotDoubleBoard: data.bomb_pot_double_board ?? false,
+          chatEnabled: data.chat_enabled ?? true,
+          chatSlowMode: data.chat_slow_mode ?? false,
+          chatSlowModeInterval: data.chat_slow_mode_interval ?? 5,
+          runItTwiceEnabled: data.run_it_twice_enabled ?? false,
+          rakePercent: data.rake_percent ?? 0,
+          rakeCap: data.rake_cap ?? 0,
+          autoStartEnabled: data.auto_start_enabled ?? true,
+          autoStartDelaySeconds: data.auto_start_delay_seconds ?? 3,
+        });
+      }
+    };
+    
+    fetchFullSettings();
+  }, [showSettings, tableId]);
 
   // Connection is auto-managed by useNodePokerTable (connects when tableId/playerId present)
 
@@ -705,16 +768,45 @@ export function FullscreenPokerTableWrapper({
   const handleSettingsSave = useCallback((settings: any) => {
     console.log('Saving settings:', settings);
     
-    // Send to server via WebSocket
+    // Send ALL settings to server via WebSocket
     const success = updateTableSettings({
+      // Core timing
       actionTimeSeconds: settings.actionTimeSeconds,
       timeBankSeconds: settings.timeBankSeconds,
+      // Blinds & Ante
       smallBlind: settings.smallBlind,
       bigBlind: settings.bigBlind,
       ante: settings.ante,
+      // Straddle
+      straddleEnabled: settings.straddleEnabled,
+      mississippiStraddleEnabled: settings.mississippiStraddleEnabled,
+      maxStraddleCount: settings.maxStraddleCount,
+      // Advanced Ante
+      buttonAnteEnabled: settings.buttonAnteEnabled,
+      buttonAnteAmount: settings.buttonAnteAmount,
+      bigBlindAnteEnabled: settings.bigBlindAnteEnabled,
+      bigBlindAnteAmount: settings.bigBlindAnteAmount,
+      // Bomb Pot
+      bombPotEnabled: settings.bombPotEnabled,
+      bombPotMultiplier: settings.bombPotMultiplier,
+      bombPotDoubleBoard: settings.bombPotDoubleBoard,
+      // Chat
+      chatEnabled: settings.chatEnabled,
+      chatSlowMode: settings.chatSlowMode,
+      chatSlowModeInterval: settings.chatSlowModeInterval,
+      // Run it twice
+      runItTwiceEnabled: settings.runItTwiceEnabled,
+      // Rake
+      rakePercent: settings.rakePercent,
+      rakeCap: settings.rakeCap,
+      // Auto-start
+      autoStartEnabled: settings.autoStartEnabled,
+      autoStartDelaySeconds: settings.autoStartDelaySeconds,
     });
     
     if (success) {
+      // Update local fullTableSettings state to reflect saved values
+      setFullTableSettings(settings);
       toast.success('Настройки сохранены', {
         description: 'Изменения применятся со следующей раздачи'
       });
@@ -1212,7 +1304,33 @@ export function FullscreenPokerTableWrapper({
         {/* Settings panel */}
         <TableSettingsPanel
           isOpen={showSettings}
-          settings={{
+          settings={fullTableSettings ? {
+            // Use full settings from DB when available
+            smallBlind: fullTableSettings.smallBlind as number,
+            bigBlind: fullTableSettings.bigBlind as number,
+            ante: fullTableSettings.ante as number,
+            actionTimeSeconds: fullTableSettings.actionTimeSeconds as number,
+            timeBankSeconds: fullTableSettings.timeBankSeconds as number,
+            straddleEnabled: fullTableSettings.straddleEnabled as boolean,
+            mississippiStraddleEnabled: fullTableSettings.mississippiStraddleEnabled as boolean,
+            maxStraddleCount: fullTableSettings.maxStraddleCount as number,
+            buttonAnteEnabled: fullTableSettings.buttonAnteEnabled as boolean,
+            buttonAnteAmount: fullTableSettings.buttonAnteAmount as number,
+            bigBlindAnteEnabled: fullTableSettings.bigBlindAnteEnabled as boolean,
+            bigBlindAnteAmount: fullTableSettings.bigBlindAnteAmount as number,
+            bombPotEnabled: fullTableSettings.bombPotEnabled as boolean,
+            bombPotMultiplier: fullTableSettings.bombPotMultiplier as number,
+            bombPotDoubleBoard: fullTableSettings.bombPotDoubleBoard as boolean,
+            chatEnabled: fullTableSettings.chatEnabled as boolean,
+            chatSlowMode: fullTableSettings.chatSlowMode as boolean,
+            chatSlowModeInterval: fullTableSettings.chatSlowModeInterval as number,
+            runItTwiceEnabled: fullTableSettings.runItTwiceEnabled as boolean,
+            rakePercent: fullTableSettings.rakePercent as number,
+            rakeCap: fullTableSettings.rakeCap as number,
+            autoStartEnabled: fullTableSettings.autoStartEnabled as boolean,
+            autoStartDelaySeconds: fullTableSettings.autoStartDelaySeconds as number,
+          } : {
+            // Fallback to tableState values if DB fetch hasn't completed yet
             smallBlind: tableState?.smallBlindAmount || 10,
             bigBlind: tableState?.bigBlindAmount || 20,
             ante: tableState?.anteAmount || 0,
