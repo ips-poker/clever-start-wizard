@@ -21,6 +21,39 @@ export interface TableConfig {
   actionTimeSeconds: number;
   timeBankSeconds: number;
   tournamentId?: string; // Tournament ID if this is a tournament table
+  
+  // ========== PRO FEATURES ==========
+  // Straddle settings
+  straddleEnabled?: boolean;
+  mississippiStraddleEnabled?: boolean;
+  maxStraddleCount?: number;
+  
+  // Ante options
+  buttonAnteEnabled?: boolean;
+  buttonAnteAmount?: number;
+  bigBlindAnteEnabled?: boolean;
+  bigBlindAnteAmount?: number;
+  
+  // Bomb pot settings
+  bombPotEnabled?: boolean;
+  bombPotMultiplier?: number;
+  bombPotDoubleBoard?: boolean;
+  
+  // Chat settings
+  chatEnabled?: boolean;
+  chatSlowMode?: boolean;
+  chatSlowModeInterval?: number;
+  
+  // Run It Twice
+  runItTwiceEnabled?: boolean;
+  
+  // Rake settings
+  rakePercent?: number;
+  rakeCap?: number;
+  
+  // Auto-start settings
+  autoStartEnabled?: boolean;
+  autoStartDelaySeconds?: number;
 }
 
 export class PokerGameManager {
