@@ -2564,6 +2564,18 @@ export class PokerTable {
 
       if (isNewContext || isStale) {
         this.currentHand.actionStartTime = now;
+        // CRITICAL FIX: Also refresh actionTimeTotal to use current config.actionTimeSeconds
+        // This ensures that if settings changed, new time is applied from next turn
+        this.currentHand.actionTimeTotal = this.getActionTimeForPhase();
+        
+        logger.info('startActionTimer: Timer context reset', {
+          tableId: this.id,
+          timerKey,
+          isNewContext,
+          isStale,
+          actionTimeTotal: this.currentHand.actionTimeTotal,
+          configActionTime: this.config.actionTimeSeconds
+        });
       }
 
       this.lastActionTimerKey = timerKey;
