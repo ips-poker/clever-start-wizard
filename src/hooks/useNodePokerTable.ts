@@ -53,6 +53,7 @@ export interface TableState {
   bigBlindAmount?: number;
   anteAmount?: number;
   actionTimer?: number;
+  timeBankSeconds?: number;            // Table setting for time bank total
   // POKERSTARS-STYLE: Server-authoritative timing
   // Server sends all timing info - client just displays
   timeRemaining?: number | null;       // Computed remaining seconds (for simple clients)
@@ -472,6 +473,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       bigBlindAmount: bigBlind,
       anteAmount: ante,
       actionTimer,
+      timeBankSeconds: Number((state as any).timeBankSeconds ?? 30),
       // POKERSTARS-STYLE: Server-authoritative timing
       timeRemaining: (state as any).timeRemaining as number | null | undefined,
       actionStartTime: (state as any).actionStartTime as number | null | undefined,
