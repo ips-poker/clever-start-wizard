@@ -709,6 +709,11 @@ const PlayerSeat = memo(function PlayerSeat({
     dealCompletedForHandRef.current === visualHandId;
   const shouldShowAfterDeal = isDealCompletedForThisHand && gamePhase !== 'waiting';
   
+  // NEW: hard guard for the parent — if neither pulse nor completed, never mount children
+  const shouldRenderOpponentCards =
+    !forceHideOppCardsThisRender &&
+    (effectiveDealPulse || isDealCompletedForThisHand || gamePhase === 'showdown');
+  
   // Format stack based on display preference
   const formatStack = (stack: number): string => {
     if (displayFormat === 'bb') {
@@ -908,7 +913,8 @@ const PlayerSeat = memo(function PlayerSeat({
         )}
         {/* Opponent cards - positioned at corner of avatar */}
         {/* Only show cards during active hand phases (preflop through showdown), NOT waiting */}
-        {!isHero && !player.isFolded && gamePhase && ['preflop', 'flop', 'turn', 'river', 'showdown'].includes(gamePhase) && (() => {
+        {/* POKERSTARS FIX: Do NOT render at all until deal pulse starts -> no CSS visibility flash */}
+        {!isHero && !player.isFolded && shouldRenderOpponentCards && ['preflop', 'flop', 'turn', 'river', 'showdown'].includes(gamePhase ?? '') && (() => {
           // Get cards from showdownPlayers if available (revealed at showdown)
           const showdownData = showdownPlayers?.find(sp => sp.playerId === player.playerId || sp.seatNumber === seatNumber);
           const revealedCards = showdownData?.holeCards;
@@ -969,8 +975,8 @@ const PlayerSeat = memo(function PlayerSeat({
                 size="xs"
                 position={position}
                 handId={visualHandId}
-                // POKERSTARS: Opponents start AFTER hero (200ms offset + 120ms per seat)
-                dealDelay={200 + Math.max(0, dealOrder - 1) * 120}
+                // POKERSTARS: Opponents start AFTER hero offset + 60ms per seat (faster!)
+                dealDelay={100 + Math.max(0, dealOrder - 1) * 60}
                 // POKERSTARS: Cards animate on preflop, stay static after, clear between hands
                 animateDeal={shouldAnimateCompactDeal}
                 showAfterDeal={shouldShowAfterDeal}
