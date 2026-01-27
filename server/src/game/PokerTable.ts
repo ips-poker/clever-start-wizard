@@ -119,6 +119,10 @@ export class PokerTable {
   private pendingHandStart: boolean = false; // Prevent concurrent checkStartHand calls
   
   private actionTimer: NodeJS.Timeout | null = null;
+  // Tracks the last "logical" timer context (hand+phase+seat+mode) so we can
+  // safely reset actionStartTime even during ultra-fast phase transitions.
+  // This prevents turn time from carrying over across streets in heads-up / short-handed.
+  private lastActionTimerKey: string | null = null;
   private eventListeners: Set<TableEventCallback> = new Set();
   
   // Professional timing settings
@@ -2430,16 +2434,23 @@ export class PokerTable {
       return;
     }
     
-    // NOTE: actionStartTime is usually set BEFORE state_update emission in afterAction()
-    // However, for direct calls (e.g., from advanceTurn, startHand, retry loop below),
-    // we need to ensure it's set if missing or stale (> 500ms old)
+    // NOTE: actionStartTime is usually set BEFORE state_update emission in afterAction()/advancePhase().
+    // However, for direct calls (advanceTurn/startHand/retry loop), we must ensure it's reset.
+    // IMPORTANT: The old "stale > 500ms" guard can break very fast street transitions,
+    // especially when the same seat becomes first to act on flop/turn/river.
+    // So we also reset when the *logical timer context* changes.
     if (this.currentHand) {
       const now = Date.now();
-      const isStale = !this.currentHand.actionStartTime || 
-                      (now - this.currentHand.actionStartTime > 500);
-      if (isStale) {
+
+      const timerKey = `${this.currentHand.id}:${this.currentHand.phase}:${this.currentHand.currentPlayerSeat ?? 'none'}:${this.currentHand.isTimeBankPhase ? 'tb' : 'main'}`;
+      const isNewContext = timerKey !== this.lastActionTimerKey;
+      const isStale = !this.currentHand.actionStartTime || (now - this.currentHand.actionStartTime > 500);
+
+      if (isNewContext || isStale) {
         this.currentHand.actionStartTime = now;
       }
+
+      this.lastActionTimerKey = timerKey;
       this.currentHand.isTimeBankPhase = false;
     }
 
