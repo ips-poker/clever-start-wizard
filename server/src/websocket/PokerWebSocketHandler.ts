@@ -111,6 +111,7 @@ const UpdateTableSettingsSchema = z.object({
     // Bomb Pot
     bombPotEnabled: z.boolean().optional(),
     bombPotMultiplier: z.number().int().min(2).max(10).optional(),
+    bombPotInterval: z.number().int().min(1).max(50).optional(),
     bombPotDoubleBoard: z.boolean().optional(),
     // Chat
     chatEnabled: z.boolean().optional(),
@@ -866,6 +867,9 @@ export class PokerWebSocketHandler {
     }
     if (settings.bombPotMultiplier !== undefined) {
       dbUpdate.bomb_pot_multiplier = settings.bombPotMultiplier;
+    }
+    if (settings.bombPotInterval !== undefined) {
+      dbUpdate.bomb_pot_interval = settings.bombPotInterval;
     }
     if (settings.bombPotDoubleBoard !== undefined) {
       dbUpdate.bomb_pot_double_board = settings.bombPotDoubleBoard;

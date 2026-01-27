@@ -31,6 +31,7 @@ export interface TableSettings {
   // Bomb Pot
   bombPotEnabled: boolean;
   bombPotMultiplier: number;
+  bombPotInterval: number;
   bombPotDoubleBoard: boolean;
   // Chat
   chatEnabled: boolean;
@@ -61,6 +62,7 @@ const DEFAULT_TABLE_SETTINGS: Partial<TableSettings> = {
   bigBlindAnteAmount: 0,
   bombPotEnabled: false,
   bombPotMultiplier: 2,
+  bombPotInterval: 10,
   bombPotDoubleBoard: false,
   chatEnabled: true,
   chatSlowMode: false,
@@ -423,7 +425,7 @@ export function TableSettingsPanel({
 
               {/* Bomb Pot */}
               <SettingsSection title="Bomb Pot" icon={Bomb} collapsed>
-                <SettingRow label="Bomb Pot" description="Предложение бомбочки раз в 5-10 раздач">
+                <SettingRow label="Bomb Pot" description="Периодическое предложение бомбочки">
                   <Switch
                     checked={settings.bombPotEnabled}
                     onCheckedChange={(v) => updateSetting('bombPotEnabled', v)}
@@ -437,6 +439,17 @@ export function TableSettingsPanel({
                       10 сек на решение, отказ = обычная раздача. 
                       После бомбочки баттон остаётся на месте.
                     </p>
+                    <SettingRow label="Интервал" description={`Каждые ${settings.bombPotInterval || 10} раздач`}>
+                      <Slider
+                        value={[settings.bombPotInterval || 10]}
+                        onValueChange={([v]) => updateSetting('bombPotInterval', v)}
+                        min={3}
+                        max={30}
+                        step={1}
+                        className="w-24"
+                        disabled={!isHost}
+                      />
+                    </SettingRow>
                     <SettingRow label="Множитель" description={`${settings.bombPotMultiplier}x BB`}>
                       <Slider
                         value={[settings.bombPotMultiplier || 2]}

@@ -279,6 +279,9 @@ export class PokerTable {
     if (settings.bombPotMultiplier !== undefined) {
       this.config.bombPotMultiplier = settings.bombPotMultiplier;
     }
+    if (settings.bombPotInterval !== undefined) {
+      this.config.bombPotInterval = settings.bombPotInterval;
+    }
     if (settings.bombPotDoubleBoard !== undefined) {
       this.config.bombPotDoubleBoard = settings.bombPotDoubleBoard;
     }
@@ -5568,8 +5571,8 @@ export class PokerTable {
     
     this.handsSinceLastBombPot++;
     
-    // Propose bomb pot every 5-10 hands (configurable)
-    const bombPotInterval = 5 + Math.floor(Math.random() * 6); // 5-10 random
+    // Use configured interval (default 10 hands)
+    const bombPotInterval = this.config.bombPotInterval || 10;
     
     if (this.handsSinceLastBombPot >= bombPotInterval) {
       this.startBombPotVoting();
