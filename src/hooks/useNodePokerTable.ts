@@ -774,8 +774,15 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           // compact cards and replays their deal animation 2-3 times.
           {
             const now = Date.now();
-            const stateData = (data.state as Record<string, unknown> | undefined);
-            const incomingHandId = (stateData?.handId || (stateData as any)?.hand_id || (stateData as any)?.currentHandId || (stateData as any)?.current_hand_id) as string | undefined;
+            // Some servers nest the snapshot under `data.data.state` instead of `data.state`.
+            const stateData = ((data.state as Record<string, unknown> | undefined) ??
+              ((data.data as any)?.state as Record<string, unknown> | undefined));
+            const incomingHandId = (
+              stateData?.handId ||
+              (stateData as any)?.hand_id ||
+              (stateData as any)?.currentHandId ||
+              (stateData as any)?.current_hand_id
+            ) as string | undefined;
 
             // EXTRA HARD GUARD:
             // Some servers can incorrectly emit `hand_started` mid-hand (e.g. after an action)
@@ -783,6 +790,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             // which makes opponent mini-cards replay their fan animation.
             const cur = tableStateRef.current;
             const curBoardCount = cur?.communityCards?.length ?? 0;
+            const curHasAnyBets = (cur?.players || []).some((p) => (p.betAmount ?? 0) > 0);
+            const curHasAnyHoleCards = (cur?.players || []).some((p) => (p.holeCards?.length ?? 0) > 0);
             const curLooksActive =
               Boolean(cur?.handId) &&
               (
@@ -790,7 +799,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 curBoardCount > 0 ||
                 (cur?.pot ?? 0) > 0 ||
                 (cur?.currentBet ?? 0) > 0 ||
-                (cur?.currentPlayerSeat !== null && cur?.currentPlayerSeat !== undefined)
+                (cur?.currentPlayerSeat !== null && cur?.currentPlayerSeat !== undefined) ||
+                // Extra signals: after BB + first action, some servers temporarily report pot/currentBet/turn as 0/null.
+                // Bets and/or already-dealt hole cards are still strong evidence we're mid-hand.
+                (cur?.phase !== 'waiting' && (curHasAnyBets || curHasAnyHoleCards))
               );
 
             // If the event carries the same handId as the currently active hand -> always ignore.
