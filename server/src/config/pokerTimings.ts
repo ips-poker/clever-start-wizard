@@ -161,25 +161,25 @@ export const PROFESSIONAL_TIMINGS: ProfessionalTimings = {
   
   showdown: {
     // PokerStars-fast (synchronized with frontend src/config/pokerTimings.ts)
-    perPlayerReveal: 400,    // Faster per-player reveal
-    winnerHighlight: 1800,   // Shorter winner highlight
-    potCollection: 500,      // Pot slides from center
-    potSlideToWinner: 1200,  // Keep readable chip movement (min ~1.2s)
-    winnerCelebration: 1200, // Winner overlay display
+    perPlayerReveal: 350,    // Faster per-player reveal
+    winnerHighlight: 800,    // Shorter winner highlight (reduced from 1800)
+    potCollection: 400,      // Pot slides from center
+    potSlideToWinner: 1000,  // Readable chip movement (~1s)
+    winnerCelebration: 600,  // Winner overlay display (reduced from 1200)
   },
   
   betCollection: {
-    slideToCenter: 500,      // POKERSTARS: Chips slide to pot center
-    staggerPerPlayer: 80,    // Stagger for realistic collection
-    pauseAfterCollection: 250, // Brief pause before next phase
+    slideToCenter: 400,      // POKERSTARS: Chips slide to pot center (faster)
+    staggerPerPlayer: 60,    // Stagger for realistic collection
+    pauseAfterCollection: 200, // Brief pause before next phase
   },
   
   // PokerStars-fast: reduce downtime between hands
-  betweenHands: 1800,
-  shuffleAnimation: 400,
-  minimumHandDisplay: 1500,
-  preDealHoleCards: 350,     // POKERSTARS: Pause before dealing hole cards
-  perHoleCard: 100,          // POKERSTARS: Time per hole card dealt
+  betweenHands: 600,         // Reduced from 1800 - cards clear ~1s after chip cascade
+  shuffleAnimation: 200,     // Faster shuffle animation
+  minimumHandDisplay: 800,   // Reduced from 1500
+  preDealHoleCards: 200,     // Faster hole card dealing
+  perHoleCard: 60,           // Faster per hole card
   
   // POKERSTARS-STYLE: Cash game action timing (seconds)
   actionTiming: {
@@ -267,24 +267,24 @@ export const TURBO_TIMINGS: ProfessionalTimings = {
   },
   
   showdown: {
-    perPlayerReveal: 300,
-    winnerHighlight: 1200,
-    potCollection: 400,
-    potSlideToWinner: 300,
-    winnerCelebration: 1000,
+    perPlayerReveal: 250,
+    winnerHighlight: 600,
+    potCollection: 300,
+    potSlideToWinner: 800,
+    winnerCelebration: 500,
   },
   
   betCollection: {
-    slideToCenter: 250,
-    staggerPerPlayer: 40,
-    pauseAfterCollection: 150,
+    slideToCenter: 200,
+    staggerPerPlayer: 30,
+    pauseAfterCollection: 100,
   },
   
-  betweenHands: 1500,
-  shuffleAnimation: 250,
-  minimumHandDisplay: 1000,
-  preDealHoleCards: 150,
-  perHoleCard: 50,
+  betweenHands: 500,          // Faster for turbo
+  shuffleAnimation: 150,
+  minimumHandDisplay: 600,
+  preDealHoleCards: 120,
+  perHoleCard: 40,
   
   // Turbo action timing (faster)
   actionTiming: {
@@ -340,24 +340,24 @@ export const HYPER_TURBO_TIMINGS: ProfessionalTimings = {
   },
   
   showdown: {
-    perPlayerReveal: 200,
-    winnerHighlight: 800,
-    potCollection: 250,
-    potSlideToWinner: 200,
-    winnerCelebration: 600,
+    perPlayerReveal: 150,
+    winnerHighlight: 500,
+    potCollection: 200,
+    potSlideToWinner: 600,
+    winnerCelebration: 400,
   },
   
   betCollection: {
-    slideToCenter: 150,
-    staggerPerPlayer: 25,
-    pauseAfterCollection: 100,
+    slideToCenter: 100,
+    staggerPerPlayer: 20,
+    pauseAfterCollection: 80,
   },
   
-  betweenHands: 1000,
-  shuffleAnimation: 150,
-  minimumHandDisplay: 600,
-  preDealHoleCards: 100,
-  perHoleCard: 30,
+  betweenHands: 400,          // Ultra-fast for hyper-turbo
+  shuffleAnimation: 100,
+  minimumHandDisplay: 500,
+  preDealHoleCards: 80,
+  perHoleCard: 25,
   
   // Hyper-turbo action timing (very fast)
   actionTiming: {

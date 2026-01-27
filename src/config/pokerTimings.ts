@@ -36,14 +36,13 @@ export const PHASE_TIMINGS = {
 // SHOWDOWN TIMINGS (ms) - POKERSTARS-FAST
 // ============================================
 export const SHOWDOWN_TIMINGS = {
-  perPlayerReveal: 400,     // Delay between each player reveal (was 750)
-  cardFlipDuration: 250,    // Card flip animation (was 350)
-  winnerHighlight: 1800,    // Winner hand highlight duration (was 3000)
-  potCollection: 500,       // Pot slides from center (was 800)
-  // Keep chip movement readable (min ~1.2s), while still faster than classic PokerStars pacing
-  potSlideToWinner: 1200,   // Chips slide to winner (was 1500)
-  winnerCelebration: 1200,  // Winner overlay display (was 2000)
-  displayDuration: 2200,    // Total showdown display time (was 4000)
+  perPlayerReveal: 350,     // Delay between each player reveal (faster)
+  cardFlipDuration: 200,    // Card flip animation (faster)
+  winnerHighlight: 800,     // Winner hand highlight duration (reduced from 1800)
+  potCollection: 400,       // Pot slides from center (faster)
+  potSlideToWinner: 1000,   // Chips slide to winner (min readable ~1s)
+  winnerCelebration: 600,   // Winner overlay display (reduced from 1200)
+  displayDuration: 1400,    // Total showdown display time (reduced from 2200)
 } as const;
 
 // ============================================
@@ -71,10 +70,10 @@ export const CARD_DEAL_TIMINGS = {
 // HAND TRANSITION TIMINGS (ms) - POKERSTARS-FAST
 // ============================================
 export const HAND_TRANSITION_TIMINGS = {
-  afterAction: 200,         // After each player action (faster)
-  betweenHands: 900,        // Between hands (faster)
-  shuffleAnimation: 120,    // Shuffle animation (faster)
-  minimumHandDisplay: 1000, // Minimum time to see showdown (faster)
+  afterAction: 180,         // After each player action (faster)
+  betweenHands: 600,        // Between hands (reduced from 900)
+  shuffleAnimation: 100,    // Shuffle animation (faster)
+  minimumHandDisplay: 800,  // Minimum time to see showdown (reduced from 1000)
 } as const;
 
 // ============================================
