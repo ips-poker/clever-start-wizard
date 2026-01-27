@@ -14,6 +14,7 @@ interface ProActionPanelProps {
   currentBet: number;
   pot: number;
   myStack: number;
+  smallBlind: number; // For step alignment
   onFold: () => void;
   onCheck: () => void;
   onCall: () => void;
@@ -200,6 +201,7 @@ export const ProActionPanel = memo(function ProActionPanel({
   currentBet,
   pot,
   myStack,
+  smallBlind,
   onFold,
   onCheck,
   onCall,
@@ -259,20 +261,27 @@ export const ProActionPanel = memo(function ProActionPanel({
     }
   }, [isMyTurn, preAction, canCheck, callAmount, myStack, disabled, onFold, onCheck, onCall, sounds]);
 
-  // Handle preset click
+  // Round to nearest small blind (all bets must be multiples of SB)
+  const roundToSB = useCallback((amount: number): number => {
+    const sb = smallBlind || 1;
+    return Math.round(amount / sb) * sb;
+  }, [smallBlind]);
+
+  // Handle preset click - round to SB
   const handlePreset = useCallback((multiplier: number) => {
-    const potBet = Math.floor(pot * multiplier);
-    setRaiseAmount(Math.max(minRaise, Math.min(potBet, maxRaise)));
-  }, [pot, minRaise, maxRaise]);
+    const potBet = roundToSB(pot * multiplier);
+    const clamped = Math.max(minRaise, Math.min(potBet, maxRaise));
+    setRaiseAmount(roundToSB(clamped));
+  }, [pot, minRaise, maxRaise, roundToSB]);
 
   // Handle raise confirm
   const handleRaiseConfirm = useCallback(() => {
-    const finalAmount = Math.max(raiseAmount, minRaise);
+    const finalAmount = roundToSB(Math.max(raiseAmount, minRaise));
     console.log('[ProActionPanel] handleRaiseConfirm - finalAmount:', finalAmount, 'minRaise:', minRaise, 'maxRaise:', maxRaise);
     sounds.playRaise();
     onRaise(finalAmount);
     setShowSlider(false);
-  }, [raiseAmount, minRaise, maxRaise, onRaise, sounds]);
+  }, [raiseAmount, minRaise, maxRaise, onRaise, sounds, roundToSB]);
 
   // Wrapped action handlers with sounds
   const handleFold = useCallback(() => {
@@ -295,8 +304,8 @@ export const ProActionPanel = memo(function ProActionPanel({
     onAllIn();
   }, [onAllIn, sounds]);
 
-  // Step for slider
-  const step = Math.max(1, Math.floor(minRaise / 2));
+  // Step for slider - always equals small blind
+  const step = smallBlind || 1;
 
   // Pre-action panel (when not my turn)
   if (!isMyTurn) {
@@ -400,26 +409,26 @@ export const ProActionPanel = memo(function ProActionPanel({
               className="relative overflow-hidden mb-3"
             >
             <div className="bg-black/30 backdrop-blur-md rounded-xl p-3 border border-white/10">
-              {/* Presets */}
+              {/* Presets - check if rounded value matches */}
               <div className="flex justify-center gap-2 mb-3">
                 <PresetButton
                   label="1/3"
-                  isActive={raiseAmount === Math.floor(pot / 3)}
+                  isActive={raiseAmount === roundToSB(pot / 3)}
                   onClick={() => handlePreset(1/3)}
                 />
                 <PresetButton
                   label="1/2"
-                  isActive={raiseAmount === Math.floor(pot / 2)}
+                  isActive={raiseAmount === roundToSB(pot / 2)}
                   onClick={() => handlePreset(0.5)}
                 />
                 <PresetButton
                   label="2/3"
-                  isActive={raiseAmount === Math.floor(pot * 2/3)}
+                  isActive={raiseAmount === roundToSB(pot * 2/3)}
                   onClick={() => handlePreset(2/3)}
                 />
                 <PresetButton
                   label="POT"
-                  isActive={raiseAmount === pot}
+                  isActive={raiseAmount === roundToSB(pot)}
                   onClick={() => handlePreset(1)}
                 />
               </div>
@@ -427,34 +436,50 @@ export const ProActionPanel = memo(function ProActionPanel({
               {/* Slider with controls */}
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setRaiseAmount(a => Math.max(minRaise, a - step))}
+                  onClick={() => setRaiseAmount(a => roundToSB(Math.max(minRaise, a - step)))}
                   className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
                 >
                   <Minus className="w-5 h-5 text-white" />
                 </button>
 
-                <div className="flex-1">
+                <div className="flex-1 relative pt-8">
+                  {/* Floating bubble ABOVE slider - always visible */}
+                  <div 
+                    className="absolute -top-1 pointer-events-none z-10"
+                    style={{
+                      left: `calc(${((raiseAmount - minRaise) / Math.max(1, maxRaise - minRaise)) * 100}% - 28px)`,
+                      transform: 'translateX(0)'
+                    }}
+                  >
+                    <div className="bg-amber-500 text-white text-sm font-bold px-2 py-1 rounded-lg shadow-lg whitespace-nowrap min-w-[56px] text-center">
+                      {formatAmount(raiseAmount)}
+                    </div>
+                    {/* Arrow pointing down */}
+                    <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-amber-500" />
+                  </div>
+
                   <input
                     type="range"
                     min={minRaise}
                     max={maxRaise}
                     value={raiseAmount}
-                    onChange={(e) => setRaiseAmount(Number(e.target.value))}
+                    onChange={(e) => setRaiseAmount(roundToSB(Number(e.target.value)))}
                     step={step}
-                    className="w-full h-2 appearance-none cursor-pointer rounded-full"
+                    className="w-full h-3 appearance-none cursor-pointer rounded-full"
                     style={{
-                      background: `linear-gradient(to right, #f59e0b ${((raiseAmount - minRaise) / (maxRaise - minRaise)) * 100}%, rgba(255,255,255,0.2) ${((raiseAmount - minRaise) / (maxRaise - minRaise)) * 100}%)`
+                      background: `linear-gradient(to right, #f59e0b ${((raiseAmount - minRaise) / Math.max(1, maxRaise - minRaise)) * 100}%, rgba(255,255,255,0.2) ${((raiseAmount - minRaise) / Math.max(1, maxRaise - minRaise)) * 100}%)`
                     }}
                   />
-                  <div className="text-center mt-2">
-                    <span className="text-2xl font-black text-amber-400">
-                      {formatAmount(raiseAmount)}
-                    </span>
+                  
+                  {/* Min/Max labels */}
+                  <div className="flex justify-between mt-1 text-[10px] text-white/50">
+                    <span>{formatAmount(minRaise)}</span>
+                    <span>{formatAmount(maxRaise)}</span>
                   </div>
                 </div>
 
                 <button
-                  onClick={() => setRaiseAmount(a => Math.min(maxRaise, a + step))}
+                  onClick={() => setRaiseAmount(a => roundToSB(Math.min(maxRaise, a + step)))}
                   className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
                 >
                   <Plus className="w-5 h-5 text-white" />

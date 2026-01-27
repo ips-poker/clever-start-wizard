@@ -1178,6 +1178,7 @@ export function FullscreenPokerTableWrapper({
             currentBet={currentBetValue}
             pot={potValue}
             myStack={myPlayer.stack}
+            smallBlind={tableState?.smallBlindAmount || Math.floor(bigBlind / 2) || 5}
             onFold={fold}
             onCheck={check}
             onCall={call}
