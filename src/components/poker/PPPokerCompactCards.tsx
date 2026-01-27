@@ -355,23 +355,49 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   const { currentCardBack, preferences } = usePokerPreferences();
 
   // =====================================================
-  // POKERSTARS-STYLE: STABLE VISIBILITY & ANIMATION GUARDS
+  // POKERSTARS-STYLE: STABLE VISIBILITY & ANIMATION GUARDS v2
   // =====================================================
-  // CRITICAL: Never return null - use CSS visibility instead.
-  // When component unmounts, ALL refs reset, causing re-animation.
+  // CRITICAL FIX: Prevent animation re-trigger after first action.
+  // Problem: after state_update, animateDeal can flicker back to true
+  // Solution: Lock animation to handId + record that we animated IMMEDIATELY
   
   // 1) Stable handId - persists even if server briefly omits it
   const stableHandIdRef = useRef<string | undefined>(undefined);
-  if (handId) stableHandIdRef.current = handId;
-  const stableHandId = stableHandIdRef.current;
   
-  // 2) Track which handId has ALREADY been animated - NEVER re-animate same hand
+  // 2) Track which handId has ALREADY been animated - NEVER re-animate
   const animatedHandIdRef = useRef<string | undefined>(undefined);
   
   // 3) Track if cards were ever shown for this hand (sticky visibility)
   const shownForHandIdRef = useRef<string | undefined>(undefined);
   
-  // Determine visibility: show if animating, post-deal, or showdown
+  // 4) Track previous handId to detect new hand
+  const prevHandIdRef = useRef<string | undefined>(undefined);
+  
+  // STEP 1: Detect new hand FIRST (before updating stableHandIdRef)
+  const incomingHandId = handId;
+  const previousStableHandId = stableHandIdRef.current;
+  
+  // New hand detection: handId changed AND is a new valid ID
+  const isNewHand = incomingHandId && 
+                    previousStableHandId && 
+                    incomingHandId !== previousStableHandId;
+  
+  // STEP 2: Reset refs on new hand
+  if (isNewHand) {
+    animatedHandIdRef.current = undefined;
+    shownForHandIdRef.current = undefined;
+  }
+  
+  // STEP 3: Update stable handId (persist if server flickers to undefined)
+  if (incomingHandId) {
+    stableHandIdRef.current = incomingHandId;
+  }
+  const stableHandId = stableHandIdRef.current;
+  
+  // Track for next render
+  prevHandIdRef.current = stableHandId;
+  
+  // STEP 4: Determine visibility
   const wantVisible = animateDeal || showAfterDeal || isShowdown;
   
   // Mark as "shown" for this hand once any show signal arrives
@@ -383,30 +409,23 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   const isSticky = stableHandId && shownForHandIdRef.current === stableHandId;
   const shouldShow = wantVisible || isSticky;
   
-  // ANIMATION GUARD: Animate ONLY if:
-  // - animateDeal is true (preflop signal)
-  // - Not already animated for this handId
+  // STEP 5: ANIMATION GUARD - THE FIX
+  // Only animate if:
+  // - animateDeal is true (preflop signal from parent)
+  // - stableHandId exists
+  // - This EXACT handId was NOT already animated
   // - Not in showdown
-  const shouldAnimate = (() => {
-    if (!animateDeal || isShowdown) return false;
-    if (!stableHandId) return false;
-    if (animatedHandIdRef.current === stableHandId) return false;
-    return true;
-  })();
+  const alreadyAnimatedThisHand = animatedHandIdRef.current === stableHandId;
+  const shouldAnimate = animateDeal && 
+                        !!stableHandId && 
+                        !alreadyAnimatedThisHand && 
+                        !isShowdown;
   
-  // Mark as animated IMMEDIATELY (before React commits)
+  // STEP 6: Mark as animated IMMEDIATELY (sync, before render)
+  // This is the KEY fix - we mark BEFORE MiniCard renders with animate=true
   if (shouldAnimate && stableHandId) {
     animatedHandIdRef.current = stableHandId;
   }
-  
-  // Reset refs when handId actually changes (new hand)
-  const prevHandIdRef = useRef<string | undefined>(undefined);
-  if (stableHandId && prevHandIdRef.current && prevHandIdRef.current !== stableHandId) {
-    // New hand detected - allow fresh animation
-    animatedHandIdRef.current = undefined;
-    shownForHandIdRef.current = undefined;
-  }
-  prevHandIdRef.current = stableHandId;
   
   // Use showdown size for larger cards during showdown like in reference
   const actualSize = isShowdown ? 'showdown' : size;
