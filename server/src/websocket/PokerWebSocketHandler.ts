@@ -767,7 +767,10 @@ export class PokerWebSocketHandler {
     // Allow updates if: player is creator OR table has no creator (legacy) OR player is seated at table
     const isCreator = tableData.created_by === playerId;
     const isLegacyTable = tableData.created_by === null;
-    const isSeatedPlayer = table.getPlayers().some(p => p.playerId === playerId);
+    
+    // Check if player is seated using getPlayersForBalancing (returns active players with IDs)
+    const seatedPlayers = table.getPlayersForBalancing();
+    const isSeatedPlayer = seatedPlayers.some((p: { playerId: string }) => p.playerId === playerId);
     
     if (!isCreator && !isLegacyTable && !isSeatedPlayer) {
       this.sendError(ws, 'Only table creator can update settings');
