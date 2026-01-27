@@ -557,7 +557,26 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             // 2) If server claims 'waiting' but the snapshot likely represents an active hand,
             //    infer the phase from the board like PokerStars clients do.
             if (newState.phase === 'waiting') {
+              const now = Date.now();
               const boardCount = newState.communityCards?.length ?? 0;
+              const effectiveHandId = newState.handId || prev.handId;
+              const sameHandAsPrev = Boolean(effectiveHandId && prev.handId && effectiveHandId === prev.handId);
+
+              // Anti-flicker: some servers can emit a single-frame `waiting` on the SAME hand
+              // right after the first action (especially after BB). That resets the UI and can
+              // replay opponent mini-card fan animation. If this happens shortly after hand start,
+              // keep the previous phase.
+              const RECENT_HAND_START_GUARD_MS = 8000;
+              const isRecentSameHandWaitingFlicker =
+                sameHandAsPrev &&
+                prev.phase !== 'waiting' &&
+                now - lastHandStartedAtRef.current < RECENT_HAND_START_GUARD_MS &&
+                boardCount === 0;
+
+              if (isRecentSameHandWaitingFlicker) {
+                newState.phase = prev.phase;
+              }
+
               const hasActiveSignals =
                 Boolean(newState.handId || prev.handId) &&
                 (
