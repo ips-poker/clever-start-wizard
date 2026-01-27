@@ -1714,9 +1714,72 @@ export function runItTwice(
 // ==========================================
 export function collectAntes(
   players: GamePlayer[],
-  anteAmount: number
+  anteAmount: number,
+  options?: {
+    bigBlindAnteEnabled?: boolean;
+    bigBlindAnteSeat?: number;
+    bigBlindAnteAmount?: number;
+    buttonAnteEnabled?: boolean;
+    buttonAnteSeat?: number;
+    buttonAnteAmount?: number;
+  }
 ): { pot: number; updatedPlayers: GamePlayer[] } {
   let pot = 0;
+  
+  // Big Blind Ante mode: BB pays for all players (PokerStars tournament style)
+  if (options?.bigBlindAnteEnabled && options.bigBlindAnteSeat !== undefined) {
+    const bbAnteAmount = options.bigBlindAnteAmount || anteAmount;
+    const activeCount = players.filter(p => !p.isSittingOut && p.stack > 0).length;
+    const totalBbAnte = bbAnteAmount * activeCount;
+    
+    const updatedPlayers = players.map(p => {
+      if (p.seatNumber === options.bigBlindAnteSeat && !p.isSittingOut && p.stack > 0) {
+        const anteToPost = Math.min(totalBbAnte, p.stack);
+        pot += anteToPost;
+        console.log('[Engine] Big Blind Ante posted:', { 
+          playerId: p.id.substring(0, 8), 
+          amount: anteToPost,
+          forPlayers: activeCount 
+        });
+        return {
+          ...p,
+          stack: p.stack - anteToPost,
+          betAmount: 0,
+          isAllIn: p.stack - anteToPost === 0
+        };
+      }
+      return p;
+    });
+    
+    return { pot, updatedPlayers };
+  }
+  
+  // Button Ante mode: Dealer pays a fixed ante
+  if (options?.buttonAnteEnabled && options.buttonAnteSeat !== undefined) {
+    const buttonAnteAmount = options.buttonAnteAmount || anteAmount;
+    
+    const updatedPlayers = players.map(p => {
+      if (p.seatNumber === options.buttonAnteSeat && !p.isSittingOut && p.stack > 0) {
+        const anteToPost = Math.min(buttonAnteAmount, p.stack);
+        pot += anteToPost;
+        console.log('[Engine] Button Ante posted:', { 
+          playerId: p.id.substring(0, 8), 
+          amount: anteToPost 
+        });
+        return {
+          ...p,
+          stack: p.stack - anteToPost,
+          betAmount: 0,
+          isAllIn: p.stack - anteToPost === 0
+        };
+      }
+      return p;
+    });
+    
+    return { pot, updatedPlayers };
+  }
+  
+  // Standard ante collection: everyone pays
   const updatedPlayers = players.map(p => {
     if (p.isSittingOut || p.stack === 0) return p;
     
@@ -1725,11 +1788,51 @@ export function collectAntes(
     return {
       ...p,
       stack: p.stack - ante,
-      betAmount: 0
+      betAmount: 0,
+      isAllIn: p.stack - ante === 0
     };
   });
   
   return { pot, updatedPlayers };
+}
+
+/**
+ * Post straddle (voluntary 3rd blind from UTG position)
+ * Returns updated players and new current bet
+ */
+export function postStraddle(
+  players: GamePlayer[],
+  straddleSeat: number,
+  straddleAmount: number
+): { pot: number; currentBet: number; updatedPlayers: GamePlayer[] } {
+  let pot = 0;
+  let currentBet = straddleAmount;
+  
+  const updatedPlayers = players.map(p => {
+    if (p.seatNumber === straddleSeat && !p.isFolded && !p.isSittingOut) {
+      const straddle = Math.min(straddleAmount, p.stack);
+      if (straddle > 0) {
+        pot += straddle;
+        currentBet = Math.max(currentBet, straddle);
+        console.log('[Engine] Straddle posted:', { 
+          playerId: p.id.substring(0, 8), 
+          amount: straddle,
+          seat: straddleSeat 
+        });
+        return {
+          ...p,
+          stack: p.stack - straddle,
+          betAmount: straddle,
+          totalBetThisHand: (p.totalBetThisHand || 0) + straddle,
+          isAllIn: p.stack - straddle === 0,
+          hasActedThisRound: false
+        };
+      }
+    }
+    return p;
+  });
+  
+  return { pot, currentBet, updatedPlayers };
 }
 
 /**
@@ -1913,9 +2016,26 @@ export interface GameConfig {
   maxBuyIn: number;
   actionTimeSeconds: number;
   timeBankSeconds: number;
+  // Advanced features
   runItTwiceEnabled: boolean;
   bombPotEnabled: boolean;
   straddleEnabled: boolean;
+  mississippiStraddleEnabled?: boolean;
+  maxStraddleCount?: number;
+  // Advanced ante modes
+  buttonAnteEnabled?: boolean;
+  buttonAnteAmount?: number;
+  bigBlindAnteEnabled?: boolean;
+  bigBlindAnteAmount?: number;
+  // Bomb pot settings
+  bombPotMultiplier?: number;
+  bombPotDoubleBoard?: boolean;
+  // Auto-start
+  autoStartEnabled?: boolean;
+  autoStartDelaySeconds?: number;
+  // Rake
+  rakePercent?: number;
+  rakeCap?: number;
 }
 
 // ==========================================

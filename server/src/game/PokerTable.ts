@@ -4357,8 +4357,12 @@ export class PokerTable {
       isHandActive: false
     });
     
-    // Check for next hand after professional between-hands delay
-    setTimeout(() => this.checkStartHand(), this.timings.betweenHands);
+    // Check for next hand after configured auto-start delay (or default professional timing)
+    const autoStartDelay = (this.config as Record<string, unknown>).autoStartDelaySeconds;
+    const delayMs = typeof autoStartDelay === 'number' 
+      ? autoStartDelay * 1000 
+      : this.timings.betweenHands;
+    setTimeout(() => this.checkStartHand(), delayMs);
   }
   
   /**
@@ -4703,7 +4707,9 @@ export class PokerTable {
       // Clean up pending leave players
       await this.cleanupPendingLeavePlayers();
       
-      setTimeout(() => this.checkStartHand(), this.timings.betweenHands);
+      const autoStartDelay1 = (this.config as Record<string, unknown>).autoStartDelaySeconds;
+      const delayMs1 = typeof autoStartDelay1 === 'number' ? autoStartDelay1 * 1000 : this.timings.betweenHands;
+      setTimeout(() => this.checkStartHand(), delayMs1);
       return;
     }
     
@@ -4731,7 +4737,9 @@ export class PokerTable {
       
       await this.cleanupPendingLeavePlayers();
       
-      setTimeout(() => this.checkStartHand(), this.timings.betweenHands);
+      const autoStartDelay2 = (this.config as Record<string, unknown>).autoStartDelaySeconds;
+      const delayMs2 = typeof autoStartDelay2 === 'number' ? autoStartDelay2 * 1000 : this.timings.betweenHands;
+      setTimeout(() => this.checkStartHand(), delayMs2);
       return;
     }
     
@@ -4809,10 +4817,12 @@ export class PokerTable {
       isHandActive: false
     });
     
-    // Check for new hand
+    // Check for new hand with configured auto-start delay
+    const autoStartDelay3 = (this.config as Record<string, unknown>).autoStartDelaySeconds;
+    const delayMs3 = typeof autoStartDelay3 === 'number' ? autoStartDelay3 * 1000 : this.timings.betweenHands;
     setTimeout(() => {
       this.checkStartHand();
-    }, this.timings.betweenHands);
+    }, delayMs3);
   }
   
   /**
