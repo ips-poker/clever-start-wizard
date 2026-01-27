@@ -366,11 +366,8 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   
   // 2) Track which handId has ALREADY been animated - NEVER re-animate
   const animatedHandIdRef = useRef<string | undefined>(undefined);
-  
-  // 3) Track if cards were ever shown for this hand (sticky visibility)
-  const shownForHandIdRef = useRef<string | undefined>(undefined);
-  
-  // 4) Track previous handId to detect new hand
+
+  // 3) Track previous handId to detect new hand
   const prevHandIdRef = useRef<string | undefined>(undefined);
   
   // STEP 1: Detect new hand FIRST (before updating stableHandIdRef)
@@ -385,7 +382,6 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   // STEP 2: Reset refs on new hand
   if (isNewHand) {
     animatedHandIdRef.current = undefined;
-    shownForHandIdRef.current = undefined;
   }
   
   // STEP 3: Update stable handId (persist if server flickers to undefined)
@@ -397,17 +393,12 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   // Track for next render
   prevHandIdRef.current = stableHandId;
   
-  // STEP 4: Determine visibility
+  // STEP 4: Determine visibility (NO sticky visibility)
+  // Sticky-visibility caused the bug:
+  // when a new hand starts but the new handId hasn't arrived yet,
+  // the component can keep showing the previous hand's mini-cards.
   const wantVisible = animateDeal || showAfterDeal || isShowdown;
-  
-  // Mark as "shown" for this hand once any show signal arrives
-  if (wantVisible && stableHandId) {
-    shownForHandIdRef.current = stableHandId;
-  }
-  
-  // STICKY VISIBILITY: Once shown for a handId, stay visible until handId changes
-  const isSticky = stableHandId && shownForHandIdRef.current === stableHandId;
-  const shouldShow = wantVisible || isSticky;
+  const shouldShow = wantVisible;
   
   // STEP 5: ANIMATION GUARD - THE FIX
   // Only animate if:
