@@ -654,23 +654,32 @@ const PlayerSeat = memo(function PlayerSeat({
     }
 
     // Case B: we were on a local key; upgrade to server id ONLY if we haven't started dealing yet.
+    // CRITICAL: Once dealStartedForHandRef is set, we MUST NOT change visualHandIdRef!
+    // Otherwise the useEffect will re-trigger timers causing animation replay.
     // BUT: if we see `dealCompleted` while in preflop, that's almost certainly stale carry-over
     // from the previous hand (the exact bug the user reports). In that case we hard-reset too.
     if (!hasServerKey) {
-      const canUpgradeBeforeDeal = !dealStartedForHandRef.current && !dealPulse && !dealCompleted;
-      const looksLikeStaleCarryOver = gamePhase === 'preflop' && dealCompleted;
+      // IMPORTANT: Check if deal has started for ANY hand - if so, freeze the ID
+      const dealAlreadyStarted = Boolean(dealStartedForHandRef.current);
+      const canUpgradeBeforeDeal = !dealAlreadyStarted && !dealPulse && !dealCompleted;
+      const looksLikeStaleCarryOver = gamePhase === 'preflop' && dealCompleted && !dealAlreadyStarted;
 
-      if (canUpgradeBeforeDeal || looksLikeStaleCarryOver) {
+      if (canUpgradeBeforeDeal) {
+        // Safe to adopt server ID - deal hasn't started yet
         visualHandIdRef.current = handId;
         visualHandServerIdRef.current = handId;
-        if (looksLikeStaleCarryOver) {
-          clearDealPulseTimers();
-          dealStartedForHandRef.current = undefined;
-          opponentCardsMountedForHandRef.current = undefined;
-          dealPulseForHandRef.current = undefined;
-          forceHideOppCardsThisRender = true;
-        }
+      } else if (looksLikeStaleCarryOver) {
+        // Stale state from previous hand - hard reset
+        visualHandIdRef.current = handId;
+        visualHandServerIdRef.current = handId;
+        clearDealPulseTimers();
+        dealStartedForHandRef.current = undefined;
+        opponentCardsMountedForHandRef.current = undefined;
+        dealPulseForHandRef.current = undefined;
+        animateSentForHandRef.current = undefined;
+        forceHideOppCardsThisRender = true;
       }
+      // Otherwise: deal has started with local key - DO NOT update ID, it would re-trigger animation
     }
   }
   const visualHandId = visualHandIdRef.current;
