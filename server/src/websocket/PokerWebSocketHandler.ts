@@ -752,7 +752,7 @@ export class PokerWebSocketHandler {
       return;
     }
     
-    // Check if player is the table creator
+    // Check if player is the table creator (or if table has no creator - legacy tables)
     const { data: tableData, error: tableError } = await this.supabase
       .from('poker_tables')
       .select('created_by')
@@ -764,7 +764,12 @@ export class PokerWebSocketHandler {
       return;
     }
     
-    if (tableData.created_by !== playerId) {
+    // Allow updates if: player is creator OR table has no creator (legacy) OR player is seated at table
+    const isCreator = tableData.created_by === playerId;
+    const isLegacyTable = tableData.created_by === null;
+    const isSeatedPlayer = table.getPlayers().some(p => p.playerId === playerId);
+    
+    if (!isCreator && !isLegacyTable && !isSeatedPlayer) {
       this.sendError(ws, 'Only table creator can update settings');
       return;
     }
