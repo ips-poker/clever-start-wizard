@@ -203,6 +203,7 @@ export function TableSettingsPanel({
     initialSettings.bigBlindAnteAmount,
     initialSettings.bombPotEnabled,
     initialSettings.bombPotMultiplier,
+    initialSettings.bombPotInterval,
     initialSettings.bombPotDoubleBoard,
     initialSettings.chatEnabled,
     initialSettings.chatSlowMode,
