@@ -370,6 +370,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     const currentPlayerSeat = (state.currentPlayerSeat ?? (state as any).current_player_seat ?? null) as number | null;
     const communityCards = (state.communityCards || (state as any).community_cards || []) as string[];
 
+    // Get handId from server state (may be handId, hand_id, currentHandId, etc.)
+    const handId = (state.handId || (state as any).hand_id || (state as any).currentHandId || (state as any).current_hand_id) as string | undefined;
+
     // Seats: accept both camelCase and snake_case from server
     const dealerSeat = Number(state.dealerSeat ?? (state as any).dealer_seat ?? (state as any).buttonSeat ?? (state as any).button_seat ?? 0);
 
@@ -422,10 +425,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     // POKERSTARS-STYLE: Cash Game = 15s, Tournament = 30s (server provides actual value)
     const actionTimer = Number((state as any).actionTimer ?? (state as any).action_timer ?? config?.actionTimeSeconds ?? 15);
 
-    // If server doesn't include blinds as per-player bets, show them client-side on preflop
+    // If server doesn't include blinds as per-player bets, show them client-side on preflop.
+    // IMPORTANT: Some servers can briefly send phase='waiting' mid-preflop (e.g. right after first action)
+    // while STILL including handId. Treat that as preflop-like so SB/BB bets remain visible and the
+    // stability layer can detect "active" signals reliably (prevents one-time mini-card fan replay).
     const isPreflopLike =
       normalizedPhase === 'preflop' ||
-      (normalizedPhase === 'waiting' && communityCards.length === 0 && (pot > 0 || currentBet > 0));
+      (normalizedPhase === 'waiting' && communityCards.length === 0 && (pot > 0 || currentBet > 0 || Boolean(handId)));
 
     const players = mappedPlayers.map((p) => {
       if (!isPreflopLike) return p;
@@ -448,9 +454,6 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       }
       return p;
     });
-
-    // Get handId from server state (may be handId, hand_id, currentHandId, etc.)
-    const handId = (state.handId || (state as any).hand_id || (state as any).currentHandId || (state as any).current_hand_id) as string | undefined;
 
     return {
       tableId: tblId,
