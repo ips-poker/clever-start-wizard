@@ -28,6 +28,7 @@ interface ProFeaturesOverlayProps {
   bombPotProposal: BombPotProposal | null;
   runItTwiceProposal: RunItTwiceProposal | null;
   straddleEnabled: boolean;
+  mississippiStraddleEnabled?: boolean;
   canStraddle: boolean;
   bigBlind: number;
   onBombPotVote: (accept: boolean) => void;
@@ -42,6 +43,7 @@ export function ProFeaturesOverlay({
   bombPotProposal,
   runItTwiceProposal,
   straddleEnabled,
+  mississippiStraddleEnabled = false,
   canStraddle,
   bigBlind,
   onBombPotVote,
@@ -254,28 +256,32 @@ export function ProFeaturesOverlay({
       </AnimatePresence>
 
       {/* Straddle Button - shown between hands when enabled */}
-      {straddleEnabled && canStraddle && canAffordStraddle && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          className="fixed bottom-28 left-1/2 -translate-x-1/2 z-30"
-        >
-          <Button
-            onClick={onStraddleRequest}
-            className={cn(
-              "bg-gradient-to-r from-purple-600 to-pink-500",
-              "hover:from-purple-500 hover:to-pink-400",
-              "text-white font-bold px-6 py-3 rounded-full",
-              "shadow-lg shadow-purple-500/30",
-              "flex items-center gap-2"
-            )}
+      <AnimatePresence>
+        {straddleEnabled && canStraddle && canAffordStraddle && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-28 left-1/2 -translate-x-1/2 z-30"
           >
-            <Zap className="w-5 h-5" />
-            Straddle {straddleAmount}
-          </Button>
-        </motion.div>
-      )}
+            <Button
+              onClick={onStraddleRequest}
+              className={cn(
+                mississippiStraddleEnabled
+                  ? "bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400"
+                  : "bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400",
+                "text-white font-bold px-6 py-3 rounded-full",
+                "shadow-lg",
+                mississippiStraddleEnabled ? "shadow-amber-500/30" : "shadow-purple-500/30",
+                "flex items-center gap-2"
+              )}
+            >
+              <Zap className="w-5 h-5" />
+              {mississippiStraddleEnabled ? 'Mississippi Straddle' : 'Straddle'} {straddleAmount}
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

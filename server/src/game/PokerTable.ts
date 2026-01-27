@@ -2965,6 +2965,7 @@ export class PokerTable {
       tableId: this.id, 
       hasCurrentHand: !!this.currentHand,
       pendingHandStart: this.pendingHandStart,
+      bombPotVotingActive: this.bombPotVotingActive,
       totalPlayers: this.players.size
     });
     
@@ -2976,6 +2977,12 @@ export class PokerTable {
     
     if (this.pendingHandStart) {
       logger.info('checkStartHand: hand start already pending, skipping');
+      return;
+    }
+    
+    // PRO FEATURE: Wait for Bomb Pot voting to complete
+    if (this.bombPotVotingActive) {
+      logger.info('checkStartHand: waiting for bomb pot voting to complete');
       return;
     }
     
@@ -4421,6 +4428,12 @@ export class PokerTable {
     // PRO FEATURE: Check if it's time to propose a bomb pot
     this.checkBombPotProposal();
     
+    // If bomb pot voting started, don't schedule next hand - finalizeBombPotVoting will do it
+    if (this.bombPotVotingActive) {
+      logger.info('BOMB POT: Voting active, waiting for result before starting next hand');
+      return;
+    }
+    
     // Check for next hand after configured auto-start delay (or default professional timing)
     const autoStartDelay = this.config.autoStartDelaySeconds;
     const delayMs = typeof autoStartDelay === 'number' 
@@ -5707,6 +5720,10 @@ export class PokerTable {
     }
     
     this.bombPotVotes.clear();
+    
+    // CRITICAL: Now that voting is complete, trigger next hand start
+    // Use a small delay to allow UI to process the result
+    setTimeout(() => this.checkStartHand(), 500);
   }
   
   // ========================================
