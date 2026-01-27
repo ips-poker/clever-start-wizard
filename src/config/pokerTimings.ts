@@ -60,11 +60,11 @@ export const BET_COLLECTION_TIMINGS = {
 // CARD DEALING TIMINGS (ms)
 // ============================================
 export const CARD_DEAL_TIMINGS = {
-  preDealHoleCards: 200,    // Pause before dealing hole cards (was 350)
-  perHoleCard: 60,          // Per hole card dealt (was 100)
-  cardDealDuration: 220,    // Single card deal animation (was 350)
+  preDealHoleCards: 150,    // Pause before dealing hole cards (faster)
+  perHoleCard: 50,          // Per hole card dealt (faster)
+  cardDealDuration: 200,    // Single card deal animation (faster)
   cardFlipDuration: 250,    // Card flip animation (was 350)
-  burnCardDuration: 280,    // Burn card animation (was 400)
+  burnCardDuration: 240,    // Burn card animation (faster)
 } as const;
 
 // ============================================
@@ -72,8 +72,8 @@ export const CARD_DEAL_TIMINGS = {
 // ============================================
 export const HAND_TRANSITION_TIMINGS = {
   afterAction: 250,         // After each player action (faster)
-  betweenHands: 1400,       // Between hands (faster)
-  shuffleAnimation: 250,    // Shuffle animation (faster, was 400)
+  betweenHands: 1200,       // Between hands (faster)
+  shuffleAnimation: 200,    // Shuffle animation (faster)
   minimumHandDisplay: 1200, // Minimum time to see showdown (faster)
 } as const;
 
