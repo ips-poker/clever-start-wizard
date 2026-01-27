@@ -2386,41 +2386,30 @@ export class PokerTable {
    * - Postflop = standard time
    */
   private getActionTimeForPhase(): number {
+    // ALWAYS use table's configured action time (from DB / user settings)
+    // This ensures user customizations are respected
+    const userConfiguredTime = this.config.actionTimeSeconds;
+    
     if (!this.currentHand) {
-      return this.config.actionTimeSeconds;
+      return userConfiguredTime;
     }
     
     const phase = this.currentHand.phase;
     
-    // POKERSTARS-STYLE: Use proper timing configuration based on table type
-    // Tournament tables get more time, cash games less
-    const isTournament = this.config.tableType === 'tournament';
-    const timingConfig = isTournament ? TOURNAMENT_TIMINGS : PROFESSIONAL_TIMINGS;
-    
-    // Check if pot is raised (currentBet > bigBlind means someone raised)
-    const isRaisedPot = this.currentHand.currentBet > this.config.bigBlind;
-    
-    // Use the professional timing function for accurate PokerStars-style times
-    const configuredTime = getActionTimeFromConfig(
-      phase as 'preflop' | 'flop' | 'turn' | 'river' | 'showdown',
-      isRaisedPot,
-      timingConfig
-    );
-    
-    // If config returns 0 (showdown), use database fallback
-    if (configuredTime === 0) {
-      return this.config.actionTimeSeconds;
+    // For showdown, no action time needed
+    if (phase === 'showdown') {
+      return userConfiguredTime;
     }
     
-    logger.info('getActionTimeForPhase: Calculated time', {
+    logger.info('getActionTimeForPhase: Using user-configured time', {
       phase,
-      isTournament,
-      isRaisedPot,
-      configuredTime,
-      dbTime: this.config.actionTimeSeconds
+      userConfiguredTime,
+      tableId: this.id
     });
     
-    return configuredTime;
+    // Return user-configured action time directly
+    // This respects table settings panel changes
+    return userConfiguredTime;
   }
 
   /**
@@ -4793,6 +4782,7 @@ export class PokerTable {
       bigBlind: this.config.bigBlind,
       ante: this.config.ante,
       actionTimer: this.config.actionTimeSeconds,
+      timeBankSeconds: this.config.timeBankSeconds, // Table setting for time bank
       players,
       // Hand state - CRITICAL: only show pot/bet when hand is active
       phase: this.currentHand?.phase || 'waiting',
