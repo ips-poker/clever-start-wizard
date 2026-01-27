@@ -1,12 +1,13 @@
 /**
  * Pro Features Overlay
- * Displays Bomb Pot voting, Straddle button, and Run It Twice dialogs
+ * Displays Bomb Pot voting and Run It Twice dialogs
+ * Straddle controls are now in ProActionPanel/StraddleControls
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Bomb, Zap, Repeat2 } from 'lucide-react';
+import { Bomb, Repeat2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface BombPotProposal {
@@ -27,13 +28,9 @@ interface ProFeaturesOverlayProps {
   playerStack: number;
   bombPotProposal: BombPotProposal | null;
   runItTwiceProposal: RunItTwiceProposal | null;
-  straddleEnabled: boolean;
-  mississippiStraddleEnabled?: boolean;
-  canStraddle: boolean;
   bigBlind: number;
   onBombPotVote: (accept: boolean) => void;
   onRunItTwiceVote: (accept: boolean) => void;
-  onStraddleRequest: () => void;
 }
 
 export function ProFeaturesOverlay({
@@ -42,13 +39,9 @@ export function ProFeaturesOverlay({
   playerStack,
   bombPotProposal,
   runItTwiceProposal,
-  straddleEnabled,
-  mississippiStraddleEnabled = false,
-  canStraddle,
   bigBlind,
   onBombPotVote,
-  onRunItTwiceVote,
-  onStraddleRequest
+  onRunItTwiceVote
 }: ProFeaturesOverlayProps) {
   const [bombPotTimeLeft, setBombPotTimeLeft] = useState(10);
   const [ritTimeLeft, setRitTimeLeft] = useState(10);
@@ -106,9 +99,6 @@ export function ProFeaturesOverlay({
     setHasVotedRit(true);
     onRunItTwiceVote(false);
   }, [onRunItTwiceVote]);
-
-  const straddleAmount = bigBlind * 2;
-  const canAffordStraddle = playerStack >= straddleAmount;
 
   return (
     <>
@@ -251,34 +241,6 @@ export function ProFeaturesOverlay({
                 </Button>
               </div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Straddle Button - shown between hands when enabled */}
-      <AnimatePresence>
-        {straddleEnabled && canStraddle && canAffordStraddle && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-28 left-1/2 -translate-x-1/2 z-30"
-          >
-            <Button
-              onClick={onStraddleRequest}
-              className={cn(
-                mississippiStraddleEnabled
-                  ? "bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400"
-                  : "bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400",
-                "text-white font-bold px-6 py-3 rounded-full",
-                "shadow-lg",
-                mississippiStraddleEnabled ? "shadow-amber-500/30" : "shadow-purple-500/30",
-                "flex items-center gap-2"
-              )}
-            >
-              <Zap className="w-5 h-5" />
-              {mississippiStraddleEnabled ? 'Mississippi Straddle' : 'Straddle'} {straddleAmount}
-            </Button>
           </motion.div>
         )}
       </AnimatePresence>

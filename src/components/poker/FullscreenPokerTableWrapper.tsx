@@ -87,6 +87,7 @@ export function FullscreenPokerTableWrapper({
   const [isProcessingCashout, setIsProcessingCashout] = useState(false);
   const [actualBuyIn, setActualBuyIn] = useState<number>(buyIn);
   const [isTimeBankActive, setIsTimeBankActive] = useState(false);
+  const [autoStraddleEnabled, setAutoStraddleEnabled] = useState(false);
   
   // Full table settings fetched from DB for the settings panel
   const [fullTableSettings, setFullTableSettings] = useState<Record<string, unknown> | null>(null);
@@ -157,10 +158,10 @@ export function FullscreenPokerTableWrapper({
     };
   }, [isTournament, tableId]);
 
-  // Fetch full table settings when settings panel is opened
+  // Fetch full table settings on mount and when settings panel is opened
+  // Need to fetch on mount for straddle controls visibility
   useEffect(() => {
-    if (!showSettings) return;
-    
+    // Fetch immediately on mount, and again if settings panel is opened
     const fetchFullSettings = async () => {
       const { data, error } = await supabase
         .from('poker_tables')
@@ -215,8 +216,16 @@ export function FullscreenPokerTableWrapper({
       }
     };
     
-    fetchFullSettings();
-  }, [showSettings, tableId]);
+    // Fetch on mount
+    if (!fullTableSettings) {
+      fetchFullSettings();
+    }
+    
+    // Also refetch when settings panel opens (to get latest values)
+    if (showSettings) {
+      fetchFullSettings();
+    }
+  }, [showSettings, tableId, fullTableSettings]);
 
   // Connection is auto-managed by useNodePokerTable (connects when tableId/playerId present)
 
@@ -1185,11 +1194,23 @@ export function FullscreenPokerTableWrapper({
             onCall={call}
             onRaise={raise}
             onAllIn={allIn}
+            // Straddle props
+            straddleEnabled={fullTableSettings?.straddleEnabled as boolean ?? false}
+            mississippiStraddleEnabled={fullTableSettings?.mississippiStraddleEnabled as boolean ?? false}
+            bigBlind={effectiveBigBlind}
+            phase={tableState?.phase || 'waiting'}
+            handId={tableState?.handId || null}
+            currentPlayerSeat={tableState?.currentPlayerSeat ?? null}
+            mySeat={mySeat}
+            dealerSeat={tableState?.dealerSeat ?? null}
+            onStraddleRequest={requestStraddle}
+            autoStraddleEnabled={autoStraddleEnabled}
+            onAutoStraddleChange={setAutoStraddleEnabled}
           />
         )}
         
-        {/* PRO FEATURES: Bomb Pot, Straddle, Run It Twice Overlays */}
-        {/* Straddle can be requested during showdown or between hands (phase waiting or showdown without active turn) */}
+        {/* PRO FEATURES: Bomb Pot and Run It Twice modals */}
+        {/* Straddle controls are now integrated into ProActionPanel */}
         {myPlayer && !isSpectator && (
           <ProFeaturesOverlay
             tableId={tableId}
@@ -1197,20 +1218,9 @@ export function FullscreenPokerTableWrapper({
             playerStack={myPlayer.stack}
             bombPotProposal={bombPotProposal}
             runItTwiceProposal={runItTwiceProposal}
-            straddleEnabled={fullTableSettings?.straddleEnabled as boolean ?? false}
-            mississippiStraddleEnabled={fullTableSettings?.mississippiStraddleEnabled as boolean ?? false}
-            canStraddle={
-              // Allow straddle during waiting phase (between hands)
-              (tableState?.phase === 'waiting' && !tableState?.handId) ||
-              // Allow straddle during showdown phase (while results are displayed)
-              (tableState?.phase === 'showdown') ||
-              // Allow straddle when there's no active action (currentPlayerSeat is null)
-              (!tableState?.currentPlayerSeat && tableState?.phase !== 'preflop')
-            }
             bigBlind={effectiveBigBlind}
             onBombPotVote={voteBombPot}
             onRunItTwiceVote={voteRunItTwice}
-            onStraddleRequest={requestStraddle}
           />
         )}
         
