@@ -571,6 +571,15 @@ const PlayerSeat = memo(function PlayerSeat({
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // -------------------------------------------------
+  // POKERSTARS-STYLE: One-shot deal pulse (per hand)
+  // -------------------------------------------------
+  // IMPORTANT: these must be declared before any per-render hand-key logic
+  // so we can safely force-hide cards on the first render of a new hand.
+  const [dealPulse, setDealPulse] = useState(false);
+  const [dealCompleted, setDealCompleted] = useState(false);
+  const dealStartedForHandRef = useRef<string | undefined>(undefined);
+
+  // -------------------------------------------------
   // POKERSTARS: Visual hand key for compact opponent cards
   // -------------------------------------------------
   // We MUST NOT rely on server `handId` being present on every snapshot.
@@ -584,11 +593,50 @@ const PlayerSeat = memo(function PlayerSeat({
   // - If server handId isn't available yet, generate a local key.
   // - Never swap local -> server key mid-hand (would re-trigger animations).
   const visualHandIdRef = useRef<string | undefined>(undefined);
+  const visualHandServerIdRef = useRef<string | undefined>(undefined);
+
+  // If we detect a true new hand (server handId changed), we must force-hide
+  // opponent cards on THIS render to avoid a 1-frame flash from stale state.
+  let forceHideOppCardsThisRender = false;
+
   if (gamePhase === 'waiting') {
     visualHandIdRef.current = undefined;
+    visualHandServerIdRef.current = undefined;
   } else if (!visualHandIdRef.current) {
-    visualHandIdRef.current =
-      handId ?? `local-${Date.now()}-${seatNumber}-${Math.random().toString(16).slice(2)}`;
+    if (handId) {
+      visualHandIdRef.current = handId;
+      visualHandServerIdRef.current = handId;
+    } else {
+      visualHandIdRef.current = `local-${Date.now()}-${seatNumber}-${Math.random().toString(16).slice(2)}`;
+      visualHandServerIdRef.current = undefined;
+    }
+  } else if (handId) {
+    const hasServerKey = Boolean(visualHandServerIdRef.current);
+
+    // Case A: we already use server id; if it changes => DEFINITELY a new hand.
+    if (hasServerKey && handId !== visualHandServerIdRef.current) {
+      visualHandIdRef.current = handId;
+      visualHandServerIdRef.current = handId;
+      dealStartedForHandRef.current = undefined;
+      forceHideOppCardsThisRender = true;
+    }
+
+    // Case B: we were on a local key; upgrade to server id ONLY if we haven't started dealing yet.
+    // BUT: if we see `dealCompleted` while in preflop, that's almost certainly stale carry-over
+    // from the previous hand (the exact bug the user reports). In that case we hard-reset too.
+    if (!hasServerKey) {
+      const canUpgradeBeforeDeal = !dealStartedForHandRef.current && !dealPulse && !dealCompleted;
+      const looksLikeStaleCarryOver = gamePhase === 'preflop' && dealCompleted;
+
+      if (canUpgradeBeforeDeal || looksLikeStaleCarryOver) {
+        visualHandIdRef.current = handId;
+        visualHandServerIdRef.current = handId;
+        if (looksLikeStaleCarryOver) {
+          dealStartedForHandRef.current = undefined;
+          forceHideOppCardsThisRender = true;
+        }
+      }
+    }
   }
   const visualHandId = visualHandIdRef.current;
 
@@ -601,12 +649,6 @@ const PlayerSeat = memo(function PlayerSeat({
   // Fix:
   // - Generate a short "deal pulse" only once per handId.
   // - Keep cards hidden until the pulse starts (shuffle/deal moment).
-
-  const [dealPulse, setDealPulse] = useState(false);
-  const [dealCompleted, setDealCompleted] = useState(false);
-
-  const dealStartedForHandRef = useRef<string | undefined>(undefined);
-
   useEffect(() => {
     // Between hands: hard reset.
     if (gamePhase === 'waiting') {
@@ -650,8 +692,10 @@ const PlayerSeat = memo(function PlayerSeat({
   // Drive opponent mini-cards:
   // - animate only during dealPulse (once per hand)
   // - remain visible after deal (even in preflop) but never animate again
-  const shouldAnimateCompactDeal = dealPulse;
-  const shouldShowAfterDeal = dealCompleted && gamePhase !== 'waiting';
+  const effectiveDealPulse = forceHideOppCardsThisRender ? false : dealPulse;
+  const effectiveDealCompleted = forceHideOppCardsThisRender ? false : dealCompleted;
+  const shouldAnimateCompactDeal = effectiveDealPulse;
+  const shouldShowAfterDeal = effectiveDealCompleted && gamePhase !== 'waiting';
   
   // Format stack based on display preference
   const formatStack = (stack: number): string => {
