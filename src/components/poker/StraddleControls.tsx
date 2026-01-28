@@ -87,39 +87,58 @@ export const StraddleControls = memo(function StraddleControls({
   const straddleAmount = bigBlind * 2;
   const canAffordStraddle = playerStack >= straddleAmount;
   
-  // Calculate UTG position (first player after BB)
-  const utgSeat = useMemo(() => {
-    if (!bigBlindSeat || players.length < 3) return null;
-    
+  // Calculate NEXT hand's positions for straddle eligibility
+  // CRITICAL FIX: Straddle is posted BETWEEN hands, so we need NEXT hand's positions
+  const { nextDealerSeat, nextUTGSeat } = useMemo(() => {
     const activePlayers = players
       .filter(p => p.status === 'active' || !p.status)
       .sort((a, b) => a.seatNumber - b.seatNumber);
     
-    if (activePlayers.length < 3) return null;
+    if (activePlayers.length < 2 || dealerSeat === null) {
+      return { nextDealerSeat: null, nextUTGSeat: null };
+    }
     
-    const bbIdx = activePlayers.findIndex(p => p.seatNumber === bigBlindSeat);
-    if (bbIdx === -1) return null;
+    const currentDealerIdx = activePlayers.findIndex(p => p.seatNumber === dealerSeat);
     
-    const utgIdx = (bbIdx + 1) % activePlayers.length;
-    return activePlayers[utgIdx]?.seatNumber ?? null;
-  }, [bigBlindSeat, players]);
+    // Between hands (waiting/showdown): dealer will move to next position
+    // During hand: dealer stays in current position for straddle eligibility
+    const isHandActive = phase === 'preflop' || phase === 'flop' || phase === 'turn' || phase === 'river';
+    
+    const nextDealerIdx = isHandActive
+      ? currentDealerIdx  // During hand: current dealer
+      : (currentDealerIdx === -1 ? 0 : (currentDealerIdx + 1) % activePlayers.length); // Between hands: next dealer
+    
+    const computedNextDealerSeat = activePlayers[nextDealerIdx]?.seatNumber ?? null;
+    
+    // UTG calculation needs at least 3 players
+    let computedNextUTGSeat: number | null = null;
+    if (activePlayers.length >= 3) {
+      // Next BB is 2 positions after next dealer
+      const nextBBIdx = (nextDealerIdx + 2) % activePlayers.length;
+      // Next UTG is 1 position after next BB
+      const nextUTGIdx = (nextBBIdx + 1) % activePlayers.length;
+      computedNextUTGSeat = activePlayers[nextUTGIdx]?.seatNumber ?? null;
+    }
+    
+    return { nextDealerSeat: computedNextDealerSeat, nextUTGSeat: computedNextUTGSeat };
+  }, [dealerSeat, players, phase]);
   
-  // Determine straddle eligibility based on position
+  // Determine straddle eligibility based on NEXT hand positions
   const straddleType = useMemo((): 'utg' | 'mississippi' | null => {
     if (mySeat === null) return null;
     
-    // Mississippi (Button) straddle - only from button
-    if (mississippiStraddleEnabled && mySeat === dealerSeat) {
+    // Mississippi (Button) straddle - only from NEXT button position
+    if (mississippiStraddleEnabled && mySeat === nextDealerSeat) {
       return 'mississippi';
     }
     
-    // Regular UTG straddle - only from UTG position
-    if (straddleEnabled && mySeat === utgSeat) {
+    // Regular UTG straddle - only from NEXT UTG position
+    if (straddleEnabled && mySeat === nextUTGSeat) {
       return 'utg';
     }
     
     return null;
-  }, [mySeat, dealerSeat, utgSeat, straddleEnabled, mississippiStraddleEnabled]);
+  }, [mySeat, nextDealerSeat, nextUTGSeat, straddleEnabled, mississippiStraddleEnabled]);
   
   const isEligible = straddleType !== null && canAffordStraddle;
   const isMississippi = straddleType === 'mississippi';
