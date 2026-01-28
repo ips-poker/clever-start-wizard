@@ -1065,12 +1065,15 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'phase_change':
         case 'phaseChange':
           // PROFESSIONAL TIMING: These events now include dealDelay and preDealDelay from server
-          log(`📡 ${data.type} event received:`, {
+          // CRITICAL FIX: Also update timer fields to reset countdown on new street
+          log(`📡 ${data.type} event received (TIMER RESET):`, {
             hasState: !!data.state,
             stateKeys: data.state ? Object.keys(data.state as object) : [],
             dealDelay: (data as any).dealDelay,
             preDealDelay: (data as any).preDealDelay,
-            phase: (data as any).phase
+            phase: (data as any).phase,
+            actionStartTime: (data as any).actionStartTime,
+            actionTimeTotal: (data as any).actionTimeTotal
           });
           
           // Extract professional timings from server
@@ -1108,7 +1111,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               mySeat: stateData.mySeat,
               isMyTurn: stateData.isMyTurn,
               pot: stateData.pot,
-              hasConfig: !!stateData.config
+              hasConfig: !!stateData.config,
+              actionStartTime: stateData.actionStartTime,
+              actionTimeTotal: stateData.actionTimeTotal,
+              timeRemaining: stateData.timeRemaining
             });
             
             applyIncomingState(data.state);
@@ -2211,10 +2217,17 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           break;
 
         // PROFESSIONAL TIMING: Phase change with card dealing delays
+        // CRITICAL FIX: Also update timer fields to reset countdown on new street
         case 'phase_change':
           {
             const phaseData = data as Record<string, unknown>;
-            log('🎴 Phase change:', phaseData);
+            log('🎴 Phase change (TIMER RESET):', {
+              phase: phaseData.phase,
+              actionStartTime: phaseData.actionStartTime,
+              actionTimeTotal: phaseData.actionTimeTotal,
+              timeRemaining: phaseData.timeRemaining,
+              currentPlayerSeat: phaseData.currentPlayerSeat
+            });
             
             setPhaseTimings({
               dealDelay: phaseData.dealDelay as number | undefined,
@@ -2223,16 +2236,78 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               phase: phaseData.phase as string | undefined
             });
             
-            // Update community cards
-            if (phaseData.communityCards && tableId) {
+            // Helper to parse actionStartTime (supports ms, seconds, ISO)
+            const toMsTimestamp = (v: unknown): number | null => {
+              if (v === null || v === undefined) return null;
+              if (typeof v === 'number' && Number.isFinite(v)) {
+                return v < 1e12 ? v * 1000 : v;
+              }
+              if (typeof v === 'string') {
+                const parsed = Date.parse(v.trim());
+                if (!Number.isNaN(parsed)) return parsed;
+                const num = Number(v.trim());
+                if (Number.isFinite(num)) return num < 1e12 ? num * 1000 : num;
+              }
+              return null;
+            };
+            
+            // Update community cards AND timer fields
+            if (tableId) {
+              const newActionStartTime = toMsTimestamp(phaseData.actionStartTime);
+              const newActionTimeTotal = typeof phaseData.actionTimeTotal === 'number' 
+                ? phaseData.actionTimeTotal 
+                : (typeof phaseData.timeRemaining === 'number' ? phaseData.timeRemaining : null);
+              
+              // CRITICAL DEBUG: Log what we received from server
+              console.log('🎴 [PHASE CHANGE] Timer data received:', {
+                phase: phaseData.phase,
+                rawActionStartTime: phaseData.actionStartTime,
+                parsedActionStartTime: newActionStartTime,
+                rawActionTimeTotal: phaseData.actionTimeTotal,
+                rawTimeRemaining: phaseData.timeRemaining,
+                parsedActionTimeTotal: newActionTimeTotal,
+                currentPlayerSeat: phaseData.currentPlayerSeat,
+                now: Date.now()
+              });
+              
               setTableState(prev => {
                 if (!prev) return prev;
-                return {
+                
+                const updatedState: TableState = {
                   ...prev,
                   phase: phaseData.phase as TableState['phase'] || prev.phase,
-                  communityCards: phaseData.communityCards as string[],
-                  pot: (phaseData.pot as number) ?? prev.pot
+                  pot: (phaseData.pot as number) ?? prev.pot,
+                  // CRITICAL: Reset timer state on phase change
+                  isTimeBankPhase: false, // New street always starts with main timer
                 };
+                
+                // Update community cards if provided
+                if (phaseData.communityCards) {
+                  updatedState.communityCards = phaseData.communityCards as string[];
+                }
+                
+                // Update currentPlayerSeat if provided
+                if (phaseData.currentPlayerSeat !== undefined) {
+                  updatedState.currentPlayerSeat = phaseData.currentPlayerSeat as number | null;
+                }
+                
+                // CRITICAL: Update timer fields - this is what resets the countdown
+                if (newActionStartTime !== null) {
+                  updatedState.actionStartTime = newActionStartTime;
+                  log('🎴 Phase change: Updated actionStartTime to', newActionStartTime);
+                } else {
+                  // No actionStartTime from server - use now as fallback
+                  updatedState.actionStartTime = Date.now();
+                  log('🎴 Phase change: Using Date.now() as actionStartTime fallback');
+                }
+                
+                if (newActionTimeTotal !== null) {
+                  updatedState.actionTimeTotal = newActionTimeTotal;
+                  updatedState.timeRemaining = newActionTimeTotal;
+                  log('🎴 Phase change: Updated actionTimeTotal to', newActionTimeTotal);
+                }
+                
+                return updatedState;
               });
             }
           }
