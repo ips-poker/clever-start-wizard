@@ -306,12 +306,21 @@ export function FullscreenPokerTableWrapper({
   // POKERSTARS-STYLE TIMER: Server-authoritative timing
   // Server sends: timeRemaining, actionStartTime, isTimeBankPhase
   // Client syncs from server and counts down locally
-  // Include actionStartTime in key to detect timer resets even for same seat
+  // CRITICAL FIX: actionStartTime is the PRIMARY reset signal
+  // Server sets actionStartTime = Date.now() for EVERY new turn/phase
   const timerResetKey = useMemo(() => {
-    // CRITICAL FIX: Include timeRemaining as additional reset signal
-    // This ensures timer resets even if actionStartTime wasn't updated
-    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}-${tableState?.actionStartTime || 0}-${Math.round(tableState?.timeRemaining ?? 0)}`;
-  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase, tableState?.actionStartTime, tableState?.timeRemaining]);
+    // actionStartTime changes on every turn - this is the key reset signal
+    // If server sends same actionStartTime, timer continues from current position
+    // If server sends new actionStartTime, timer MUST reset
+    const actionTs = tableState?.actionStartTime || 0;
+    const phase = tableState?.phase || 'waiting';
+    const seat = tableState?.currentPlayerSeat ?? 'none';
+    const handId = tableState?.handId || 'no-hand';
+    const isTimeBank = tableState?.isTimeBankPhase ? 'tb' : 'main';
+    
+    // Use full precision for actionStartTime to catch every change
+    return `${handId}-${phase}-${seat}-${isTimeBank}-${actionTs}`;
+  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase, tableState?.actionStartTime]);
 
   // Track previous phase for phase-change detection
   const prevPhaseRef = useRef<string>('');
@@ -319,6 +328,8 @@ export function FullscreenPokerTableWrapper({
 
   // Track previous timerResetKey to detect new turn/phase
   const prevTimerResetKeyRef = useRef<string>('');
+  // CRITICAL FIX: Track actionStartTime separately for reliable turn change detection
+  const prevActionStartTimeRef = useRef<number>(0);
 
   // Store the deadline in a ref so it persists across re-renders
   // Only recalculate when turn/phase actually changes
@@ -379,9 +390,13 @@ export function FullscreenPokerTableWrapper({
     prevPhaseRef.current = currentPhase;
     prevSeatRef.current = currentSeat ?? null;
 
-    // Detect if this is a NEW turn/phase (timerResetKey changed OR phase/seat changed)
-    const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current || phaseChanged || seatChanged;
+    // Detect if this is a NEW turn/phase
+    // CRITICAL FIX: actionStartTime change is the PRIMARY indicator of a new turn
+    // Phase/seat change are SECONDARY indicators (catch edge cases)
+    const actionStartTimeChanged = actionStartTime && actionStartTime !== (prevActionStartTimeRef.current || 0);
+    const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current || phaseChanged || seatChanged || actionStartTimeChanged;
     prevTimerResetKeyRef.current = timerResetKey;
+    prevActionStartTimeRef.current = actionStartTime || 0;
 
     // POKERSTARS-STYLE SYNC:
     // 1. On NEW turn: calculate deadline from actionStartTime (server's authoritative start)

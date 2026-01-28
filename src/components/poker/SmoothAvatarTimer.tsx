@@ -1,6 +1,7 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Style
 // Designed to stay visually smooth even when parent updates `remaining` every second.
 // Supports Time Bank phase with distinct blue coloring and enhanced pulsation
+// CRITICAL: Timer MUST reset on every new turn (detected via remaining jump or total change)
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { isTimerCritical, getTimerColorHex, getTimerGlowColor, POKERSTARS_TIMER } from '@/constants/pokerTimerConfig';
@@ -37,6 +38,8 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const lastTotalRef = useRef<number>(total);
   const lastTimeBankPhaseRef = useRef<boolean>(isTimeBankPhase);
   const lastRemainingRef = useRef<number>(remaining);
+  // CRITICAL FIX: Track previous remaining to detect significant jumps (new turn)
+  const lastPropsRemainingRef = useRef<number>(remaining);
 
   const startAnimation = (startRemaining: number) => {
     if (animationRef.current !== null) {
@@ -71,6 +74,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     lastTotalRef.current = total;
     lastTimeBankPhaseRef.current = isTimeBankPhase;
     lastRemainingRef.current = remaining;
+    lastPropsRemainingRef.current = remaining;
 
     return () => {
       if (animationRef.current !== null) {
@@ -88,16 +92,24 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     const drift = Math.abs(remaining - currentRemainingRef.current);
     const jumpedUp = remaining > currentRemainingRef.current + 0.75; // new turn / time bank
     
-    // CRITICAL FIX: Also detect when remaining jumped significantly (new turn started)
-    // This ensures timer resets properly after each player action
-    const significantRemainingChange = Math.abs(remaining - lastRemainingRef.current) > 2;
+    // CRITICAL FIX: Detect when remaining changed significantly from PROPS perspective
+    // This catches the case when server sends new actionStartTime with same remaining
+    // For example: player acted, turn moved to next player who also gets 25s
+    // The key insight: if remaining jumps UP from what we received in last props, it's a new turn
+    const propsJumpedUp = remaining > lastPropsRemainingRef.current + 1;
     
+    // Also detect when remaining is close to total (new turn just started)
+    const isNearTotal = total > 0 && remaining >= total - 1;
+    const wasNotNearTotal = lastPropsRemainingRef.current < total - 2;
+    const resetToFull = isNearTotal && wasNotNearTotal;
+    
+    lastPropsRemainingRef.current = remaining;
     lastRemainingRef.current = remaining;
 
     // If server corrects the remaining time by more than ~1.25s, re-sync.
     // Also resync when time bank phase changes (important visual transition)
-    // Also resync on significant remaining time changes (new turn)
-    const needsResync = totalChanged || timeBankPhaseChanged || jumpedUp || drift > 1.25 || significantRemainingChange;
+    // Also resync when props indicate a new turn started
+    const needsResync = totalChanged || timeBankPhaseChanged || jumpedUp || propsJumpedUp || resetToFull || drift > 1.25;
 
     if (needsResync) {
       lastTotalRef.current = total;
