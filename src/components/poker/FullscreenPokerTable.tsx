@@ -485,6 +485,7 @@ interface PlayerSeatProps {
   turnTimeTotal?: number;
   isTimeBankActive?: boolean; // POKERSTARS-STYLE: Time bank phase
   timeBankRemaining?: number;  // PPPoker-STYLE: Remaining time bank seconds for alarm badge
+  timeBankTotalSeconds?: number; // PPPoker-STYLE: Total seconds for the current time bank slice
   heroCards?: string[];
   communityCards?: string[];
   gamePhase?: string;
@@ -552,6 +553,7 @@ const PlayerSeat = memo(function PlayerSeat({
   turnTimeTotal = 15,
   isTimeBankActive = false,
   timeBankRemaining = 0,
+  timeBankTotalSeconds = 30,
   heroCards,
   communityCards = [],
   gamePhase = 'waiting',
@@ -925,7 +927,7 @@ const PlayerSeat = memo(function PlayerSeat({
           <TimeBankAlarmBadge
             isActive={isTimeBankActive}
             remainingSeconds={timeBankRemaining}
-            totalSeconds={30}
+            totalSeconds={timeBankTotalSeconds}
             size={isHero ? "md" : "sm"}
             position="top-right"
           />
@@ -1619,6 +1621,7 @@ export interface FullscreenPokerTableProps {
   turnTimeTotal?: number;
   isTimeBankActive?: boolean; // POKERSTARS-STYLE: Time bank phase indicator
   timeBankRemaining?: number;  // PPPoker-STYLE: Remaining time bank for alarm badge
+  timeBankTotalSeconds?: number; // PPPoker-STYLE: Total seconds for the current time bank slice
   smallBlind: number;
   bigBlind: number;
   canJoinTable: boolean;
@@ -1704,6 +1707,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   turnTimeTotal,
   isTimeBankActive,
   timeBankRemaining = 0,
+  timeBankTotalSeconds = 30,
   smallBlind,
   bigBlind,
   canJoinTable,
@@ -2016,6 +2020,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               turnTimeTotal={turnTimeTotal}
               isTimeBankActive={player?.seatNumber === currentPlayerSeat ? isTimeBankActive : false}
               timeBankRemaining={player?.seatNumber === currentPlayerSeat ? timeBankRemaining : 0}
+              timeBankTotalSeconds={player?.seatNumber === currentPlayerSeat ? timeBankTotalSeconds : undefined}
               heroCards={idx === 0 ? heroCards : undefined}
               communityCards={communityCards}
               gamePhase={phase}
