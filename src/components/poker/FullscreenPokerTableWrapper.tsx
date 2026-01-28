@@ -372,6 +372,15 @@ export function FullscreenPokerTableWrapper({
   // Only recalculate when turn/phase actually changes
   const deadlineMsRef = useRef<number>(0);
   
+  // FIX: Track MAXIMUM actionStartTime seen for this turn to ignore stale updates
+  // When server broadcasts redundant state_updates, older ones may arrive after newer ones.
+  // We ignore any update where actionStartTime < maxActionStartTime for the same turn.
+  const maxActionStartTimeForTurnRef = useRef<number>(0);
+  
+  // FIX: "Sticky" time bank - once we enter time bank phase, don't exit until turn/seat changes
+  const stickyTimeBankActiveRef = useRef<boolean>(false);
+  const stickyTimeBankTurnIdRef = useRef<string>('');
+  
   useEffect(() => {
     // POKERSTARS-STYLE: Use server's actionTimeTotal (phase-aware) or fallback to table settings from DB.
     // This prevents rare ticks where WS snapshot omits timing fields and UI falls back to 15s.
@@ -410,21 +419,8 @@ export function FullscreenPokerTableWrapper({
       return;
     }
 
-    // Update time bank phase indicator
+    // Parse time bank phase from server (will be made "sticky" below)
     const isTimeBankPhase = Boolean(tableState?.isTimeBankPhase);
-    
-    // DIAGNOSTIC: Log Time Bank state changes
-    if (isTimeBankPhase !== isTimeBankActive) {
-      console.log('[TIME BANK UI]', {
-        isTimeBankPhase,
-        prevActive: isTimeBankActive,
-        currentPlayerTimeBank: tableState?.currentPlayerTimeBank,
-        timeRemaining: tableState?.timeRemaining,
-        seat: tableState?.currentPlayerSeat
-      });
-    }
-    
-    setIsTimeBankActive(isTimeBankPhase);
 
     const now = Date.now();
     const serverRemaining = tableState?.timeRemaining;
@@ -436,6 +432,39 @@ export function FullscreenPokerTableWrapper({
     const currentSeat = tableState?.currentPlayerSeat;
     const phaseChanged = prevPhaseRef.current !== currentPhase;
     const seatChanged = prevSeatRef.current !== currentSeat;
+
+    // ============================================
+    // FIX #1: Ignore stale (outdated) state updates
+    // ============================================
+    // Server can broadcast redundant state_updates out of order.
+    // If this update has an OLDER actionStartTime than we've already seen for this turn,
+    // skip processing to avoid "jumping back" the timer or resetting time bank.
+    const turnId = `${tableState?.handId}-${currentPhase}-${currentSeat}`;
+    const prevTurnId = `${tableState?.handId}-${prevPhaseRef.current}-${prevSeatRef.current}`;
+    const isSameTurn = turnId === prevTurnId && !phaseChanged && !seatChanged;
+
+    if (isSameTurn && actionStartTime && maxActionStartTimeForTurnRef.current > 0) {
+      // Same turn - check if this update is stale
+      if (actionStartTime < maxActionStartTimeForTurnRef.current) {
+        console.log('[TIMER SYNC] Ignoring STALE update:', {
+          receivedActionStartTime: actionStartTime,
+          maxSeenActionStartTime: maxActionStartTimeForTurnRef.current,
+          turnId,
+        });
+        return; // Skip this stale update entirely
+      }
+    }
+    
+    // Track the maximum actionStartTime we've seen for this turn
+    if (actionStartTime && actionStartTime > 0) {
+      if (!isSameTurn) {
+        // New turn - reset tracking
+        maxActionStartTimeForTurnRef.current = actionStartTime;
+      } else if (actionStartTime > maxActionStartTimeForTurnRef.current) {
+        maxActionStartTimeForTurnRef.current = actionStartTime;
+      }
+    }
+
     prevPhaseRef.current = currentPhase;
     prevSeatRef.current = currentSeat ?? null;
 
@@ -446,6 +475,35 @@ export function FullscreenPokerTableWrapper({
     const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current || phaseChanged || seatChanged || actionStartTimeChanged;
     prevTimerResetKeyRef.current = timerResetKey;
     prevActionStartTimeRef.current = actionStartTime || 0;
+
+    // ============================================
+    // FIX #2: Sticky Time Bank
+    // ============================================
+    // Once we enter time bank phase for this turn, DON'T exit it even if
+    // server sends updates with isTimeBankPhase=false (stale/redundant broadcasts).
+    // Only reset when turn/seat changes.
+    if (!isSameTurn || isNewTurn) {
+      stickyTimeBankActiveRef.current = false;
+      stickyTimeBankTurnIdRef.current = turnId;
+    }
+    
+    if (isTimeBankPhase) {
+      stickyTimeBankActiveRef.current = true;
+    }
+    
+    // Use sticky time bank: if we ever saw isTimeBankPhase=true for this turn, stay in it
+    const effectiveIsTimeBankPhase = stickyTimeBankActiveRef.current || isTimeBankPhase;
+    
+    // Update UI state with sticky logic
+    if (effectiveIsTimeBankPhase !== isTimeBankActive) {
+      console.log('[TIME BANK STICKY]', {
+        serverIsTimeBankPhase: isTimeBankPhase,
+        stickyActive: stickyTimeBankActiveRef.current,
+        effectiveIsTimeBankPhase,
+        turnId,
+      });
+    }
+    setIsTimeBankActive(effectiveIsTimeBankPhase);
 
     // POKERSTARS-STYLE SYNC:
     // 1. On NEW turn: calculate deadline from actionStartTime (server's authoritative start)
@@ -473,7 +531,7 @@ export function FullscreenPokerTableWrapper({
       // rather than cached actionTimer or DB fallback
       const effectiveActionTime = tableState?.actionTimeTotal ?? actionTimer;
       
-      if (isTimeBankPhase) {
+      if (effectiveIsTimeBankPhase) {
         // Time bank: DO NOT use `serverRemaining` as the *total* (it changes every tick).
         // Use server-provided `actionTimeTotal` (time bank slice total) when available.
         const tbTotal =
