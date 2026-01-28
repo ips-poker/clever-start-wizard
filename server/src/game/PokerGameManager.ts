@@ -483,10 +483,30 @@ export class PokerGameManager {
    */
   private async checkStuckTables(): Promise<void> {
     try {
-      // POKERSTARS: Reduced from 2 minutes to 45 seconds for faster recovery
-      const stuckThreshold = new Date(Date.now() - 45 * 1000).toISOString();
-      // Hard timeout: 90 seconds - force abort regardless of state
-      const hardTimeoutThreshold = new Date(Date.now() - 90 * 1000).toISOString();
+      // IMPORTANT:
+      // We MUST NOT treat a hand as "stuck" sooner than the table's configured
+      // (action_time_seconds + time_bank_seconds), otherwise tables configured
+      // with long action times (e.g., 60s) will be force-timed-out at 45s.
+      //
+      // We still keep a base candidate threshold of 45s for query efficiency,
+      // but we apply per-table dynamic thresholds in code.
+      const candidateThresholdIso = new Date(Date.now() - 45 * 1000).toISOString();
+
+      const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+
+      const computeStuckThresholdsSeconds = (actionTimeSeconds: number, timeBankSeconds: number) => {
+        // Add a small buffer for server-side animation delays / scheduling jitter.
+        const bufferSeconds = 10;
+        const baseSoft = actionTimeSeconds + timeBankSeconds + bufferSeconds;
+
+        // Soft threshold: never below 45s; never above DB watchdog (120s) minus headroom.
+        const soft = clamp(baseSoft, 45, 110);
+
+        // Hard threshold: allow a bit more time before aggressive recovery, but never exceed DB watchdog.
+        const hard = clamp(soft + 30, 90, 120);
+
+        return { soft, hard };
+      };
       
       // CRITICAL FIX: First, use the DB watchdog function to cleanup very old hands
       try {
@@ -503,12 +523,13 @@ export class PokerGameManager {
         logger.warn('Watchdog RPC failed', { error: String(watchdogErr) });
       }
       
-      // Find hands that are TRULY stuck (not completed AND not in a finished phase)
-      // Exclude 'complete', 'showdown', and 'aborted' phases
+      // Find candidate hands that are older than the *minimum* detection window.
+      // We then apply per-table thresholds based on (action_time_seconds + time_bank_seconds).
+      // Exclude 'complete', 'showdown', and 'aborted' phases.
       const { data: stuckHands, error } = await this.supabase
         .from('poker_hands')
-        .select('id, table_id, action_started_at, phase')
-        .lt('action_started_at', stuckThreshold)
+        .select('id, table_id, action_started_at, phase, poker_tables(action_time_seconds, time_bank_seconds)')
+        .lt('action_started_at', candidateThresholdIso)
         .is('completed_at', null)
         .not('phase', 'in', '("complete","showdown","aborted")');
       
@@ -516,11 +537,24 @@ export class PokerGameManager {
         return;
       }
       
-      for (const hand of stuckHands) {
+      for (const hand of stuckHands as Array<any>) {
         // Calculate how long the hand has been stuck
         const actionStartedAt = new Date(hand.action_started_at).getTime();
         const stuckDuration = Date.now() - actionStartedAt;
-        const isHardTimeout = stuckDuration > 90 * 1000; // 90 seconds
+
+        const actionTimeSeconds = Number(hand?.poker_tables?.action_time_seconds ?? 15);
+        const timeBankSeconds = Number(hand?.poker_tables?.time_bank_seconds ?? 30);
+        const { soft: softThresholdSeconds, hard: hardThresholdSeconds } = computeStuckThresholdsSeconds(
+          Number.isFinite(actionTimeSeconds) ? actionTimeSeconds : 15,
+          Number.isFinite(timeBankSeconds) ? timeBankSeconds : 30
+        );
+
+        // If the hand isn't actually past its configured action+timebank window, do nothing.
+        if (stuckDuration < softThresholdSeconds * 1000) {
+          continue;
+        }
+
+        const isHardTimeout = stuckDuration > hardThresholdSeconds * 1000;
         
         // CRITICAL: Check if hand has any players - if not, it's orphaned
         const { data: handPlayers } = await this.supabase
@@ -564,7 +598,11 @@ export class PokerGameManager {
           phase: hand.phase,
           actionStartedAt: hand.action_started_at,
           stuckDurationMs: stuckDuration,
-          isHardTimeout
+          isHardTimeout,
+          actionTimeSeconds,
+          timeBankSeconds,
+          softThresholdSeconds,
+          hardThresholdSeconds
         });
         
         // Check if table is in memory
