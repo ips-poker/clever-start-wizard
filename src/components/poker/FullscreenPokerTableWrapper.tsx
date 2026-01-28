@@ -397,26 +397,48 @@ export function FullscreenPokerTableWrapper({
         serverRemaining,
         phaseChanged,
         seatChanged,
-        isTimeBankPhase
+        isTimeBankPhase,
+        // Extra debug info
+        tableStateActionTimeTotal: tableState?.actionTimeTotal,
+        tableStateActionTimer: tableState?.actionTimer,
+        dbActionTime,
       });
       
       // NEW TURN: Set up fresh timer
+      // CRITICAL FIX: Use server's actionTimeTotal (which is ALWAYS fresh per-turn)
+      // rather than cached actionTimer or DB fallback
+      const effectiveActionTime = tableState?.actionTimeTotal ?? actionTimer;
+      
       if (isTimeBankPhase) {
         // Time bank: server gives a specific slice as the new "total"
-        const tbSlice = serverRemaining ?? dbTimeBank ?? actionTimer;
+        const tbSlice = serverRemaining ?? dbTimeBank ?? effectiveActionTime;
         setTurnTimeTotal(tbSlice);
         // Deadline: now + time bank slice
         deadlineMsRef.current = now + tbSlice * 1000;
       } else {
-        // Main timer: always starts at full actionTimer
-        setTurnTimeTotal(actionTimer);
-        // Prefer actionStartTime from server for precise sync
-        if (actionStartTime && actionStartTime > 0) {
-          deadlineMsRef.current = actionStartTime + actionTimer * 1000;
-        } else if (serverRemaining !== null && serverRemaining !== undefined) {
+        // Main timer: always starts at full actionTime (server's per-turn value)
+        setTurnTimeTotal(effectiveActionTime);
+        
+        // CRITICAL FIX: If actionStartTime is provided and reasonable (within last 2 minutes),
+        // use it. Otherwise, assume timer just started (now).
+        const isRecentActionStart = actionStartTime && actionStartTime > 0 && 
+                                    (now - actionStartTime) < 120000; // Within 2 minutes
+        
+        if (isRecentActionStart) {
+          deadlineMsRef.current = actionStartTime + effectiveActionTime * 1000;
+          console.log('[TIMER SYNC] Using server actionStartTime:', {
+            actionStartTime,
+            effectiveActionTime,
+            deadline: deadlineMsRef.current,
+            remainingSeconds: (deadlineMsRef.current - now) / 1000
+          });
+        } else if (serverRemaining !== null && serverRemaining !== undefined && serverRemaining > 0) {
           deadlineMsRef.current = now + serverRemaining * 1000;
+          console.log('[TIMER SYNC] Using serverRemaining:', { serverRemaining });
         } else {
-          deadlineMsRef.current = now + actionTimer * 1000;
+          // Fallback: start fresh timer from now
+          deadlineMsRef.current = now + effectiveActionTime * 1000;
+          console.log('[TIMER SYNC] Using fresh start (now):', { effectiveActionTime });
         }
       }
     } else {

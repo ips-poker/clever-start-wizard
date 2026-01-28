@@ -2239,6 +2239,9 @@ export class PokerTable {
         // POKERSTARS-STYLE: Timing info for client sync - now has fresh actionStartTime
         actionStartTime: newActionStartTime,
         actionTimeTotal: actionTimeTotal,
+        // CRITICAL: Also send timeRemaining = actionTimeTotal for new turn
+        // This helps client detect it's a fresh timer start
+        timeRemaining: actionTimeTotal,
         isTimeBankPhase: false
       });
       
@@ -2294,6 +2297,9 @@ export class PokerTable {
         // POKERSTARS-STYLE: Timing info for client sync - now has fresh actionStartTime
         actionStartTime: newActionStartTime,
         actionTimeTotal: actionTimeTotal,
+        // CRITICAL: Also send timeRemaining = actionTimeTotal for new turn
+        // This helps client detect it's a fresh timer start
+        timeRemaining: actionTimeTotal,
         isTimeBankPhase: false
       });
     }
