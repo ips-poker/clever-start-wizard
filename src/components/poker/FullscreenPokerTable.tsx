@@ -12,6 +12,7 @@ import { usePokerPreferences, TABLE_THEMES, CARD_BACKS } from '@/hooks/usePokerP
 import { getMaskedName } from '@/hooks/useMaskedPlayerName';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 import { SmoothAvatarTimer } from './SmoothAvatarTimer';
+import { TimeBankAlarmBadge } from './TimeBankAlarmBadge';
 import { PPPokerChipStack } from './PPPokerChipStack';
 import { PotChips } from './RealisticPokerChip';
 import { SyndikateTableBackground } from './SyndikateTableBackground';
@@ -483,6 +484,7 @@ interface PlayerSeatProps {
   turnTimeRemaining?: number;
   turnTimeTotal?: number;
   isTimeBankActive?: boolean; // POKERSTARS-STYLE: Time bank phase
+  timeBankRemaining?: number;  // PPPoker-STYLE: Remaining time bank seconds for alarm badge
   heroCards?: string[];
   communityCards?: string[];
   gamePhase?: string;
@@ -549,6 +551,7 @@ const PlayerSeat = memo(function PlayerSeat({
   turnTimeRemaining,
   turnTimeTotal = 15,
   isTimeBankActive = false,
+  timeBankRemaining = 0,
   heroCards,
   communityCards = [],
   gamePhase = 'waiting',
@@ -914,6 +917,17 @@ const PlayerSeat = memo(function PlayerSeat({
               isTimeBankPhase={isTimeBankActive}
             />
           </div>
+        )}
+        
+        {/* PPPoker-STYLE: Time Bank Alarm Badge - animated clock with countdown */}
+        {isHero && isCurrentTurn && isTimeBankActive && (
+          <TimeBankAlarmBadge
+            isActive={isTimeBankActive}
+            remainingSeconds={timeBankRemaining}
+            totalSeconds={30}
+            size="md"
+            position="top-right"
+          />
         )}
         
         {/* Level badge - PPPoker style (5YR, VIP, etc.) */}
@@ -1603,6 +1617,7 @@ export interface FullscreenPokerTableProps {
   turnTimeRemaining?: number;
   turnTimeTotal?: number;
   isTimeBankActive?: boolean; // POKERSTARS-STYLE: Time bank phase indicator
+  timeBankRemaining?: number;  // PPPoker-STYLE: Remaining time bank for alarm badge
   smallBlind: number;
   bigBlind: number;
   canJoinTable: boolean;
@@ -1687,6 +1702,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   turnTimeRemaining,
   turnTimeTotal,
   isTimeBankActive,
+  timeBankRemaining = 0,
   smallBlind,
   bigBlind,
   canJoinTable,
@@ -1998,6 +2014,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
               turnTimeTotal={turnTimeTotal}
               isTimeBankActive={player?.seatNumber === currentPlayerSeat ? isTimeBankActive : false}
+              timeBankRemaining={player?.seatNumber === currentPlayerSeat ? timeBankRemaining : 0}
               heroCards={idx === 0 ? heroCards : undefined}
               communityCards={communityCards}
               gamePhase={phase}
