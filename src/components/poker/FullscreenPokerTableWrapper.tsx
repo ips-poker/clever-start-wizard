@@ -474,11 +474,37 @@ export function FullscreenPokerTableWrapper({
       const effectiveActionTime = tableState?.actionTimeTotal ?? actionTimer;
       
       if (isTimeBankPhase) {
-        // Time bank: server gives a specific slice as the new "total"
-        const tbSlice = serverRemaining ?? dbTimeBank ?? effectiveActionTime;
-        setTurnTimeTotal(tbSlice);
-        // Deadline: now + time bank slice
-        deadlineMsRef.current = now + tbSlice * 1000;
+        // Time bank: DO NOT use `serverRemaining` as the *total* (it changes every tick).
+        // Use server-provided `actionTimeTotal` (time bank slice total) when available.
+        const tbTotal =
+          (typeof tableState?.actionTimeTotal === 'number' && Number.isFinite(tableState.actionTimeTotal)
+            ? tableState.actionTimeTotal
+            : (typeof dbTimeBank === 'number' && Number.isFinite(dbTimeBank)
+              ? dbTimeBank
+              : effectiveActionTime));
+
+        setTurnTimeTotal(tbTotal);
+
+        // IMPORTANT: Align deadline to server's actionStartTime when it's present.
+        // Using `now + tbTotal` causes UI to be "late" vs server (player gets sat out with seconds still shown).
+        const isRecentActionStart = actionStartTime && actionStartTime > 0 && (now - actionStartTime) < 120000;
+        if (isRecentActionStart) {
+          deadlineMsRef.current = actionStartTime + tbTotal * 1000;
+          console.log('[TIMER SYNC] Time bank using server actionStartTime:', {
+            actionStartTime,
+            tbTotal,
+            deadline: deadlineMsRef.current,
+            remainingSeconds: (deadlineMsRef.current - now) / 1000,
+          });
+        } else if (serverRemaining !== null && serverRemaining !== undefined && serverRemaining > 0) {
+          // Fallback: if start timestamp is missing, at least stay aligned with serverRemaining.
+          deadlineMsRef.current = now + serverRemaining * 1000;
+          console.log('[TIMER SYNC] Time bank using serverRemaining fallback:', { serverRemaining });
+        } else {
+          // Last resort: start from now.
+          deadlineMsRef.current = now + tbTotal * 1000;
+          console.log('[TIMER SYNC] Time bank using fresh start (now):', { tbTotal });
+        }
       } else {
         // Main timer: always starts at full actionTime (server's per-turn value)
         setTurnTimeTotal(effectiveActionTime);
