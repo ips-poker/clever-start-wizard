@@ -463,8 +463,54 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       (state as any).bigBlind ?? (state as any).big_blind ?? (state as any).bb ?? config?.bigBlind ?? 20
     );
     const ante = Number((state as any).ante ?? (state as any).ante_amount ?? config?.ante ?? 0);
-    // POKERSTARS-STYLE: Cash Game = 15s, Tournament = 30s (server provides actual value)
+    // POKERSTARS-STYLE: server provides the authoritative base action time (table setting)
     const actionTimer = Number((state as any).actionTimer ?? (state as any).action_timer ?? config?.actionTimeSeconds ?? 15);
+
+    // --- Timing parsing hardening (handles old servers / different shapes) ---
+    const toMsTimestamp = (v: unknown): number | null => {
+      if (v === null || v === undefined) return null;
+      if (typeof v === 'number' && Number.isFinite(v)) {
+        // If it's seconds (10 digits-ish), convert to ms.
+        return v < 1e12 ? v * 1000 : v;
+      }
+      if (typeof v === 'string') {
+        const trimmed = v.trim();
+        // ISO timestamp
+        const parsed = Date.parse(trimmed);
+        if (!Number.isNaN(parsed)) return parsed;
+        // numeric string
+        const num = Number(trimmed);
+        if (Number.isFinite(num)) return num < 1e12 ? num * 1000 : num;
+      }
+      return null;
+    };
+
+    const toNumberOrNull = (v: unknown): number | null => {
+      if (v === null || v === undefined) return null;
+      const n = typeof v === 'number' ? v : Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+
+    const parsedTimeBankSeconds =
+      toNumberOrNull((state as any).timeBankSeconds ?? (state as any).time_bank_seconds ?? config?.timeBankSeconds) ??
+      30;
+
+    const parsedTimeRemaining =
+      toNumberOrNull((state as any).timeRemaining ?? (state as any).time_remaining ?? (state as any).remaining) ??
+      null;
+
+    const parsedActionStartTime =
+      toMsTimestamp(
+        (state as any).actionStartTime ??
+          (state as any).action_start_time ??
+          // Some servers send ISO `action_started_at`
+          (state as any).action_started_at
+      ) ??
+      null;
+
+    const parsedActionTimeTotal =
+      toNumberOrNull((state as any).actionTimeTotal ?? (state as any).action_time_total) ??
+      actionTimer;
 
     // If server doesn't include blinds as per-player bets, show them client-side on preflop.
     // IMPORTANT: Some servers can briefly send phase='waiting' mid-preflop (e.g. right after first action)
@@ -513,15 +559,15 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       bigBlindAmount: bigBlind,
       anteAmount: ante,
       actionTimer,
-      timeBankSeconds: Number((state as any).timeBankSeconds ?? 30),
+      timeBankSeconds: parsedTimeBankSeconds,
       // POKERSTARS-STYLE: Server-authoritative timing
-      timeRemaining: (state as any).timeRemaining as number | null | undefined,
-      actionStartTime: (state as any).actionStartTime as number | null | undefined,
+      timeRemaining: parsedTimeRemaining,
+      actionStartTime: parsedActionStartTime,
       isTimeBankPhase: Boolean((state as any).isTimeBankPhase),
       currentPlayerTimeBank: Number((state as any).currentPlayerTimeBank ?? 0),
       // NEW: Phase-aware action timing
       isRaisedPot: Boolean((state as any).isRaisedPot),
-      actionTimeTotal: Number((state as any).actionTimeTotal ?? actionTimer),
+      actionTimeTotal: parsedActionTimeTotal,
       playersNeeded: ((state as any).playersNeeded || 0) as number
     };
   }, []);
@@ -1191,7 +1237,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 isTimeBankPhase: true,
                 // Reset action start time for time bank countdown
                 actionStartTime: Date.now(),
-                actionTimeTotal: timeUsed > 0 ? timeUsed : 30
+                // Time bank slice duration (server sends timeUsed as slice length)
+                actionTimeTotal: timeUsed > 0 ? timeUsed : (prev.timeBankSeconds ?? 30),
+                // Provide immediate remaining for UI until next state_update arrives
+                timeRemaining: timeUsed > 0 ? timeUsed : prev.timeBankSeconds
               };
             });
             
@@ -1231,7 +1280,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                     return {
                       ...incomingState,
                       isTimeBankPhase: directTimeBankPhase,
-                      actionStartTime: directTimeBankPhase ? Date.now() : incomingState.actionStartTime,
+                      // Prefer server timestamp if present; fall back to local now.
+                      actionStartTime: directTimeBankPhase ? (incomingState.actionStartTime ?? Date.now()) : incomingState.actionStartTime,
                       actionTimeTotal: directTimeRemaining ?? incomingState.actionTimeTotal
                     };
                   }
@@ -1846,6 +1896,25 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'timeout':
           // Player timed out - update state if included
           log('⏱️ Player timeout:', data.data);
+          // Always log critical timing snapshot for diagnosis of "early timeout" reports.
+          console.warn('[POKER TIMEOUT DIAG]', {
+            tableId,
+            data: data.data,
+            timing: tableStateRef.current
+              ? {
+                  handId: tableStateRef.current.handId,
+                  phase: tableStateRef.current.phase,
+                  currentPlayerSeat: tableStateRef.current.currentPlayerSeat,
+                  actionTimer: tableStateRef.current.actionTimer,
+                  actionTimeTotal: tableStateRef.current.actionTimeTotal,
+                  isTimeBankPhase: tableStateRef.current.isTimeBankPhase,
+                  timeBankSeconds: tableStateRef.current.timeBankSeconds,
+                  timeRemaining: tableStateRef.current.timeRemaining,
+                  actionStartTime: tableStateRef.current.actionStartTime,
+                }
+              : null,
+            now: Date.now(),
+          });
           if (data.state && tableId) {
             applyIncomingState(data.state);
             

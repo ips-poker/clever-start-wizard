@@ -325,8 +325,16 @@ export function FullscreenPokerTableWrapper({
   const deadlineMsRef = useRef<number>(0);
   
   useEffect(() => {
-    // POKERSTARS-STYLE: Use server's actionTimeTotal (phase-aware) or fallback
-    const actionTimer = tableState?.actionTimeTotal || tableState?.actionTimer || 15;
+    // POKERSTARS-STYLE: Use server's actionTimeTotal (phase-aware) or fallback to table settings from DB.
+    // This prevents rare ticks where WS snapshot omits timing fields and UI falls back to 15s.
+    const dbActionTime = typeof (fullTableSettings as any)?.actionTimeSeconds === 'number'
+      ? ((fullTableSettings as any).actionTimeSeconds as number)
+      : undefined;
+    const dbTimeBank = typeof (fullTableSettings as any)?.timeBankSeconds === 'number'
+      ? ((fullTableSettings as any).timeBankSeconds as number)
+      : undefined;
+
+    const actionTimer = tableState?.actionTimeTotal || tableState?.actionTimer || dbActionTime || 15;
 
     // No active player = no timer
     if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
@@ -378,7 +386,7 @@ export function FullscreenPokerTableWrapper({
       // NEW TURN: Set up fresh timer
       if (isTimeBankPhase) {
         // Time bank: server gives a specific slice as the new "total"
-        const tbSlice = serverRemaining ?? actionTimer;
+        const tbSlice = serverRemaining ?? dbTimeBank ?? actionTimer;
         setTurnTimeTotal(tbSlice);
         // Deadline: now + time bank slice
         deadlineMsRef.current = now + tbSlice * 1000;

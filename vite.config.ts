@@ -18,9 +18,13 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    // Prevent "Invalid hook call" by ensuring ALL deps resolve the same React instance.
+    // This is especially important with Radix UI packages.
+    dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
     // All dependencies now bundled together to avoid React duplication
     force: true,
+    include: ["react", "react-dom"],
   },
 }));
