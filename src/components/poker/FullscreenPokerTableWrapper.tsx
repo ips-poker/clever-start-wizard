@@ -35,6 +35,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ThemePageBackground } from './ThemePageBackground';
 import { CASH_ACTION_TIMING, TIME_BANK_CONFIG } from '@/config/pokerTimings';
 import { ProFeaturesOverlay } from './ProFeaturesOverlay';
+import { BombPotIndicator } from './BombPotIndicator';
 
 
 // Syndikate branding
@@ -249,11 +250,12 @@ export function FullscreenPokerTableWrapper({
     playerMovedToTable, clearPlayerMovedToTable,
     // Table settings
     updateTableSettings,
-    // PRO FEATURES: Bomb Pot, Straddle, Run It Twice
-    bombPotProposal,
+    // PRO FEATURES: Bomb Pot (Industry-style automatic), Straddle, Run It Twice
+    bombPotProposal, // Legacy
+    bombPotActive,   // NEW: Industry-style automatic
     runItTwiceProposal,
     straddlePosted,
-    voteBombPot,
+    voteBombPot, // Legacy - no-op
     voteRunItTwice,
     requestStraddle
   } = pokerTable;
@@ -1209,17 +1211,24 @@ export function FullscreenPokerTableWrapper({
           />
         )}
         
-        {/* PRO FEATURES: Bomb Pot and Run It Twice modals */}
-        {/* Straddle controls are now integrated into ProActionPanel */}
+        {/* PRO FEATURES: Bomb Pot Indicator (Industry-style automatic) */}
+        <BombPotIndicator
+          isActive={!!bombPotActive}
+          multiplier={bombPotActive?.multiplier ?? 2}
+          isDoubleBoard={bombPotActive?.isDoubleBoard ?? false}
+        />
+        
+        {/* PRO FEATURES: Run It Twice modal (still requires voting) */}
+        {/* Bomb Pot is now automatic - no voting modal */}
         {myPlayer && !isSpectator && (
           <ProFeaturesOverlay
             tableId={tableId}
             playerId={playerId}
             playerStack={myPlayer.stack}
-            bombPotProposal={bombPotProposal}
+            bombPotProposal={null} // Legacy - not used in industry mode
             runItTwiceProposal={runItTwiceProposal}
             bigBlind={effectiveBigBlind}
-            onBombPotVote={voteBombPot}
+            onBombPotVote={voteBombPot} // Legacy - no-op
             onRunItTwiceVote={voteRunItTwice}
           />
         )}
