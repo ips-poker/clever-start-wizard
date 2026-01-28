@@ -349,9 +349,13 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
 
   const hasCards = Array.isArray(cards) && cards.length >= 2;
   const isShowdown = gamePhase === 'showdown';
+  
+  // BOMB POT SUPPORT: Check if this is a fresh hand at flop (bomb pot skips preflop)
+  // Bomb pot is detected when: phase='flop', no prior animation for this hand, and we have cards
+  const isBombPotStart = gamePhase === 'flop' && hasCards && !wasAlreadyAnimated && !!visualHandKey;
 
-  // Animate only once per visual hand
-  const shouldAnimate = gamePhase === 'preflop' && hasCards && !wasAlreadyAnimated;
+  // Animate only once per visual hand - support both preflop and bomb pot (flop start)
+  const shouldAnimate = (gamePhase === 'preflop' || isBombPotStart) && hasCards && !wasAlreadyAnimated;
   if (shouldAnimate && visualHandKey) {
     animatedHandKeyRef.current = visualHandKey;
   }
@@ -367,12 +371,14 @@ export const PPPokerHeroCards = memo(function PPPokerHeroCards({
   const cardCount = cards?.length ?? 0;
   const cardOverlap = cardCount > 2 ? -8 : -10;
 
-  // Show cards: during preflop (animate), after preflop (static), showdown, or folded.
+  // Show cards: during preflop (animate), bomb pot flop start, after deal (static), showdown, or folded.
   // Hide completely in waiting (between hands) and when we don't have cards yet.
+  // BOMB POT: Include flop/turn/river phases with cards (wasAlreadyAnimated will be true after first render)
+  const isActivePhase = ['preflop', 'flop', 'turn', 'river', 'showdown'].includes(gamePhase);
   const wantVisible =
     gamePhase !== 'waiting' &&
     hasCards &&
-    (gamePhase === 'preflop' || wasAlreadyAnimated || isShowdown || isFolded);
+    (isActivePhase || isFolded);
   
   // PokerStars-style: folded cards show face-down, hover to peek
   const showCardsFaceUp = !isFolded || isHovering;

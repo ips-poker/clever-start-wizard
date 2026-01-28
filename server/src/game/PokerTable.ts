@@ -3306,12 +3306,17 @@ export class PokerTable {
         straddleAmount?: number;
       } = {};
       
-      // BOMB POT: Check if this hand is a bomb pot
+      // Track if this hand is a bomb pot for later event emission
+      let isBombPotHand = false;
+      let bombPotAmount = 0;
+      
       if (this.nextHandIsBombPot) {
         const bombPotMultiplier = this.config.bombPotMultiplier || 2;
         engineOptions.isBombPot = true;
         engineOptions.bombPotAmount = this.config.bigBlind * bombPotMultiplier;
         this.nextHandIsBombPot = false;
+        isBombPotHand = true;
+        bombPotAmount = engineOptions.bombPotAmount;
         
         logger.info('BOMB POT: Starting bomb pot hand', {
           multiplier: bombPotMultiplier,
