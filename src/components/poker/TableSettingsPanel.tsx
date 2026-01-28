@@ -355,14 +355,14 @@ export function TableSettingsPanel({
 
               {/* Straddle */}
               <SettingsSection title="Стрэддл" icon={Zap} collapsed>
-                <SettingRow label="Straddle" description="Добровольный 3-й блайнд (2x BB)">
+                <SettingRow label="Straddle (2×BB)" description="Добровольный 3-й блайнд, ставится UTG позицией">
                   <Switch
                     checked={settings.straddleEnabled}
                     onCheckedChange={(v) => updateSetting('straddleEnabled', v)}
                     disabled={!isHost}
                   />
                 </SettingRow>
-                <SettingRow label="Mississippi Straddle" description="Стрэддл с баттона (2-3x BB), первый ход у SB">
+                <SettingRow label="Mississippi Straddle (2×BB)" description="Стрэддл с баттона, действие начинается с SB">
                   <Switch
                     checked={settings.mississippiStraddleEnabled}
                     onCheckedChange={(v) => updateSetting('mississippiStraddleEnabled', v)}
