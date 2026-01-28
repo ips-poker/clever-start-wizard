@@ -158,6 +158,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
   const [betsBeingCollected, setBetsBeingCollected] = useState<{
     bets: Array<{ playerId: string; seatNumber: number; amount: number }>;
     timestamp: number;
+    isBombPot?: boolean;
   } | null>(null);
 
   // Professional timing: phase transition delays from server
@@ -921,30 +922,45 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
         case 'bets_collected':
           // PROFESSIONAL TIMING: Bets being collected before phase change
+          // BOMB POT SUPPORT: Also triggered before bomb pot hand starts
           log('💰 Bets collected - chips moving to pot:', data);
           // Extract bet positions from event data
           {
             const eventData = (data.data || data) as Record<string, unknown>;
+            // Server sends betPositions for bomb pot and normal phase transitions
+            const betPositions = eventData.betPositions as Array<{
+              playerId?: string;
+              seatNumber: number;
+              amount: number;
+            }> | undefined;
+            // Legacy format fallback
             const bets = (eventData.bets || eventData.collectedBets) as Array<{
               playerId?: string;
               seatNumber?: number;
               amount?: number;
             }> | undefined;
+            const isBombPot = eventData.isBombPot as boolean | undefined;
             
-            if (bets && bets.length > 0) {
+            // Prefer betPositions (new format), fallback to bets (legacy)
+            const effectiveBets = betPositions || bets;
+            
+            if (effectiveBets && effectiveBets.length > 0) {
               setBetsBeingCollected({
-                bets: bets.map(b => ({
+                bets: effectiveBets.map(b => ({
                   playerId: b.playerId || '',
                   seatNumber: b.seatNumber ?? 0,
                   amount: b.amount ?? 0
                 })),
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                isBombPot
               });
               
-              // Auto-clear after animation completes (800ms)
+              // Auto-clear after animation completes
+              const collectionDelay = (eventData.collectionDelay as number || 500) + 
+                (effectiveBets.length * ((eventData.staggerDelay as number) || 80));
               setTimeout(() => {
                 setBetsBeingCollected(null);
-              }, 800);
+              }, collectionDelay + 200);
             } else {
               // Fallback: use current player bets from table state
               const currentPlayers = tableStateRef.current?.players || [];
@@ -962,9 +978,11 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                   timestamp: Date.now()
                 });
                 
+                const collectionDelay = (eventData.collectionDelay as number || 500) + 
+                  (currentBets.length * ((eventData.staggerDelay as number) || 80));
                 setTimeout(() => {
                   setBetsBeingCollected(null);
-                }, 800);
+                }, collectionDelay + 200);
               }
             }
           }
