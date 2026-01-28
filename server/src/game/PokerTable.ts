@@ -5053,7 +5053,23 @@ export class PokerTable {
       // POKERSTARS-STYLE: Phase-aware timing info for client
       isRaisedPot: this.currentHand ? this.currentHand.currentBet > this.config.bigBlind : false,
       // Use stored actionTimeTotal if available (for consistency), otherwise calculate fresh
-      actionTimeTotal: this.currentHand?.actionTimeTotal || this.getActionTimeForPhase()
+      actionTimeTotal: (() => {
+        const actionTimeTotal = this.currentHand?.actionTimeTotal || this.getActionTimeForPhase();
+        // DIAGNOSTIC: Log action time being sent to clients
+        if (this.currentHand && this.currentHand.currentPlayerSeat !== null) {
+          logger.debug('getPublicState: sending actionTimeTotal to client', {
+            tableId: this.id,
+            configActionTimeSeconds: this.config.actionTimeSeconds,
+            configTimeBankSeconds: this.config.timeBankSeconds,
+            handActionTimeTotal: this.currentHand.actionTimeTotal,
+            calculatedActionTime: this.getActionTimeForPhase(),
+            finalActionTimeTotal: actionTimeTotal,
+            phase: this.currentHand.phase,
+            currentPlayerSeat: this.currentHand.currentPlayerSeat
+          });
+        }
+        return actionTimeTotal;
+      })()
     };
   }
   
