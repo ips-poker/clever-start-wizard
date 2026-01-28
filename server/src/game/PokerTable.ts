@@ -175,9 +175,26 @@ export class PokerTable {
       maxBuyIn: config.maxBuyIn,
       actionTimeSeconds: config.actionTimeSeconds,
       timeBankSeconds: config.timeBankSeconds,
-      runItTwiceEnabled: false,
-      bombPotEnabled: false,
-      straddleEnabled: false
+      // ========== PRO FEATURES FROM CONFIG ==========
+      runItTwiceEnabled: config.runItTwiceEnabled || false,
+      bombPotEnabled: config.bombPotEnabled || false,
+      straddleEnabled: config.straddleEnabled || false,
+      mississippiStraddleEnabled: config.mississippiStraddleEnabled || false,
+      maxStraddleCount: config.maxStraddleCount || 1,
+      buttonAnteEnabled: config.buttonAnteEnabled || false,
+      buttonAnteAmount: config.buttonAnteAmount || 0,
+      bigBlindAnteEnabled: config.bigBlindAnteEnabled || false,
+      bigBlindAnteAmount: config.bigBlindAnteAmount || 0,
+      bombPotMultiplier: config.bombPotMultiplier || 2,
+      bombPotInterval: config.bombPotInterval || 10,
+      bombPotDoubleBoard: config.bombPotDoubleBoard || false,
+      chatEnabled: config.chatEnabled !== false, // Default true
+      chatSlowMode: config.chatSlowMode || false,
+      chatSlowModeInterval: config.chatSlowModeInterval || 5,
+      rakePercent: config.rakePercent || 0,
+      rakeCap: config.rakeCap || 0,
+      autoStartEnabled: config.autoStartEnabled !== false, // Default true
+      autoStartDelaySeconds: config.autoStartDelaySeconds || 3,
     };
     
     this.engine = new PokerEngineV3(gameType, engineConfig);
@@ -192,6 +209,10 @@ export class PokerTable {
     logger.info('PokerTable initialized with Engine v3.0', {
       tableId: this.id,
       gameType,
+      bombPotEnabled: engineConfig.bombPotEnabled,
+      bombPotInterval: engineConfig.bombPotInterval,
+      bombPotMultiplier: engineConfig.bombPotMultiplier,
+      straddleEnabled: engineConfig.straddleEnabled,
       config: engineConfig
     });
   }
@@ -5609,12 +5630,27 @@ export class PokerTable {
    */
   private checkBombPotTrigger(): void {
     const bombPotEnabled = this.config.bombPotEnabled;
+    
+    logger.debug('BOMB POT: Check trigger', {
+      tableId: this.id,
+      bombPotEnabled,
+      handsSinceLastBombPot: this.handsSinceLastBombPot,
+      bombPotInterval: this.config.bombPotInterval
+    });
+    
     if (!bombPotEnabled) return;
     
     this.handsSinceLastBombPot++;
     
     // Use configured interval (default 10 hands)
     const bombPotInterval = this.config.bombPotInterval || 10;
+    
+    logger.info('BOMB POT: Counter incremented', {
+      tableId: this.id,
+      handsSinceLastBombPot: this.handsSinceLastBombPot,
+      bombPotInterval,
+      willTrigger: this.handsSinceLastBombPot >= bombPotInterval
+    });
     
     if (this.handsSinceLastBombPot >= bombPotInterval) {
       this.triggerBombPot();

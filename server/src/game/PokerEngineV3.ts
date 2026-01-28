@@ -2037,6 +2037,10 @@ export interface GameConfig {
   // Rake
   rakePercent?: number;
   rakeCap?: number;
+  // Chat settings
+  chatEnabled?: boolean;
+  chatSlowMode?: boolean;
+  chatSlowModeInterval?: number;
 }
 
 // ==========================================

@@ -142,6 +142,40 @@ export class PokerGameManager {
           actionTimeSeconds: tableData.action_time_seconds || 15,
           timeBankSeconds: tableData.time_bank_seconds || 30,
           tournamentId: tableData.tournament_id || undefined,
+          
+          // ========== PRO FEATURES FROM DB ==========
+          // Straddle settings
+          straddleEnabled: tableData.straddle_enabled || false,
+          mississippiStraddleEnabled: tableData.mississippi_straddle_enabled || false,
+          maxStraddleCount: tableData.max_straddle_count || 1,
+          
+          // Ante options
+          buttonAnteEnabled: tableData.button_ante_enabled || false,
+          buttonAnteAmount: tableData.button_ante_amount || 0,
+          bigBlindAnteEnabled: tableData.big_blind_ante_enabled || false,
+          bigBlindAnteAmount: tableData.big_blind_ante_amount || 0,
+          
+          // BOMB POT SETTINGS - Critical for auto-trigger!
+          bombPotEnabled: tableData.bomb_pot_enabled || false,
+          bombPotMultiplier: tableData.bomb_pot_multiplier || 2,
+          bombPotInterval: tableData.bomb_pot_interval || 10,
+          bombPotDoubleBoard: tableData.bomb_pot_double_board || false,
+          
+          // Chat settings
+          chatEnabled: tableData.chat_enabled !== false, // Default true
+          chatSlowMode: tableData.chat_slow_mode || false,
+          chatSlowModeInterval: tableData.chat_slow_mode_interval || 5,
+          
+          // Run It Twice
+          runItTwiceEnabled: tableData.run_it_twice_enabled || false,
+          
+          // Rake settings
+          rakePercent: tableData.rake_percent || 0,
+          rakeCap: tableData.rake_cap || 0,
+          
+          // Auto-start settings
+          autoStartEnabled: tableData.auto_start_enabled !== false, // Default true
+          autoStartDelaySeconds: tableData.auto_start_delay_seconds || 3,
         };
         
         const table = new PokerTable(config, this.supabase);
