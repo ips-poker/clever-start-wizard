@@ -707,8 +707,10 @@ const PlayerSeat = memo(function PlayerSeat({
       return;
     }
 
-    // Only start the pulse on the FIRST preflop frame of a new hand.
-    if (gamePhase !== 'preflop') return;
+    // Only start the pulse on the FIRST deal frame of a new hand.
+    // BOMB POT SUPPORT: Bomb pot starts at 'flop' phase, not 'preflop'
+    const isDealStartPhase = gamePhase === 'preflop' || gamePhase === 'flop';
+    if (!isDealStartPhase) return;
     if (!visualHandId) return;
     if (dealStartedForHandRef.current === visualHandId) return;
     dealStartedForHandRef.current = visualHandId;
