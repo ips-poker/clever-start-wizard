@@ -375,6 +375,18 @@ export function FullscreenPokerTableWrapper({
 
     // Update time bank phase indicator
     const isTimeBankPhase = Boolean(tableState?.isTimeBankPhase);
+    
+    // DIAGNOSTIC: Log Time Bank state changes
+    if (isTimeBankPhase !== isTimeBankActive) {
+      console.log('[TIME BANK UI]', {
+        isTimeBankPhase,
+        prevActive: isTimeBankActive,
+        currentPlayerTimeBank: tableState?.currentPlayerTimeBank,
+        timeRemaining: tableState?.timeRemaining,
+        seat: tableState?.currentPlayerSeat
+      });
+    }
+    
     setIsTimeBankActive(isTimeBankPhase);
 
     const now = Date.now();
@@ -1248,7 +1260,7 @@ export function FullscreenPokerTableWrapper({
             turnTimeRemaining={turnTimeRemaining ?? undefined}
             turnTimeTotal={turnTimeTotal}
             isTimeBankActive={isTimeBankActive}
-            timeBankRemaining={myPlayer?.timeBankRemaining ?? tableState?.currentPlayerTimeBank ?? 30}
+            timeBankRemaining={isTimeBankActive ? (turnTimeRemaining ?? 30) : (myPlayer?.timeBankRemaining ?? tableState?.currentPlayerTimeBank ?? 30)}
             smallBlind={effectiveSmallBlind}
             bigBlind={effectiveBigBlind}
             ante={effectiveAnte}
