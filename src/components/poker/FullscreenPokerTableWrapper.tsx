@@ -485,51 +485,122 @@ export function FullscreenPokerTableWrapper({
 
         setTurnTimeTotal(tbTotal);
 
-        // IMPORTANT: Align deadline to server's actionStartTime when it's present.
-        // Using `now + tbTotal` causes UI to be "late" vs server (player gets sat out with seconds still shown).
-        const isRecentActionStart = actionStartTime && actionStartTime > 0 && (now - actionStartTime) < 120000;
-        if (isRecentActionStart) {
-          deadlineMsRef.current = actionStartTime + tbTotal * 1000;
-          console.log('[TIMER SYNC] Time bank using server actionStartTime:', {
-            actionStartTime,
+        // IMPORTANT: actionStartTime is an absolute epoch ms from the server.
+        // If the client's clock is skewed (ahead/behind), using it directly can show extra seconds and cause
+        // "early sit-out" while UI still shows 6–7s. So we prefer serverRemaining when skew is detected.
+        const hasServerRemaining = typeof serverRemaining === 'number' && Number.isFinite(serverRemaining);
+        const hasActionStartTime = typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0;
+
+        const deadlineFromRemaining = hasServerRemaining ? (now + Math.max(0, serverRemaining) * 1000) : null;
+        const deadlineFromStart = hasActionStartTime ? (actionStartTime + tbTotal * 1000) : null;
+
+        let chosen: number | null = null;
+        let chosenSource: 'start' | 'remaining' | 'now' = 'now';
+
+        if (deadlineFromStart !== null && deadlineFromRemaining !== null) {
+          const sr = serverRemaining as number;
+          const ast = actionStartTime as number;
+          // Estimate skew: serverNow ~= actionStartTime + (total - remaining)
+          const impliedServerNow = ast + (tbTotal - sr) * 1000;
+          const clockSkewMs = now - impliedServerNow;
+          const startInFutureMs = ast - now;
+
+          // If start timestamp is in the future (client clock behind) OR skew is noticeable, trust remaining.
+          const skewTooHigh = Math.abs(clockSkewMs) > 1500;
+          const startTooFuture = startInFutureMs > 1500;
+
+          chosen = (skewTooHigh || startTooFuture) ? deadlineFromRemaining : deadlineFromStart;
+          chosenSource = (skewTooHigh || startTooFuture) ? 'remaining' : 'start';
+
+          console.log('[TIMER SYNC] Time bank clock skew estimate:', {
+            clockSkewMs,
+            startInFutureMs,
+            chosenSource,
             tbTotal,
-            deadline: deadlineMsRef.current,
-            remainingSeconds: (deadlineMsRef.current - now) / 1000,
+            serverRemaining: sr,
           });
-        } else if (serverRemaining !== null && serverRemaining !== undefined && serverRemaining > 0) {
-          // Fallback: if start timestamp is missing, at least stay aligned with serverRemaining.
-          deadlineMsRef.current = now + serverRemaining * 1000;
-          console.log('[TIMER SYNC] Time bank using serverRemaining fallback:', { serverRemaining });
-        } else {
-          // Last resort: start from now.
-          deadlineMsRef.current = now + tbTotal * 1000;
-          console.log('[TIMER SYNC] Time bank using fresh start (now):', { tbTotal });
+        } else if (deadlineFromRemaining !== null) {
+          chosen = deadlineFromRemaining;
+          chosenSource = 'remaining';
+        } else if (deadlineFromStart !== null) {
+          // Only trust absolute start if it's not in the future by a noticeable margin.
+          if (actionStartTime <= now + 1500 && (now - actionStartTime) < 120000) {
+            chosen = deadlineFromStart;
+            chosenSource = 'start';
+          }
         }
+
+        if (chosen === null) {
+          chosen = now + tbTotal * 1000;
+          chosenSource = 'now';
+        }
+
+        deadlineMsRef.current = chosen;
+        console.log('[TIMER SYNC] Time bank deadline chosen:', {
+          chosenSource,
+          deadline: deadlineMsRef.current,
+          remainingSeconds: (deadlineMsRef.current - now) / 1000,
+          tbTotal,
+          serverRemaining,
+          actionStartTime,
+        });
       } else {
         // Main timer: always starts at full actionTime (server's per-turn value)
         setTurnTimeTotal(effectiveActionTime);
         
-        // CRITICAL FIX: If actionStartTime is provided and reasonable (within last 2 minutes),
-        // use it. Otherwise, assume timer just started (now).
-        const isRecentActionStart = actionStartTime && actionStartTime > 0 && 
-                                    (now - actionStartTime) < 120000; // Within 2 minutes
-        
-        if (isRecentActionStart) {
-          deadlineMsRef.current = actionStartTime + effectiveActionTime * 1000;
-          console.log('[TIMER SYNC] Using server actionStartTime:', {
-            actionStartTime,
+        const hasServerRemaining = typeof serverRemaining === 'number' && Number.isFinite(serverRemaining);
+        const hasActionStartTime = typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0;
+
+        const deadlineFromRemaining = hasServerRemaining ? (now + Math.max(0, serverRemaining) * 1000) : null;
+        const deadlineFromStart = hasActionStartTime ? (actionStartTime + effectiveActionTime * 1000) : null;
+
+        let chosen: number | null = null;
+        let chosenSource: 'start' | 'remaining' | 'now' = 'now';
+
+        if (deadlineFromStart !== null && deadlineFromRemaining !== null) {
+          const sr = serverRemaining as number;
+          const ast = actionStartTime as number;
+          const impliedServerNow = ast + (effectiveActionTime - sr) * 1000;
+          const clockSkewMs = now - impliedServerNow;
+          const startInFutureMs = ast - now;
+
+          const skewTooHigh = Math.abs(clockSkewMs) > 1500;
+          const startTooFuture = startInFutureMs > 1500;
+
+          chosen = (skewTooHigh || startTooFuture) ? deadlineFromRemaining : deadlineFromStart;
+          chosenSource = (skewTooHigh || startTooFuture) ? 'remaining' : 'start';
+
+          console.log('[TIMER SYNC] Main clock skew estimate:', {
+            clockSkewMs,
+            startInFutureMs,
+            chosenSource,
             effectiveActionTime,
-            deadline: deadlineMsRef.current,
-            remainingSeconds: (deadlineMsRef.current - now) / 1000
+            serverRemaining: sr,
           });
-        } else if (serverRemaining !== null && serverRemaining !== undefined && serverRemaining > 0) {
-          deadlineMsRef.current = now + serverRemaining * 1000;
-          console.log('[TIMER SYNC] Using serverRemaining:', { serverRemaining });
-        } else {
-          // Fallback: start fresh timer from now
-          deadlineMsRef.current = now + effectiveActionTime * 1000;
-          console.log('[TIMER SYNC] Using fresh start (now):', { effectiveActionTime });
+        } else if (deadlineFromRemaining !== null) {
+          chosen = deadlineFromRemaining;
+          chosenSource = 'remaining';
+        } else if (deadlineFromStart !== null) {
+          if (actionStartTime <= now + 1500 && (now - actionStartTime) < 120000) {
+            chosen = deadlineFromStart;
+            chosenSource = 'start';
+          }
         }
+
+        if (chosen === null) {
+          chosen = now + effectiveActionTime * 1000;
+          chosenSource = 'now';
+        }
+
+        deadlineMsRef.current = chosen;
+        console.log('[TIMER SYNC] Main deadline chosen:', {
+          chosenSource,
+          deadline: deadlineMsRef.current,
+          remainingSeconds: (deadlineMsRef.current - now) / 1000,
+          effectiveActionTime,
+          serverRemaining,
+          actionStartTime,
+        });
       }
     } else {
       // SAME TURN: Check for drift from server
