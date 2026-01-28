@@ -13,6 +13,10 @@ interface UseTimeBankFallbackParams {
   handId: string | null | undefined;
   /** Current player seat - reset when turn changes to different player */
   currentPlayerSeat: number | null | undefined;
+  /** Current phase (preflop/flop/turn/river) - reset when street changes */
+  currentPhase?: string | null | undefined;
+  /** Is it MY turn? Fallback only activates when it's the hero's turn */
+  isMyTurn?: boolean;
 }
 
 /**
@@ -29,6 +33,8 @@ export function useTimeBankFallback({
   timeBankSliceSeconds,
   handId,
   currentPlayerSeat,
+  currentPhase,
+  isMyTurn = true, // Default true for backward compatibility
 }: UseTimeBankFallbackParams) {
   const [fallback, setFallback] = useState<{ startedAt: number; duration: number } | null>(null);
   const [tick, setTick] = useState(0);
@@ -38,8 +44,9 @@ export function useTimeBankFallback({
   const minMainRemainingThisTurnRef = useRef<number>(Number.POSITIVE_INFINITY);
   
   // Track the turn identity to know when a NEW turn actually starts
+  // Include phase to reset on street transitions (flop→turn→river)
   const turnIdRef = useRef<string | null>(null);
-  const currentTurnId = `${handId}-${currentPlayerSeat}`;
+  const currentTurnId = `${handId}-${currentPhase ?? 'unknown'}-${currentPlayerSeat}`;
   
   // Track if we've already activated fallback for this turn
   const activatedForTurnRef = useRef<string | null>(null);
@@ -51,7 +58,7 @@ export function useTimeBankFallback({
     return () => window.clearInterval(id);
   }, [fallback]);
 
-  // Reset fallback ONLY when turn genuinely changes (different hand or different player)
+  // Reset fallback ONLY when turn genuinely changes (different hand, player, or phase)
   useEffect(() => {
     if (turnIdRef.current !== currentTurnId) {
       turnIdRef.current = currentTurnId;
@@ -66,17 +73,26 @@ export function useTimeBankFallback({
     if (serverIsTimeBankPhase && !fallback && currentPlayerTimeBank && currentPlayerTimeBank > 0) {
       // Server confirmed time bank - activate with server's remaining value
       const duration = Math.min(timeBankSliceSeconds, currentPlayerTimeBank);
+      console.log('[TIME BANK FALLBACK] Server confirmed time bank, activating:', {
+        duration,
+        currentPlayerTimeBank,
+        timeBankSliceSeconds,
+        turnId: currentTurnId,
+      });
       setFallback({ startedAt: Date.now(), duration });
       activatedForTurnRef.current = currentTurnId;
     }
   }, [serverIsTimeBankPhase, currentPlayerTimeBank, timeBankSliceSeconds, currentTurnId, fallback]);
 
   // Main fallback logic - activate when main timer reaches 0
+  // IMPORTANT: Only activate fallback if it's the hero's turn!
   useEffect(() => {
     // Don't override if server already told us we're in time bank
     if (serverIsTimeBankPhase) return;
     // Already activated for this turn
     if (activatedForTurnRef.current === currentTurnId && fallback) return;
+    // NOT the hero's turn - don't activate fallback for other players
+    if (!isMyTurn) return;
 
     const remaining = mainTurnRemaining ?? null;
     const tb = Number(currentPlayerTimeBank ?? 0);
@@ -90,9 +106,11 @@ export function useTimeBankFallback({
     if (!Number.isFinite(slice) || slice <= 0) return;
     if (!Number.isFinite(tb) || tb <= 0) return;
 
+    // FIX: Use a slightly higher threshold (0.5s) to catch near-zero states
+    // since timer updates at 200ms intervals
     const mainExpired =
-      (remaining !== null && remaining <= 0.1) ||
-      minMainRemainingThisTurnRef.current <= 0.1;
+      (remaining !== null && remaining <= 0.5) ||
+      minMainRemainingThisTurnRef.current <= 0.5;
 
     if (mainExpired && !fallback) {
       const duration = Math.max(0, Math.min(slice, tb));
@@ -103,7 +121,8 @@ export function useTimeBankFallback({
           playerTimeBank: tb,
           slice,
           duration,
-          turnId: currentTurnId
+          turnId: currentTurnId,
+          isMyTurn,
         });
         setFallback({ startedAt: Date.now(), duration });
         activatedForTurnRef.current = currentTurnId;
@@ -112,7 +131,7 @@ export function useTimeBankFallback({
     
     // DON'T reset fallback based on mainTurnRemaining changing!
     // The ring timer re-animates, but we track real time.
-  }, [serverIsTimeBankPhase, mainTurnRemaining, currentPlayerTimeBank, timeBankSliceSeconds, fallback, currentTurnId]);
+  }, [serverIsTimeBankPhase, mainTurnRemaining, currentPlayerTimeBank, timeBankSliceSeconds, fallback, currentTurnId, isMyTurn]);
 
   const remainingSeconds = useMemo(() => {
     if (!fallback) return null;

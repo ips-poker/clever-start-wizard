@@ -345,6 +345,8 @@ export function FullscreenPokerTableWrapper({
     timeBankSliceSeconds,
     handId: tableState?.handId,
     currentPlayerSeat: tableState?.currentPlayerSeat,
+    currentPhase: tableState?.phase,
+    isMyTurn,
   });
 
   const timeBankUiActive = serverIsTimeBankPhase || tbFallback.isActive;
@@ -606,17 +608,33 @@ export function FullscreenPokerTableWrapper({
         // Main timer: always starts at full actionTime (server's per-turn value)
         setTurnTimeTotal(effectiveActionTime);
         
-        const hasServerRemaining = typeof serverRemaining === 'number' && Number.isFinite(serverRemaining);
+        // FIX: For NEW turn, if serverRemaining is 0 or very low (< 1s), this is a stale/race update.
+        // The server just started the turn, so serverRemaining should be ~effectiveActionTime.
+        // Trust actionStartTime in this case, or fallback to full effectiveActionTime.
+        const rawServerRemaining = serverRemaining;
+        let correctedServerRemaining = rawServerRemaining;
+        
+        // If it's a genuinely new turn and serverRemaining is suspiciously low, correct it
+        if (typeof rawServerRemaining === 'number' && rawServerRemaining < 1 && isNewTurn) {
+          console.log('[TIMER SYNC] CORRECTING suspiciously low serverRemaining on new turn:', {
+            rawServerRemaining,
+            correctedTo: effectiveActionTime,
+            reason: 'serverRemaining < 1s on brand new turn indicates stale update',
+          });
+          correctedServerRemaining = effectiveActionTime;
+        }
+        
+        const hasServerRemaining = typeof correctedServerRemaining === 'number' && Number.isFinite(correctedServerRemaining);
         const hasActionStartTime = typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0;
 
-        const deadlineFromRemaining = hasServerRemaining ? (now + Math.max(0, serverRemaining) * 1000) : null;
+        const deadlineFromRemaining = hasServerRemaining ? (now + Math.max(0, correctedServerRemaining) * 1000) : null;
         const deadlineFromStart = hasActionStartTime ? (actionStartTime + effectiveActionTime * 1000) : null;
 
         let chosen: number | null = null;
         let chosenSource: 'start' | 'remaining' | 'now' = 'now';
 
         if (deadlineFromStart !== null && deadlineFromRemaining !== null) {
-          const sr = serverRemaining as number;
+          const sr = correctedServerRemaining as number;
           const ast = actionStartTime as number;
           const impliedServerNow = ast + (effectiveActionTime - sr) * 1000;
           const clockSkewMs = now - impliedServerNow;
@@ -634,6 +652,7 @@ export function FullscreenPokerTableWrapper({
             chosenSource,
             effectiveActionTime,
             serverRemaining: sr,
+            rawServerRemaining,
           });
         } else if (deadlineFromRemaining !== null) {
           chosen = deadlineFromRemaining;
@@ -656,7 +675,8 @@ export function FullscreenPokerTableWrapper({
           deadline: deadlineMsRef.current,
           remainingSeconds: (deadlineMsRef.current - now) / 1000,
           effectiveActionTime,
-          serverRemaining,
+          serverRemaining: correctedServerRemaining,
+          rawServerRemaining,
           actionStartTime,
         });
       }
