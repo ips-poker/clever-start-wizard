@@ -22,7 +22,7 @@ interface ProActionPanelProps {
   onRaise: (amount: number) => void;
   onAllIn: () => void;
   disabled?: boolean;
-  // Straddle props
+  // Straddle props (PokerStars/PPPoker standard)
   straddleEnabled?: boolean;
   mississippiStraddleEnabled?: boolean;
   bigBlind?: number;
@@ -31,6 +31,10 @@ interface ProActionPanelProps {
   currentPlayerSeat?: number | null;
   mySeat?: number | null;
   dealerSeat?: number | null;
+  // Position info for straddle validation (industry standard)
+  smallBlindSeat?: number | null;
+  bigBlindSeat?: number | null;
+  players?: { seatNumber: number; status?: string }[];
   onStraddleRequest?: () => void;
   autoStraddleEnabled?: boolean;
   onAutoStraddleChange?: (enabled: boolean) => void;
@@ -221,7 +225,7 @@ export const ProActionPanel = memo(function ProActionPanel({
   onRaise,
   onAllIn,
   disabled = false,
-  // Straddle props
+  // Straddle props (PokerStars/PPPoker standard)
   straddleEnabled = false,
   mississippiStraddleEnabled = false,
   bigBlind = 20,
@@ -230,6 +234,10 @@ export const ProActionPanel = memo(function ProActionPanel({
   currentPlayerSeat = null,
   mySeat = null,
   dealerSeat = null,
+  // Position info for straddle validation
+  smallBlindSeat = null,
+  bigBlindSeat = null,
+  players = [],
   onStraddleRequest,
   autoStraddleEnabled = false,
   onAutoStraddleChange
@@ -374,6 +382,9 @@ export const ProActionPanel = memo(function ProActionPanel({
               currentPlayerSeat={currentPlayerSeat}
               mySeat={mySeat}
               dealerSeat={dealerSeat}
+              smallBlindSeat={smallBlindSeat}
+              bigBlindSeat={bigBlindSeat}
+              players={players}
               onStraddleRequest={onStraddleRequest}
               autoStraddleEnabled={autoStraddleEnabled}
               onAutoStraddleChange={onAutoStraddleChange}

@@ -1196,7 +1196,7 @@ export function FullscreenPokerTableWrapper({
             onCall={call}
             onRaise={raise}
             onAllIn={allIn}
-            // Straddle props
+            // Straddle props (PokerStars/PPPoker standard)
             straddleEnabled={fullTableSettings?.straddleEnabled as boolean ?? false}
             mississippiStraddleEnabled={fullTableSettings?.mississippiStraddleEnabled as boolean ?? false}
             bigBlind={effectiveBigBlind}
@@ -1205,6 +1205,13 @@ export function FullscreenPokerTableWrapper({
             currentPlayerSeat={tableState?.currentPlayerSeat ?? null}
             mySeat={mySeat}
             dealerSeat={tableState?.dealerSeat ?? null}
+            // Position info for straddle validation (industry standard: UTG/Button only)
+            smallBlindSeat={tableState?.smallBlindSeat ?? null}
+            bigBlindSeat={tableState?.bigBlindSeat ?? null}
+            players={(tableState?.players || []).map(p => ({ 
+              seatNumber: p.seatNumber, 
+              status: p.isActive ? 'active' : p.isSittingOut ? 'sitting_out' : 'disconnected' 
+            }))}
             onStraddleRequest={requestStraddle}
             autoStraddleEnabled={autoStraddleEnabled}
             onAutoStraddleChange={setAutoStraddleEnabled}
