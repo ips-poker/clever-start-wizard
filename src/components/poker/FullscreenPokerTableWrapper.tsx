@@ -343,7 +343,8 @@ export function FullscreenPokerTableWrapper({
     mainTurnRemaining: turnTimeRemaining,
     currentPlayerTimeBank: currentTurnPlayerTimeBank,
     timeBankSliceSeconds,
-    resetKey: timerResetKey,
+    handId: tableState?.handId,
+    currentPlayerSeat: tableState?.currentPlayerSeat,
   });
 
   const timeBankUiActive = serverIsTimeBankPhase || tbFallback.isActive;
