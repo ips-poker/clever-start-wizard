@@ -308,8 +308,14 @@ export function FullscreenPokerTableWrapper({
   // Client syncs from server and counts down locally
   // Include actionStartTime in key to detect timer resets even for same seat
   const timerResetKey = useMemo(() => {
-    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}-${tableState?.actionStartTime || 0}`;
-  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase, tableState?.actionStartTime]);
+    // CRITICAL FIX: Include timeRemaining as additional reset signal
+    // This ensures timer resets even if actionStartTime wasn't updated
+    return `${tableState?.handId || 'no-hand'}-${tableState?.phase || 'waiting'}-${tableState?.currentPlayerSeat ?? 'none'}-${tableState?.isTimeBankPhase ? 'tb' : 'main'}-${tableState?.actionStartTime || 0}-${Math.round(tableState?.timeRemaining ?? 0)}`;
+  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase, tableState?.actionStartTime, tableState?.timeRemaining]);
+
+  // Track previous phase for phase-change detection
+  const prevPhaseRef = useRef<string>('');
+  const prevSeatRef = useRef<number | null>(null);
 
   // Track previous timerResetKey to detect new turn/phase
   const prevTimerResetKeyRef = useRef<string>('');
@@ -326,6 +332,8 @@ export function FullscreenPokerTableWrapper({
     if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
       setTurnTimeRemaining(null);
       setIsTimeBankActive(false);
+      prevPhaseRef.current = tableState?.phase || 'waiting';
+      prevSeatRef.current = null;
       return;
     }
 
@@ -337,8 +345,17 @@ export function FullscreenPokerTableWrapper({
     const serverRemaining = tableState?.timeRemaining;
     const actionStartTime = tableState?.actionStartTime;
 
-    // Detect if this is a NEW turn/phase (timerResetKey changed)
-    const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current;
+    // CRITICAL FIX: Detect phase change or seat change separately from timerResetKey
+    // This ensures timer ALWAYS resets on flop→turn→river transitions
+    const currentPhase = tableState?.phase || 'waiting';
+    const currentSeat = tableState?.currentPlayerSeat;
+    const phaseChanged = prevPhaseRef.current !== currentPhase;
+    const seatChanged = prevSeatRef.current !== currentSeat;
+    prevPhaseRef.current = currentPhase;
+    prevSeatRef.current = currentSeat ?? null;
+
+    // Detect if this is a NEW turn/phase (timerResetKey changed OR phase/seat changed)
+    const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current || phaseChanged || seatChanged;
     prevTimerResetKeyRef.current = timerResetKey;
 
     // POKERSTARS-STYLE SYNC:
@@ -346,6 +363,18 @@ export function FullscreenPokerTableWrapper({
     // 2. During turn: only adjust if server's remaining differs significantly (drift correction)
     
     if (isNewTurn) {
+      // DEBUG: Log timer reset details
+      console.log('[TIMER SYNC] New turn detected:', {
+        phase: currentPhase,
+        seat: currentSeat,
+        actionTimer,
+        actionStartTime,
+        serverRemaining,
+        phaseChanged,
+        seatChanged,
+        isTimeBankPhase
+      });
+      
       // NEW TURN: Set up fresh timer
       if (isTimeBankPhase) {
         // Time bank: server gives a specific slice as the new "total"
@@ -374,6 +403,7 @@ export function FullscreenPokerTableWrapper({
         
         if (drift > 2) {
           // Significant drift - resync to server
+          console.log('[TIMER SYNC] Drift correction:', { drift, serverRemaining, localRemaining });
           deadlineMsRef.current = now + serverRemaining * 1000;
         }
       }
