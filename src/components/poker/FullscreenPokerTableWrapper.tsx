@@ -343,8 +343,17 @@ export function FullscreenPokerTableWrapper({
       toNumberOrUndef(rawSettings?.time_bank_seconds);
 
     const actionTimer = tableState?.actionTimeTotal || tableState?.actionTimer || dbActionTime || 15;
-
-    // No active player = no timer
+    
+    // DIAGNOSTIC: Log where action time comes from
+    console.log('[TIMER CONFIG]', {
+      actionTimeTotal: tableState?.actionTimeTotal,
+      actionTimer: tableState?.actionTimer,
+      dbActionTime,
+      dbTimeBank,
+      finalActionTimer: actionTimer,
+      phase: tableState?.phase,
+      seat: tableState?.currentPlayerSeat
+    });
     if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
       setTurnTimeRemaining(null);
       setIsTimeBankActive(false);
