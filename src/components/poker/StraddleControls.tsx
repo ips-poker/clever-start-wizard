@@ -289,19 +289,21 @@ export const StraddleControls = memo(function StraddleControls({
             "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all",
             "border backdrop-blur-sm",
             straddleQueued 
-              ? "bg-amber-500/30 border-amber-400 text-amber-300"
+              ? isMississippi 
+                ? "bg-orange-500/30 border-orange-400 text-orange-300"
+                : "bg-purple-500/30 border-purple-400 text-purple-300"
               : "bg-white/5 border-white/20 text-white/60 hover:bg-white/10 hover:text-white/80"
           )}
         >
           <div className={cn(
             "w-3.5 h-3.5 rounded-sm border flex items-center justify-center transition-all",
             straddleQueued 
-              ? "bg-amber-500 border-amber-400"
+              ? isMississippi ? "bg-orange-500 border-orange-400" : "bg-purple-500 border-purple-400"
               : "border-white/40 bg-transparent"
           )}>
             {straddleQueued && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
           </div>
-          <span>×1</span>
+          <span>Next</span>
         </button>
       )}
       

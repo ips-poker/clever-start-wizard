@@ -381,12 +381,15 @@ export function FullscreenPokerTableWrapper({
 
     const getRemaining = () => Math.max(0, (deadlineMsRef.current - Date.now()) / 1000);
 
-    // Store as integer seconds for UI/sounds; SmoothAvatarTimer keeps sub-second smoothness internally.
-    setTurnTimeRemaining(Math.ceil(getRemaining()));
+    // Store as precise seconds for SmoothAvatarTimer to maintain 60fps animation
+    // Using fractional seconds allows timer ring to animate smoothly
+    setTurnTimeRemaining(getRemaining());
 
+    // Update frequently for smooth UI - SmoothAvatarTimer handles interpolation
+    // 200ms gives good balance between smoothness and performance
     const interval = setInterval(() => {
-      setTurnTimeRemaining(Math.ceil(getRemaining()));
-    }, 500);
+      setTurnTimeRemaining(getRemaining());
+    }, 200);
 
     return () => clearInterval(interval);
   }, [
