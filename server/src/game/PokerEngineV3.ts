@@ -2027,8 +2027,9 @@ export interface GameConfig {
   buttonAnteAmount?: number;
   bigBlindAnteEnabled?: boolean;
   bigBlindAnteAmount?: number;
-  // Bomb pot settings
+  // Bomb pot settings (industry-style automatic trigger)
   bombPotMultiplier?: number;
+  bombPotInterval?: number;        // Number of hands between bomb pots
   bombPotDoubleBoard?: boolean;
   // Auto-start
   autoStartEnabled?: boolean;
