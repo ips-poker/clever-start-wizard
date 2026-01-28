@@ -464,7 +464,14 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     );
     const ante = Number((state as any).ante ?? (state as any).ante_amount ?? config?.ante ?? 0);
     // POKERSTARS-STYLE: server provides the authoritative base action time (table setting)
-    const actionTimer = Number((state as any).actionTimer ?? (state as any).action_timer ?? config?.actionTimeSeconds ?? 15);
+    // Harden parsing for old/new server shapes (camelCase + snake_case config).
+    const actionTimer = Number(
+      (state as any).actionTimer ??
+        (state as any).action_timer ??
+        config?.actionTimeSeconds ??
+        (config as any)?.action_time_seconds ??
+        15
+    );
 
     // --- Timing parsing hardening (handles old servers / different shapes) ---
     const toMsTimestamp = (v: unknown): number | null => {
@@ -491,8 +498,25 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       return Number.isFinite(n) ? n : null;
     };
 
+    const toBooleanOrNull = (v: unknown): boolean | null => {
+      if (v === null || v === undefined) return null;
+      if (typeof v === 'boolean') return v;
+      if (typeof v === 'number') return v === 1;
+      if (typeof v === 'string') {
+        const s = v.trim().toLowerCase();
+        if (s === 'true' || s === '1') return true;
+        if (s === 'false' || s === '0') return false;
+      }
+      return null;
+    };
+
     const parsedTimeBankSeconds =
-      toNumberOrNull((state as any).timeBankSeconds ?? (state as any).time_bank_seconds ?? config?.timeBankSeconds) ??
+      toNumberOrNull(
+        (state as any).timeBankSeconds ??
+          (state as any).time_bank_seconds ??
+          config?.timeBankSeconds ??
+          (config as any)?.time_bank_seconds
+      ) ??
       30;
 
     const parsedTimeRemaining =
@@ -511,6 +535,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     const parsedActionTimeTotal =
       toNumberOrNull((state as any).actionTimeTotal ?? (state as any).action_time_total) ??
       actionTimer;
+
+    const parsedIsTimeBankPhase =
+      toBooleanOrNull((state as any).isTimeBankPhase ?? (state as any).is_time_bank_phase) ?? false;
 
     // If server doesn't include blinds as per-player bets, show them client-side on preflop.
     // IMPORTANT: Some servers can briefly send phase='waiting' mid-preflop (e.g. right after first action)
@@ -563,7 +590,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       // POKERSTARS-STYLE: Server-authoritative timing
       timeRemaining: parsedTimeRemaining,
       actionStartTime: parsedActionStartTime,
-      isTimeBankPhase: Boolean((state as any).isTimeBankPhase),
+      // Avoid Boolean("false") === true bugs if server sends strings.
+      isTimeBankPhase: parsedIsTimeBankPhase,
       currentPlayerTimeBank: Number((state as any).currentPlayerTimeBank ?? 0),
       // NEW: Phase-aware action timing
       isRaisedPot: Boolean((state as any).isRaisedPot),
@@ -1191,6 +1219,19 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'turn_changed':
           log('🔄 Turn changed event:', data);
           {
+            const toMs = (v: unknown): number | undefined => {
+              if (v === null || v === undefined) return undefined;
+              if (typeof v === 'number' && Number.isFinite(v)) return v < 1e12 ? v * 1000 : v;
+              if (typeof v === 'string') {
+                const trimmed = v.trim();
+                const parsed = Date.parse(trimmed);
+                if (!Number.isNaN(parsed)) return parsed;
+                const num = Number(trimmed);
+                if (Number.isFinite(num)) return num < 1e12 ? num * 1000 : num;
+              }
+              return undefined;
+            };
+
             // Update only the timing-critical fields for instant timer reset
             const turnData = data as {
               currentPlayerSeat: number;
@@ -1206,9 +1247,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 ...prev,
                 currentPlayerSeat: turnData.currentPlayerSeat,
                 phase: turnData.phase as any,
-                actionStartTime: turnData.actionStartTime ?? Date.now(),
-                actionTimeTotal: turnData.actionTimeTotal ?? prev.actionTimer ?? 15,
-                isTimeBankPhase: turnData.isTimeBankPhase ?? false
+                // Normalize seconds/ISO to ms to prevent instant-expire timers.
+                actionStartTime: toMs(turnData.actionStartTime) ?? Date.now(),
+                actionTimeTotal:
+                  (typeof turnData.actionTimeTotal === 'number' && Number.isFinite(turnData.actionTimeTotal)
+                    ? turnData.actionTimeTotal
+                    : prev.actionTimeTotal ?? prev.actionTimer ?? 15),
+                isTimeBankPhase: typeof turnData.isTimeBankPhase === 'boolean' ? turnData.isTimeBankPhase : false
               };
             });
           }
@@ -1258,8 +1303,29 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             
             // POKERSTARS-STYLE: Check for time bank phase in direct state_update
             // Server sends isTimeBankPhase and timeRemaining when entering time bank
-            const directTimeBankPhase = stateData.isTimeBankPhase as boolean | undefined;
-            const directTimeRemaining = stateData.timeRemaining as number | undefined;
+            const toBooleanOrUndef = (v: unknown): boolean | undefined => {
+              if (typeof v === 'boolean') return v;
+              if (typeof v === 'number') return v === 1;
+              if (typeof v === 'string') {
+                const s = v.trim().toLowerCase();
+                if (s === 'true' || s === '1') return true;
+                if (s === 'false' || s === '0') return false;
+              }
+              return undefined;
+            };
+
+            const toNumberOrUndef = (v: unknown): number | undefined => {
+              if (v === null || v === undefined) return undefined;
+              const n = typeof v === 'number' ? v : Number(v);
+              return Number.isFinite(n) ? n : undefined;
+            };
+
+            const directTimeBankPhase = toBooleanOrUndef(
+              (stateData as any).isTimeBankPhase ?? (stateData as any).is_time_bank_phase
+            );
+            const directTimeRemaining = toNumberOrUndef(
+              (stateData as any).timeRemaining ?? (stateData as any).time_remaining
+            );
             
             if (directTimeBankPhase !== undefined) {
               log('⏱️ Time Bank phase update from state_update:', { 

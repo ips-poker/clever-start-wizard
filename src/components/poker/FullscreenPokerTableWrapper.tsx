@@ -327,12 +327,20 @@ export function FullscreenPokerTableWrapper({
   useEffect(() => {
     // POKERSTARS-STYLE: Use server's actionTimeTotal (phase-aware) or fallback to table settings from DB.
     // This prevents rare ticks where WS snapshot omits timing fields and UI falls back to 15s.
-    const dbActionTime = typeof (fullTableSettings as any)?.actionTimeSeconds === 'number'
-      ? ((fullTableSettings as any).actionTimeSeconds as number)
-      : undefined;
-    const dbTimeBank = typeof (fullTableSettings as any)?.timeBankSeconds === 'number'
-      ? ((fullTableSettings as any).timeBankSeconds as number)
-      : undefined;
+    const toNumberOrUndef = (v: unknown): number | undefined => {
+      if (v === null || v === undefined) return undefined;
+      const n = typeof v === 'number' ? v : Number(v);
+      return Number.isFinite(n) ? n : undefined;
+    };
+
+    // DB settings can be camelCase (frontend) or snake_case (raw row / older code paths)
+    const rawSettings = fullTableSettings as any;
+    const dbActionTime =
+      toNumberOrUndef(rawSettings?.actionTimeSeconds) ??
+      toNumberOrUndef(rawSettings?.action_time_seconds);
+    const dbTimeBank =
+      toNumberOrUndef(rawSettings?.timeBankSeconds) ??
+      toNumberOrUndef(rawSettings?.time_bank_seconds);
 
     const actionTimer = tableState?.actionTimeTotal || tableState?.actionTimer || dbActionTime || 15;
 
@@ -436,7 +444,9 @@ export function FullscreenPokerTableWrapper({
     tableState?.actionTimeTotal, // POKERSTARS-STYLE: Phase-aware timing
     tableState?.timeRemaining,
     tableState?.actionStartTime,
-    tableState?.isTimeBankPhase
+    tableState?.isTimeBankPhase,
+    // If settings are edited, fallbacks (dbActionTime/dbTimeBank) must refresh too.
+    fullTableSettings
   ]);
 
   // Auto-connect handled inside useNodePokerTable
