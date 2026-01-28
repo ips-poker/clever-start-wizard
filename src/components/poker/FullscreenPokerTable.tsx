@@ -920,12 +920,13 @@ const PlayerSeat = memo(function PlayerSeat({
         )}
         
         {/* PPPoker-STYLE: Time Bank Alarm Badge - animated clock with countdown */}
-        {isHero && isCurrentTurn && isTimeBankActive && (
+        {/* Show for CURRENT TURN player when time bank is active (not just hero) */}
+        {isCurrentTurn && isTimeBankActive && (
           <TimeBankAlarmBadge
             isActive={isTimeBankActive}
             remainingSeconds={timeBankRemaining}
             totalSeconds={30}
-            size="md"
+            size={isHero ? "md" : "sm"}
             position="top-right"
           />
         )}
