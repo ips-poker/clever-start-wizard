@@ -138,11 +138,8 @@ export class PokerTable {
   private timings: ProfessionalTimings = PROFESSIONAL_TIMINGS;
   
   // ========== PRO FEATURES STATE ==========
-  // Bomb Pot tracking
+  // Bomb Pot tracking (Industry-style: automatic, no voting)
   private handsSinceLastBombPot: number = 0;
-  private bombPotVotingActive: boolean = false;
-  private bombPotVotes: Map<string, boolean> = new Map(); // playerId -> accepted
-  private bombPotVotingTimeout: NodeJS.Timeout | null = null;
   private nextHandIsBombPot: boolean = false;
   
   // Straddle tracking
@@ -2992,11 +2989,7 @@ export class PokerTable {
       return;
     }
     
-    // PRO FEATURE: Wait for Bomb Pot voting to complete
-    if (this.bombPotVotingActive) {
-      logger.info('checkStartHand: waiting for bomb pot voting to complete');
-      return;
-    }
+    // Bomb Pot is now automatic (industry-style) - no voting delay
     
     const allPlayers = Array.from(this.players.values());
     const activePlayers = allPlayers.filter(p => p.status === 'active' && p.stack > 0);
@@ -4437,14 +4430,8 @@ export class PokerTable {
       isHandActive: false
     });
     
-    // PRO FEATURE: Check if it's time to propose a bomb pot
-    this.checkBombPotProposal();
-    
-    // If bomb pot voting started, don't schedule next hand - finalizeBombPotVoting will do it
-    if (this.bombPotVotingActive) {
-      logger.info('BOMB POT: Voting active, waiting for result before starting next hand');
-      return;
-    }
+    // PRO FEATURE: Check if next hand should be a Bomb Pot (automatic, no voting)
+    this.checkBombPotTrigger();
     
     // Check for next hand after configured auto-start delay (or default professional timing)
     const autoStartDelay = this.config.autoStartDelaySeconds;
@@ -4906,8 +4893,8 @@ export class PokerTable {
       isHandActive: false
     });
     
-    // PRO FEATURE: Check if it's time to propose a bomb pot
-    this.checkBombPotProposal();
+    // PRO FEATURE: Check if next hand should be a Bomb Pot (automatic, no voting)
+    this.checkBombPotTrigger();
     
     // Check for new hand with configured auto-start delay
     const autoStartDelay3 = this.config.autoStartDelaySeconds;
@@ -5584,14 +5571,15 @@ export class PokerTable {
   }
   
   // ========================================
-  // PRO FEATURES: BOMB POT
+  // PRO FEATURES: BOMB POT (Industry-style - Automatic, No Voting)
   // ========================================
   
   /**
-   * Check if it's time to propose a bomb pot
+   * Check if next hand should be a Bomb Pot
+   * Industry-style: Automatic trigger every N hands, no voting/delay
    * Called at the end of each hand
    */
-  private checkBombPotProposal(): void {
+  private checkBombPotTrigger(): void {
     const bombPotEnabled = this.config.bombPotEnabled;
     if (!bombPotEnabled) return;
     
@@ -5601,14 +5589,15 @@ export class PokerTable {
     const bombPotInterval = this.config.bombPotInterval || 10;
     
     if (this.handsSinceLastBombPot >= bombPotInterval) {
-      this.startBombPotVoting();
+      this.triggerBombPot();
     }
   }
   
   /**
-   * Start bomb pot voting - all players have 10 seconds to accept or decline
+   * Trigger automatic Bomb Pot (industry-style)
+   * No voting, no delay - just set the flag and notify players
    */
-  private startBombPotVoting(): void {
+  private triggerBombPot(): void {
     const activePlayers = Array.from(this.players.values())
       .filter(p => p.status === 'active' && p.stack > 0);
     
@@ -5616,126 +5605,44 @@ export class PokerTable {
     
     const bombPotMultiplier = this.config.bombPotMultiplier || 2;
     const bombPotAmount = this.config.bigBlind * bombPotMultiplier;
+    const isDoubleBoard = this.config.bombPotDoubleBoard || false;
     
     // Check all players have enough chips
     const eligiblePlayers = activePlayers.filter(p => p.stack >= bombPotAmount);
     if (eligiblePlayers.length < 2) return;
     
-    this.bombPotVotingActive = true;
-    this.bombPotVotes.clear();
+    // AUTOMATIC: Set bomb pot flag - no voting required
+    this.nextHandIsBombPot = true;
+    this.handsSinceLastBombPot = 0;
     
-    logger.info('BOMB POT: Starting voting', {
+    logger.info('BOMB POT: Automatic trigger (industry-style)', {
       tableId: this.id,
       multiplier: bombPotMultiplier,
       amount: bombPotAmount,
+      isDoubleBoard,
       eligiblePlayers: eligiblePlayers.length
     });
     
-    this.emit('bomb_pot_proposal', {
+    // Notify all players - this is informational, not a vote request
+    this.emit('bomb_pot_triggered', {
       multiplier: bombPotMultiplier,
       amount: bombPotAmount,
-      timeoutSeconds: 10,
-      players: eligiblePlayers.map(p => ({
-        playerId: p.id,
-        name: p.name,
-        seatNumber: p.seatNumber
-      }))
+      isDoubleBoard,
+      playerCount: eligiblePlayers.length
     });
-    
-    // 10 second timeout for voting
-    this.bombPotVotingTimeout = setTimeout(() => {
-      this.finalizeBombPotVoting();
-    }, 10000);
   }
   
   /**
-   * Handle player's bomb pot vote
+   * Legacy voteBombPot - kept for backwards compatibility
+   * In industry-style mode, voting is disabled
+   * @deprecated Use automatic trigger instead
    */
   public voteBombPot(playerId: string, accept: boolean): void {
-    if (!this.bombPotVotingActive) return;
-    
-    const player = this.players.get(playerId);
-    if (!player || player.status !== 'active') return;
-    
-    this.bombPotVotes.set(playerId, accept);
-    
-    logger.info('BOMB POT: Player voted', {
+    // Industry-style: No voting - log and ignore
+    logger.info('BOMB POT: Vote ignored (industry-style automatic mode)', {
       playerId: playerId.substring(0, 8),
-      accept,
-      totalVotes: this.bombPotVotes.size
+      accept
     });
-    
-    this.emit('bomb_pot_vote', {
-      playerId,
-      accept,
-      votesReceived: this.bombPotVotes.size
-    });
-    
-    // Check if all eligible players voted
-    const activePlayers = Array.from(this.players.values())
-      .filter(p => p.status === 'active' && p.stack > 0);
-    
-    if (this.bombPotVotes.size >= activePlayers.length) {
-      if (this.bombPotVotingTimeout) {
-        clearTimeout(this.bombPotVotingTimeout);
-      }
-      this.finalizeBombPotVoting();
-    }
-  }
-  
-  /**
-   * Finalize bomb pot voting
-   */
-  private finalizeBombPotVoting(): void {
-    if (!this.bombPotVotingActive) return;
-    
-    this.bombPotVotingActive = false;
-    if (this.bombPotVotingTimeout) {
-      clearTimeout(this.bombPotVotingTimeout);
-      this.bombPotVotingTimeout = null;
-    }
-    
-    // Check if ALL players accepted (or didn't vote = decline)
-    const activePlayers = Array.from(this.players.values())
-      .filter(p => p.status === 'active' && p.stack > 0);
-    
-    const allAccepted = activePlayers.every(p => this.bombPotVotes.get(p.id) === true);
-    
-    if (allAccepted && activePlayers.length >= 2) {
-      // BOMB POT CONFIRMED!
-      this.nextHandIsBombPot = true;
-      this.handsSinceLastBombPot = 0;
-      
-      logger.info('BOMB POT: All players accepted!', {
-        tableId: this.id,
-        playerCount: activePlayers.length
-      });
-      
-      this.emit('bomb_pot_confirmed', {
-        accepted: true,
-        playerCount: activePlayers.length
-      });
-    } else {
-      // Someone declined or didn't vote
-      const declinedCount = activePlayers.filter(p => !this.bombPotVotes.get(p.id)).length;
-      
-      logger.info('BOMB POT: Declined', {
-        tableId: this.id,
-        declinedCount,
-        totalPlayers: activePlayers.length
-      });
-      
-      this.emit('bomb_pot_declined', {
-        accepted: false,
-        declinedCount
-      });
-    }
-    
-    this.bombPotVotes.clear();
-    
-    // CRITICAL: Now that voting is complete, trigger next hand start
-    // Use a small delay to allow UI to process the result
-    setTimeout(() => this.checkStartHand(), 500);
   }
   
   // ========================================

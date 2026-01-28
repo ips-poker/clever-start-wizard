@@ -199,12 +199,21 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     timestamp: number;
   } | null>(null);
   
-  // PRO FEATURES: Bomb Pot state
+  // PRO FEATURES: Bomb Pot state (Industry-style: automatic, no voting)
+  // Legacy bombPotProposal kept for backwards compatibility but not used
   const [bombPotProposal, setBombPotProposal] = useState<{
     multiplier: number;
     amount: number;
     timeoutSeconds: number;
     players: { playerId: string; name: string; seatNumber: number }[];
+  } | null>(null);
+  
+  // NEW: Active bomb pot indicator (industry-style automatic trigger)
+  const [bombPotActive, setBombPotActive] = useState<{
+    multiplier: number;
+    amount: number;
+    isDoubleBoard: boolean;
+    playerCount: number;
   } | null>(null);
   
   // PRO FEATURES: Run It Twice state
@@ -1732,9 +1741,16 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           });
           break;
         
-        // PRO FEATURES: Bomb Pot
+        // PRO FEATURES: Bomb Pot (Industry-style: automatic, no voting)
+        case 'bomb_pot_triggered':
+          log('💣 BOMB POT triggered (automatic):', data);
+          setBombPotActive(data as any);
+          // Clear after hand starts (will be handled by hand_started)
+          break;
+        
+        // Legacy events - kept for backwards compatibility
         case 'bomb_pot_proposal':
-          log('💣 Bomb Pot proposal:', data);
+          log('💣 Bomb Pot proposal (legacy):', data);
           setBombPotProposal(data as any);
           break;
         
@@ -1742,6 +1758,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
         case 'bomb_pot_declined':
           log('💣 Bomb Pot result:', data.type);
           setBombPotProposal(null);
+          setBombPotActive(null);
           break;
         
         // PRO FEATURES: Run It Twice
@@ -2825,12 +2842,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
     clearWinnerAnnouncement: () => setWinnerAnnouncement(null),
     activeBurnCard, // POKERSTARS-STYLE: Burn card animation state
 
-    // PRO FEATURES: Bomb Pot, Straddle, Run It Twice
-    bombPotProposal,
+    // PRO FEATURES: Bomb Pot (Industry-style automatic), Straddle, Run It Twice
+    bombPotProposal, // Legacy - kept for backwards compatibility
+    bombPotActive,   // NEW: Industry-style automatic bomb pot indicator
     runItTwiceProposal,
     runItTwiceBoards,
     straddlePosted,
-    voteBombPot,
+    voteBombPot, // Legacy - no-op in industry mode
     voteRunItTwice,
     requestStraddle,
 
