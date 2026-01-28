@@ -1,6 +1,6 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Style
 // Designed to stay visually smooth even when parent updates `remaining` every second.
-// Supports Time Bank phase with distinct blue coloring
+// Supports Time Bank phase with distinct blue coloring and enhanced pulsation
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { isTimerCritical, getTimerColorHex, getTimerGlowColor, POKERSTARS_TIMER } from '@/constants/pokerTimerConfig';
@@ -11,7 +11,7 @@ interface SmoothAvatarTimerProps {
   size: number;
   strokeWidth?: number;
   className?: string;
-  /** Whether we're in time bank phase - changes color to blue */
+  /** Whether we're in time bank phase - changes color to blue with enhanced pulsation */
   isTimeBankPhase?: boolean;
   /** Current player's total time bank (for secondary indicator) */
   timeBankRemaining?: number;
@@ -36,6 +36,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const currentRemainingRef = useRef<number>(remaining);
   const lastTotalRef = useRef<number>(total);
   const lastTimeBankPhaseRef = useRef<boolean>(isTimeBankPhase);
+  const lastRemainingRef = useRef<number>(remaining);
 
   const startAnimation = (startRemaining: number) => {
     if (animationRef.current !== null) {
@@ -69,6 +70,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     startAnimation(remaining);
     lastTotalRef.current = total;
     lastTimeBankPhaseRef.current = isTimeBankPhase;
+    lastRemainingRef.current = remaining;
 
     return () => {
       if (animationRef.current !== null) {
@@ -85,10 +87,17 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     const timeBankPhaseChanged = isTimeBankPhase !== lastTimeBankPhaseRef.current;
     const drift = Math.abs(remaining - currentRemainingRef.current);
     const jumpedUp = remaining > currentRemainingRef.current + 0.75; // new turn / time bank
+    
+    // CRITICAL FIX: Also detect when remaining jumped significantly (new turn started)
+    // This ensures timer resets properly after each player action
+    const significantRemainingChange = Math.abs(remaining - lastRemainingRef.current) > 2;
+    
+    lastRemainingRef.current = remaining;
 
     // If server corrects the remaining time by more than ~1.25s, re-sync.
     // Also resync when time bank phase changes (important visual transition)
-    const needsResync = totalChanged || timeBankPhaseChanged || jumpedUp || drift > 1.25;
+    // Also resync on significant remaining time changes (new turn)
+    const needsResync = totalChanged || timeBankPhaseChanged || jumpedUp || drift > 1.25 || significantRemainingChange;
 
     if (needsResync) {
       lastTotalRef.current = total;
@@ -105,6 +114,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const strokeDashoffset = circumference * (1 - progress);
 
   const isCritical = isTimerCritical(currentRemaining);
+  const isWarning = currentRemaining <= POKERSTARS_TIMER.WARNING_SECONDS && !isCritical;
 
   // Use time bank aware color functions
   const strokeColor = getTimerColorHex(currentRemaining, isTimeBankPhase);
@@ -114,8 +124,17 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const glowFilter = isCritical
     ? `drop-shadow(0 0 12px ${glowColor}) drop-shadow(0 0 24px ${glowColor})`
     : isTimeBankPhase
-      ? `drop-shadow(0 0 10px ${glowColor}) drop-shadow(0 0 20px ${glowColor})`
-      : `drop-shadow(0 0 8px ${glowColor})`;
+      ? `drop-shadow(0 0 14px ${glowColor}) drop-shadow(0 0 28px ${glowColor})`
+      : isWarning
+        ? `drop-shadow(0 0 10px ${glowColor}) drop-shadow(0 0 20px ${glowColor})`
+        : `drop-shadow(0 0 8px ${glowColor})`;
+
+  // Enhanced pulse animation class for time bank
+  const pulseClass = isCritical
+    ? 'animate-[pulse_0.4s_ease-in-out_infinite]'
+    : isTimeBankPhase
+      ? 'animate-[pulse_0.6s_ease-in-out_infinite]'
+      : '';
 
   return (
     <svg
@@ -148,10 +167,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={strokeDashoffset}
-        className={cn(
-          isCritical && 'animate-[pulse_0.4s_ease-in-out_infinite]',
-          isTimeBankPhase && !isCritical && 'animate-[pulse_0.8s_ease-in-out_infinite]'
-        )}
+        className={pulseClass}
         style={{ transition: 'stroke 0.3s ease' }}
       />
 
@@ -178,26 +194,43 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
         );
       })()}
 
-      {/* Time Bank indicator - inner ring when in time bank phase */}
-      {isTimeBankPhase && !isCritical && (() => {
+      {/* Time Bank indicator - enhanced inner ring when in time bank phase */}
+      {isTimeBankPhase && (() => {
         const innerRadius = radius - 3;
         const innerCircumference = 2 * Math.PI * innerRadius;
         const innerOffset = innerCircumference * (1 - progress);
 
         return (
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={innerRadius}
-            fill="none"
-            stroke={POKERSTARS_TIMER.TIME_BANK_COLORS.ACTIVE}
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeDasharray={innerCircumference}
-            strokeDashoffset={innerOffset}
-            opacity={0.6}
-            className="animate-[pulse_1s_ease-in-out_infinite]"
-          />
+          <>
+            {/* Inner progress ring */}
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={innerRadius}
+              fill="none"
+              stroke={isCritical ? '#ef4444' : POKERSTARS_TIMER.TIME_BANK_COLORS.ACTIVE}
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeDasharray={innerCircumference}
+              strokeDashoffset={innerOffset}
+              opacity={0.8}
+              className={isCritical ? 'animate-[pulse_0.3s_ease-in-out_infinite]' : 'animate-[pulse_0.7s_ease-in-out_infinite]'}
+            />
+            {/* Additional outer glow for time bank */}
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius + 3}
+              fill="none"
+              stroke={isCritical ? '#ef4444' : POKERSTARS_TIMER.TIME_BANK_COLORS.ACTIVE}
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeDasharray={circumference * 1.1}
+              strokeDashoffset={strokeDashoffset * 1.1}
+              opacity={0.3}
+              className="animate-[pulse_0.8s_ease-in-out_infinite]"
+            />
+          </>
         );
       })()}
     </svg>

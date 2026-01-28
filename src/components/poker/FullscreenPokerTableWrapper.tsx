@@ -1233,6 +1233,7 @@ export function FullscreenPokerTableWrapper({
             turnTimeRemaining={turnTimeRemaining ?? undefined}
             turnTimeTotal={turnTimeTotal}
             isTimeBankActive={isTimeBankActive}
+            timeBankRemaining={myPlayer?.timeBankRemaining ?? tableState?.currentPlayerTimeBank ?? 30}
             smallBlind={effectiveSmallBlind}
             bigBlind={effectiveBigBlind}
             ante={effectiveAnte}
