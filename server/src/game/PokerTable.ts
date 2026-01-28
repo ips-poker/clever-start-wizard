@@ -3568,6 +3568,27 @@ export class PokerTable {
         // Otherwise, the server can change currentHand.id (atomicHandId) mid-hand,
         // and the frontend will interpret it as a brand new hand and replay deal animations
         // (exactly the “repeat once after first action after BB” symptom).
+        // BOMB POT: Emit bets_collected BEFORE hand_started so frontend can animate
+        // forced bets moving to pot before cards are dealt
+        if (isBombPotHand) {
+          const betPositions = activePlayers.map(p => ({
+            playerId: p.id,
+            seatNumber: p.seatNumber,
+            amount: bombPotAmount
+          }));
+          
+          this.emit('bets_collected', {
+            pot: this.currentHand.pot,
+            phase: 'flop',
+            betPositions,
+            collectionDelay: this.timings.betCollection.slideToCenter,
+            staggerDelay: this.timings.betCollection.staggerPerPlayer,
+            isBombPot: true
+          });
+          
+          await this.delay(this.timings.betCollection.slideToCenter + 100);
+        }
+        
         // Cards are sent player-specific via getPlayerState() in WebSocket handler.
         this.emit('hand_started', {
           handId: this.currentHand.id,
@@ -3579,6 +3600,8 @@ export class PokerTable {
           currentBet: this.currentHand.currentBet,
           currentPlayerSeat: this.currentHand.currentPlayerSeat,
           phase: this.currentHand.phase || 'preflop',
+          isBombPot: isBombPotHand,
+          communityCards: isBombPotHand ? this.currentHand.communityCards : [],
           players: activePlayers.map(p => ({
             id: p.id,
             name: p.name,
