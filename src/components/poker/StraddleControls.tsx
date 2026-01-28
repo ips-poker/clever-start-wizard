@@ -1,21 +1,22 @@
 /**
- * Straddle Controls Component - PokerStars/PokerBROS Style
- * Shows straddle options during pre-action phase (waiting for turn)
- * - Auto-Straddle: automatically post straddle every hand (persisted in localStorage)
- * - Straddle Next Hand: one-time straddle for the next hand
- * - Mississippi Straddle: straddle from any position (doubled amounts per position)
+ * Straddle Controls Component - PokerStars/PPPoker Industry Standard
  * 
- * Key improvements over basic implementation:
- * 1. Auto-straddle persisted across sessions (localStorage)
- * 2. Visual indicator of straddle amount (2xBB)
- * 3. Mississippi mode shows orange styling with "any position" hint
- * 4. Clean integration in pre-action panel (not floating button)
+ * INDUSTRY STANDARD RULES:
+ * 1. Regular Straddle: ONLY from UTG position (first player after BB)
+ * 2. Mississippi Straddle: ONLY from Button position
+ * 3. Amount: always 2× Big Blind (fixed, not a raise)
+ * 4. Straddle is a LIVE blind - straddler can raise if action returns uncapped
+ * 
+ * UI Features:
+ * - Auto-Straddle: automatically post straddle every hand when in valid position
+ * - Straddle Next Hand: one-time straddle for the next hand
+ * - Position validation: only shows when player is in valid straddle position
  */
 
 import React, { memo, useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Zap, Check, RotateCcw, DollarSign } from 'lucide-react';
+import { Zap, Check, RotateCcw, DollarSign, AlertCircle, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface StraddleControlsProps {
@@ -31,6 +32,11 @@ interface StraddleControlsProps {
   currentPlayerSeat: number | null;
   mySeat: number | null;
   dealerSeat: number | null;
+  
+  // Position info for validation
+  smallBlindSeat?: number | null;
+  bigBlindSeat?: number | null;
+  players?: { seatNumber: number; status?: string }[];
   
   // Actions
   onStraddleRequest: () => void;
@@ -57,6 +63,9 @@ export const StraddleControls = memo(function StraddleControls({
   currentPlayerSeat,
   mySeat,
   dealerSeat,
+  smallBlindSeat,
+  bigBlindSeat,
+  players = [],
   onStraddleRequest,
   autoStraddleEnabled,
   onAutoStraddleChange
@@ -67,6 +76,44 @@ export const StraddleControls = memo(function StraddleControls({
   
   const straddleAmount = bigBlind * 2;
   const canAffordStraddle = playerStack >= straddleAmount;
+  
+  // POKERSTARS STANDARD: Calculate UTG position (first after BB)
+  const utgSeat = useMemo(() => {
+    if (!bigBlindSeat || players.length < 3) return null;
+    
+    const activePlayers = players
+      .filter(p => p.status === 'active' || !p.status) // Include if status not provided
+      .sort((a, b) => a.seatNumber - b.seatNumber);
+    
+    if (activePlayers.length < 3) return null;
+    
+    const bbIdx = activePlayers.findIndex(p => p.seatNumber === bigBlindSeat);
+    if (bbIdx === -1) return null;
+    
+    // UTG is the next player after BB
+    const utgIdx = (bbIdx + 1) % activePlayers.length;
+    return activePlayers[utgIdx]?.seatNumber ?? null;
+  }, [bigBlindSeat, players]);
+  
+  // Determine straddle eligibility based on position
+  const straddleEligibility = useMemo((): 'utg' | 'button' | null => {
+    if (mySeat === null) return null;
+    
+    // Mississippi (Button) straddle - only from button
+    if (mississippiStraddleEnabled && mySeat === dealerSeat) {
+      return 'button';
+    }
+    
+    // Regular UTG straddle - only from UTG position
+    if (straddleEnabled && mySeat === utgSeat) {
+      return 'utg';
+    }
+    
+    return null;
+  }, [mySeat, dealerSeat, utgSeat, straddleEnabled, mississippiStraddleEnabled]);
+  
+  const canStraddle = straddleEligibility !== null && canAffordStraddle;
+  const isMississippi = straddleEligibility === 'button';
   
   // Determine if straddle window is open
   // Window is open during:
@@ -92,30 +139,27 @@ export const StraddleControls = memo(function StraddleControls({
     if (
       autoStraddleEnabled && 
       isStraddleWindow && 
-      canAffordStraddle && 
-      !hasRequestedStraddle &&
-      (straddleEnabled || mississippiStraddleEnabled)
+      canStraddle && 
+      !hasRequestedStraddle
     ) {
       // Auto-post with small delay for visual feedback
       const timer = setTimeout(() => {
         onStraddleRequest();
         setHasRequestedStraddle(true);
         setShowConfirmation(true);
-        // Hide confirmation after 2s
         setTimeout(() => setShowConfirmation(false), 2000);
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [autoStraddleEnabled, isStraddleWindow, canAffordStraddle, hasRequestedStraddle, straddleEnabled, mississippiStraddleEnabled, onStraddleRequest]);
+  }, [autoStraddleEnabled, isStraddleWindow, canStraddle, hasRequestedStraddle, onStraddleRequest]);
   
   // Handle one-time straddle checkbox
   useEffect(() => {
     if (
       straddleNextHand && 
       isStraddleWindow && 
-      canAffordStraddle && 
-      !hasRequestedStraddle &&
-      (straddleEnabled || mississippiStraddleEnabled)
+      canStraddle && 
+      !hasRequestedStraddle
     ) {
       onStraddleRequest();
       setHasRequestedStraddle(true);
@@ -123,31 +167,59 @@ export const StraddleControls = memo(function StraddleControls({
       setShowConfirmation(true);
       setTimeout(() => setShowConfirmation(false), 2000);
     }
-  }, [straddleNextHand, isStraddleWindow, canAffordStraddle, hasRequestedStraddle, straddleEnabled, mississippiStraddleEnabled, onStraddleRequest]);
+  }, [straddleNextHand, isStraddleWindow, canStraddle, hasRequestedStraddle, onStraddleRequest]);
   
   const handleManualStraddle = useCallback(() => {
-    if (!hasRequestedStraddle && canAffordStraddle) {
+    if (!hasRequestedStraddle && canStraddle) {
       onStraddleRequest();
       setHasRequestedStraddle(true);
       setShowConfirmation(true);
       setTimeout(() => setShowConfirmation(false), 2000);
     }
-  }, [hasRequestedStraddle, canAffordStraddle, onStraddleRequest]);
+  }, [hasRequestedStraddle, canStraddle, onStraddleRequest]);
   
-  // Don't show if straddle is not enabled
+  // Don't show if both straddle types are disabled
   if (!straddleEnabled && !mississippiStraddleEnabled) {
     return null;
   }
   
-  // Don't show if can't afford
-  if (!canAffordStraddle) {
+  // Don't show if player is not at table
+  if (mySeat === null) {
     return null;
   }
   
-  const isMississippi = mississippiStraddleEnabled;
+  // Show position indicator if not in valid straddle position
+  if (!canStraddle) {
+    // Only show info if straddle is possible on this table
+    const positionHint = straddleEnabled && !mississippiStraddleEnabled
+      ? `UTG only (seat ${utgSeat ?? '?'})`
+      : mississippiStraddleEnabled && !straddleEnabled
+        ? `Button only (seat ${dealerSeat ?? '?'})`
+        : `UTG (${utgSeat ?? '?'}) or Button (${dealerSeat ?? '?'})`;
+    
+    return (
+      <div className="flex items-center gap-2 opacity-50">
+        <AlertCircle className="w-3.5 h-3.5 text-white/40" />
+        <span className="text-xs text-white/40">
+          Straddle: {positionHint}
+        </span>
+      </div>
+    );
+  }
   
   return (
     <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+      {/* Position badge - shows UTG or BTN */}
+      <div className={cn(
+        "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide",
+        isMississippi 
+          ? "bg-orange-500/30 text-orange-300 border border-orange-500/40"
+          : "bg-purple-500/30 text-purple-300 border border-purple-500/40"
+      )}>
+        <Target className="w-2.5 h-2.5" />
+        <span>{isMississippi ? 'BTN' : 'UTG'}</span>
+      </div>
+      
       {/* Straddle amount badge */}
       <div className={cn(
         "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold",
@@ -204,13 +276,6 @@ export const StraddleControls = memo(function StraddleControls({
           <span className="hidden sm:inline">Straddle </span>×1
         </span>
       </label>
-      
-      {/* Mississippi indicator */}
-      {isMississippi && (
-        <span className="text-[10px] text-orange-400/70 italic hidden sm:inline">
-          (любая позиция)
-        </span>
-      )}
       
       {/* Manual Straddle Button - show when in straddle window */}
       <AnimatePresence mode="wait">

@@ -5646,50 +5646,138 @@ export class PokerTable {
   }
   
   // ========================================
-  // PRO FEATURES: STRADDLE
+  // PRO FEATURES: STRADDLE (PokerStars/PPPoker Standard)
   // ========================================
   
   /**
-   * Player requests to straddle
-   * Only UTG can regular straddle, or Button for Mississippi
+   * Determine if a player is in UTG position (first to act after BB)
+   * POKERSTARS STANDARD: Only UTG can post regular straddle
    */
-  public requestStraddle(playerId: string): void {
-    const straddleEnabled = this.config.straddleEnabled;
-    if (!straddleEnabled) {
-      this.emit('straddle_rejected', { playerId, reason: 'Straddle disabled' });
-      return;
+  private getUTGPosition(): number | null {
+    const activePlayers = Array.from(this.players.values())
+      .filter(p => p.status === 'active' && p.stack > 0)
+      .sort((a, b) => a.seatNumber - b.seatNumber);
+    
+    if (activePlayers.length < 3) return null; // Need at least 3 players for straddle
+    
+    // Calculate positions: Dealer -> SB -> BB -> UTG
+    const dealerSeat = this.dealerSeat;
+    if (dealerSeat === null) return null;
+    
+    // Find BB position (2 seats after dealer in 3+ player game)
+    const dealerIdx = activePlayers.findIndex(p => p.seatNumber === dealerSeat);
+    if (dealerIdx === -1) return null;
+    
+    // BB is 2 positions after dealer
+    const bbIdx = (dealerIdx + 2) % activePlayers.length;
+    // UTG is 1 position after BB
+    const utgIdx = (bbIdx + 1) % activePlayers.length;
+    
+    return activePlayers[utgIdx]?.seatNumber ?? null;
+  }
+  
+  /**
+   * Check if player is on the Button (for Mississippi Straddle)
+   * POKERSTARS STANDARD: Mississippi straddle is BUTTON-only
+   */
+  private isButtonPosition(seatNumber: number): boolean {
+    return this.dealerSeat === seatNumber;
+  }
+  
+  /**
+   * Get valid straddle position for a player
+   * Returns 'utg' | 'button' | null
+   */
+  private getStraddleEligibility(playerId: string): 'utg' | 'button' | null {
+    const player = this.players.get(playerId);
+    if (!player || player.status !== 'active') return null;
+    
+    const mississippiEnabled = this.config.mississippiStraddleEnabled;
+    const regularStraddleEnabled = this.config.straddleEnabled;
+    
+    // Mississippi (Button) straddle check
+    if (mississippiEnabled && this.isButtonPosition(player.seatNumber)) {
+      return 'button';
     }
     
+    // Regular UTG straddle check
+    if (regularStraddleEnabled) {
+      const utgSeat = this.getUTGPosition();
+      if (utgSeat !== null && player.seatNumber === utgSeat) {
+        return 'utg';
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Player requests to straddle
+   * POKERSTARS/PPPOKER STANDARD:
+   * - Regular straddle: ONLY from UTG position (first after BB)
+   * - Mississippi straddle: ONLY from Button position
+   * - Amount: always 2× Big Blind
+   * - Straddle is a LIVE blind (player can raise if action returns uncapped)
+   */
+  public requestStraddle(playerId: string): void {
     const player = this.players.get(playerId);
     if (!player || player.status !== 'active') {
       this.emit('straddle_rejected', { playerId, reason: 'Player not active' });
       return;
     }
     
-    const straddleAmount = this.config.bigBlind * 2;
-    if (player.stack < straddleAmount) {
-      this.emit('straddle_rejected', { playerId, reason: 'Insufficient chips' });
+    // Check straddle eligibility based on position
+    const eligibility = this.getStraddleEligibility(playerId);
+    
+    if (!eligibility) {
+      // Determine reason for rejection
+      const utgSeat = this.getUTGPosition();
+      const isOnButton = this.isButtonPosition(player.seatNumber);
+      
+      let reason = 'Invalid position for straddle';
+      if (this.config.straddleEnabled && !this.config.mississippiStraddleEnabled) {
+        reason = `Only UTG (seat ${utgSeat}) can straddle`;
+      } else if (!this.config.straddleEnabled && this.config.mississippiStraddleEnabled) {
+        reason = `Only Button (seat ${this.dealerSeat}) can Mississippi straddle`;
+      } else if (this.config.straddleEnabled && this.config.mississippiStraddleEnabled) {
+        reason = `Only UTG (seat ${utgSeat}) or Button (seat ${this.dealerSeat}) can straddle`;
+      } else {
+        reason = 'Straddle is disabled on this table';
+      }
+      
+      this.emit('straddle_rejected', { 
+        playerId, 
+        reason,
+        yourSeat: player.seatNumber,
+        utgSeat,
+        buttonSeat: this.dealerSeat
+      });
       return;
     }
     
-    const mississippiEnabled = this.config.mississippiStraddleEnabled;
+    // POKERSTARS STANDARD: Straddle = 2× BB
+    const straddleAmount = this.config.bigBlind * 2;
     
-    // Validate position
-    // For Mississippi: must be on button
-    // For regular: must be UTG (first after BB)
-    // We'll allow straddle request before hand starts
+    if (player.stack < straddleAmount) {
+      this.emit('straddle_rejected', { playerId, reason: 'Insufficient chips for straddle' });
+      return;
+    }
     
+    const isMississippi = eligibility === 'button';
+    
+    // Store pending straddle for next hand
     this.pendingStraddle = {
       playerId,
       seat: player.seatNumber,
       amount: straddleAmount
     };
     
-    logger.info('STRADDLE: Player requested straddle', {
+    logger.info('STRADDLE: Player posted straddle', {
       playerId: playerId.substring(0, 8),
       seat: player.seatNumber,
       amount: straddleAmount,
-      isMississippi: mississippiEnabled
+      type: isMississippi ? 'MISSISSIPPI (Button)' : 'REGULAR (UTG)',
+      eligibility
     });
     
     this.emit('straddle_posted', {
@@ -5697,8 +5785,29 @@ export class PokerTable {
       playerName: player.name,
       seatNumber: player.seatNumber,
       amount: straddleAmount,
-      isMississippi: mississippiEnabled
+      isMississippi,
+      straddleType: isMississippi ? 'button' : 'utg'
     });
+  }
+  
+  /**
+   * Get straddle eligibility info for a player (for UI)
+   */
+  public getStraddleInfo(playerId: string): {
+    canStraddle: boolean;
+    straddleType: 'utg' | 'button' | null;
+    straddleAmount: number;
+    utgSeat: number | null;
+    buttonSeat: number | null;
+  } {
+    const eligibility = this.getStraddleEligibility(playerId);
+    return {
+      canStraddle: eligibility !== null,
+      straddleType: eligibility,
+      straddleAmount: this.config.bigBlind * 2,
+      utgSeat: this.getUTGPosition(),
+      buttonSeat: this.dealerSeat
+    };
   }
   
   // ========================================
