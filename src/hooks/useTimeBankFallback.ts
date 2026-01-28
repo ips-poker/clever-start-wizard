@@ -32,6 +32,10 @@ export function useTimeBankFallback({
 }: UseTimeBankFallbackParams) {
   const [fallback, setFallback] = useState<{ startedAt: number; duration: number } | null>(null);
   const [tick, setTick] = useState(0);
+  // Track the minimum main remaining observed within THIS turn.
+  // This prevents missing time bank activation if the main remaining briefly hits 0
+  // but then gets corrected/resynced upwards by the parent timer logic.
+  const minMainRemainingThisTurnRef = useRef<number>(Number.POSITIVE_INFINITY);
   
   // Track the turn identity to know when a NEW turn actually starts
   const turnIdRef = useRef<string | null>(null);
@@ -52,6 +56,7 @@ export function useTimeBankFallback({
     if (turnIdRef.current !== currentTurnId) {
       turnIdRef.current = currentTurnId;
       activatedForTurnRef.current = null;
+      minMainRemainingThisTurnRef.current = Number.POSITIVE_INFINITY;
       setFallback(null);
     }
   }, [currentTurnId]);
@@ -77,17 +82,24 @@ export function useTimeBankFallback({
     const tb = Number(currentPlayerTimeBank ?? 0);
     const slice = Number(timeBankSliceSeconds ?? 30);
 
+    if (remaining !== null && Number.isFinite(remaining)) {
+      minMainRemainingThisTurnRef.current = Math.min(minMainRemainingThisTurnRef.current, remaining);
+    }
+
     // Only enable fallback if time bank exists and is positive
     if (!Number.isFinite(slice) || slice <= 0) return;
     if (!Number.isFinite(tb) || tb <= 0) return;
 
-    const mainExpired = remaining !== null && remaining <= 0.1;
+    const mainExpired =
+      (remaining !== null && remaining <= 0.1) ||
+      minMainRemainingThisTurnRef.current <= 0.1;
 
     if (mainExpired && !fallback) {
       const duration = Math.max(0, Math.min(slice, tb));
       if (duration > 0) {
         console.log('[TIME BANK FALLBACK] Activating fallback time bank:', {
           mainRemaining: remaining,
+          minMainRemainingThisTurn: minMainRemainingThisTurnRef.current,
           playerTimeBank: tb,
           slice,
           duration,

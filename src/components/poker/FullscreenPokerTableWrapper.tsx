@@ -1298,6 +1298,7 @@ export function FullscreenPokerTableWrapper({
             turnTimeTotal={displayTurnTimeTotal}
             isTimeBankActive={timeBankUiActive}
             timeBankRemaining={timeBankUiActive ? (displayTurnTimeRemaining ?? timeBankSliceSeconds) : (currentTurnPlayerTimeBank || timeBankSliceSeconds)}
+            timeBankTotalSeconds={timeBankUiActive ? displayTurnTimeTotal : timeBankSliceSeconds}
             smallBlind={effectiveSmallBlind}
             bigBlind={effectiveBigBlind}
             ante={effectiveAnte}
