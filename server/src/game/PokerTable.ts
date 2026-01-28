@@ -2179,38 +2179,57 @@ export class PokerTable {
       const collectionTime = calculateBetCollectionDelay(betPositions.length, this.timings);
       await this.delay(collectionTime);
       
-      // Emit phase change with dealing delay for client animation
+      // CRITICAL FIX: Calculate timer values BEFORE phase_change emission
+      // This ensures client can reset timer immediately on phase_change, not wait for state_update
+      const actionTimeTotal = this.getActionTimeForPhase();
+      const newActionStartTime = Date.now();
+      
+      // Update internal state FIRST
+      if (this.currentHand) {
+        this.currentHand.actionStartTime = newActionStartTime;
+        this.currentHand.isTimeBankPhase = false;
+        this.currentHand.actionTimeTotal = actionTimeTotal;
+      }
+      
+      logger.info('Phase change - timer reset (BEFORE animation delay)', {
+        newPhase,
+        actionStartTime: newActionStartTime,
+        actionTimeTotal,
+        currentPlayerSeat: this.currentHand?.currentPlayerSeat
+      });
+      
+      // Emit phase change with dealing delay AND timer info for IMMEDIATE reset
+      // Client can now reset timer on phase_change without waiting for state_update
       this.emit('phase_change', {
         phase: newPhase,
         communityCards: this.currentHand.communityCards,
         pot: this.currentHand.pot,
         dealDelay: this.timings.phases[newPhase]?.perCardDelay || 0,
         preDealDelay: this.timings.phases[newPhase]?.preDealDelay || 0,
-        postDealDelay: this.timings.phases[newPhase]?.postDealDelay || 0
+        postDealDelay: this.timings.phases[newPhase]?.postDealDelay || 0,
+        // CRITICAL: Include timer fields for immediate reset
+        currentPlayerSeat: this.currentHand.currentPlayerSeat,
+        actionStartTime: newActionStartTime,
+        actionTimeTotal: actionTimeTotal,
+        timeRemaining: actionTimeTotal,
+        isTimeBankPhase: false
       });
       
-      // Wait for cards to be dealt visually before starting next action timer
+      // Wait for cards to be dealt visually before syncing to DB
       await this.delay(phaseDelay);
       
-      // Now emit state update after cards are visually dealt
-      // POKERSTARS-STYLE: Include timing info for instant timer reset
-      // CRITICAL FIX: Set actionStartTime BEFORE emitting state_update
-      // Calculate actionTimeTotal ONCE and use it consistently
-      const actionTimeTotal = this.getActionTimeForPhase();
-      const newActionStartTime = Date.now();
+      // Update timer to account for animation delay
+      const postAnimationActionStartTime = Date.now();
       
       if (this.currentHand) {
-        this.currentHand.actionStartTime = newActionStartTime;
-        this.currentHand.isTimeBankPhase = false;
-        // Store the calculated actionTimeTotal for consistency
-        this.currentHand.actionTimeTotal = actionTimeTotal;
+        this.currentHand.actionStartTime = postAnimationActionStartTime;
         
         // CRITICAL FIX: Sync action_started_at to DB to prevent watchdog false positives
         // This ensures DB, server memory, and client all have consistent timer state
         this.supabase
           .from('poker_hands')
           .update({
-            action_started_at: new Date(newActionStartTime).toISOString(),
+            action_started_at: new Date(postAnimationActionStartTime).toISOString(),
             current_player_seat: this.currentHand.currentPlayerSeat,
             phase: newPhase,
             current_bet: 0
@@ -2223,24 +2242,23 @@ export class PokerTable {
           });
       }
       
-      logger.info('Emitting state_update with timer info (phase change)', {
-        actionStartTime: newActionStartTime,
+      logger.info('Emitting state_update with timer info (after animation)', {
+        actionStartTime: postAnimationActionStartTime,
         actionTimeTotal,
         phase: newPhase,
-        currentPlayerSeat: this.currentHand.currentPlayerSeat
+        currentPlayerSeat: this.currentHand?.currentPlayerSeat
       });
       
+      // Emit state_update with updated timer (after animation delay)
       this.emit('state_update', {
-        handId: this.currentHand.id, // POKERSTARS: For card deal animation sync
-        pot: this.currentHand.pot,
-        currentBet: 0, // Bets reset after phase
-        currentPlayerSeat: this.currentHand.currentPlayerSeat,
+        handId: this.currentHand?.id,
+        pot: this.currentHand?.pot || 0,
+        currentBet: 0,
+        currentPlayerSeat: this.currentHand?.currentPlayerSeat,
         phase: newPhase,
-        // POKERSTARS-STYLE: Timing info for client sync - now has fresh actionStartTime
-        actionStartTime: newActionStartTime,
+        // Fresh timer start after animation completed
+        actionStartTime: postAnimationActionStartTime,
         actionTimeTotal: actionTimeTotal,
-        // CRITICAL: Also send timeRemaining = actionTimeTotal for new turn
-        // This helps client detect it's a fresh timer start
         timeRemaining: actionTimeTotal,
         isTimeBankPhase: false
       });
