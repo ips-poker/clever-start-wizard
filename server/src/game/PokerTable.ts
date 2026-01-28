@@ -2974,7 +2974,7 @@ export class PokerTable {
       tableId: this.id, 
       hasCurrentHand: !!this.currentHand,
       pendingHandStart: this.pendingHandStart,
-      bombPotVotingActive: this.bombPotVotingActive,
+      nextHandIsBombPot: this.nextHandIsBombPot,
       totalPlayers: this.players.size
     });
     
