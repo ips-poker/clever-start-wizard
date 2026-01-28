@@ -36,6 +36,7 @@ import { ThemePageBackground } from './ThemePageBackground';
 import { CASH_ACTION_TIMING, TIME_BANK_CONFIG } from '@/config/pokerTimings';
 import { ProFeaturesOverlay } from './ProFeaturesOverlay';
 import { BombPotIndicator } from './BombPotIndicator';
+import { useTimeBankFallback } from '@/hooks/useTimeBankFallback';
 
 
 // Syndikate branding
@@ -321,6 +322,41 @@ export function FullscreenPokerTableWrapper({
     // Use full precision for actionStartTime to catch every change
     return `${handId}-${phase}-${seat}-${isTimeBank}-${actionTs}`;
   }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase, tableState?.actionStartTime]);
+
+  // --- TIME BANK UI FALLBACK (UI-only) ---
+  const timeBankSliceSeconds = useMemo(() => {
+    const rawSettings: any = fullTableSettings as any;
+    const fromDb =
+      (typeof rawSettings?.timeBankSeconds === 'number' ? rawSettings.timeBankSeconds : undefined) ??
+      (typeof rawSettings?.time_bank_seconds === 'number' ? rawSettings.time_bank_seconds : undefined);
+    const fromWs = typeof tableState?.timeBankSeconds === 'number' ? tableState.timeBankSeconds : undefined;
+    const fromConfig = isTournament ? TIME_BANK_CONFIG.tournament.initial : TIME_BANK_CONFIG.cash.initial;
+    return (fromWs ?? fromDb ?? fromConfig ?? 30) as number;
+  }, [fullTableSettings, tableState?.timeBankSeconds, isTournament]);
+
+  const serverIsTimeBankPhase = Boolean(tableState?.isTimeBankPhase);
+  const currentTurnPlayerTimeBank =
+    (tableState?.currentPlayerTimeBank ?? myPlayer?.timeBankRemaining ?? 0) as number;
+
+  const tbFallback = useTimeBankFallback({
+    serverIsTimeBankPhase,
+    mainTurnRemaining: turnTimeRemaining,
+    currentPlayerTimeBank: currentTurnPlayerTimeBank,
+    timeBankSliceSeconds,
+    resetKey: timerResetKey,
+  });
+
+  const timeBankUiActive = serverIsTimeBankPhase || tbFallback.isActive;
+  const displayTurnTimeRemaining = serverIsTimeBankPhase
+    ? turnTimeRemaining
+    : tbFallback.isActive
+      ? tbFallback.remainingSeconds
+      : turnTimeRemaining;
+  const displayTurnTimeTotal = serverIsTimeBankPhase
+    ? turnTimeTotal
+    : tbFallback.isActive
+      ? tbFallback.totalSeconds
+      : turnTimeTotal;
 
   // Track previous phase for phase-change detection
   const prevPhaseRef = useRef<string>('');
@@ -1257,10 +1293,10 @@ export function FullscreenPokerTableWrapper({
             smallBlindSeat={smallBlindSeat}
             bigBlindSeat={bigBlindSeat}
             currentPlayerSeat={currentPlayerSeat}
-            turnTimeRemaining={turnTimeRemaining ?? undefined}
-            turnTimeTotal={turnTimeTotal}
-            isTimeBankActive={isTimeBankActive}
-            timeBankRemaining={isTimeBankActive ? (turnTimeRemaining ?? 30) : (myPlayer?.timeBankRemaining ?? tableState?.currentPlayerTimeBank ?? 30)}
+            turnTimeRemaining={displayTurnTimeRemaining ?? undefined}
+            turnTimeTotal={displayTurnTimeTotal}
+            isTimeBankActive={timeBankUiActive}
+            timeBankRemaining={timeBankUiActive ? (displayTurnTimeRemaining ?? timeBankSliceSeconds) : (currentTurnPlayerTimeBank || timeBankSliceSeconds)}
             smallBlind={effectiveSmallBlind}
             bigBlind={effectiveBigBlind}
             ante={effectiveAnte}
