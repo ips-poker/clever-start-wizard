@@ -19,6 +19,8 @@ interface PPPokerActionButtonsProps {
   myStack: number;
   myCurrentBet?: number;
   timeRemaining?: number | null;
+  /** Total action time for the current turn (used for timer bar percentage) */
+  timeTotal?: number;
   onFold: () => void;
   onCheck: () => void;
   onCall: () => void;
@@ -48,6 +50,7 @@ export const PPPokerActionButtons = memo(function PPPokerActionButtons({
   myStack,
   myCurrentBet = 0,
   timeRemaining,
+  timeTotal = 15, // Default fallback, should come from table settings
   onFold,
   onCheck,
   onCall,
@@ -224,7 +227,7 @@ export const PPPokerActionButtons = memo(function PPPokerActionButtons({
           <div 
             className="h-full rounded-full transition-all duration-300" 
             style={{ 
-              width: `${Math.max(0, (timeRemaining / 15) * 100)}%`,
+              width: `${Math.max(0, Math.min(100, (timeRemaining / timeTotal) * 100))}%`,
               background: getTimerColorHex(timeRemaining)
             }} 
           />
