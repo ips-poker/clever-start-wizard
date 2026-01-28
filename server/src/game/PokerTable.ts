@@ -3447,6 +3447,33 @@ export class PokerTable {
         }
       }
       
+      // POKERSTARS-STYLE HAND HISTORY: Record straddle if posted
+      if (engineOptions.straddleSeat !== undefined && engineOptions.straddleAmount) {
+        const straddlePlayer = activePlayers.find(p => p.seatNumber === engineOptions.straddleSeat);
+        if (straddlePlayer) {
+          this.currentHand.actionLog.push({
+            playerId: straddlePlayer.id,
+            playerName: straddlePlayer.name,
+            seatNumber: straddlePlayer.seatNumber,
+            phase: 'preflop',
+            actionType: 'posts_straddle',
+            amount: engineOptions.straddleAmount,
+            timestamp: Date.now(),
+            actionOrder: actionOrder++
+          });
+          
+          // Also store straddle seat in hand state for reference
+          this.currentHand.straddleSeat = engineOptions.straddleSeat;
+          
+          logger.info('HAND HISTORY: Recorded straddle post', {
+            handId: this.currentHand.id,
+            straddlePlayer: straddlePlayer.name,
+            amount: engineOptions.straddleAmount,
+            seat: engineOptions.straddleSeat
+          });
+        }
+      }
+      
       logger.info('HAND HISTORY: Recorded blind posts', {
         handId: this.currentHand.id,
         actionCount: this.currentHand.actionLog.length,
@@ -3623,6 +3650,9 @@ export class PokerTable {
           phase: this.currentHand.phase || 'preflop',
           isBombPot: isBombPotHand,
           communityCards: isBombPotHand ? this.currentHand.communityCards : [],
+          // PRO FEATURE: Include straddle info if applicable
+          straddleSeat: this.currentHand.straddleSeat ?? null,
+          straddleAmount: engineOptions.straddleAmount ?? null,
           players: activePlayers.map(p => ({
             id: p.id,
             name: p.name,
@@ -5714,8 +5744,12 @@ export class PokerTable {
   // ========================================
   
   /**
-   * Determine if a player is in UTG position (first to act after BB)
+   * Determine if a player is in UTG position for the NEXT hand
    * POKERSTARS STANDARD: Only UTG can post regular straddle
+   * 
+   * CRITICAL FIX: Straddle is posted BEFORE the next hand starts,
+   * so we need to calculate UTG based on where the dealer WILL BE
+   * (next position after current dealer)
    */
   private getUTGPosition(): number | null {
     const activePlayers = Array.from(this.players.values())
@@ -5724,28 +5758,53 @@ export class PokerTable {
     
     if (activePlayers.length < 3) return null; // Need at least 3 players for straddle
     
-    // Calculate positions: Dealer -> SB -> BB -> UTG
-    const dealerSeat = this.dealerSeat;
-    if (dealerSeat === null) return null;
+    // Calculate positions for NEXT hand
+    // NEXT Dealer = current dealer + 1 position
+    const currentDealerSeat = this.dealerSeat;
+    if (currentDealerSeat === null && currentDealerSeat !== 0) return null;
     
-    // Find BB position (2 seats after dealer in 3+ player game)
-    const dealerIdx = activePlayers.findIndex(p => p.seatNumber === dealerSeat);
-    if (dealerIdx === -1) return null;
+    const currentDealerIdx = activePlayers.findIndex(p => p.seatNumber === currentDealerSeat);
     
-    // BB is 2 positions after dealer
-    const bbIdx = (dealerIdx + 2) % activePlayers.length;
+    // If no current hand, dealer hasn't moved yet - use current dealer as next dealer
+    // If hand just ended, next dealer is one position after current
+    const nextDealerIdx = this.currentHand 
+      ? currentDealerIdx  // During hand: use current dealer for this hand's UTG
+      : (currentDealerIdx === -1 ? 0 : (currentDealerIdx + 1) % activePlayers.length); // Between hands: next dealer
+    
+    // For NEXT hand: Dealer -> SB -> BB -> UTG
+    // BB is 2 positions after NEXT dealer
+    const nextBBIdx = (nextDealerIdx + 2) % activePlayers.length;
     // UTG is 1 position after BB
-    const utgIdx = (bbIdx + 1) % activePlayers.length;
+    const nextUTGIdx = (nextBBIdx + 1) % activePlayers.length;
     
-    return activePlayers[utgIdx]?.seatNumber ?? null;
+    return activePlayers[nextUTGIdx]?.seatNumber ?? null;
   }
   
   /**
-   * Check if player is on the Button (for Mississippi Straddle)
+   * Check if player is on the Button for NEXT hand (for Mississippi Straddle)
    * POKERSTARS STANDARD: Mississippi straddle is BUTTON-only
+   * 
+   * CRITICAL FIX: Straddle is posted BEFORE the next hand starts,
+   * so we need to calculate Button based on where the dealer WILL BE
    */
   private isButtonPosition(seatNumber: number): boolean {
-    return this.dealerSeat === seatNumber;
+    const activePlayers = Array.from(this.players.values())
+      .filter(p => p.status === 'active' && p.stack > 0)
+      .sort((a, b) => a.seatNumber - b.seatNumber);
+    
+    if (activePlayers.length < 2) return false;
+    
+    const currentDealerSeat = this.dealerSeat;
+    const currentDealerIdx = activePlayers.findIndex(p => p.seatNumber === currentDealerSeat);
+    
+    // During hand: current dealer is the button
+    // Between hands: next dealer (current + 1) will be the button
+    const nextDealerIdx = this.currentHand 
+      ? currentDealerIdx  // During hand: current dealer
+      : (currentDealerIdx === -1 ? 0 : (currentDealerIdx + 1) % activePlayers.length); // Between hands: next dealer
+    
+    const nextDealerSeat = activePlayers[nextDealerIdx]?.seatNumber;
+    return nextDealerSeat === seatNumber;
   }
   
   /**
