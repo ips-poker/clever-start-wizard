@@ -1347,12 +1347,22 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             const eventSeat = tbData?.seat;
             const eventPlayerId = tbData?.playerId;
             
-            // CRITICAL FIX: Only update isTimeBankPhase if this is for the CURRENT PLAYER.
-            // All clients receive this broadcast, but only the player whose turn it is
-            // should show the time bank phase. Use seat as primary check.
+            // CRITICAL FIX (v2): Only set isTimeBankPhase=true if this event is for the HERO.
+            // All clients receive this broadcast. The old check `eventSeat === currentPlayerSeat`
+            // was wrong because currentPlayerSeat is the same on all clients.
+            // We need to check if `eventSeat === mySeat` (the player viewing the table).
+            //
+            // For the HERO: show time bank alarm + blue ring + update state
+            // For OPPONENTS: just update timer timing values (actionStartTime/Total) but NOT isTimeBankPhase
+            //
+            // mySeatRef is defined at hook level, use it here.
+            const heroSeat = mySeatRef.current;
+            const isEventForHero = (heroSeat !== null && eventSeat !== undefined && eventSeat === heroSeat);
+            
             setTableState((prev) => {
               if (!prev) return prev;
               
+              // First check: is this event for the current player at all?
               const isForCurrentTurn = 
                 (eventSeat !== undefined && eventSeat === prev.currentPlayerSeat) ||
                 (eventPlayerId && prev.players?.some(p => 
@@ -1360,7 +1370,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 ));
               
               if (!isForCurrentTurn) {
-                // Time bank is for a different player - just log, don't change state
+                // Time bank is for a different player entirely - ignore
                 log('⏱️ Time Bank event for different player, ignoring state update', { 
                   eventSeat, 
                   eventPlayerId, 
@@ -1369,19 +1379,36 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 return prev;
               }
               
-              return {
-                ...prev,
-                isTimeBankPhase: true,
-                // Use server's authoritative timestamps
-                actionStartTime: serverActionStartTime ?? prev.actionStartTime,
-                // Use server's actionTimeTotal for consistent ring animation
-                actionTimeTotal: serverActionTimeTotal > 0 ? serverActionTimeTotal : (prev.timeBankSeconds ?? 30),
-                // Initial remaining = full slice
-                timeRemaining: serverActionTimeTotal > 0 ? serverActionTimeTotal : prev.timeBankSeconds
-              };
+              // CRITICAL: Only set isTimeBankPhase for the HERO (the client whose seat matches eventSeat)
+              // For other clients, just update timing values but keep isTimeBankPhase = false
+              if (isEventForHero) {
+                log('⏱️ Time Bank activated for HERO', { eventSeat, heroSeat });
+                return {
+                  ...prev,
+                  isTimeBankPhase: true,
+                  // Use server's authoritative timestamps
+                  actionStartTime: serverActionStartTime ?? prev.actionStartTime,
+                  // Use server's actionTimeTotal for consistent ring animation
+                  actionTimeTotal: serverActionTimeTotal > 0 ? serverActionTimeTotal : (prev.timeBankSeconds ?? 30),
+                  // Initial remaining = full slice
+                  timeRemaining: serverActionTimeTotal > 0 ? serverActionTimeTotal : prev.timeBankSeconds
+                };
+              } else {
+                // Opponent entered time bank - update timer values but NOT isTimeBankPhase
+                // This ensures opponent's ring still counts down correctly
+                log('⏱️ Time Bank activated for OPPONENT (not hero)', { eventSeat, heroSeat });
+                return {
+                  ...prev,
+                  // DON'T set isTimeBankPhase: true for opponents!
+                  // Update timing so ring animation is correct
+                  actionStartTime: serverActionStartTime ?? prev.actionStartTime,
+                  actionTimeTotal: serverActionTimeTotal > 0 ? serverActionTimeTotal : (prev.actionTimeTotal ?? 30),
+                  timeRemaining: serverActionTimeTotal > 0 ? serverActionTimeTotal : prev.timeRemaining
+                };
+              }
             });
             
-            log(`⏱️ Time Bank активирован: ${timeUsed}s (осталось: ${remaining}s)`);
+            log(`⏱️ Time Bank активирован: ${timeUsed}s (осталось: ${remaining}s), isHero: ${isEventForHero}`);
           }
           break;
 
