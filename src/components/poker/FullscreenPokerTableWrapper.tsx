@@ -665,22 +665,42 @@ export function FullscreenPokerTableWrapper({
         // Trust actionStartTime in this case, or fallback to full effectiveActionTime.
         const rawServerRemaining = serverRemaining;
         let correctedServerRemaining = rawServerRemaining;
+
+        const hasActionStartTime =
+          typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0;
+        const elapsedSinceStartMs = hasActionStartTime ? now - (actionStartTime as number) : null;
+
+        // CRITICAL HARDENING:
+        // If we just switched streets (flop→turn→river) but we receive a snapshot that implies
+        // we've already been in the new street for a long time, treat it as stale.
+        // This is the exact pattern in the logs: phase='turn' but serverRemaining ~1-2s.
+        const startLooksStaleForNewStreet =
+          Boolean(isNewTurn && phaseChanged && elapsedSinceStartMs !== null && elapsedSinceStartMs > 5000);
         
         // If it's a genuinely new turn and serverRemaining is suspiciously low, correct it
-        if (typeof rawServerRemaining === 'number' && rawServerRemaining < 1 && isNewTurn) {
+        if (typeof rawServerRemaining === 'number' && isNewTurn) {
+          const lowThreshold = Math.min(3, Math.max(1, effectiveActionTime * 0.25));
+          const isSuspiciouslyLow = rawServerRemaining < lowThreshold;
+
+          if (isSuspiciouslyLow && (startLooksStaleForNewStreet || rawServerRemaining < 1)) {
           console.log('[TIMER SYNC] CORRECTING suspiciously low serverRemaining on new turn:', {
             rawServerRemaining,
             correctedTo: effectiveActionTime,
-            reason: 'serverRemaining < 1s on brand new turn indicates stale update',
+            reason: startLooksStaleForNewStreet
+              ? 'phase changed but actionStartTime implies we are late into the street (stale packet)'
+              : 'serverRemaining extremely low on brand new turn indicates stale update',
+            phaseChanged,
+            elapsedSinceStartMs,
           });
           correctedServerRemaining = effectiveActionTime;
         }
-        
+        }
+
         const hasServerRemaining = typeof correctedServerRemaining === 'number' && Number.isFinite(correctedServerRemaining);
-        const hasActionStartTime = typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0;
 
         const deadlineFromRemaining = hasServerRemaining ? (now + Math.max(0, correctedServerRemaining) * 1000) : null;
-        const deadlineFromStart = hasActionStartTime ? (actionStartTime + effectiveActionTime * 1000) : null;
+        const deadlineFromStart =
+          hasActionStartTime && !startLooksStaleForNewStreet ? (actionStartTime + effectiveActionTime * 1000) : null;
 
         let chosen: number | null = null;
         let chosenSource: 'start' | 'remaining' | 'now' = 'now';
