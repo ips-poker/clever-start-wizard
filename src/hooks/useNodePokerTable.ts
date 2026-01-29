@@ -1445,10 +1445,17 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               (stateData as any).timeRemaining ?? (stateData as any).time_remaining
             );
             
+            // CRITICAL FIX: Get current player seat from state to determine if time bank is for hero
+            const stateCurrentPlayerSeat = toNumberOrUndef(
+              (stateData as any).currentPlayerSeat ?? (stateData as any).current_player_seat
+            );
+            
             if (directTimeBankPhase !== undefined) {
               log('⏱️ Time Bank phase update from state_update:', { 
                 isTimeBankPhase: directTimeBankPhase, 
-                timeRemaining: directTimeRemaining 
+                timeRemaining: directTimeRemaining,
+                currentPlayerSeat: stateCurrentPlayerSeat,
+                mySeat: mySeatRef.current
               });
             }
             
@@ -1459,11 +1466,29 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               setTableState((prev) => {
                 if (!prev) return keepShowdown ? { ...incomingState, phase: 'showdown' } : incomingState;
                 if (!keepShowdown) {
+                  // CRITICAL FIX: Only set isTimeBankPhase = true if this is for the HERO
+                  // Server broadcasts time bank state to all clients, but only the hero should see it as their turn
+                  const heroSeat = mySeatRef.current;
+                  const currentTurnSeat = stateCurrentPlayerSeat ?? incomingState.currentPlayerSeat ?? prev.currentPlayerSeat;
+                  const isTimeBankForHero = heroSeat !== null && currentTurnSeat === heroSeat;
+                  
                   // POKERSTARS-STYLE: Preserve time bank state from direct update
                   if (directTimeBankPhase !== undefined) {
+                    // Only set isTimeBankPhase = true for the hero, never for opponents
+                    const effectiveTimeBankPhase = directTimeBankPhase && isTimeBankForHero;
+                    
+                    if (directTimeBankPhase && !isTimeBankForHero) {
+                      log('⏱️ Time Bank from state_update - NOT for hero, keeping timing only', {
+                        heroSeat,
+                        currentTurnSeat,
+                        directTimeBankPhase
+                      });
+                    }
+                    
                     return {
                       ...incomingState,
-                      isTimeBankPhase: directTimeBankPhase,
+                      // CRITICAL: Only set true if it's for the hero
+                      isTimeBankPhase: effectiveTimeBankPhase,
                       // CRITICAL: Never synthesize actionStartTime on client.
                       // If server omitted it in a snapshot, keep the previous one.
                       actionStartTime: directTimeBankPhase
