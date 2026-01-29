@@ -1097,52 +1097,101 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             }
           }
           
-          if (data.state && tableId) {
-            const stateData = data.state as Record<string, unknown>;
-            
-            // Log all state keys and values for debugging
-            log(`📊 Full state dump:`, JSON.stringify(stateData).substring(0, 800));
-            
-            // Log specific fields
-            log(`📊 State fields:`, {
-              phase: stateData.phase,
-              currentPlayerSeat: stateData.currentPlayerSeat,
-              myCards: stateData.myCards,
-              mySeat: stateData.mySeat,
-              isMyTurn: stateData.isMyTurn,
-              pot: stateData.pot,
-              hasConfig: !!stateData.config,
-              actionStartTime: stateData.actionStartTime,
-              actionTimeTotal: stateData.actionTimeTotal,
-              timeRemaining: stateData.timeRemaining
-            });
-            
-            applyIncomingState(data.state);
-            
-            // Extract myCards from state - server sends at root level
-            if (stateData.myCards) {
-              const cards = stateData.myCards as string[];
-              log('🃏 Setting my cards from myCards:', cards);
-              setMyCards(cards);
-            } else {
-              // Fallback: try to find my cards in players array
-              const playersData = stateData.players as Array<Record<string, unknown>> | undefined;
-              if (playersData && playerId) {
-                const myPlayer = playersData.find(p => 
-                  (p.playerId === playerId || p.id === playerId) && 
-                  Array.isArray(p.holeCards) && 
-                  (p.holeCards as string[]).length > 0
-                );
-                if (myPlayer) {
-                  const cards = myPlayer.holeCards as string[];
-                  log('🃏 Setting my cards from player holeCards:', cards);
-                  setMyCards(cards);
-                }
+          {
+            // IMPORTANT: Some server implementations send timing fields on the EVENT ROOT
+            // (phase_change.actionStartTime/actionTimeTotal/timeRemaining) and may omit `data.state`.
+            // If we only apply `data.state`, the client may stay on the previous street while the
+            // server timer is already running, causing "turn starts with 1-2s left".
+
+            const toMs = (v: unknown): number | undefined => {
+              if (v === null || v === undefined) return undefined;
+              if (typeof v === 'number' && Number.isFinite(v)) return v < 1e12 ? v * 1000 : v;
+              if (typeof v === 'string') {
+                const trimmed = v.trim();
+                const parsed = Date.parse(trimmed);
+                if (!Number.isNaN(parsed)) return parsed;
+                const num = Number(trimmed);
+                if (Number.isFinite(num)) return num < 1e12 ? num * 1000 : num;
               }
-            }
-            
-            if (stateData.mySeat !== undefined && stateData.mySeat !== null) {
-              setMySeat(stateData.mySeat as number);
+              return undefined;
+            };
+
+            const eventData = (data as any) ?? {};
+            const stateData = (data.state as any) ?? (eventData.state as any) ?? null;
+
+            const eventPhase = (eventData.phase ?? stateData?.phase) as string | undefined;
+            const eventCommunityCards = (eventData.communityCards ?? eventData.community_cards ?? stateData?.communityCards ?? stateData?.community_cards) as unknown;
+            const eventCurrentPlayerSeat = (eventData.currentPlayerSeat ?? eventData.current_player_seat ?? stateData?.currentPlayerSeat ?? stateData?.current_player_seat) as unknown;
+
+            const eventActionStartTime = toMs(eventData.actionStartTime ?? eventData.action_start_time ?? stateData?.actionStartTime ?? stateData?.action_start_time);
+            const eventActionTimeTotal = eventData.actionTimeTotal ?? eventData.action_time_total ?? stateData?.actionTimeTotal ?? stateData?.action_time_total;
+            const eventTimeRemaining = eventData.timeRemaining ?? eventData.time_remaining ?? stateData?.timeRemaining ?? stateData?.time_remaining;
+            const eventIsTimeBankPhase = eventData.isTimeBankPhase ?? eventData.is_time_bank_phase ?? stateData?.isTimeBankPhase ?? stateData?.is_time_bank_phase;
+
+            // If we have a state snapshot, enrich it with event-root timing fields and apply through stability layer.
+            if (stateData && tableId) {
+              const enriched = {
+                ...(stateData as Record<string, unknown>),
+                // Ensure these exist for immediate timer reset
+                phase: eventPhase ?? (stateData as any).phase,
+                communityCards: eventCommunityCards ?? (stateData as any).communityCards,
+                currentPlayerSeat: eventCurrentPlayerSeat ?? (stateData as any).currentPlayerSeat,
+                actionStartTime: eventActionStartTime ?? (stateData as any).actionStartTime,
+                actionTimeTotal: eventActionTimeTotal ?? (stateData as any).actionTimeTotal,
+                timeRemaining: eventTimeRemaining ?? (stateData as any).timeRemaining,
+                isTimeBankPhase: eventIsTimeBankPhase ?? (stateData as any).isTimeBankPhase,
+              };
+
+              // Log specific fields
+              log(`📊 phase_change enriched fields:`, {
+                phase: (enriched as any).phase,
+                currentPlayerSeat: (enriched as any).currentPlayerSeat,
+                actionStartTime: (enriched as any).actionStartTime,
+                actionTimeTotal: (enriched as any).actionTimeTotal,
+                timeRemaining: (enriched as any).timeRemaining,
+                isTimeBankPhase: (enriched as any).isTimeBankPhase,
+              });
+
+              applyIncomingState(enriched);
+
+              // Extract myCards from state - server sends at root level
+              if ((stateData as any).myCards) {
+                const cards = (stateData as any).myCards as string[];
+                log('🃏 Setting my cards from myCards:', cards);
+                setMyCards(cards);
+              }
+
+              if ((stateData as any).mySeat !== undefined && (stateData as any).mySeat !== null) {
+                setMySeat((stateData as any).mySeat as number);
+              }
+            } else {
+              // No snapshot included - still do an IMMEDIATE minimal update so UI switches street + resets timer.
+              setTableState((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  phase: (eventPhase as any) ?? prev.phase,
+                  communityCards: Array.isArray(eventCommunityCards)
+                    ? (eventCommunityCards as any)
+                    : prev.communityCards,
+                  currentPlayerSeat:
+                    (typeof eventCurrentPlayerSeat === 'number'
+                      ? (eventCurrentPlayerSeat as number)
+                      : prev.currentPlayerSeat),
+                  actionStartTime: (eventActionStartTime ?? prev.actionStartTime) as any,
+                  actionTimeTotal:
+                    (typeof eventActionTimeTotal === 'number' && Number.isFinite(eventActionTimeTotal)
+                      ? (eventActionTimeTotal as number)
+                      : prev.actionTimeTotal),
+                  timeRemaining:
+                    (typeof eventTimeRemaining === 'number' && Number.isFinite(eventTimeRemaining)
+                      ? (eventTimeRemaining as number)
+                      : prev.timeRemaining),
+                  isTimeBankPhase: (typeof eventIsTimeBankPhase === 'boolean'
+                    ? eventIsTimeBankPhase
+                    : prev.isTimeBankPhase),
+                };
+              });
             }
           }
           break;
