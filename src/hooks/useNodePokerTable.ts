@@ -1189,7 +1189,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                   actionTimeTotal:
                     (typeof eventActionTimeTotal === 'number' && Number.isFinite(eventActionTimeTotal)
                       ? (eventActionTimeTotal as number)
-                      : prev.actionTimeTotal),
+                       : (prev.actionTimer ?? prev.actionTimeTotal)),
                   timeRemaining:
                     (typeof eventTimeRemaining === 'number' && Number.isFinite(eventTimeRemaining)
                       ? (eventTimeRemaining as number)
@@ -1300,22 +1300,43 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               phase: string;
               actionStartTime?: number;
               actionTimeTotal?: number;
+              timeRemaining?: number;
               isTimeBankPhase?: boolean;
             };
             
             setTableState((prev) => {
               if (!prev) return prev;
+
+              // IMPORTANT:
+              // - actionTimeTotal is PER-TURN and may be time-bank slice (e.g. 10s) during TB.
+              //   We must NOT fall back to prev.actionTimeTotal, otherwise after a time bank
+              //   the next player's *main* timer can incorrectly become 10s.
+              // - Never synthesize actionStartTime with Date.now(); it can go "ahead" of server
+              //   and then monotonic guards reject the next authoritative snapshot.
+
+              const parsedActionStartTime = toMs(turnData.actionStartTime);
+              const fallbackMainTotal = prev.actionTimer ?? 15;
+              const nextActionTimeTotal =
+                (typeof turnData.actionTimeTotal === 'number' && Number.isFinite(turnData.actionTimeTotal))
+                  ? turnData.actionTimeTotal
+                  : fallbackMainTotal;
+
+              const nextTimeRemaining =
+                (typeof turnData.timeRemaining === 'number' && Number.isFinite(turnData.timeRemaining))
+                  ? turnData.timeRemaining
+                  : nextActionTimeTotal;
+
               return {
                 ...prev,
                 currentPlayerSeat: turnData.currentPlayerSeat,
                 phase: turnData.phase as any,
-                // Normalize seconds/ISO to ms to prevent instant-expire timers.
-                actionStartTime: toMs(turnData.actionStartTime) ?? Date.now(),
-                actionTimeTotal:
-                  (typeof turnData.actionTimeTotal === 'number' && Number.isFinite(turnData.actionTimeTotal)
-                    ? turnData.actionTimeTotal
-                    : prev.actionTimeTotal ?? prev.actionTimer ?? 15),
-                isTimeBankPhase: typeof turnData.isTimeBankPhase === 'boolean' ? turnData.isTimeBankPhase : false
+                // Normalize seconds/ISO to ms; if missing, keep previous (do NOT use Date.now()).
+                actionStartTime: parsedActionStartTime ?? prev.actionStartTime ?? null,
+                // Per-turn total for ring animation
+                actionTimeTotal: nextActionTimeTotal,
+                // Ensure the wrapper's drift logic doesn't read stale remaining from previous turn
+                timeRemaining: nextTimeRemaining,
+                isTimeBankPhase: typeof turnData.isTimeBankPhase === 'boolean' ? turnData.isTimeBankPhase : false,
               };
             });
           }
