@@ -649,18 +649,18 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           let newState = transformServerState(incomingState as any, tableId);
 
           // ------------------------------
-          // POKERSTARS-STYLE TIMER CONSISTENCY GUARD
+          // SERVER-AUTH TIMER CONSISTENCY GUARD (STRICT)
           // ------------------------------
-          // Problem:
-          // The server can emit redundant/out-of-order snapshots (especially around time bank).
-          // A stale snapshot may:
-          //   - change `currentPlayerSeat`
-          //   - but carry an old `actionStartTime`
-          // Result: UI shows the NEW seat, but the ring uses the OLD deadline ("inherits" progress / instant pulse).
+          // Goal:
+          // Make the client strictly follow the server's turn boundary.
+          // A NEW turn must come with a NEW actionStartTime.
           //
-          // Fix:
-          // Reject snapshots that attempt to move the turn/phase backwards within the SAME hand.
-          // We keep the whole previous state to avoid any visual desync between seat + timer.
+          // IMPORTANT:
+          // Previously we used a 50ms tolerance. In practice, server timestamps can advance by only
+          // a few milliseconds (or be very tight under load), and the tolerance caused us to ignore
+          // legitimate turn changes, which then:
+          // - kept isMyTurn=false (blocking actions), and
+          // - caused timer inheritance/pulse artifacts.
           if (prev?.handId && newState.handId && prev.handId === newState.handId) {
             const prevAst = typeof prev.actionStartTime === 'number' && Number.isFinite(prev.actionStartTime)
               ? prev.actionStartTime
@@ -669,7 +669,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               ? newState.actionStartTime
               : null;
 
-            // Global monotonic guard (same hand)
+            // Global monotonic guard (same hand): never allow a real backwards jump.
             if (prevAst !== null && nextAst !== null) {
               const BACKWARDS_TOL_MS = 50;
               if (nextAst < prevAst - BACKWARDS_TOL_MS) {
@@ -696,13 +696,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               prevSeat !== nextSeat;
 
             if (seatChanged) {
-              const ADVANCE_TOL_MS = 50;
-              const hasPrev = prevAst !== null;
-              const hasNext = nextAst !== null;
-
-              // If either timestamp is missing OR it didn't advance, treat as stale.
-              if (!hasPrev || !hasNext || nextAst! <= prevAst! + ADVANCE_TOL_MS) {
-                log('[TimerGuard] Ignoring stale seat-change snapshot (no fresh actionStartTime)', {
+              // STRICT: A seat change without an increased actionStartTime is considered a stale/out-of-order snapshot.
+              // No tolerance here — if server advanced by 1ms, we must accept it.
+              if (prevAst !== null && nextAst !== null && nextAst <= prevAst) {
+                log('[TimerGuard] Ignoring stale seat-change snapshot (actionStartTime did not advance)', {
                   handId: prev.handId,
                   prevSeat,
                   nextSeat,
