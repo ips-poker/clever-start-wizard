@@ -592,7 +592,14 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
       actionStartTime: parsedActionStartTime,
       // Avoid Boolean("false") === true bugs if server sends strings.
       isTimeBankPhase: parsedIsTimeBankPhase,
-      currentPlayerTimeBank: Number((state as any).currentPlayerTimeBank ?? 0),
+      // Server-authoritative time bank for the CURRENT TURN player.
+      // Accept a few common shapes to avoid silently falling back to 0.
+      currentPlayerTimeBank: Number(
+        (state as any).currentPlayerTimeBank ??
+          (state as any).current_player_time_bank ??
+          (state as any).current_player_timebank ??
+          0
+      ),
       // NEW: Phase-aware action timing
       isRaisedPot: Boolean((state as any).isRaisedPot),
       actionTimeTotal: parsedActionTimeTotal,
@@ -1409,9 +1416,18 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                     return {
                       ...incomingState,
                       isTimeBankPhase: directTimeBankPhase,
-                      // Prefer server timestamp if present; fall back to local now.
-                      actionStartTime: directTimeBankPhase ? (incomingState.actionStartTime ?? Date.now()) : incomingState.actionStartTime,
-                      actionTimeTotal: directTimeRemaining ?? incomingState.actionTimeTotal
+                      // CRITICAL: Never synthesize actionStartTime on client.
+                      // If server omitted it in a snapshot, keep the previous one.
+                      actionStartTime: directTimeBankPhase
+                        ? (incomingState.actionStartTime ?? prev.actionStartTime ?? null)
+                        : incomingState.actionStartTime,
+                      // CRITICAL: timeRemaining is NOT the total duration.
+                      // Keep per-turn total from server; if missing, keep previous known total.
+                      actionTimeTotal: directTimeBankPhase
+                        ? (incomingState.actionTimeTotal ?? prev.actionTimeTotal ?? prev.timeBankSeconds ?? null)
+                        : incomingState.actionTimeTotal,
+                      // If server explicitly sent timeRemaining alongside TB flag, keep it in timeRemaining.
+                      timeRemaining: directTimeRemaining ?? incomingState.timeRemaining
                     };
                   }
                   return incomingState;
