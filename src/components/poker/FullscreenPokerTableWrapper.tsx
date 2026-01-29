@@ -536,27 +536,56 @@ export function FullscreenPokerTableWrapper({
     // Once we enter time bank phase for this turn, DON'T exit it even if
     // server sends updates with isTimeBankPhase=false (stale/redundant broadcasts).
     // Only reset when turn/seat changes.
-    if (!isSameTurn || isNewTurn) {
+    //
+    // CRITICAL FIX: On NEW turn, we MUST reset sticky AND IGNORE any isTimeBankPhase=true
+    // that might be stale from the previous player's time bank phase.
+    // The new player always starts with their main timer, never time bank.
+    
+    const isGenuineNewTurn = !isSameTurn || isNewTurn || phaseChanged || seatChanged;
+    
+    // Calculate effectiveIsTimeBankPhase BEFORE updating state
+    let effectiveIsTimeBankPhase: boolean;
+    
+    if (isGenuineNewTurn) {
+      // CRITICAL: Always reset sticky on new turn - new player starts with main timer
       stickyTimeBankActiveRef.current = false;
       stickyTimeBankTurnIdRef.current = turnId;
+      
+      // CRITICAL FIX: On new turn, IGNORE any isTimeBankPhase=true from server.
+      // This could be a stale update from the previous player's time bank.
+      // The new turn ALWAYS starts with isTimeBankPhase=false.
+      // Only set isTimeBankPhase=true later when server explicitly sends time_bank_activated
+      // for THIS player's turn.
+      if (isTimeBankPhase) {
+        console.log('[TIME BANK STICKY] Ignoring stale isTimeBankPhase=true on new turn:', {
+          turnId,
+          prevTurnId,
+          phaseChanged,
+          seatChanged,
+        });
+      }
+      effectiveIsTimeBankPhase = false;
+    } else {
+      // Same turn - apply sticky logic
+      if (isTimeBankPhase) {
+        stickyTimeBankActiveRef.current = true;
+      }
+      
+      // Use sticky time bank: if we ever saw isTimeBankPhase=true for this turn, stay in it
+      effectiveIsTimeBankPhase = stickyTimeBankActiveRef.current || isTimeBankPhase;
+      
+      // Log changes
+      if (effectiveIsTimeBankPhase !== isTimeBankActive) {
+        console.log('[TIME BANK STICKY]', {
+          serverIsTimeBankPhase: isTimeBankPhase,
+          stickyActive: stickyTimeBankActiveRef.current,
+          effectiveIsTimeBankPhase,
+          turnId,
+        });
+      }
     }
     
-    if (isTimeBankPhase) {
-      stickyTimeBankActiveRef.current = true;
-    }
-    
-    // Use sticky time bank: if we ever saw isTimeBankPhase=true for this turn, stay in it
-    const effectiveIsTimeBankPhase = stickyTimeBankActiveRef.current || isTimeBankPhase;
-    
-    // Update UI state with sticky logic
-    if (effectiveIsTimeBankPhase !== isTimeBankActive) {
-      console.log('[TIME BANK STICKY]', {
-        serverIsTimeBankPhase: isTimeBankPhase,
-        stickyActive: stickyTimeBankActiveRef.current,
-        effectiveIsTimeBankPhase,
-        turnId,
-      });
-    }
+    // Update UI state
     setIsTimeBankActive(effectiveIsTimeBankPhase);
 
     // POKERSTARS-STYLE SYNC:
