@@ -780,35 +780,33 @@ export function FullscreenPokerTableWrapper({
         //
         // FIX: Also include seatChanged in the condition, because logs show:
         //   seat 7 → seat 0 (same phase 'flop'), but stale packet with serverRemaining=1
+        // CRITICAL HARDENING (v3):
+        // If elapsedSinceStartMs > 5s on a NEW turn (phase or seat), this packet belongs to 
+        // the PREVIOUS player's turn. We must ALWAYS correct, regardless of serverRemaining value.
+        // Previous bug: serverRemaining=4.2 wasn't "suspiciously low" (< 3s), so correction skipped.
         const startLooksStale =
           Boolean(isGenuineNewTurn && (phaseChanged || seatChanged) && elapsedSinceStartMs !== null && elapsedSinceStartMs > 5000);
 
-        // AGGRESSIVE FIX: If it's a new turn and serverRemaining is very low (< 2s),
-        // this is almost certainly a stale/race packet. Force full timer.
-        // This catches the case: seat change with old actionStartTime but low remaining.
+        // Also catch: new turn with serverRemaining < 2s (definitely stale regardless of elapsed)
         const isDefinitelyStale =
           isGenuineNewTurn &&
           typeof rawServerRemaining === 'number' &&
           rawServerRemaining < 2;
 
-        // If it's a genuinely new turn and serverRemaining is suspiciously low, correct it
-        if (typeof rawServerRemaining === 'number' && isGenuineNewTurn) {
-          const lowThreshold = Math.min(3, Math.max(1, effectiveActionTime * 0.25));
-          const isSuspiciouslyLow = rawServerRemaining < lowThreshold;
-
-          if (isSuspiciouslyLow && (startLooksStale || isDefinitelyStale)) {
-            console.log('[TIMER SYNC] CORRECTING stale serverRemaining on new turn:', {
-              rawServerRemaining,
-              correctedTo: effectiveActionTime,
-              reason: startLooksStale
-                ? 'turn/phase changed but actionStartTime implies we are late into someone else\'s turn'
-                : 'serverRemaining < 2s on brand new turn = definitely stale packet',
-              phaseChanged,
-              seatChanged,
-              elapsedSinceStartMs,
-            });
-            correctedServerRemaining = effectiveActionTime;
-          }
+        // FIX (v3): If startLooksStale is true, ALWAYS correct - don't check isSuspiciouslyLow.
+        // The elapsed time being > 5s is conclusive proof that actionStartTime is from a previous player.
+        if (isGenuineNewTurn && (startLooksStale || isDefinitelyStale)) {
+          console.log('[TIMER SYNC] CORRECTING stale packet on new turn:', {
+            rawServerRemaining,
+            correctedTo: effectiveActionTime,
+            reason: startLooksStale
+              ? `elapsedSinceStartMs=${elapsedSinceStartMs}ms > 5000ms proves actionStartTime is from previous player`
+              : 'serverRemaining < 2s on brand new turn = definitely stale packet',
+            phaseChanged,
+            seatChanged,
+            elapsedSinceStartMs,
+          });
+          correctedServerRemaining = effectiveActionTime;
         }
 
         const hasServerRemaining = typeof correctedServerRemaining === 'number' && Number.isFinite(correctedServerRemaining);
