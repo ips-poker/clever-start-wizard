@@ -2841,17 +2841,25 @@ export class PokerTable {
     // Time Bank activates ONLY when:
     // 1. Main timer expires (this function is called)
     // 2. Player has Time Bank remaining
-    // 3. Player has money invested in the pot (including blinds/antes)
-    //    - If no money invested: auto-fold WITHOUT using Time Bank
-    //    - This prevents abuse of Time Bank by limpers who haven't contributed
+    // 3. Player is participating in the hand (not just currentBet > 0, which resets per street)
+    //    - Check: player is not folded AND is still in the hand
+    //    - Blinds/Antes count as investment for preflop
+    //    - For postflop: if player reached this street, they have investment
     const isTimeBankPhase = this.currentHand.isTimeBankPhase;
     
-    // Check if player has money in pot (PokerStars rule)
-    const hasMoneyInPot = player.currentBet > 0;
+    // CRITICAL FIX: Check participation in hand, not just currentBet
+    // currentBet resets to 0 at each street, so flop/turn/river players would be denied TB
+    // A player participating in the hand (not folded, still active) is considered "invested"
+    const isParticipatingInHand = !player.isFolded && !player.isAllIn;
     const isBlindsPlayer = seat === this.currentHand.smallBlindSeat || 
                            seat === this.currentHand.bigBlindSeat;
     const hasAnteInvested = (this.config.ante ?? 0) > 0;
-    const hasInvestment = hasMoneyInPot || isBlindsPlayer || hasAnteInvested;
+    const isPostflop = this.currentHand.phase !== 'preflop';
+    // Preflop: require blinds/ante or current bet
+    // Postflop: if player is still in hand, they already invested preflop
+    const hasInvestment = isPostflop 
+      ? isParticipatingInHand 
+      : (player.currentBet > 0 || isBlindsPlayer || hasAnteInvested);
     
     if (!isTimeBankPhase && player.timeBank > 0 && hasInvestment) {
       // Main timer expired AND player has investment - enter time bank phase
@@ -2862,6 +2870,8 @@ export class PokerTable {
         currentBet: player.currentBet,
         isBlindsPlayer,
         hasAnteInvested,
+        isPostflop,
+        isParticipatingInHand,
         timeBank: player.timeBank
       });
       
@@ -2871,10 +2881,14 @@ export class PokerTable {
       player.timeBank = Math.max(0, player.timeBank - timeToUse);
       player.timeBankUsedThisAction = timeToUse;
 
+      // CRITICAL: Calculate actionStartTime now, include in emit for frontend sync
+      const timeBankStartTime = Date.now();
+
       this.emit('time_bank_activated', {
         playerId,
         timeUsed: timeToUse,
-        remaining: player.timeBank
+        remaining: player.timeBank,
+        actionStartTime: timeBankStartTime
       });
 
       logger.info('POKERSTARS: Time bank ACTIVATED', {
@@ -2892,13 +2906,15 @@ export class PokerTable {
       if (timeToUse > 0) {
         this.startActionTimer(timeToUse);
 
-        const timeBankStartTime = this.currentHand.actionStartTime || Date.now();
+        // Use the same timeBankStartTime that was sent in time_bank_activated event
+        // (or fallback to currentHand.actionStartTime which startActionTimer() may have set)
+        const finalActionStartTime = this.currentHand.actionStartTime || timeBankStartTime;
 
         // CRITICAL FIX: Sync action_started_at to DB for time bank phase
         this.supabase
           .from('poker_hands')
           .update({
-            action_started_at: new Date(timeBankStartTime).toISOString()
+            action_started_at: new Date(finalActionStartTime).toISOString()
           })
           .eq('id', this.currentHand.id)
           .then(({ error }) => {
@@ -2918,7 +2934,7 @@ export class PokerTable {
           // Total for this slice (client uses this for ring reset + consistent countdown)
           actionTimeTotal: timeToUse,
           timeRemaining: timeToUse,
-          actionStartTime: timeBankStartTime
+          actionStartTime: finalActionStartTime
         });
         return;
       }

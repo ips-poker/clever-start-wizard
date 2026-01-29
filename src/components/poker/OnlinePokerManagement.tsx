@@ -169,21 +169,34 @@ export function OnlinePokerManagement() {
     stuckHands: 0
   });
 
-  // New table form state
+  // New table form state - Extended with all professional settings
   const [newTable, setNewTable] = useState({
     name: '',
     small_blind: 10,
     big_blind: 20,
+    ante: 0,
     min_buy_in: 400,
     max_buy_in: 2000,
     max_players: 9,
-    action_time_seconds: 15,
+    action_time_seconds: 25,
     time_bank_seconds: 30,
     auto_start_enabled: true,
+    auto_start_delay_seconds: 3,
     straddle_enabled: false,
-    run_it_twice_enabled: false,
+    mississippi_straddle_enabled: false,
+    max_straddle_count: 1,
+    button_ante_enabled: false,
+    button_ante_amount: 0,
+    big_blind_ante_enabled: false,
+    big_blind_ante_amount: 0,
     bomb_pot_enabled: false,
+    bomb_pot_multiplier: 2,
+    bomb_pot_interval: 10,
+    bomb_pot_double_board: false,
+    run_it_twice_enabled: false,
     chat_enabled: true,
+    chat_slow_mode: false,
+    chat_slow_mode_interval: 5,
     rake_percent: 0,
     rake_cap: 0,
   });
@@ -514,16 +527,29 @@ export function OnlinePokerManagement() {
       name: newTable.name,
       small_blind: newTable.small_blind,
       big_blind: newTable.big_blind,
+      ante: newTable.ante,
       min_buy_in: newTable.min_buy_in,
       max_buy_in: newTable.max_buy_in,
       max_players: newTable.max_players,
       action_time_seconds: newTable.action_time_seconds,
       time_bank_seconds: newTable.time_bank_seconds,
       auto_start_enabled: newTable.auto_start_enabled,
+      auto_start_delay_seconds: newTable.auto_start_delay_seconds,
       straddle_enabled: newTable.straddle_enabled,
-      run_it_twice_enabled: newTable.run_it_twice_enabled,
+      mississippi_straddle_enabled: newTable.mississippi_straddle_enabled,
+      max_straddle_count: newTable.max_straddle_count,
+      button_ante_enabled: newTable.button_ante_enabled,
+      button_ante_amount: newTable.button_ante_amount,
+      big_blind_ante_enabled: newTable.big_blind_ante_enabled,
+      big_blind_ante_amount: newTable.big_blind_ante_amount,
       bomb_pot_enabled: newTable.bomb_pot_enabled,
+      bomb_pot_multiplier: newTable.bomb_pot_multiplier,
+      bomb_pot_interval: newTable.bomb_pot_interval,
+      bomb_pot_double_board: newTable.bomb_pot_double_board,
+      run_it_twice_enabled: newTable.run_it_twice_enabled,
       chat_enabled: newTable.chat_enabled,
+      chat_slow_mode: newTable.chat_slow_mode,
+      chat_slow_mode_interval: newTable.chat_slow_mode_interval,
       rake_percent: newTable.rake_percent,
       rake_cap: newTable.rake_cap,
       game_type: 'holdem',
@@ -542,16 +568,29 @@ export function OnlinePokerManagement() {
       name: '',
       small_blind: 10,
       big_blind: 20,
+      ante: 0,
       min_buy_in: 400,
       max_buy_in: 2000,
       max_players: 9,
-      action_time_seconds: 15,
+      action_time_seconds: 25,
       time_bank_seconds: 30,
       auto_start_enabled: true,
+      auto_start_delay_seconds: 3,
       straddle_enabled: false,
-      run_it_twice_enabled: false,
+      mississippi_straddle_enabled: false,
+      max_straddle_count: 1,
+      button_ante_enabled: false,
+      button_ante_amount: 0,
+      big_blind_ante_enabled: false,
+      big_blind_ante_amount: 0,
       bomb_pot_enabled: false,
+      bomb_pot_multiplier: 2,
+      bomb_pot_interval: 10,
+      bomb_pot_double_board: false,
+      run_it_twice_enabled: false,
       chat_enabled: true,
+      chat_slow_mode: false,
+      chat_slow_mode_interval: 5,
       rake_percent: 0,
       rake_cap: 0,
     });
@@ -1433,113 +1472,299 @@ export function OnlinePokerManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Create Table Dialog */}
+      {/* Create Table Dialog - Extended with all professional settings */}
       <Dialog open={showCreateTableDialog} onOpenChange={setShowCreateTableDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Создать новый стол</DialogTitle>
             <DialogDescription>
-              Настройте параметры покерного стола
+              Настройте параметры покерного стола (все настройки как в TableSettingsPanel)
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <Label>Название стола</Label>
-              <Input
-                value={newTable.name}
-                onChange={(e) => setNewTable({ ...newTable, name: e.target.value })}
-                placeholder="Стол NL200"
-              />
+          
+          <ScrollArea className="max-h-[60vh] pr-4">
+            {/* Basic Settings */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-muted-foreground">Основные настройки</h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label>Название стола</Label>
+                  <Input
+                    value={newTable.name}
+                    onChange={(e) => setNewTable({ ...newTable, name: e.target.value })}
+                    placeholder="Стол NL200"
+                  />
+                </div>
+                <div>
+                  <Label>Макс. игроков</Label>
+                  <Select
+                    value={newTable.max_players.toString()}
+                    onValueChange={(v) => setNewTable({ ...newTable, max_players: parseInt(v) })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2">2 (Heads-Up)</SelectItem>
+                      <SelectItem value="6">6 (Short-Handed)</SelectItem>
+                      <SelectItem value="9">9 (Full Ring)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Blinds & Ante */}
+              <h4 className="text-sm font-semibold text-muted-foreground pt-4">Блайнды и анте</h4>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <Label>Small Blind</Label>
+                  <Input
+                    type="number"
+                    value={newTable.small_blind}
+                    onChange={(e) => setNewTable({ ...newTable, small_blind: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label>Big Blind</Label>
+                  <Input
+                    type="number"
+                    value={newTable.big_blind}
+                    onChange={(e) => setNewTable({ ...newTable, big_blind: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label>Анте</Label>
+                  <Input
+                    type="number"
+                    value={newTable.ante}
+                    onChange={(e) => setNewTable({ ...newTable, ante: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+
+              {/* Buy-in */}
+              <h4 className="text-sm font-semibold text-muted-foreground pt-4">Бай-ин</h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label>Min Buy-In</Label>
+                  <Input
+                    type="number"
+                    value={newTable.min_buy_in}
+                    onChange={(e) => setNewTable({ ...newTable, min_buy_in: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label>Max Buy-In</Label>
+                  <Input
+                    type="number"
+                    value={newTable.max_buy_in}
+                    onChange={(e) => setNewTable({ ...newTable, max_buy_in: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+
+              {/* Timing */}
+              <h4 className="text-sm font-semibold text-muted-foreground pt-4">Тайминг</h4>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <Label>Время на ход (сек)</Label>
+                  <Input
+                    type="number"
+                    value={newTable.action_time_seconds}
+                    onChange={(e) => setNewTable({ ...newTable, action_time_seconds: parseInt(e.target.value) || 25 })}
+                  />
+                </div>
+                <div>
+                  <Label>Тайм-банк (сек)</Label>
+                  <Input
+                    type="number"
+                    value={newTable.time_bank_seconds}
+                    onChange={(e) => setNewTable({ ...newTable, time_bank_seconds: parseInt(e.target.value) || 30 })}
+                  />
+                </div>
+                <div>
+                  <Label>Задержка авто-старта (сек)</Label>
+                  <Input
+                    type="number"
+                    value={newTable.auto_start_delay_seconds}
+                    onChange={(e) => setNewTable({ ...newTable, auto_start_delay_seconds: parseInt(e.target.value) || 3 })}
+                  />
+                </div>
+              </div>
+
+              {/* Straddle Settings */}
+              <h4 className="text-sm font-semibold text-muted-foreground pt-4">Страддл</h4>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="flex items-center justify-between">
+                  <Label>Страддл</Label>
+                  <Switch
+                    checked={newTable.straddle_enabled}
+                    onCheckedChange={(v) => setNewTable({ ...newTable, straddle_enabled: v })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Миссисипи страддл</Label>
+                  <Switch
+                    checked={newTable.mississippi_straddle_enabled}
+                    onCheckedChange={(v) => setNewTable({ ...newTable, mississippi_straddle_enabled: v })}
+                  />
+                </div>
+                <div>
+                  <Label>Макс. страддлов</Label>
+                  <Input
+                    type="number"
+                    value={newTable.max_straddle_count}
+                    onChange={(e) => setNewTable({ ...newTable, max_straddle_count: parseInt(e.target.value) || 1 })}
+                    disabled={!newTable.straddle_enabled}
+                  />
+                </div>
+              </div>
+
+              {/* Advanced Ante */}
+              <h4 className="text-sm font-semibold text-muted-foreground pt-4">Расширенное анте</h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Button Ante</Label>
+                    <Switch
+                      checked={newTable.button_ante_enabled}
+                      onCheckedChange={(v) => setNewTable({ ...newTable, button_ante_enabled: v })}
+                    />
+                  </div>
+                  {newTable.button_ante_enabled && (
+                    <Input
+                      type="number"
+                      placeholder="Сумма"
+                      value={newTable.button_ante_amount}
+                      onChange={(e) => setNewTable({ ...newTable, button_ante_amount: parseInt(e.target.value) || 0 })}
+                    />
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>BB Ante</Label>
+                    <Switch
+                      checked={newTable.big_blind_ante_enabled}
+                      onCheckedChange={(v) => setNewTable({ ...newTable, big_blind_ante_enabled: v })}
+                    />
+                  </div>
+                  {newTable.big_blind_ante_enabled && (
+                    <Input
+                      type="number"
+                      placeholder="Сумма"
+                      value={newTable.big_blind_ante_amount}
+                      onChange={(e) => setNewTable({ ...newTable, big_blind_ante_amount: parseInt(e.target.value) || 0 })}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Bomb Pot */}
+              <h4 className="text-sm font-semibold text-muted-foreground pt-4">Bomb Pot</h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="flex items-center justify-between">
+                  <Label>Bomb Pot</Label>
+                  <Switch
+                    checked={newTable.bomb_pot_enabled}
+                    onCheckedChange={(v) => setNewTable({ ...newTable, bomb_pot_enabled: v })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Double Board</Label>
+                  <Switch
+                    checked={newTable.bomb_pot_double_board}
+                    onCheckedChange={(v) => setNewTable({ ...newTable, bomb_pot_double_board: v })}
+                    disabled={!newTable.bomb_pot_enabled}
+                  />
+                </div>
+                <div>
+                  <Label>Множитель</Label>
+                  <Input
+                    type="number"
+                    value={newTable.bomb_pot_multiplier}
+                    onChange={(e) => setNewTable({ ...newTable, bomb_pot_multiplier: parseInt(e.target.value) || 2 })}
+                    disabled={!newTable.bomb_pot_enabled}
+                  />
+                </div>
+                <div>
+                  <Label>Интервал (рук)</Label>
+                  <Input
+                    type="number"
+                    value={newTable.bomb_pot_interval}
+                    onChange={(e) => setNewTable({ ...newTable, bomb_pot_interval: parseInt(e.target.value) || 10 })}
+                    disabled={!newTable.bomb_pot_enabled}
+                  />
+                </div>
+              </div>
+
+              {/* Rake */}
+              <h4 className="text-sm font-semibold text-muted-foreground pt-4">Рейк</h4>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label>Рейк (%)</Label>
+                  <Input
+                    type="number"
+                    value={newTable.rake_percent}
+                    onChange={(e) => setNewTable({ ...newTable, rake_percent: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label>Кап рейка</Label>
+                  <Input
+                    type="number"
+                    value={newTable.rake_cap}
+                    onChange={(e) => setNewTable({ ...newTable, rake_cap: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+
+              {/* Feature Toggles */}
+              <h4 className="text-sm font-semibold text-muted-foreground pt-4">Функции</h4>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="flex items-center justify-between">
+                  <Label>Авто-старт</Label>
+                  <Switch
+                    checked={newTable.auto_start_enabled}
+                    onCheckedChange={(v) => setNewTable({ ...newTable, auto_start_enabled: v })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Run It Twice</Label>
+                  <Switch
+                    checked={newTable.run_it_twice_enabled}
+                    onCheckedChange={(v) => setNewTable({ ...newTable, run_it_twice_enabled: v })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Чат</Label>
+                  <Switch
+                    checked={newTable.chat_enabled}
+                    onCheckedChange={(v) => setNewTable({ ...newTable, chat_enabled: v })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Slow Mode чата</Label>
+                  <Switch
+                    checked={newTable.chat_slow_mode}
+                    onCheckedChange={(v) => setNewTable({ ...newTable, chat_slow_mode: v })}
+                    disabled={!newTable.chat_enabled}
+                  />
+                </div>
+                {newTable.chat_slow_mode && (
+                  <div>
+                    <Label>Интервал (сек)</Label>
+                    <Input
+                      type="number"
+                      value={newTable.chat_slow_mode_interval}
+                      onChange={(e) => setNewTable({ ...newTable, chat_slow_mode_interval: parseInt(e.target.value) || 5 })}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <Label>Макс. игроков</Label>
-              <Select
-                value={newTable.max_players.toString()}
-                onValueChange={(v) => setNewTable({ ...newTable, max_players: parseInt(v) })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="2">2 (Heads-Up)</SelectItem>
-                  <SelectItem value="6">6 (Short-Handed)</SelectItem>
-                  <SelectItem value="9">9 (Full Ring)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Small Blind</Label>
-              <Input
-                type="number"
-                value={newTable.small_blind}
-                onChange={(e) => setNewTable({ ...newTable, small_blind: parseInt(e.target.value) || 0 })}
-              />
-            </div>
-            <div>
-              <Label>Big Blind</Label>
-              <Input
-                type="number"
-                value={newTable.big_blind}
-                onChange={(e) => setNewTable({ ...newTable, big_blind: parseInt(e.target.value) || 0 })}
-              />
-            </div>
-            <div>
-              <Label>Min Buy-In</Label>
-              <Input
-                type="number"
-                value={newTable.min_buy_in}
-                onChange={(e) => setNewTable({ ...newTable, min_buy_in: parseInt(e.target.value) || 0 })}
-              />
-            </div>
-            <div>
-              <Label>Max Buy-In</Label>
-              <Input
-                type="number"
-                value={newTable.max_buy_in}
-                onChange={(e) => setNewTable({ ...newTable, max_buy_in: parseInt(e.target.value) || 0 })}
-              />
-            </div>
-            <div>
-              <Label>Время на ход (сек)</Label>
-              <Input
-                type="number"
-                value={newTable.action_time_seconds}
-                onChange={(e) => setNewTable({ ...newTable, action_time_seconds: parseInt(e.target.value) || 15 })}
-              />
-            </div>
-            <div>
-              <Label>Time Bank (сек)</Label>
-              <Input
-                type="number"
-                value={newTable.time_bank_seconds}
-                onChange={(e) => setNewTable({ ...newTable, time_bank_seconds: parseInt(e.target.value) || 30 })}
-              />
-            </div>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3 pt-4">
-            <div className="flex items-center justify-between">
-              <Label>Авто-старт</Label>
-              <Switch
-                checked={newTable.auto_start_enabled}
-                onCheckedChange={(v) => setNewTable({ ...newTable, auto_start_enabled: v })}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label>Страддл</Label>
-              <Switch
-                checked={newTable.straddle_enabled}
-                onCheckedChange={(v) => setNewTable({ ...newTable, straddle_enabled: v })}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label>Чат</Label>
-              <Switch
-                checked={newTable.chat_enabled}
-                onCheckedChange={(v) => setNewTable({ ...newTable, chat_enabled: v })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
+          </ScrollArea>
+          
+          <DialogFooter className="pt-4">
             <Button variant="outline" onClick={() => setShowCreateTableDialog(false)}>
               Отмена
             </Button>

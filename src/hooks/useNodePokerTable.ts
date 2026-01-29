@@ -1266,6 +1266,10 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           break;
 
         // POKERSTARS-STYLE: Time Bank activated - immediate visual feedback
+        // CRITICAL FIX: Do NOT override actionStartTime with Date.now() - this causes
+        // the global monotonic guard to reject subsequent state_update packets from server,
+        // leading to desync. Only set the visual flag; let the subsequent state_update
+        // provide the authoritative actionStartTime.
         case 'time_bank_activated':
           log('⏱️ Time Bank ACTIVATED:', data);
           {
@@ -1275,10 +1279,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               playerId: string;
               timeUsed: number;
               remaining: number;
+              actionStartTime?: number;
             };
             
             const timeUsed = tbData?.timeUsed ?? 0;
             const remaining = tbData?.remaining ?? 0;
+            // Use server's actionStartTime if provided, otherwise DON'T override
+            const serverActionStartTime = tbData?.actionStartTime;
             
             // Immediately update to time bank phase for instant visual change
             setTableState((prev) => {
@@ -1286,8 +1293,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               return {
                 ...prev,
                 isTimeBankPhase: true,
-                // Reset action start time for time bank countdown
-                actionStartTime: Date.now(),
+                // CRITICAL: Only update actionStartTime if server provided it
+                // Otherwise keep previous value - the subsequent state_update will sync it
+                actionStartTime: serverActionStartTime ?? prev.actionStartTime,
                 // Time bank slice duration (server sends timeUsed as slice length)
                 actionTimeTotal: timeUsed > 0 ? timeUsed : (prev.timeBankSeconds ?? 30),
                 // Provide immediate remaining for UI until next state_update arrives
