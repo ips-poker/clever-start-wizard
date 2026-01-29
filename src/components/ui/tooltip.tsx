@@ -1,9 +1,18 @@
+// v2 - Invalidate Vite cache
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-// Упрощённые тултипы без Radix, чтобы избежать конфликтов React hooks
-const TooltipProvider = ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => {
+// Simplified tooltips WITHOUT Radix to avoid React hooks conflicts
+// DO NOT import from @radix-ui/react-tooltip anywhere!
+interface TooltipProviderProps {
+  children: React.ReactNode;
+  delayDuration?: number;
+  skipDelayDuration?: number;
+  disableHoverableContent?: boolean;
+}
+
+const TooltipProvider = ({ children }: TooltipProviderProps) => {
   return <>{children}</>;
 };
 
