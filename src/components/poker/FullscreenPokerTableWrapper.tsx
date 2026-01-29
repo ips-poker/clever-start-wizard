@@ -407,6 +407,16 @@ export function FullscreenPokerTableWrapper({
   // This guard ignores any update that moves actionStartTime backwards within the same hand.
   const maxActionStartTimeInHandRef = useRef<number>(0);
   const maxActionStartTimeHandIdRef = useRef<string | null>(null);
+
+  // FIX (STALE-DRIFT GUARD): If we detect a stale "new turn" packet (seat/phase changed but
+  // actionStartTime implies we're already far into the previous player's turn), we correct the
+  // first packet to full time.
+  // However, the server may still send more stale packets with the SAME actionStartTime + low
+  // timeRemaining, and our SAME-TURN drift correction would snap the deadline back down.
+  // 
+  // So: when we correct a stale packet on a new turn, we temporarily ignore drift correction
+  // for that exact actionStartTime until we see actionStartTime advance.
+  const staleMainTimerActionStartRef = useRef<{ handId: string | null; actionStartTime: number } | null>(null);
   
   // FIX: "Sticky" time bank - once we enter time bank phase, don't exit until turn/seat changes
   const stickyTimeBankActiveRef = useRef<boolean>(false);
@@ -473,6 +483,21 @@ export function FullscreenPokerTableWrapper({
     if (maxActionStartTimeHandIdRef.current !== currentHandId) {
       maxActionStartTimeHandIdRef.current = currentHandId;
       maxActionStartTimeInHandRef.current = 0;
+    }
+
+    // Reset stale-drift guard on new hand.
+    if (staleMainTimerActionStartRef.current?.handId !== currentHandId) {
+      staleMainTimerActionStartRef.current = null;
+    }
+
+    // If server finally advanced actionStartTime, clear the stale-drift guard.
+    if (
+      staleMainTimerActionStartRef.current &&
+      typeof actionStartTime === 'number' &&
+      Number.isFinite(actionStartTime) &&
+      actionStartTime > staleMainTimerActionStartRef.current.actionStartTime
+    ) {
+      staleMainTimerActionStartRef.current = null;
     }
 
     if (typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0) {
@@ -796,6 +821,11 @@ export function FullscreenPokerTableWrapper({
         // FIX (v3): If startLooksStale is true, ALWAYS correct - don't check isSuspiciouslyLow.
         // The elapsed time being > 5s is conclusive proof that actionStartTime is from a previous player.
         if (isGenuineNewTurn && (startLooksStale || isDefinitelyStale)) {
+          // Arm the stale-drift guard so subsequent stale packets can't snap the timer back down.
+          if (typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0) {
+            staleMainTimerActionStartRef.current = { handId: currentHandId, actionStartTime };
+          }
+
           console.log('[TIMER SYNC] CORRECTING stale packet on new turn:', {
             rawServerRemaining,
             correctedTo: effectiveActionTime,
@@ -870,6 +900,21 @@ export function FullscreenPokerTableWrapper({
       // SAME TURN: Check for drift from server
       // Only resync if server's remaining differs by more than 2 seconds
       if (serverRemaining !== null && serverRemaining !== undefined) {
+        const shouldIgnoreDriftBecauseStaleStart = Boolean(
+          staleMainTimerActionStartRef.current &&
+            staleMainTimerActionStartRef.current.handId === currentHandId &&
+            typeof actionStartTime === 'number' &&
+            Number.isFinite(actionStartTime) &&
+            actionStartTime === staleMainTimerActionStartRef.current.actionStartTime
+        );
+
+        if (shouldIgnoreDriftBecauseStaleStart) {
+          console.log('[TIMER SYNC] Skipping drift correction due to stale actionStartTime guard:', {
+            handId: currentHandId,
+            actionStartTime,
+            serverRemaining,
+          });
+        } else {
         const localRemaining = Math.max(0, (deadlineMsRef.current - now) / 1000);
         const drift = Math.abs(serverRemaining - localRemaining);
         
@@ -877,6 +922,7 @@ export function FullscreenPokerTableWrapper({
           // Significant drift - resync to server
           console.log('[TIMER SYNC] Drift correction:', { drift, serverRemaining, localRemaining });
           deadlineMsRef.current = now + serverRemaining * 1000;
+        }
         }
       }
     }
