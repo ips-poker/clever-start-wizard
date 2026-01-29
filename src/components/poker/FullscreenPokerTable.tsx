@@ -922,8 +922,8 @@ const PlayerSeat = memo(function PlayerSeat({
         )}
         
         {/* PPPoker-STYLE: Time Bank Alarm Badge - animated clock with countdown */}
-        {/* Show for CURRENT TURN player when time bank is active (not just hero) */}
-        {isCurrentTurn && isTimeBankActive && (
+        {/* CRITICAL FIX: Show ONLY for HERO, never for opponents */}
+        {isHero && isCurrentTurn && isTimeBankActive && (
           <TimeBankAlarmBadge
             isActive={isTimeBankActive}
             remainingSeconds={timeBankRemaining}
