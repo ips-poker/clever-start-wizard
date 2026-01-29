@@ -649,6 +649,76 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           let newState = transformServerState(incomingState as any, tableId);
 
           // ------------------------------
+          // POKERSTARS-STYLE TIMER CONSISTENCY GUARD
+          // ------------------------------
+          // Problem:
+          // The server can emit redundant/out-of-order snapshots (especially around time bank).
+          // A stale snapshot may:
+          //   - change `currentPlayerSeat`
+          //   - but carry an old `actionStartTime`
+          // Result: UI shows the NEW seat, but the ring uses the OLD deadline ("inherits" progress / instant pulse).
+          //
+          // Fix:
+          // Reject snapshots that attempt to move the turn/phase backwards within the SAME hand.
+          // We keep the whole previous state to avoid any visual desync between seat + timer.
+          if (prev?.handId && newState.handId && prev.handId === newState.handId) {
+            const prevAst = typeof prev.actionStartTime === 'number' && Number.isFinite(prev.actionStartTime)
+              ? prev.actionStartTime
+              : null;
+            const nextAst = typeof newState.actionStartTime === 'number' && Number.isFinite(newState.actionStartTime)
+              ? newState.actionStartTime
+              : null;
+
+            // Global monotonic guard (same hand)
+            if (prevAst !== null && nextAst !== null) {
+              const BACKWARDS_TOL_MS = 50;
+              if (nextAst < prevAst - BACKWARDS_TOL_MS) {
+                log('[TimerGuard] Ignoring stale snapshot: actionStartTime went backwards', {
+                  handId: prev.handId,
+                  prevActionStartTime: prevAst,
+                  nextActionStartTime: nextAst,
+                  prevSeat: prev.currentPlayerSeat,
+                  nextSeat: newState.currentPlayerSeat,
+                  prevPhase: prev.phase,
+                  nextPhase: newState.phase,
+                });
+                return prev;
+              }
+            }
+
+            // Seat-change must be accompanied by a fresh actionStartTime.
+            // If not, this snapshot is stale and must not be allowed to move the UI turn.
+            const prevSeat = prev.currentPlayerSeat;
+            const nextSeat = newState.currentPlayerSeat;
+            const seatChanged =
+              prevSeat !== null && prevSeat !== undefined &&
+              nextSeat !== null && nextSeat !== undefined &&
+              prevSeat !== nextSeat;
+
+            if (seatChanged) {
+              const ADVANCE_TOL_MS = 50;
+              const hasPrev = prevAst !== null;
+              const hasNext = nextAst !== null;
+
+              // If either timestamp is missing OR it didn't advance, treat as stale.
+              if (!hasPrev || !hasNext || nextAst! <= prevAst! + ADVANCE_TOL_MS) {
+                log('[TimerGuard] Ignoring stale seat-change snapshot (no fresh actionStartTime)', {
+                  handId: prev.handId,
+                  prevSeat,
+                  nextSeat,
+                  prevActionStartTime: prevAst,
+                  nextActionStartTime: nextAst,
+                  prevTimeRemaining: prev.timeRemaining,
+                  nextTimeRemaining: newState.timeRemaining,
+                  prevIsTimeBankPhase: prev.isTimeBankPhase,
+                  nextIsTimeBankPhase: newState.isTimeBankPhase,
+                });
+                return prev;
+              }
+            }
+          }
+
+          // ------------------------------
           // POKERSTARS-STYLE STABILITY LAYER
           // ------------------------------
           if (prev) {
