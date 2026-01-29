@@ -2600,10 +2600,22 @@ export class PokerTable {
         });
       }
 
+      // Detect if this is a time bank call (durationSeconds provided) vs regular turn start
+      const isTimeBankCall = durationSeconds !== undefined && durationSeconds > 0;
+      
+      // CRITICAL FIX: Reset isTimeBankPhase when starting a NEW turn context (not a time bank continuation).
+      // This prevents the flag from "sticking" when moving to a different player or phase.
+      // Only preserve the flag if this is an explicit time bank slice call.
+      if (isNewContext && !isTimeBankCall) {
+        this.currentHand.isTimeBankPhase = false;
+        logger.info('startActionTimer: Reset isTimeBankPhase for new turn context', {
+          tableId: this.id,
+          timerKey,
+          wasTimeBankPhase: this.currentHand.isTimeBankPhase
+        });
+      }
+      
       this.lastActionTimerKey = timerKey;
-      // CRITICAL: Do NOT force-reset isTimeBankPhase here.
-      // This function is used both for main timer and for time bank slices.
-      // Phase/turn transitions and afterAction() are responsible for resetting it to false.
     }
 
     // Always clear any existing timer before starting a new one
