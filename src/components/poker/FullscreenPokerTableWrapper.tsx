@@ -772,26 +772,39 @@ export function FullscreenPokerTableWrapper({
           typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0;
         const elapsedSinceStartMs = hasActionStartTime ? now - (actionStartTime as number) : null;
 
-        // CRITICAL HARDENING:
-        // If we just switched streets (flop→turn→river) but we receive a snapshot that implies
-        // we've already been in the new street for a long time, treat it as stale.
-        // This is the exact pattern in the logs: phase='turn' but serverRemaining ~1-2s.
-        const startLooksStaleForNewStreet =
-          Boolean(isGenuineNewTurn && phaseChanged && elapsedSinceStartMs !== null && elapsedSinceStartMs > 5000);
+        // CRITICAL HARDENING (v2):
+        // Detect stale packets on ANY new turn (phase OR seat change), not just phase changes.
+        // A stale packet has:
+        //   - Low serverRemaining (< 3s or < 25% of actionTime)
+        //   - Large elapsedSinceStartMs (> 5s) implying we're "late" into someone else's turn
+        //
+        // FIX: Also include seatChanged in the condition, because logs show:
+        //   seat 7 → seat 0 (same phase 'flop'), but stale packet with serverRemaining=1
+        const startLooksStale =
+          Boolean(isGenuineNewTurn && (phaseChanged || seatChanged) && elapsedSinceStartMs !== null && elapsedSinceStartMs > 5000);
+
+        // AGGRESSIVE FIX: If it's a new turn and serverRemaining is very low (< 2s),
+        // this is almost certainly a stale/race packet. Force full timer.
+        // This catches the case: seat change with old actionStartTime but low remaining.
+        const isDefinitelyStale =
+          isGenuineNewTurn &&
+          typeof rawServerRemaining === 'number' &&
+          rawServerRemaining < 2;
 
         // If it's a genuinely new turn and serverRemaining is suspiciously low, correct it
         if (typeof rawServerRemaining === 'number' && isGenuineNewTurn) {
           const lowThreshold = Math.min(3, Math.max(1, effectiveActionTime * 0.25));
           const isSuspiciouslyLow = rawServerRemaining < lowThreshold;
 
-          if (isSuspiciouslyLow && (startLooksStaleForNewStreet || rawServerRemaining < 1)) {
-            console.log('[TIMER SYNC] CORRECTING suspiciously low serverRemaining on new turn:', {
+          if (isSuspiciouslyLow && (startLooksStale || isDefinitelyStale)) {
+            console.log('[TIMER SYNC] CORRECTING stale serverRemaining on new turn:', {
               rawServerRemaining,
               correctedTo: effectiveActionTime,
-              reason: startLooksStaleForNewStreet
-                ? 'phase changed but actionStartTime implies we are late into the street (stale packet)'
-                : 'serverRemaining extremely low on brand new turn indicates stale update',
+              reason: startLooksStale
+                ? 'turn/phase changed but actionStartTime implies we are late into someone else\'s turn'
+                : 'serverRemaining < 2s on brand new turn = definitely stale packet',
               phaseChanged,
+              seatChanged,
               elapsedSinceStartMs,
             });
             correctedServerRemaining = effectiveActionTime;
@@ -801,8 +814,9 @@ export function FullscreenPokerTableWrapper({
         const hasServerRemaining = typeof correctedServerRemaining === 'number' && Number.isFinite(correctedServerRemaining);
 
         const deadlineFromRemaining = hasServerRemaining ? (now + Math.max(0, correctedServerRemaining) * 1000) : null;
+        // FIX: If we detected a stale packet, do NOT use deadlineFromStart (it's based on old actionStartTime)
         const deadlineFromStart =
-          hasActionStartTime && !startLooksStaleForNewStreet ? (actionStartTime + effectiveActionTime * 1000) : null;
+          hasActionStartTime && !startLooksStale && !isDefinitelyStale ? (actionStartTime + effectiveActionTime * 1000) : null;
 
         let chosen: number | null = null;
         let chosenSource: 'start' | 'remaining' | 'now' = 'now';
