@@ -193,7 +193,7 @@ export function FullscreenPokerTableWrapper({
           smallBlind: data.small_blind,
           bigBlind: data.big_blind,
           ante: data.ante ?? 0,
-          actionTimeSeconds: data.action_time_seconds ?? 15,
+          actionTimeSeconds: data.action_time_seconds ?? 25,
           timeBankSeconds: data.time_bank_seconds ?? 30,
           straddleEnabled: data.straddle_enabled ?? false,
           mississippiStraddleEnabled: data.mississippi_straddle_enabled ?? false,
@@ -420,7 +420,7 @@ export function FullscreenPokerTableWrapper({
       toNumberOrUndef(rawSettings?.timeBankSeconds) ??
       toNumberOrUndef(rawSettings?.time_bank_seconds);
 
-    const actionTimer = tableState?.actionTimeTotal || tableState?.actionTimer || dbActionTime || 15;
+    const actionTimer = tableState?.actionTimeTotal || tableState?.actionTimer || dbActionTime || 25;
     
     // DIAGNOSTIC: Log where action time comes from
     console.log('[TIMER CONFIG]', {
@@ -1802,7 +1802,7 @@ export function FullscreenPokerTableWrapper({
             smallBlind: tableState?.smallBlindAmount || 10,
             bigBlind: tableState?.bigBlindAmount || 20,
             ante: tableState?.anteAmount || 0,
-            actionTimeSeconds: tableState?.actionTimer || turnTimeTotal || 15,
+            actionTimeSeconds: tableState?.actionTimer || turnTimeTotal || 25,
             timeBankSeconds: tableState?.timeBankSeconds || 30,
           }}
           onSave={handleSettingsSave}

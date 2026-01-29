@@ -346,7 +346,7 @@ export function useUnifiedPoker({
           gameType: 'holdem',
           tableType: table.table_type as 'cash' | 'tournament',
           // POKERSTARS-STYLE: Cash = 15s, Tournament = 30s (server provides actual value)
-          actionTime: table.action_time_seconds || 15,
+          actionTime: table.action_time_seconds || 25,
           timeBankTime: table.time_bank_seconds || 30
         }
       };

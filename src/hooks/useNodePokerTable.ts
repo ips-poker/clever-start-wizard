@@ -1313,9 +1313,13 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               //   the next player's *main* timer can incorrectly become 10s.
               // - Never synthesize actionStartTime with Date.now(); it can go "ahead" of server
               //   and then monotonic guards reject the next authoritative snapshot.
+              // - FIXED: Use table's actionTimer from settings, NOT prev.actionTimeTotal which
+              //   could be 10s from a time bank phase.
 
               const parsedActionStartTime = toMs(turnData.actionStartTime);
-              const fallbackMainTotal = prev.actionTimer ?? 15;
+              // CRITICAL FIX: Fallback to table's base action time (actionTimer), never prev.actionTimeTotal
+              // prev.actionTimeTotal might be 10s from time bank, causing premature timeouts
+              const fallbackMainTotal = prev.actionTimer ?? 25; // Use 25s as safe default (table config)
               const nextActionTimeTotal =
                 (typeof turnData.actionTimeTotal === 'number' && Number.isFinite(turnData.actionTimeTotal))
                   ? turnData.actionTimeTotal

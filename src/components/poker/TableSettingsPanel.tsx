@@ -51,7 +51,7 @@ const DEFAULT_TABLE_SETTINGS: Partial<TableSettings> = {
   smallBlind: 10,
   bigBlind: 20,
   ante: 0,
-  actionTimeSeconds: 15,
+  actionTimeSeconds: 25,
   timeBankSeconds: 30,
   straddleEnabled: false,
   mississippiStraddleEnabled: false,
@@ -311,7 +311,7 @@ export function TableSettingsPanel({
               <SettingsSection title="Тайминг" icon={Clock}>
                 <SettingRow label="Время на ход" description={`${settings.actionTimeSeconds}сек`}>
                   <Slider
-                    value={[settings.actionTimeSeconds || 15]}
+                    value={[settings.actionTimeSeconds || 25]}
                     onValueChange={([v]) => updateSetting('actionTimeSeconds', v)}
                     min={5}
                     max={60}

@@ -440,7 +440,7 @@ export function useOptimizedPokerState({
           maxPlayers: table.max_players,
           gameType: 'holdem',
           tableType: table.table_type as 'cash' | 'tournament',
-          actionTime: 15,
+          actionTime: 25,
           timeBankTime: 30
         }
       };
