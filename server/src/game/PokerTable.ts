@@ -2577,11 +2577,18 @@ export class PokerTable {
       const isNewContext = timerKey !== this.lastActionTimerKey;
       const isStale = !this.currentHand.actionStartTime || (now - this.currentHand.actionStartTime > 500);
 
+      // IMPORTANT:
+      // - Main turn timer total = phase-aware action time (table setting)
+      // - Time bank timer total = provided durationSeconds (slice length)
+      // Never overwrite time bank totals with config.actionTimeSeconds.
+      const intendedActionTimeTotal = Math.max(0, durationSeconds ?? this.getActionTimeForPhase());
+
       if (isNewContext || isStale) {
         this.currentHand.actionStartTime = now;
-        // CRITICAL FIX: Also refresh actionTimeTotal to use current config.actionTimeSeconds
-        // This ensures that if settings changed, new time is applied from next turn
-        this.currentHand.actionTimeTotal = this.getActionTimeForPhase();
+        // CRITICAL: Refresh actionTimeTotal for the CURRENT timer context.
+        // - main timer: getActionTimeForPhase()
+        // - time bank: durationSeconds
+        this.currentHand.actionTimeTotal = intendedActionTimeTotal;
         
         logger.info('startActionTimer: Timer context reset', {
           tableId: this.id,
@@ -2594,7 +2601,9 @@ export class PokerTable {
       }
 
       this.lastActionTimerKey = timerKey;
-      this.currentHand.isTimeBankPhase = false;
+      // CRITICAL: Do NOT force-reset isTimeBankPhase here.
+      // This function is used both for main timer and for time bank slices.
+      // Phase/turn transitions and afterAction() are responsible for resetting it to false.
     }
 
     // Always clear any existing timer before starting a new one
@@ -2863,25 +2872,28 @@ export class PokerTable {
       });
 
       // CRITICAL: Reset actionStartTime for time bank phase
-      const timeBankStartTime = Date.now();
-      this.currentHand.actionStartTime = timeBankStartTime;
+      // IMPORTANT: Keep server memory + emitted state_update consistent.
+      // startActionTimer() will ensure actionStartTime/actionTimeTotal are set for this context.
+      this.currentHand.actionTimeTotal = timeToUse;
       
-      // CRITICAL FIX: Sync action_started_at to DB for time bank phase
-      this.supabase
-        .from('poker_hands')
-        .update({
-          action_started_at: new Date(timeBankStartTime).toISOString()
-        })
-        .eq('id', this.currentHand.id)
-        .then(({ error }) => {
-          if (error) {
-            logger.warn('Failed to sync action_started_at to DB (time bank)', { error: error.message });
-          }
-        });
-
       // Start time bank timer
       if (timeToUse > 0) {
         this.startActionTimer(timeToUse);
+
+        const timeBankStartTime = this.currentHand.actionStartTime || Date.now();
+
+        // CRITICAL FIX: Sync action_started_at to DB for time bank phase
+        this.supabase
+          .from('poker_hands')
+          .update({
+            action_started_at: new Date(timeBankStartTime).toISOString()
+          })
+          .eq('id', this.currentHand.id)
+          .then(({ error }) => {
+            if (error) {
+              logger.warn('Failed to sync action_started_at to DB (time bank)', { error: error.message });
+            }
+          });
         
         // Emit state update so client knows we're in time bank phase
         this.emit('state_update', {
@@ -2891,6 +2903,8 @@ export class PokerTable {
           currentPlayerSeat: this.currentHand.currentPlayerSeat,
           phase: this.currentHand.phase,
           isTimeBankPhase: true,
+          // Total for this slice (client uses this for ring reset + consistent countdown)
+          actionTimeTotal: timeToUse,
           timeRemaining: timeToUse,
           actionStartTime: timeBankStartTime
         });
