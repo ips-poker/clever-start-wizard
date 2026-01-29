@@ -601,8 +601,12 @@ export function FullscreenPokerTableWrapper({
     // POKERSTARS-STYLE SYNC:
     // 1. On NEW turn: calculate deadline from actionStartTime (server's authoritative start)
     // 2. During turn: only adjust if server's remaining differs significantly (drift correction)
+    //
+    // CRITICAL FIX: Use isGenuineNewTurn (same as time bank reset logic) to ensure
+    // timer reset is synchronized with time bank reset. Previously we used isNewTurn
+    // which could be false when isGenuineNewTurn was true, causing desync.
     
-    if (isNewTurn) {
+    if (isGenuineNewTurn) {
       // DEBUG: Log timer reset details
       console.log('[TIMER SYNC] New turn detected:', {
         phase: currentPhase,
@@ -714,25 +718,25 @@ export function FullscreenPokerTableWrapper({
         // we've already been in the new street for a long time, treat it as stale.
         // This is the exact pattern in the logs: phase='turn' but serverRemaining ~1-2s.
         const startLooksStaleForNewStreet =
-          Boolean(isNewTurn && phaseChanged && elapsedSinceStartMs !== null && elapsedSinceStartMs > 5000);
+          Boolean(isGenuineNewTurn && phaseChanged && elapsedSinceStartMs !== null && elapsedSinceStartMs > 5000);
         
         // If it's a genuinely new turn and serverRemaining is suspiciously low, correct it
-        if (typeof rawServerRemaining === 'number' && isNewTurn) {
+        if (typeof rawServerRemaining === 'number' && isGenuineNewTurn) {
           const lowThreshold = Math.min(3, Math.max(1, effectiveActionTime * 0.25));
           const isSuspiciouslyLow = rawServerRemaining < lowThreshold;
 
           if (isSuspiciouslyLow && (startLooksStaleForNewStreet || rawServerRemaining < 1)) {
-          console.log('[TIMER SYNC] CORRECTING suspiciously low serverRemaining on new turn:', {
-            rawServerRemaining,
-            correctedTo: effectiveActionTime,
-            reason: startLooksStaleForNewStreet
-              ? 'phase changed but actionStartTime implies we are late into the street (stale packet)'
-              : 'serverRemaining extremely low on brand new turn indicates stale update',
-            phaseChanged,
-            elapsedSinceStartMs,
-          });
-          correctedServerRemaining = effectiveActionTime;
-        }
+            console.log('[TIMER SYNC] CORRECTING suspiciously low serverRemaining on new turn:', {
+              rawServerRemaining,
+              correctedTo: effectiveActionTime,
+              reason: startLooksStaleForNewStreet
+                ? 'phase changed but actionStartTime implies we are late into the street (stale packet)'
+                : 'serverRemaining extremely low on brand new turn indicates stale update',
+              phaseChanged,
+              elapsedSinceStartMs,
+            });
+            correctedServerRemaining = effectiveActionTime;
+          }
         }
 
         const hasServerRemaining = typeof correctedServerRemaining === 'number' && Number.isFinite(correctedServerRemaining);
