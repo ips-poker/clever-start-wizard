@@ -46,6 +46,11 @@ import { SitOutIndicator, SitOutOverlay } from './SitOutIndicator';
 import { WaitForBBIndicator } from './WaitForBBIndicator';
 import { CARD_DEAL_TIMINGS, HAND_TRANSITION_TIMINGS } from '@/config/pokerTimings';
 
+// Constant render logging can cause noticeable jank (especially on mobile/Telegram WebView).
+// Use a dedicated flag so general WS debug (POKER_DEBUG) doesn't accidentally tank FPS.
+// Enable only when needed: localStorage.setItem('POKER_RENDER_DEBUG','1')
+const DEBUG_TABLE = import.meta.env.DEV || localStorage.getItem('POKER_RENDER_DEBUG') === '1';
+
 // ============= SUIT CONFIGURATION =============
 const SUITS = {
   h: { symbol: '♥', color: '#ef4444', name: 'hearts' },
@@ -1734,12 +1739,12 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   winnerAnnouncement,
   activeBurnCard
 }: FullscreenPokerTableProps) {
-  // DEBUG: Log tableState to verify handId is received
-  console.log('[FullscreenPokerTable] RENDER:', { 
+  // DEBUG: Log tableState to verify handId is received (debug only)
+  DEBUG_TABLE && console.log('[FullscreenPokerTable] RENDER:', {
     handId: (tableState as any)?.handId,
     phase,
     dealerSeat,
-    playerCount: players.length
+    playerCount: players.length,
   });
   
   // Use dynamic positions based on max seats
@@ -1914,7 +1919,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   // Debug: log handId and dealOrderMap for synchronization verification
   React.useEffect(() => {
     if (handId) {
-      console.log('[FullscreenPokerTable] Hand sync data:', {
+      DEBUG_TABLE && console.log('[FullscreenPokerTable] Hand sync data:', {
         handId,
         dealerSeat,
         dealOrderMap: Object.fromEntries(dealOrderMap),
