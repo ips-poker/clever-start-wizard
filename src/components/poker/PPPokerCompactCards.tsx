@@ -379,11 +379,11 @@ export const PPPokerCompactCards = memo(function PPPokerCompactCards({
   const incomingHandId = handId;
   const previousStableHandId = stableHandIdRef.current;
 
-  // If we're effectively hidden OR we got a bogus early `showAfterDeal` (flash case),
-  // hard-reset refs so the next hand always starts clean.
-  const isTrulyHidden = !animateDeal && !showAfterDeal && !isShowdown;
-  const isBogusAfterDeal = showAfterDeal && !animateDeal && !isShowdown && !dealLockedHandIdRef.current;
-  if (isTrulyHidden || isBogusAfterDeal) {
+  // Only reset refs when TRULY hidden (waiting phase, no active hand).
+  // CRITICAL FIX: Do NOT reset during active gameplay - this was causing cards to disappear.
+  // Only reset when we have NO handId (truly between hands).
+  const isTrulyBetweenHands = !animateDeal && !showAfterDeal && !isShowdown && !incomingHandId;
+  if (isTrulyBetweenHands) {
     stableHandIdRef.current = undefined;
     animatedHandIdRef.current = undefined;
     dealLockedHandIdRef.current = undefined;
