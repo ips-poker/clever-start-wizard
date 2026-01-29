@@ -74,12 +74,9 @@ export function useTimeBankFallback({
   // IMPORTANT: This is a FALLBACK visual - if server is correctly sending seat-specific
   // time_bank_activated events, this may not be needed. But we keep it for edge cases.
   useEffect(() => {
-    // CRITICAL: Only activate if:
-    // 1. Server says time bank phase is active
-    // 2. It's the HERO's turn (isMyTurn === true)
-    // 3. Hero has time bank remaining
-    // 4. Fallback not already activated for this turn
-    if (!isMyTurn) {
+    // CRITICAL: isMyTurn must be EXPLICITLY true, not just truthy
+    // This prevents activation when isMyTurn is undefined/null
+    if (isMyTurn !== true) {
       // Not hero's turn - NEVER show time bank fallback for opponents
       return;
     }
@@ -106,8 +103,9 @@ export function useTimeBankFallback({
     if (serverIsTimeBankPhase) return;
     // Already activated for this turn
     if (activatedForTurnRef.current === currentTurnId && fallback) return;
-    // NOT the hero's turn - don't activate fallback for other players
-    if (!isMyTurn) return;
+    // CRITICAL: isMyTurn must be EXPLICITLY true, not just truthy
+    // This prevents activation when isMyTurn is undefined/null
+    if (isMyTurn !== true) return;
 
     const remaining = mainTurnRemaining ?? null;
     const tb = Number(currentPlayerTimeBank ?? 0);
