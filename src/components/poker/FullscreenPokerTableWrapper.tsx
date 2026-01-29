@@ -430,15 +430,23 @@ export function FullscreenPokerTableWrapper({
       toNumberOrUndef(rawSettings?.timeBankSeconds) ??
       toNumberOrUndef(rawSettings?.time_bank_seconds);
 
-    const actionTimer = tableState?.actionTimeTotal || tableState?.actionTimer || dbActionTime || 25;
+    // IMPORTANT:
+    // `actionTimer` = main action time per turn (table setting)
+    // `actionTimeTotal` from WS is per-phase/per-slice total, but can be STALE (e.g., still 10s from time bank)
+    // and must NOT be treated as the main timer source.
+    const mainActionTimer = tableState?.actionTimer || dbActionTime || 25;
+    const serverActionTimeTotal =
+      typeof tableState?.actionTimeTotal === 'number' && Number.isFinite(tableState.actionTimeTotal)
+        ? tableState.actionTimeTotal
+        : undefined;
     
     // DIAGNOSTIC: Log where action time comes from
     console.log('[TIMER CONFIG]', {
-      actionTimeTotal: tableState?.actionTimeTotal,
+      actionTimeTotal: serverActionTimeTotal,
       actionTimer: tableState?.actionTimer,
       dbActionTime,
       dbTimeBank,
-      finalActionTimer: actionTimer,
+      finalActionTimer: mainActionTimer,
       phase: tableState?.phase,
       seat: tableState?.currentPlayerSeat
     });
@@ -498,6 +506,38 @@ export function FullscreenPokerTableWrapper({
     const seatChanged = prevSeatRef.current !== currentSeat;
 
     // ============================================
+    // FIX #0.5: Seat change MUST advance actionStartTime
+    // ============================================
+    // Your logs show a critical pattern:
+    // - seatChanged=true
+    // - but actionStartTime DID NOT advance
+    // - and actionTimeTotal was 10 (time bank slice)
+    // This is an out-of-order / stale packet that makes the new player “inherit” the previous timer.
+    // Professional rule: a genuine new turn ALWAYS comes with a NEW actionStartTime.
+    const prevActionStartTime = prevActionStartTimeRef.current || 0;
+    if (
+      seatChanged &&
+      typeof actionStartTime === 'number' &&
+      Number.isFinite(actionStartTime) &&
+      actionStartTime > 0 &&
+      prevActionStartTime > 0
+    ) {
+      const ADVANCE_TOLERANCE_MS = 50;
+      if (actionStartTime <= prevActionStartTime + ADVANCE_TOLERANCE_MS) {
+        console.log('[TIMER SYNC] Ignoring STALE seat change (actionStartTime did not advance):', {
+          handId: currentHandId,
+          prevSeat: prevSeatRef.current,
+          nextSeat: currentSeat,
+          prevActionStartTime,
+          receivedActionStartTime: actionStartTime,
+          serverRemaining,
+          serverActionTimeTotal,
+        });
+        return;
+      }
+    }
+
+    // ============================================
     // FIX #1: Ignore stale (outdated) state updates
     // ============================================
     // Server can broadcast redundant state_updates out of order.
@@ -535,7 +575,8 @@ export function FullscreenPokerTableWrapper({
     // Detect if this is a NEW turn/phase
     // CRITICAL FIX: actionStartTime change is the PRIMARY indicator of a new turn
     // Phase/seat change are SECONDARY indicators (catch edge cases)
-    const actionStartTimeChanged = actionStartTime && actionStartTime !== (prevActionStartTimeRef.current || 0);
+    const actionStartTimeChanged =
+      actionStartTime && actionStartTime !== (prevActionStartTimeRef.current || 0);
     const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current || phaseChanged || seatChanged || actionStartTimeChanged;
     prevTimerResetKeyRef.current = timerResetKey;
     prevActionStartTimeRef.current = actionStartTime || 0;
@@ -611,7 +652,7 @@ export function FullscreenPokerTableWrapper({
       console.log('[TIMER SYNC] New turn detected:', {
         phase: currentPhase,
         seat: currentSeat,
-        actionTimer,
+        actionTimer: mainActionTimer,
         actionStartTime,
         serverRemaining,
         phaseChanged,
@@ -624,19 +665,30 @@ export function FullscreenPokerTableWrapper({
       });
       
       // NEW TURN: Set up fresh timer
-      // CRITICAL FIX: Use server's actionTimeTotal (which is ALWAYS fresh per-turn)
-      // rather than cached actionTimer or DB fallback
-      const effectiveActionTime = tableState?.actionTimeTotal ?? actionTimer;
+      // Main timer total must come from table settings (actionTimer / DB), not from actionTimeTotal.
+      // actionTimeTotal may still reflect a previous time-bank slice (10s) due to stale WS packets.
+      const mainTotalFromSettings = mainActionTimer;
+
+      // If server sends actionTimeTotal that looks like a normal main timer (close to settings), accept it.
+      // Otherwise, ignore and use mainTotalFromSettings.
+      const mainTotalFromServerIsSane =
+        typeof serverActionTimeTotal === 'number' &&
+        serverActionTimeTotal >= mainTotalFromSettings * 0.8;
+
+      const effectiveActionTime =
+        !effectiveIsTimeBankPhase && mainTotalFromServerIsSane
+          ? serverActionTimeTotal!
+          : mainTotalFromSettings;
       
       if (effectiveIsTimeBankPhase) {
         // Time bank: DO NOT use `serverRemaining` as the *total* (it changes every tick).
         // Use server-provided `actionTimeTotal` (time bank slice total) when available.
         const tbTotal =
-          (typeof tableState?.actionTimeTotal === 'number' && Number.isFinite(tableState.actionTimeTotal)
-            ? tableState.actionTimeTotal
-            : (typeof dbTimeBank === 'number' && Number.isFinite(dbTimeBank)
-              ? dbTimeBank
-              : effectiveActionTime));
+          typeof dbTimeBank === 'number' && Number.isFinite(dbTimeBank)
+            ? dbTimeBank
+            : (typeof tableState?.timeBankSeconds === 'number' && Number.isFinite(tableState.timeBankSeconds)
+              ? tableState.timeBankSeconds
+              : 10);
 
         setTurnTimeTotal(tbTotal);
 
