@@ -389,6 +389,14 @@ export function FullscreenPokerTableWrapper({
   // When server broadcasts redundant state_updates, older ones may arrive after newer ones.
   // We ignore any update where actionStartTime < maxActionStartTime for the same turn.
   const maxActionStartTimeForTurnRef = useRef<number>(0);
+
+  // FIX (GLOBAL MONOTONIC GUARD): actionStartTime must be monotonic within a hand.
+  // We observed (in logs) that after time bank activation a delayed state_update can arrive for the next
+  // phase/seat carrying an *older* actionStartTime + small timeRemaining, which makes the UI think
+  // the new player is already in time bank / almost expired.
+  // This guard ignores any update that moves actionStartTime backwards within the same hand.
+  const maxActionStartTimeInHandRef = useRef<number>(0);
+  const maxActionStartTimeHandIdRef = useRef<string | null>(null);
   
   // FIX: "Sticky" time bank - once we enter time bank phase, don't exit until turn/seat changes
   const stickyTimeBankActiveRef = useRef<boolean>(false);
@@ -438,6 +446,39 @@ export function FullscreenPokerTableWrapper({
     const now = Date.now();
     const serverRemaining = tableState?.timeRemaining;
     const actionStartTime = tableState?.actionStartTime;
+
+    // ============================================
+    // FIX #0: Global monotonic guard (per hand)
+    // ============================================
+    // Reset guard on new hand.
+    const currentHandId = tableState?.handId ?? null;
+    if (maxActionStartTimeHandIdRef.current !== currentHandId) {
+      maxActionStartTimeHandIdRef.current = currentHandId;
+      maxActionStartTimeInHandRef.current = 0;
+    }
+
+    if (typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0) {
+      const seen = maxActionStartTimeInHandRef.current;
+      // Allow tiny jitter, but never accept a real backwards jump.
+      const BACKWARDS_TOLERANCE_MS = 50;
+
+      if (seen > 0 && actionStartTime < seen - BACKWARDS_TOLERANCE_MS) {
+        console.log('[TIMER SYNC] Ignoring GLOBAL STALE update (actionStartTime went backwards):', {
+          handId: currentHandId,
+          receivedActionStartTime: actionStartTime,
+          maxSeenActionStartTimeInHand: seen,
+          phase: tableState?.phase,
+          seat: tableState?.currentPlayerSeat,
+          serverRemaining,
+          isTimeBankPhase,
+        });
+        return;
+      }
+
+      if (actionStartTime > seen) {
+        maxActionStartTimeInHandRef.current = actionStartTime;
+      }
+    }
 
     // CRITICAL FIX: Detect phase change or seat change separately from timerResetKey
     // This ensures timer ALWAYS resets on flop→turn→river transitions
