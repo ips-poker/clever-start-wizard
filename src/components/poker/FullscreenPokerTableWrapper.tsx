@@ -334,12 +334,17 @@ export function FullscreenPokerTableWrapper({
     return (fromWs ?? fromDb ?? fromConfig ?? 30) as number;
   }, [fullTableSettings, tableState?.timeBankSeconds, isTournament]);
 
+  // NOTE: serverIsTimeBankPhase is the RAW value from tableState.
+  // We MUST NOT use it directly for UI because it can contain stale data from previous player.
+  // The useEffect below filters stale data and sets isTimeBankActive state correctly.
   const serverIsTimeBankPhase = Boolean(tableState?.isTimeBankPhase);
   const currentTurnPlayerTimeBank =
     (tableState?.currentPlayerTimeBank ?? myPlayer?.timeBankRemaining ?? 0) as number;
 
+  // CRITICAL FIX: Pass isTimeBankActive STATE (which is filtered for stale data) instead of raw serverIsTimeBankPhase.
+  // This prevents the fallback hook from activating on stale time bank data from previous player.
   const tbFallback = useTimeBankFallback({
-    serverIsTimeBankPhase,
+    serverIsTimeBankPhase: isTimeBankActive, // Use FILTERED state, not raw server value
     mainTurnRemaining: turnTimeRemaining,
     currentPlayerTimeBank: currentTurnPlayerTimeBank,
     timeBankSliceSeconds,
@@ -351,8 +356,13 @@ export function FullscreenPokerTableWrapper({
 
   // CRITICAL FIX: timeBankUiActive controls the timer RING color (blue vs green).
   // It should reflect whether the CURRENT PLAYER (whoever's turn it is) is in time bank.
-  // For the hero, we use fallback. For opponents, we just use serverIsTimeBankPhase.
-  const timeBankUiActive = serverIsTimeBankPhase || tbFallback.isActive;
+  // 
+  // IMPORTANT: We use isTimeBankActive STATE (set in useEffect with sticky logic and stale filtering)
+  // NOT serverIsTimeBankPhase directly, because serverIsTimeBankPhase can contain stale data
+  // from the previous player's time bank phase.
+  // 
+  // For the hero, we also consider tbFallback.isActive as a UI-only backup.
+  const timeBankUiActive = isTimeBankActive || tbFallback.isActive;
   
   // CRITICAL FIX: displayTurnTimeRemaining should use fallback ONLY for hero.
   // When opponent is in time bank, we still use the server's turnTimeRemaining.
