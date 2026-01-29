@@ -2886,9 +2886,11 @@ export class PokerTable {
 
       this.emit('time_bank_activated', {
         playerId,
+        seat, // CRITICAL: Include seat for client-side hero check
         timeUsed: timeToUse,
         remaining: player.timeBank,
-        actionStartTime: timeBankStartTime
+        actionStartTime: timeBankStartTime,
+        actionTimeTotal: timeToUse // Explicit total for ring animation
       });
 
       logger.info('POKERSTARS: Time bank ACTIVATED', {

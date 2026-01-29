@@ -71,11 +71,23 @@ export function useTimeBankFallback({
   // If server explicitly says we're in time bank phase, trust that
   // CRITICAL FIX: Only activate for the hero's turn!
   // Otherwise ALL clients would show the alarm badge when ANY player enters time bank.
+  // IMPORTANT: This is a FALLBACK visual - if server is correctly sending seat-specific
+  // time_bank_activated events, this may not be needed. But we keep it for edge cases.
   useEffect(() => {
-    if (serverIsTimeBankPhase && !fallback && currentPlayerTimeBank && currentPlayerTimeBank > 0 && isMyTurn) {
-      // Server confirmed time bank - activate with server's remaining value
+    // CRITICAL: Only activate if:
+    // 1. Server says time bank phase is active
+    // 2. It's the HERO's turn (isMyTurn === true)
+    // 3. Hero has time bank remaining
+    // 4. Fallback not already activated for this turn
+    if (!isMyTurn) {
+      // Not hero's turn - NEVER show time bank fallback for opponents
+      return;
+    }
+    
+    if (serverIsTimeBankPhase && !fallback && currentPlayerTimeBank && currentPlayerTimeBank > 0) {
+      // Server confirmed time bank for hero - activate with server's remaining value
       const duration = Math.min(timeBankSliceSeconds, currentPlayerTimeBank);
-      console.log('[TIME BANK FALLBACK] Server confirmed time bank, activating:', {
+      console.log('[TIME BANK FALLBACK] Server confirmed time bank for HERO, activating:', {
         duration,
         currentPlayerTimeBank,
         timeBankSliceSeconds,

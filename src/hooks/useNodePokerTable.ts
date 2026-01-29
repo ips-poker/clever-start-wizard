@@ -1333,34 +1333,55 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             const rawData = (data as any)?.data ?? data;
             const tbData = rawData as {
               playerId: string;
+              seat?: number; // Server now sends seat for hero check
               timeUsed: number;
               remaining: number;
               actionStartTime?: number;
+              actionTimeTotal?: number;
             };
             
             const timeUsed = tbData?.timeUsed ?? 0;
             const remaining = tbData?.remaining ?? 0;
-            // Use server's actionStartTime if provided, otherwise DON'T override
             const serverActionStartTime = tbData?.actionStartTime;
+            const serverActionTimeTotal = tbData?.actionTimeTotal ?? timeUsed;
+            const eventSeat = tbData?.seat;
+            const eventPlayerId = tbData?.playerId;
             
-            // Immediately update to time bank phase for instant visual change
+            // CRITICAL FIX: Only update isTimeBankPhase if this is for the CURRENT PLAYER.
+            // All clients receive this broadcast, but only the player whose turn it is
+            // should show the time bank phase. Use seat as primary check.
             setTableState((prev) => {
               if (!prev) return prev;
+              
+              const isForCurrentTurn = 
+                (eventSeat !== undefined && eventSeat === prev.currentPlayerSeat) ||
+                (eventPlayerId && prev.players?.some(p => 
+                  p.playerId === eventPlayerId && p.seatNumber === prev.currentPlayerSeat
+                ));
+              
+              if (!isForCurrentTurn) {
+                // Time bank is for a different player - just log, don't change state
+                log('⏱️ Time Bank event for different player, ignoring state update', { 
+                  eventSeat, 
+                  eventPlayerId, 
+                  currentPlayerSeat: prev.currentPlayerSeat 
+                });
+                return prev;
+              }
+              
               return {
                 ...prev,
                 isTimeBankPhase: true,
-                // CRITICAL: Only update actionStartTime if server provided it
-                // Otherwise keep previous value - the subsequent state_update will sync it
+                // Use server's authoritative timestamps
                 actionStartTime: serverActionStartTime ?? prev.actionStartTime,
-                // Time bank slice duration (server sends timeUsed as slice length)
-                actionTimeTotal: timeUsed > 0 ? timeUsed : (prev.timeBankSeconds ?? 30),
-                // Provide immediate remaining for UI until next state_update arrives
-                timeRemaining: timeUsed > 0 ? timeUsed : prev.timeBankSeconds
+                // Use server's actionTimeTotal for consistent ring animation
+                actionTimeTotal: serverActionTimeTotal > 0 ? serverActionTimeTotal : (prev.timeBankSeconds ?? 30),
+                // Initial remaining = full slice
+                timeRemaining: serverActionTimeTotal > 0 ? serverActionTimeTotal : prev.timeBankSeconds
               };
             });
             
-            // Show toast notification for time bank activation
-            console.log(`⏱️ Time Bank активирован: ${timeUsed}s (осталось: ${remaining}s)`);
+            log(`⏱️ Time Bank активирован: ${timeUsed}s (осталось: ${remaining}s)`);
           }
           break;
 
