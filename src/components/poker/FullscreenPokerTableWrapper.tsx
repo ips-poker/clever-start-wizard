@@ -517,30 +517,30 @@ export function FullscreenPokerTableWrapper({
     // CRITICAL FIX: Instead of ignoring the packet (which causes timer inheritance),
     // we detect stale packets and FORCE a clean timer reset using Date.now().
     const prevActionStartTime = prevActionStartTimeRef.current || 0;
-    let forceCleanReset = false;
-    
+
+    // STRICT SERVER-AUTH RULE:
+    // If we see a seat change but actionStartTime did NOT advance, this packet is stale/out-of-order.
+    // We must IGNORE it entirely so the UI never shows the new seat with the old timer (inheritance).
+    //
+    // IMPORTANT: Do NOT "fix" with Date.now() here — user requested server-driven timing.
     if (
       seatChanged &&
       typeof actionStartTime === 'number' &&
       Number.isFinite(actionStartTime) &&
       actionStartTime > 0 &&
-      prevActionStartTime > 0
+      prevActionStartTime > 0 &&
+      actionStartTime <= prevActionStartTime
     ) {
-      const ADVANCE_TOLERANCE_MS = 50;
-      if (actionStartTime <= prevActionStartTime + ADVANCE_TOLERANCE_MS) {
-        console.log('[TIMER SYNC] STALE seat change detected - forcing clean reset:', {
-          handId: currentHandId,
-          prevSeat: prevSeatRef.current,
-          nextSeat: currentSeat,
-          prevActionStartTime,
-          receivedActionStartTime: actionStartTime,
-          serverRemaining,
-          serverActionTimeTotal,
-          action: 'FORCING_CLEAN_RESET_WITH_DATE_NOW',
-        });
-        // Mark for forced clean reset - will use Date.now() instead of stale actionStartTime
-        forceCleanReset = true;
-      }
+      console.log('[TIMER SYNC] Ignoring STALE seat change (actionStartTime did not advance):', {
+        handId: currentHandId,
+        prevSeat: prevSeatRef.current,
+        nextSeat: currentSeat,
+        prevActionStartTime,
+        receivedActionStartTime: actionStartTime,
+        serverRemaining,
+        serverActionTimeTotal,
+      });
+      return;
     }
 
     // ============================================
@@ -653,7 +653,7 @@ export function FullscreenPokerTableWrapper({
     // timer reset is synchronized with time bank reset. Previously we used isNewTurn
     // which could be false when isGenuineNewTurn was true, causing desync.
     
-    if (isGenuineNewTurn || forceCleanReset) {
+    if (isGenuineNewTurn) {
       // DEBUG: Log timer reset details
       console.log('[TIMER SYNC] New turn detected:', {
         phase: currentPhase,
@@ -664,7 +664,6 @@ export function FullscreenPokerTableWrapper({
         phaseChanged,
         seatChanged,
         isTimeBankPhase,
-        forceCleanReset,
         // Extra debug info
         tableStateActionTimeTotal: tableState?.actionTimeTotal,
         tableStateActionTimer: tableState?.actionTimer,
@@ -762,59 +761,48 @@ export function FullscreenPokerTableWrapper({
         // Main timer: always starts at full actionTime (server's per-turn value)
         setTurnTimeTotal(effectiveActionTime);
         
-        // CRITICAL FIX: If forceCleanReset is true, skip all server data and use Date.now()
-        // This ensures the new player gets a FULL timer ring, not inherited from previous player
-        if (forceCleanReset) {
-          deadlineMsRef.current = now + effectiveActionTime * 1000;
-          console.log('[TIMER SYNC] FORCED CLEAN RESET - using Date.now() + full actionTime:', {
-            deadline: deadlineMsRef.current,
-            remainingSeconds: effectiveActionTime,
-            effectiveActionTime,
-            reason: 'stale seat change packet detected',
-          });
-        } else {
-          // Normal path: use server data with stale detection
-          // FIX: For NEW turn, if serverRemaining is 0 or very low (< 1s), this is a stale/race update.
-          // The server just started the turn, so serverRemaining should be ~effectiveActionTime.
-          // Trust actionStartTime in this case, or fallback to full effectiveActionTime.
-          const rawServerRemaining = serverRemaining;
-          let correctedServerRemaining = rawServerRemaining;
+        // Normal path: use server data with stale detection
+        // FIX: For NEW turn, if serverRemaining is 0 or very low (< 1s), this is a stale/race update.
+        // The server just started the turn, so serverRemaining should be ~effectiveActionTime.
+        // Trust actionStartTime in this case, or fallback to full effectiveActionTime.
+        const rawServerRemaining = serverRemaining;
+        let correctedServerRemaining = rawServerRemaining;
 
-          const hasActionStartTime =
-            typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0;
-          const elapsedSinceStartMs = hasActionStartTime ? now - (actionStartTime as number) : null;
+        const hasActionStartTime =
+          typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0;
+        const elapsedSinceStartMs = hasActionStartTime ? now - (actionStartTime as number) : null;
 
-          // CRITICAL HARDENING:
-          // If we just switched streets (flop→turn→river) but we receive a snapshot that implies
-          // we've already been in the new street for a long time, treat it as stale.
-          // This is the exact pattern in the logs: phase='turn' but serverRemaining ~1-2s.
-          const startLooksStaleForNewStreet =
-            Boolean(isGenuineNewTurn && phaseChanged && elapsedSinceStartMs !== null && elapsedSinceStartMs > 5000);
-          
-          // If it's a genuinely new turn and serverRemaining is suspiciously low, correct it
-          if (typeof rawServerRemaining === 'number' && isGenuineNewTurn) {
-            const lowThreshold = Math.min(3, Math.max(1, effectiveActionTime * 0.25));
-            const isSuspiciouslyLow = rawServerRemaining < lowThreshold;
+        // CRITICAL HARDENING:
+        // If we just switched streets (flop→turn→river) but we receive a snapshot that implies
+        // we've already been in the new street for a long time, treat it as stale.
+        // This is the exact pattern in the logs: phase='turn' but serverRemaining ~1-2s.
+        const startLooksStaleForNewStreet =
+          Boolean(isGenuineNewTurn && phaseChanged && elapsedSinceStartMs !== null && elapsedSinceStartMs > 5000);
 
-            if (isSuspiciouslyLow && (startLooksStaleForNewStreet || rawServerRemaining < 1)) {
-              console.log('[TIMER SYNC] CORRECTING suspiciously low serverRemaining on new turn:', {
-                rawServerRemaining,
-                correctedTo: effectiveActionTime,
-                reason: startLooksStaleForNewStreet
-                  ? 'phase changed but actionStartTime implies we are late into the street (stale packet)'
-                  : 'serverRemaining extremely low on brand new turn indicates stale update',
-                phaseChanged,
-                elapsedSinceStartMs,
-              });
-              correctedServerRemaining = effectiveActionTime;
-            }
+        // If it's a genuinely new turn and serverRemaining is suspiciously low, correct it
+        if (typeof rawServerRemaining === 'number' && isGenuineNewTurn) {
+          const lowThreshold = Math.min(3, Math.max(1, effectiveActionTime * 0.25));
+          const isSuspiciouslyLow = rawServerRemaining < lowThreshold;
+
+          if (isSuspiciouslyLow && (startLooksStaleForNewStreet || rawServerRemaining < 1)) {
+            console.log('[TIMER SYNC] CORRECTING suspiciously low serverRemaining on new turn:', {
+              rawServerRemaining,
+              correctedTo: effectiveActionTime,
+              reason: startLooksStaleForNewStreet
+                ? 'phase changed but actionStartTime implies we are late into the street (stale packet)'
+                : 'serverRemaining extremely low on brand new turn indicates stale update',
+              phaseChanged,
+              elapsedSinceStartMs,
+            });
+            correctedServerRemaining = effectiveActionTime;
           }
+        }
 
-          const hasServerRemaining = typeof correctedServerRemaining === 'number' && Number.isFinite(correctedServerRemaining);
+        const hasServerRemaining = typeof correctedServerRemaining === 'number' && Number.isFinite(correctedServerRemaining);
 
-          const deadlineFromRemaining = hasServerRemaining ? (now + Math.max(0, correctedServerRemaining) * 1000) : null;
-          const deadlineFromStart =
-            hasActionStartTime && !startLooksStaleForNewStreet ? (actionStartTime + effectiveActionTime * 1000) : null;
+        const deadlineFromRemaining = hasServerRemaining ? (now + Math.max(0, correctedServerRemaining) * 1000) : null;
+        const deadlineFromStart =
+          hasActionStartTime && !startLooksStaleForNewStreet ? (actionStartTime + effectiveActionTime * 1000) : null;
 
         let chosen: number | null = null;
         let chosenSource: 'start' | 'remaining' | 'now' = 'now';
@@ -865,7 +853,6 @@ export function FullscreenPokerTableWrapper({
           rawServerRemaining,
           actionStartTime,
         });
-        } // Close forceCleanReset else block
       }
     } else {
       // SAME TURN: Check for drift from server
