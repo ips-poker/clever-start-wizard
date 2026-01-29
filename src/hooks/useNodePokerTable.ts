@@ -1307,40 +1307,56 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             setTableState((prev) => {
               if (!prev) return prev;
 
-              // IMPORTANT:
-              // - actionTimeTotal is PER-TURN and may be time-bank slice (e.g. 10s) during TB.
-              //   We must NOT fall back to prev.actionTimeTotal, otherwise after a time bank
-              //   the next player's *main* timer can incorrectly become 10s.
-              // - Never synthesize actionStartTime with Date.now(); it can go "ahead" of server
-              //   and then monotonic guards reject the next authoritative snapshot.
-              // - FIXED: Use table's actionTimer from settings, NOT prev.actionTimeTotal which
-              //   could be 10s from a time bank phase.
+              // IMPORTANT: turn_changed means a NEW TURN is starting for a different player.
+              // 
+              // KEY FIXES for visual transition issues:
+              // 1. actionTimeTotal: Use server's value OR table's base action time (never prev which could be 10s TB)
+              // 2. actionStartTime: If server doesn't send it, use Date.now() - this is a NEW turn, not continuation
+              // 3. isTimeBankPhase: ALWAYS reset to false - new turn always starts with main timer
+              // 4. timeRemaining: Reset to full action time for clean ring animation
 
               const parsedActionStartTime = toMs(turnData.actionStartTime);
+              
               // CRITICAL FIX: Fallback to table's base action time (actionTimer), never prev.actionTimeTotal
-              // prev.actionTimeTotal might be 10s from time bank, causing premature timeouts
-              const fallbackMainTotal = prev.actionTimer ?? 25; // Use 25s as safe default (table config)
+              const fallbackMainTotal = prev.actionTimer ?? 25;
               const nextActionTimeTotal =
                 (typeof turnData.actionTimeTotal === 'number' && Number.isFinite(turnData.actionTimeTotal))
                   ? turnData.actionTimeTotal
                   : fallbackMainTotal;
+
+              // CRITICAL FIX: For turn_changed, if server didn't send actionStartTime, 
+              // use Date.now() because this is a NEW turn starting NOW.
+              // Previously we kept prev.actionStartTime which could be from the previous player's time bank,
+              // causing the new player to "inherit" an already-elapsed timer.
+              const nextActionStartTime = parsedActionStartTime ?? Date.now();
 
               const nextTimeRemaining =
                 (typeof turnData.timeRemaining === 'number' && Number.isFinite(turnData.timeRemaining))
                   ? turnData.timeRemaining
                   : nextActionTimeTotal;
 
+              log('🔄 Turn changed - CLEAN RESET:', {
+                prevSeat: prev.currentPlayerSeat,
+                newSeat: turnData.currentPlayerSeat,
+                prevIsTimeBankPhase: prev.isTimeBankPhase,
+                prevActionStartTime: prev.actionStartTime,
+                newActionStartTime: nextActionStartTime,
+                actionTimeTotal: nextActionTimeTotal,
+                serverSentActionStartTime: !!parsedActionStartTime,
+              });
+
               return {
                 ...prev,
                 currentPlayerSeat: turnData.currentPlayerSeat,
                 phase: turnData.phase as any,
-                // Normalize seconds/ISO to ms; if missing, keep previous (do NOT use Date.now()).
-                actionStartTime: parsedActionStartTime ?? prev.actionStartTime ?? null,
+                // NEW: Always set fresh actionStartTime for new turn
+                actionStartTime: nextActionStartTime,
                 // Per-turn total for ring animation
                 actionTimeTotal: nextActionTimeTotal,
-                // Ensure the wrapper's drift logic doesn't read stale remaining from previous turn
+                // Reset to full time for clean ring animation
                 timeRemaining: nextTimeRemaining,
-                isTimeBankPhase: typeof turnData.isTimeBankPhase === 'boolean' ? turnData.isTimeBankPhase : false,
+                // ALWAYS reset to false on turn change - new turn starts with main timer
+                isTimeBankPhase: false,
               };
             });
           }

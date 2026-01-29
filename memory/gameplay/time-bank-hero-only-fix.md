@@ -48,6 +48,28 @@ if (isEventForHero) {
 }
 ```
 
+### turn_changed handler - Clean Reset (CRITICAL FIX)
+When turn changes to a new player, ALL timing state must be reset:
+
+```typescript
+// CRITICAL: For turn_changed, always set fresh actionStartTime
+// If server didn't send it, use Date.now() - this is a NEW turn
+const nextActionStartTime = parsedActionStartTime ?? Date.now();
+
+return {
+  ...prev,
+  currentPlayerSeat: turnData.currentPlayerSeat,
+  actionStartTime: nextActionStartTime,  // ALWAYS fresh
+  actionTimeTotal: nextActionTimeTotal,  // From server or table config
+  timeRemaining: nextTimeRemaining,      // Reset to full
+  isTimeBankPhase: false,                // ALWAYS reset on turn change
+};
+```
+
+**Problem Solved:** Previously, if player A used their time bank (e.g., 10s left when they acted),
+player B would "inherit" that stale actionStartTime, causing their timer ring to appear
+partially depleted or immediately triggering the alarm badge.
+
 ### state_update handler
 ```typescript
 const isTimeBankForHero = heroSeat !== null && currentTurnSeat === heroSeat;
@@ -56,7 +78,7 @@ const effectiveTimeBankPhase = directTimeBankPhase && isTimeBankForHero;
 
 ## Files Modified
 1. `server/src/game/PokerTable.ts` - Fixed timer model
-2. `src/hooks/useNodePokerTable.ts` - Hero-only time bank UI
+2. `src/hooks/useNodePokerTable.ts` - Hero-only time bank UI + clean turn reset
 
 ## Rebuild Required
 ```bash
