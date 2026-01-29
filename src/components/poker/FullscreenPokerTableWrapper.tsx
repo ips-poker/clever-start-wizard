@@ -42,6 +42,10 @@ import { useTimeBankFallback } from '@/hooks/useTimeBankFallback';
 // Syndikate branding
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 
+// Heavy debug logging (especially inside timer effects) can noticeably degrade UI responsiveness.
+// Enable only when needed: localStorage.setItem('POKER_TIMER_DEBUG','1')
+const DEBUG_TIMER = import.meta.env.DEV || localStorage.getItem('POKER_TIMER_DEBUG') === '1';
+
 interface FullscreenPokerTableWrapperProps {
   tableId: string;
   playerId: string;
@@ -421,6 +425,13 @@ export function FullscreenPokerTableWrapper({
   // FIX: "Sticky" time bank - once we enter time bank phase, don't exit until turn/seat changes
   const stickyTimeBankActiveRef = useRef<boolean>(false);
   const stickyTimeBankTurnIdRef = useRef<string>('');
+
+  // Server timeRemaining can update frequently; keep it in a ref so we don't re-run
+  // the whole timer-sync effect (and recreate intervals) on every server tick.
+  const serverRemainingRef = useRef<number | null | undefined>(undefined);
+  useEffect(() => {
+    serverRemainingRef.current = tableState?.timeRemaining;
+  }, [tableState?.timeRemaining]);
   
   useEffect(() => {
     // POKERSTARS-STYLE: Use server's actionTimeTotal (phase-aware) or fallback to table settings from DB.
@@ -450,8 +461,8 @@ export function FullscreenPokerTableWrapper({
         ? tableState.actionTimeTotal
         : undefined;
     
-    // DIAGNOSTIC: Log where action time comes from
-    console.log('[TIMER CONFIG]', {
+    // DIAGNOSTIC: Log where action time comes from (debug only)
+    DEBUG_TIMER && console.log('[TIMER CONFIG]', {
       actionTimeTotal: serverActionTimeTotal,
       actionTimer: tableState?.actionTimer,
       dbActionTime,
@@ -472,7 +483,7 @@ export function FullscreenPokerTableWrapper({
     const isTimeBankPhase = Boolean(tableState?.isTimeBankPhase);
 
     const now = Date.now();
-    const serverRemaining = tableState?.timeRemaining;
+    const serverRemaining = serverRemainingRef.current ?? tableState?.timeRemaining;
     const actionStartTime = tableState?.actionStartTime;
 
     // ============================================
@@ -927,16 +938,33 @@ export function FullscreenPokerTableWrapper({
       }
     }
 
-    const getRemaining = () => Math.max(0, (deadlineMsRef.current - Date.now()) / 1000);
+    const getRemaining = (nowMs: number) => Math.max(0, (deadlineMsRef.current - nowMs) / 1000);
 
-    // Store as precise seconds for SmoothAvatarTimer to maintain 60fps animation
-    // Using fractional seconds allows timer ring to animate smoothly
-    setTurnTimeRemaining(getRemaining());
+    // Store as precise seconds for SmoothAvatarTimer to maintain smooth animation.
+    const initialNow = Date.now();
+    setTurnTimeRemaining(getRemaining(initialNow));
 
-    // Update frequently for smooth UI - SmoothAvatarTimer handles interpolation
-    // 200ms gives good balance between smoothness and performance
+    // Update frequently for smooth UI.
+    // IMPORTANT: drift correction uses serverRemainingRef inside the interval,
+    // so we don't need to re-run this effect on every WS timeRemaining update.
+    let tickCount = 0;
     const interval = setInterval(() => {
-      setTurnTimeRemaining(getRemaining());
+      const t = Date.now();
+      const localRemaining = getRemaining(t);
+      setTurnTimeRemaining(localRemaining);
+
+      // Drift correction ~1s (every 5 ticks @ 200ms)
+      tickCount++;
+      if (tickCount % 5 === 0) {
+        const sr = serverRemainingRef.current;
+        if (typeof sr === 'number' && Number.isFinite(sr)) {
+          const drift = Math.abs(sr - localRemaining);
+          if (drift > 2) {
+            DEBUG_TIMER && console.log('[TIMER SYNC] Drift correction (interval):', { drift, serverRemaining: sr, localRemaining });
+            deadlineMsRef.current = t + sr * 1000;
+          }
+        }
+      }
     }, 200);
 
     return () => clearInterval(interval);
@@ -944,7 +972,6 @@ export function FullscreenPokerTableWrapper({
     timerResetKey,
     tableState?.actionTimer,
     tableState?.actionTimeTotal, // POKERSTARS-STYLE: Phase-aware timing
-    tableState?.timeRemaining,
     tableState?.actionStartTime,
     tableState?.isTimeBankPhase,
     // If settings are edited, fallbacks (dbActionTime/dbTimeBank) must refresh too.
