@@ -349,17 +349,28 @@ export function FullscreenPokerTableWrapper({
     isMyTurn,
   });
 
+  // CRITICAL FIX: timeBankUiActive controls the timer RING color (blue vs green).
+  // It should reflect whether the CURRENT PLAYER (whoever's turn it is) is in time bank.
+  // For the hero, we use fallback. For opponents, we just use serverIsTimeBankPhase.
   const timeBankUiActive = serverIsTimeBankPhase || tbFallback.isActive;
-  const displayTurnTimeRemaining = serverIsTimeBankPhase
-    ? turnTimeRemaining
-    : tbFallback.isActive
-      ? tbFallback.remainingSeconds
-      : turnTimeRemaining;
-  const displayTurnTimeTotal = serverIsTimeBankPhase
-    ? turnTimeTotal
-    : tbFallback.isActive
-      ? tbFallback.totalSeconds
-      : turnTimeTotal;
+  
+  // CRITICAL FIX: displayTurnTimeRemaining should use fallback ONLY for hero.
+  // When opponent is in time bank, we still use the server's turnTimeRemaining.
+  const displayTurnTimeRemaining = isMyTurn
+    ? (serverIsTimeBankPhase
+        ? turnTimeRemaining
+        : tbFallback.isActive
+          ? tbFallback.remainingSeconds
+          : turnTimeRemaining)
+    : turnTimeRemaining; // For opponents, always use server value
+    
+  const displayTurnTimeTotal = isMyTurn
+    ? (serverIsTimeBankPhase
+        ? turnTimeTotal
+        : tbFallback.isActive
+          ? tbFallback.totalSeconds
+          : turnTimeTotal)
+    : turnTimeTotal; // For opponents, always use server value
 
   // Track previous phase for phase-change detection
   const prevPhaseRef = useRef<string>('');
