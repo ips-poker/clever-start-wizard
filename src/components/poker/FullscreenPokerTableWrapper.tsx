@@ -1493,7 +1493,6 @@ export function FullscreenPokerTableWrapper({
                 isMyTurn={isMyTurn}
                 isTimeBankActive={isTimeBankActive}
                 actionTimeRemaining={turnTimeRemaining ?? undefined}
-                onUseTimeBank={() => setIsTimeBankActive(true)}
                 size="md"
               />
             )}
