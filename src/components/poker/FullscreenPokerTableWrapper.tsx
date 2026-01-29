@@ -43,8 +43,8 @@ import { useTimeBankFallback } from '@/hooks/useTimeBankFallback';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 
 // Heavy debug logging (especially inside timer effects) can noticeably degrade UI responsiveness.
-// Enable only when needed: localStorage.setItem('POKER_TIMER_DEBUG','1')
-const DEBUG_TIMER = import.meta.env.DEV || localStorage.getItem('POKER_TIMER_DEBUG') === '1';
+// OFF by default even in dev. Enable only when needed: localStorage.setItem('POKER_TIMER_DEBUG','1')
+const DEBUG_TIMER = localStorage.getItem('POKER_TIMER_DEBUG') === '1';
 
 interface FullscreenPokerTableWrapperProps {
   tableId: string;

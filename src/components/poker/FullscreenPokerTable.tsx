@@ -47,9 +47,8 @@ import { WaitForBBIndicator } from './WaitForBBIndicator';
 import { CARD_DEAL_TIMINGS, HAND_TRANSITION_TIMINGS } from '@/config/pokerTimings';
 
 // Constant render logging can cause noticeable jank (especially on mobile/Telegram WebView).
-// Use a dedicated flag so general WS debug (POKER_DEBUG) doesn't accidentally tank FPS.
-// Enable only when needed: localStorage.setItem('POKER_RENDER_DEBUG','1')
-const DEBUG_TABLE = import.meta.env.DEV || localStorage.getItem('POKER_RENDER_DEBUG') === '1';
+// OFF by default even in dev. Enable only when needed: localStorage.setItem('POKER_RENDER_DEBUG','1')
+const DEBUG_TABLE = localStorage.getItem('POKER_RENDER_DEBUG') === '1';
 
 // ============= SUIT CONFIGURATION =============
 const SUITS = {
