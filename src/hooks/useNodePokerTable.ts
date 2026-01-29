@@ -119,8 +119,9 @@ const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
 
-// Debug logging: enable in dev or via localStorage.setItem('POKER_DEBUG','1')
-const DEBUG = import.meta.env.DEV || localStorage.getItem('POKER_DEBUG') === '1';
+// Debug logging: OFF by default even in dev (can cause UI jank).
+// Enable manually: localStorage.setItem('POKER_DEBUG','1')
+const DEBUG = localStorage.getItem('POKER_DEBUG') === '1';
 const log = (...args: unknown[]) => DEBUG && console.log('[NodePoker]', ...args);
 
 

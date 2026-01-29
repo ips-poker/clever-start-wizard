@@ -4,6 +4,9 @@
  */
 import { useState, useCallback, useRef, useEffect } from 'react';
 
+// Debug OFF by default. Enable: localStorage.setItem('POKER_OPTIMISTIC_DEBUG','1')
+const DEBUG_OPTIMISTIC = localStorage.getItem('POKER_OPTIMISTIC_DEBUG') === '1';
+
 interface PendingAction {
   id: string;
   type: 'fold' | 'check' | 'call' | 'bet' | 'raise' | 'allin';
@@ -157,7 +160,7 @@ export function useOptimisticActions(options: UseOptimisticActionsOptions) {
       });
     }, timeoutMs);
 
-    console.log('[OptimisticUI] Started action:', action);
+    DEBUG_OPTIMISTIC && console.log('[OptimisticUI] Started action:', action);
     return action;
   }, [clearActionTimeout, generateActionId, calculateOptimisticChanges, timeoutMs, maxRetries, onActionTimeout]);
 
@@ -167,7 +170,7 @@ export function useOptimisticActions(options: UseOptimisticActionsOptions) {
 
     setState(prev => {
       if (prev.pendingAction?.id === actionId) {
-        console.log('[OptimisticUI] Action confirmed:', actionId);
+        DEBUG_OPTIMISTIC && console.log('[OptimisticUI] Action confirmed:', actionId);
         return {
           pendingAction: null,
           optimisticStack: null,
@@ -187,7 +190,7 @@ export function useOptimisticActions(options: UseOptimisticActionsOptions) {
     setState(prev => {
       if (prev.pendingAction?.id === actionId) {
         const rejectedAction = { ...prev.pendingAction, status: 'rejected' as const };
-        console.log('[OptimisticUI] Action rejected:', actionId, reason);
+        DEBUG_OPTIMISTIC && console.log('[OptimisticUI] Action rejected:', actionId, reason);
         onActionRejected?.(rejectedAction, reason || 'Unknown error');
         
         return {
@@ -212,7 +215,7 @@ export function useOptimisticActions(options: UseOptimisticActionsOptions) {
       optimisticPhase: null,
       isProcessing: false
     });
-    console.log('[OptimisticUI] Action cancelled');
+    DEBUG_OPTIMISTIC && console.log('[OptimisticUI] Action cancelled');
   }, [clearActionTimeout]);
 
   // Reset all optimistic state (e.g., when new hand starts)
