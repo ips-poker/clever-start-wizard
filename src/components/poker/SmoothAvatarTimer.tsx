@@ -109,12 +109,30 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     prevTotalRef.current = total;
     prevTimeBankPhaseRef.current = isTimeBankPhase;
 
-    // Only restart animation when genuinely needed
+    // CRITICAL FIX: When deadline jumps (new turn), ALWAYS restart animation
+    // Previously we only restarted if animationRef.current === null, but the animation
+    // was still running with the OLD deadline, causing visual "jitter" instead of clean reset.
     if (deadlineJumped || totalChanged || timeBankPhaseChanged) {
-      // Animation restart: we already updated deadlineMsStableRef via the separate useEffect
-      // so the running animation loop will pick up the new deadline on next frame.
-      // But if animation stopped (remaining hit 0), we need to restart it.
-      if (animationRef.current === null && curr > Date.now()) {
+      // Force update the stable ref immediately so the animation uses the new deadline
+      if (curr > 0) {
+        deadlineMsStableRef.current = curr;
+      }
+      
+      // ALWAYS restart animation on new turn to reset from 100%
+      // Cancel existing animation first to prevent overlap
+      if (animationRef.current !== null) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      
+      // Immediately set currentRemaining to full value for instant visual reset
+      if (curr > 0) {
+        const newRemaining = Math.max(0, (curr - Date.now()) / 1000);
+        setCurrentRemaining(newRemaining);
+      }
+      
+      // Start fresh animation loop
+      if (curr > Date.now()) {
         startAnimation();
       }
     }
