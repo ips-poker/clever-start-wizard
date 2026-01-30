@@ -1,7 +1,7 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Style
 // REFACTORED: Uses deadlineMs (timestamp) instead of remaining to avoid resync issues
 // Supports Time Bank phase with distinct blue coloring and enhanced pulsation
-import React, { memo, useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { isTimerCritical, getTimerColorHex, getTimerGlowColor, POKERSTARS_TIMER } from '@/constants/pokerTimerConfig';
 
@@ -31,105 +31,94 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   isTimeBankPhase = false,
   timeBankRemaining
 }: SmoothAvatarTimerProps) {
+  // Current remaining is calculated locally via RAF; no external state updates cause re-renders.
   const [currentRemaining, setCurrentRemaining] = useState(() => {
-    if (deadlineMs) {
+    if (deadlineMs && deadlineMs > 0) {
       return Math.max(0, (deadlineMs - Date.now()) / 1000);
     }
     return remainingProp ?? total;
   });
 
   const animationRef = useRef<number | null>(null);
-  const lastDeadlineMsRef = useRef<number | null>(deadlineMs ?? null);
-  const lastTotalRef = useRef<number>(total);
-  const lastTimeBankPhaseRef = useRef<boolean>(isTimeBankPhase);
-  // For backward compatibility with remaining prop
-  const lastRemainingPropRef = useRef<number | undefined>(remainingProp);
+  // Store values to detect meaningful changes
+  const prevDeadlineMsRef = useRef<number | null>(deadlineMs ?? null);
+  const prevTotalRef = useRef<number>(total);
+  const prevTimeBankPhaseRef = useRef<boolean>(isTimeBankPhase);
+  // Store deadline in ref for stable animation loop closure
+  const deadlineMsStableRef = useRef<number>(deadlineMs ?? 0);
 
-  // Start/restart the 60fps animation loop
-  const startAnimation = (initialRemaining: number) => {
+  // Update stable ref when deadlineMs prop changes
+  useEffect(() => {
+    if (deadlineMs && deadlineMs > 0) {
+      deadlineMsStableRef.current = deadlineMs;
+    }
+  }, [deadlineMs]);
+
+  // Start/restart the 60fps animation loop - uses ref for deadline so it auto-follows updates
+  const startAnimation = useCallback(() => {
     if (animationRef.current !== null) {
       cancelAnimationFrame(animationRef.current);
     }
 
-    const startTime = Date.now();
-    const startRemaining = initialRemaining;
-
     const animate = () => {
-      let newRemaining: number;
-      
-      if (deadlineMs && deadlineMs > 0) {
-        // PRIMARY: Calculate from deadline timestamp (most accurate)
-        newRemaining = Math.max(0, (deadlineMs - Date.now()) / 1000);
-      } else {
-        // FALLBACK: Calculate from elapsed time since animation start
-        const elapsed = (Date.now() - startTime) / 1000;
-        newRemaining = Math.max(0, startRemaining - elapsed);
-      }
-
-      setCurrentRemaining(newRemaining);
-
-      if (newRemaining > 0) {
-        animationRef.current = requestAnimationFrame(animate);
-      } else {
-        animationRef.current = null;
+      const dl = deadlineMsStableRef.current;
+      if (dl > 0) {
+        const newRemaining = Math.max(0, (dl - Date.now()) / 1000);
+        setCurrentRemaining(newRemaining);
+        if (newRemaining > 0) {
+          animationRef.current = requestAnimationFrame(animate);
+        } else {
+          animationRef.current = null;
+        }
       }
     };
 
     animationRef.current = requestAnimationFrame(animate);
-  };
+  }, []);
 
-  // Initial mount
+  // Initial mount - start animation
   useEffect(() => {
-    const initialRemaining = deadlineMs 
-      ? Math.max(0, (deadlineMs - Date.now()) / 1000)
-      : (remainingProp ?? total);
-    
-    startAnimation(initialRemaining);
-
+    startAnimation();
     return () => {
       if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [startAnimation]);
 
-  // React to meaningful changes
+  // React ONLY to meaningful prop changes (deadline jump, total change, time bank phase change)
+  // This effect decides IF we need to restart animation (not run the animation itself)
   useEffect(() => {
-    const totalChanged = total !== lastTotalRef.current;
-    const timeBankPhaseChanged = isTimeBankPhase !== lastTimeBankPhaseRef.current;
-    
-    // Deadline-based detection (primary)
-    let deadlineChanged = false;
-    if (deadlineMs !== undefined && deadlineMs !== null) {
-      const prevDeadline = lastDeadlineMsRef.current;
-      // New deadline is significantly different (more than 2 seconds)
-      deadlineChanged = prevDeadline === null || Math.abs(deadlineMs - prevDeadline) > 2000;
-      lastDeadlineMsRef.current = deadlineMs;
-    }
-    
-    // Backward compatibility: remaining prop jump detection
-    let remainingJumped = false;
-    if (remainingProp !== undefined && !deadlineMs) {
-      const prevRemaining = lastRemainingPropRef.current ?? 0;
-      // Remaining jumped up by more than 2 seconds (new turn)
-      remainingJumped = remainingProp > prevRemaining + 2;
-      lastRemainingPropRef.current = remainingProp;
+    const totalChanged = total !== prevTotalRef.current;
+    const timeBankPhaseChanged = isTimeBankPhase !== prevTimeBankPhaseRef.current;
+
+    // Deadline jump detection: only restart if difference > 2 seconds (new turn)
+    let deadlineJumped = false;
+    const prev = prevDeadlineMsRef.current;
+    const curr = deadlineMs ?? 0;
+    if (curr > 0 && prev !== null) {
+      const diffMs = Math.abs(curr - prev);
+      deadlineJumped = diffMs > 2000;
+    } else if (curr > 0 && prev === null) {
+      // First time getting a valid deadline
+      deadlineJumped = true;
     }
 
-    const needsRestart = totalChanged || timeBankPhaseChanged || deadlineChanged || remainingJumped;
+    // Update refs
+    prevDeadlineMsRef.current = curr > 0 ? curr : prev;
+    prevTotalRef.current = total;
+    prevTimeBankPhaseRef.current = isTimeBankPhase;
 
-    if (needsRestart) {
-      lastTotalRef.current = total;
-      lastTimeBankPhaseRef.current = isTimeBankPhase;
-      
-      const newRemaining = deadlineMs 
-        ? Math.max(0, (deadlineMs - Date.now()) / 1000)
-        : (remainingProp ?? total);
-      
-      startAnimation(newRemaining);
+    // Only restart animation when genuinely needed
+    if (deadlineJumped || totalChanged || timeBankPhaseChanged) {
+      // Animation restart: we already updated deadlineMsStableRef via the separate useEffect
+      // so the running animation loop will pick up the new deadline on next frame.
+      // But if animation stopped (remaining hit 0), we need to restart it.
+      if (animationRef.current === null && curr > Date.now()) {
+        startAnimation();
+      }
     }
-  }, [deadlineMs, remainingProp, total, isTimeBankPhase]);
+  }, [deadlineMs, total, isTimeBankPhase, startAnimation]);
 
   const progress = total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;
 

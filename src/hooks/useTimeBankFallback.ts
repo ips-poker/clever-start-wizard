@@ -119,12 +119,11 @@ export function useTimeBankFallback({
     if (!Number.isFinite(slice) || slice <= 0) return;
     if (!Number.isFinite(tb) || tb <= 0) return;
 
-    // FIX: Use a threshold of 1.5s to catch near-zero states
-    // Timer updates at 200ms intervals, and there can be slight delays in event delivery.
-    // Raised from 0.5s to 1.5s to ensure fallback activates reliably before server event arrives.
+    // FIX: Use threshold of 0.5s — the timer now updates at 1Hz which is reliable enough.
+    // Previously 1.5s caused premature alarm. 0.5s catches the last second smoothly.
     const mainExpired =
-      (remaining !== null && remaining <= 1.5) ||
-      minMainRemainingThisTurnRef.current <= 1.5;
+      (remaining !== null && remaining <= 0.5) ||
+      minMainRemainingThisTurnRef.current <= 0.5;
 
     if (mainExpired && !fallback) {
       const duration = Math.max(0, Math.min(slice, tb));
