@@ -44,7 +44,17 @@ import syndikateLogo from '@/assets/syndikate-logo-main.png';
 
 // Heavy debug logging (especially inside timer effects) can noticeably degrade UI responsiveness.
 // OFF by default even in dev. Enable only when needed: localStorage.setItem('POKER_TIMER_DEBUG','1')
-const DEBUG_TIMER = localStorage.getItem('POKER_TIMER_DEBUG') === '1';
+const isPokerTimerDebugEnabled = () => {
+  try {
+    return localStorage.getItem('POKER_TIMER_DEBUG') === '1';
+  } catch {
+    return false;
+  }
+};
+
+const timerLog = (...args: any[]) => {
+  if (isPokerTimerDebugEnabled()) console.log(...args);
+};
 
 interface FullscreenPokerTableWrapperProps {
   tableId: string;
@@ -78,6 +88,7 @@ export function FullscreenPokerTableWrapper({
   wideMode = false
 }: FullscreenPokerTableWrapperProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [turnDeadlineMs, setTurnDeadlineMs] = useState<number | null>(null);
   const [turnTimeRemaining, setTurnTimeRemaining] = useState<number | null>(null);
   const [turnTimeTotal, setTurnTimeTotal] = useState<number>(CASH_ACTION_TIMING.default);
   const [showMenu, setShowMenu] = useState(false);
@@ -108,8 +119,7 @@ export function FullscreenPokerTableWrapper({
   
   const sounds = usePokerSounds();
 
-  // Hard-disable all debug flags that can hurt FPS/inputs.
-  // NOTE: Some modules read localStorage at import time, so we also suppress spammy logs below.
+  // Hard-disable all poker debug flags that can hurt FPS/inputs.
   useEffect(() => {
     try {
       localStorage.removeItem('POKER_DEBUG');
@@ -119,29 +129,6 @@ export function FullscreenPokerTableWrapper({
     } catch {
       // ignore
     }
-  }, []);
-
-  // Suppress known high-frequency debug logs that can block the main thread and make clicks “disappear”.
-  useEffect(() => {
-    const original = console.log;
-    console.log = (...args: any[]) => {
-      const first = args?.[0];
-      if (typeof first === 'string') {
-        if (
-          first.startsWith('[TIMER SYNC]') ||
-          first.startsWith('[TIMER CONFIG]') ||
-          first.startsWith('[NodePoker]') ||
-          first.startsWith('[FullscreenPokerTable]')
-        ) {
-          return;
-        }
-      }
-      original(...args);
-    };
-
-    return () => {
-      console.log = original;
-    };
   }, []);
 
   // Keep tournament blinds in sync with DB (realtime + polling fallback)
@@ -498,7 +485,7 @@ export function FullscreenPokerTableWrapper({
         : undefined;
     
     // DIAGNOSTIC: Log where action time comes from (debug only)
-    DEBUG_TIMER && console.log('[TIMER CONFIG]', {
+    timerLog('[TIMER CONFIG]', {
       actionTimeTotal: serverActionTimeTotal,
       actionTimer: tableState?.actionTimer,
       dbActionTime,
@@ -996,7 +983,7 @@ export function FullscreenPokerTableWrapper({
         if (typeof sr === 'number' && Number.isFinite(sr)) {
           const drift = Math.abs(sr - localRemaining);
           if (drift > 2) {
-            DEBUG_TIMER && console.log('[TIMER SYNC] Drift correction (interval):', { drift, serverRemaining: sr, localRemaining });
+            timerLog('[TIMER SYNC] Drift correction (interval):', { drift, serverRemaining: sr, localRemaining });
             deadlineMsRef.current = t + sr * 1000;
           }
         }
