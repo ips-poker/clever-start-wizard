@@ -1495,30 +1495,34 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               
               // CRITICAL: Only set isTimeBankPhase for the HERO (the client whose seat matches eventSeat)
               // For other clients, just update timing values but keep isTimeBankPhase = false
+              //
+              // CRITICAL FIX (v4): Use `remaining` from the event for timeRemaining!
+              // Previously we set timeRemaining = serverActionTimeTotal (which is the TB slice total, e.g., 10s).
+              // But if player already used some time bank, `remaining` is lower (e.g., 7s).
+              // This caused the UI to show wrong countdown.
+              const effectiveRemaining = remaining > 0 ? remaining : serverActionTimeTotal;
+              
               if (isEventForHero) {
-                log('⏱️ Time Bank activated for HERO', { eventSeat, heroSeat });
+                log('⏱️ Time Bank activated for HERO', { eventSeat, heroSeat, remaining, effectiveRemaining });
                 return {
                   ...prev,
                   isTimeBankPhase: true,
                   // CRITICAL FIX: Do NOT update actionStartTime!
                   // This prevents monotonic guard from rejecting next player's turn.
-                  // actionStartTime: serverActionStartTime ?? prev.actionStartTime,
-                  // Use server's actionTimeTotal for consistent ring animation
-                  actionTimeTotal: serverActionTimeTotal > 0 ? serverActionTimeTotal : (prev.timeBankSeconds ?? 30),
-                  // Update remaining for visual feedback
-                  timeRemaining: serverActionTimeTotal > 0 ? serverActionTimeTotal : prev.timeBankSeconds
+                  // Use server's actionTimeTotal for consistent ring animation (total for the TB slice)
+                  actionTimeTotal: serverActionTimeTotal > 0 ? serverActionTimeTotal : (prev.timeBankSeconds ?? 10),
+                  // CRITICAL FIX: Use actual remaining, not the total!
+                  timeRemaining: effectiveRemaining
                 };
               } else {
                 // Opponent entered time bank - update timer values but NOT isTimeBankPhase
                 // This ensures opponent's ring still counts down correctly
-                log('⏱️ Time Bank activated for OPPONENT (not hero)', { eventSeat, heroSeat });
+                log('⏱️ Time Bank activated for OPPONENT (not hero)', { eventSeat, heroSeat, remaining });
                 return {
                   ...prev,
                   // DON'T set isTimeBankPhase: true for opponents!
-                  // CRITICAL FIX: Do NOT update actionStartTime!
-                  // actionStartTime: serverActionStartTime ?? prev.actionStartTime,
-                  actionTimeTotal: serverActionTimeTotal > 0 ? serverActionTimeTotal : (prev.actionTimeTotal ?? 30),
-                  timeRemaining: serverActionTimeTotal > 0 ? serverActionTimeTotal : prev.timeRemaining
+                  actionTimeTotal: serverActionTimeTotal > 0 ? serverActionTimeTotal : (prev.actionTimeTotal ?? 10),
+                  timeRemaining: effectiveRemaining
                 };
               }
             });
