@@ -86,30 +86,44 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
 
   // Re-sync only on *meaningful* changes.
   // This avoids restarting the animation every second (which causes "спешит/опаздывает").
+  // 
+  // CRITICAL FIX: Increased drift threshold from 1.25s to 3s.
+  // The parent component (FullscreenPokerTableWrapper) updates `remaining` every 200ms via setInterval.
+  // With a 1.25s threshold, small timing discrepancies between the parent's calculation
+  // and this component's internal RAF loop caused constant "resync" triggers,
+  // making the ring animation jump/restart repeatedly.
   useEffect(() => {
     const totalChanged = total !== lastTotalRef.current;
     const timeBankPhaseChanged = isTimeBankPhase !== lastTimeBankPhaseRef.current;
+    
+    // Drift between props and internal animation
     const drift = Math.abs(remaining - currentRemainingRef.current);
-    const jumpedUp = remaining > currentRemainingRef.current + 0.75; // new turn / time bank
     
-    // CRITICAL FIX: Detect when remaining changed significantly from PROPS perspective
-    // This catches the case when server sends new actionStartTime with same remaining
-    // For example: player acted, turn moved to next player who also gets 25s
-    // The key insight: if remaining jumps UP from what we received in last props, it's a new turn
-    const propsJumpedUp = remaining > lastPropsRemainingRef.current + 1;
+    // NEW TURN DETECTION: remaining jumped UP significantly from internal state
+    // This means a new turn started (timer reset to full)
+    const jumpedUp = remaining > currentRemainingRef.current + 2;
     
-    // Also detect when remaining is close to total (new turn just started)
+    // Also detect jumps from the PROPS perspective (server sent higher remaining than before)
+    const propsJumpedUp = remaining > lastPropsRemainingRef.current + 2;
+    
+    // Detect reset to full duration (new turn just started)
     const isNearTotal = total > 0 && remaining >= total - 1;
-    const wasNotNearTotal = lastPropsRemainingRef.current < total - 2;
+    const wasNotNearTotal = lastPropsRemainingRef.current < total - 3;
     const resetToFull = isNearTotal && wasNotNearTotal;
     
     lastPropsRemainingRef.current = remaining;
     lastRemainingRef.current = remaining;
 
-    // If server corrects the remaining time by more than ~1.25s, re-sync.
-    // Also resync when time bank phase changes (important visual transition)
-    // Also resync when props indicate a new turn started
-    const needsResync = totalChanged || timeBankPhaseChanged || jumpedUp || propsJumpedUp || resetToFull || drift > 1.25;
+    // RESYNC CONDITIONS:
+    // 1. Total duration changed (phase change, time bank activation)
+    // 2. Time bank phase changed
+    // 3. Timer jumped UP (new turn started)
+    // 4. Props jumped UP (server reset)
+    // 5. Reset to full (new turn)
+    // 6. Large drift (>3s) - only for major desync correction
+    //
+    // NOTE: Drift threshold raised to 3s to prevent constant resyncs from 200ms update interval
+    const needsResync = totalChanged || timeBankPhaseChanged || jumpedUp || propsJumpedUp || resetToFull || drift > 3;
 
     if (needsResync) {
       lastTotalRef.current = total;
