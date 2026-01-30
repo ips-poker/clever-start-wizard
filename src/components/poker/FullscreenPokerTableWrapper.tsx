@@ -660,15 +660,25 @@ export function FullscreenPokerTableWrapper({
         // Main timer: always starts at full actionTime (server's per-turn value)
         setTurnTimeTotal(effectiveActionTime);
         
-        // FIX: For NEW turn, if serverRemaining is 0 or very low (< 1s), this is a stale/race update.
-        // The server just started the turn, so serverRemaining should be ~effectiveActionTime.
-        // Trust actionStartTime in this case, or fallback to full effectiveActionTime.
+        // FIX: For NEW turn, if serverRemaining is suspiciously low, this can be a stale/race update.
+        // Symptom: player A tanks, acts; turn moves to player B, but snapshot still contains
+        // a tiny `timeRemaining` (often 1–3s) and the UI "inherits" almost-finished ring.
+        // The engine is correct; the packet is stale/partial. For UX we MUST reset the ring.
         const rawServerRemaining = serverRemaining;
         let correctedServerRemaining = rawServerRemaining;
 
         const hasActionStartTime =
           typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0;
         const elapsedSinceStartMs = hasActionStartTime ? now - (actionStartTime as number) : null;
+        const startInFutureMs = hasActionStartTime ? (actionStartTime as number) - now : null;
+        const startTooFuture = Boolean(startInFutureMs !== null && startInFutureMs > 1500);
+        const justStartedLocally = Boolean(
+          hasActionStartTime &&
+            !startTooFuture &&
+            elapsedSinceStartMs !== null &&
+            elapsedSinceStartMs >= 0 &&
+            elapsedSinceStartMs < 1500
+        );
 
         // CRITICAL HARDENING:
         // If we just switched streets (flop→turn→river) but we receive a snapshot that implies
@@ -682,18 +692,32 @@ export function FullscreenPokerTableWrapper({
           const lowThreshold = Math.min(3, Math.max(1, effectiveActionTime * 0.25));
           const isSuspiciouslyLow = rawServerRemaining < lowThreshold;
 
-          if (isSuspiciouslyLow && (startLooksStaleForNewStreet || rawServerRemaining < 1)) {
-          console.log('[TIMER SYNC] CORRECTING suspiciously low serverRemaining on new turn:', {
-            rawServerRemaining,
-            correctedTo: effectiveActionTime,
-            reason: startLooksStaleForNewStreet
-              ? 'phase changed but actionStartTime implies we are late into the street (stale packet)'
-              : 'serverRemaining extremely low on brand new turn indicates stale update',
-            phaseChanged,
-            elapsedSinceStartMs,
-          });
-          correctedServerRemaining = effectiveActionTime;
+          // Broaden the correction: even WITHOUT street change, a brand new turn should start near FULL.
+          // If actionStartTime indicates the turn just started but remaining is tiny, it's almost certainly
+          // the previous turn's remaining leaking into the snapshot.
+          const looksLikeStalePrevTurnRemaining = isSuspiciouslyLow && justStartedLocally;
+
+          if (startLooksStaleForNewStreet || rawServerRemaining < 1 || looksLikeStalePrevTurnRemaining) {
+            console.log('[TIMER SYNC] CORRECTING suspiciously low serverRemaining on new turn:', {
+              rawServerRemaining,
+              correctedTo: effectiveActionTime,
+              reason: startLooksStaleForNewStreet
+                ? 'phase changed but actionStartTime implies we are late into the street (stale packet)'
+                : looksLikeStalePrevTurnRemaining
+                  ? 'seat/turn changed, actionStartTime just started, but remaining is tiny (inheritance bug)'
+                  : 'serverRemaining extremely low on brand new turn indicates stale update',
+              phaseChanged,
+              seatChanged,
+              elapsedSinceStartMs,
+              startInFutureMs,
+            });
+            correctedServerRemaining = effectiveActionTime;
+          }
         }
+
+        // If server didn't provide remaining at all for a new turn, default to full.
+        if (isNewTurn && (rawServerRemaining === null || rawServerRemaining === undefined)) {
+          correctedServerRemaining = effectiveActionTime;
         }
 
         const hasServerRemaining = typeof correctedServerRemaining === 'number' && Number.isFinite(correctedServerRemaining);
