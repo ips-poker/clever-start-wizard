@@ -1431,10 +1431,14 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           break;
 
         // POKERSTARS-STYLE: Time Bank activated - immediate visual feedback
-        // CRITICAL FIX: Do NOT override actionStartTime with Date.now() - this causes
-        // the global monotonic guard to reject subsequent state_update packets from server,
-        // leading to desync. Only set the visual flag; let the subsequent state_update
-        // provide the authoritative actionStartTime.
+        // CRITICAL FIX (v3): Do NOT update actionStartTime at all!
+        // Updating actionStartTime here causes the monotonic guard in applyIncomingState
+        // to reject subsequent turn_changed/state_update packets for the NEXT player,
+        // because their actionStartTime may be <= the time bank's actionStartTime.
+        // This is the ROOT CAUSE of timer inheritance and stuck isMyTurn.
+        //
+        // Solution: Only set the visual flag (isTimeBankPhase) and timing totals.
+        // Do NOT touch actionStartTime - let it remain from the original turn start.
         case 'time_bank_activated':
           log('⏱️ Time Bank ACTIVATED:', data);
           {
@@ -1451,8 +1455,9 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             
             const timeUsed = tbData?.timeUsed ?? 0;
             const remaining = tbData?.remaining ?? 0;
-            const serverActionStartTime = tbData?.actionStartTime;
-            const serverActionTimeTotal = tbData?.actionTimeTotal ?? timeUsed;
+            // CRITICAL FIX: Do NOT use serverActionStartTime - it breaks monotonic guard
+            // const serverActionStartTime = tbData?.actionStartTime;
+            const serverActionTimeTotal = tbData?.actionTimeTotal ?? tbData?.remaining ?? 10;
             const eventSeat = tbData?.seat;
             const eventPlayerId = tbData?.playerId;
             
@@ -1462,7 +1467,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             // We need to check if `eventSeat === mySeat` (the player viewing the table).
             //
             // For the HERO: show time bank alarm + blue ring + update state
-            // For OPPONENTS: just update timer timing values (actionStartTime/Total) but NOT isTimeBankPhase
+            // For OPPONENTS: just update timer timing values but NOT isTimeBankPhase
             //
             // mySeatRef is defined at hook level, use it here.
             const heroSeat = mySeatRef.current;
@@ -1495,11 +1500,12 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 return {
                   ...prev,
                   isTimeBankPhase: true,
-                  // Use server's authoritative timestamps
-                  actionStartTime: serverActionStartTime ?? prev.actionStartTime,
+                  // CRITICAL FIX: Do NOT update actionStartTime!
+                  // This prevents monotonic guard from rejecting next player's turn.
+                  // actionStartTime: serverActionStartTime ?? prev.actionStartTime,
                   // Use server's actionTimeTotal for consistent ring animation
                   actionTimeTotal: serverActionTimeTotal > 0 ? serverActionTimeTotal : (prev.timeBankSeconds ?? 30),
-                  // Initial remaining = full slice
+                  // Update remaining for visual feedback
                   timeRemaining: serverActionTimeTotal > 0 ? serverActionTimeTotal : prev.timeBankSeconds
                 };
               } else {
@@ -1509,8 +1515,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                 return {
                   ...prev,
                   // DON'T set isTimeBankPhase: true for opponents!
-                  // Update timing so ring animation is correct
-                  actionStartTime: serverActionStartTime ?? prev.actionStartTime,
+                  // CRITICAL FIX: Do NOT update actionStartTime!
+                  // actionStartTime: serverActionStartTime ?? prev.actionStartTime,
                   actionTimeTotal: serverActionTimeTotal > 0 ? serverActionTimeTotal : (prev.actionTimeTotal ?? 30),
                   timeRemaining: serverActionTimeTotal > 0 ? serverActionTimeTotal : prev.timeRemaining
                 };
