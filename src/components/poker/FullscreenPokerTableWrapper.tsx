@@ -726,8 +726,23 @@ export function FullscreenPokerTableWrapper({
         const deadlineFromStart =
           hasActionStartTime && !startLooksStaleForNewStreet ? (actionStartTime + effectiveActionTime * 1000) : null;
 
-        let chosen: number | null = null;
-        let chosenSource: 'start' | 'remaining' | 'now' = 'now';
+        // ------------------------------------------------------------------
+        // UX GUARANTEE: new turn MUST visually start from FULL ring.
+        // ------------------------------------------------------------------
+        // Problem pattern (what you're seeing): after a tanked action, the first packet for the next seat
+        // can still carry old timer fields (old actionStartTime / small timeRemaining). Even if a correct
+        // state_update arrives 100-300ms later, the ring briefly shows "almost empty" and looks wrong.
+        //
+        // Fix: On every new turn, start from a baseline FULL deadline. Then, only if the server-provided
+        // candidate implies we're still near the start of the turn (<= ~1.5s drift), we accept it.
+        // Otherwise keep baseline until the next authoritative snapshot.
+        const baselineDeadline = now + effectiveActionTime * 1000;
+
+        let chosen: number = baselineDeadline;
+        let chosenSource: 'start' | 'remaining' | 'baseline_full' = 'baseline_full';
+
+        let candidate: number | null = null;
+        let candidateSource: 'start' | 'remaining' | null = null;
 
         if (deadlineFromStart !== null && deadlineFromRemaining !== null) {
           const sr = correctedServerRemaining as number;
@@ -739,30 +754,48 @@ export function FullscreenPokerTableWrapper({
           const skewTooHigh = Math.abs(clockSkewMs) > 1500;
           const startTooFuture = startInFutureMs > 1500;
 
-          chosen = (skewTooHigh || startTooFuture) ? deadlineFromRemaining : deadlineFromStart;
-          chosenSource = (skewTooHigh || startTooFuture) ? 'remaining' : 'start';
+          candidate = (skewTooHigh || startTooFuture) ? deadlineFromRemaining : deadlineFromStart;
+          candidateSource = (skewTooHigh || startTooFuture) ? 'remaining' : 'start';
 
           console.log('[TIMER SYNC] Main clock skew estimate:', {
             clockSkewMs,
             startInFutureMs,
-            chosenSource,
+            chosenSource: candidateSource,
             effectiveActionTime,
             serverRemaining: sr,
             rawServerRemaining,
           });
         } else if (deadlineFromRemaining !== null) {
-          chosen = deadlineFromRemaining;
-          chosenSource = 'remaining';
+          candidate = deadlineFromRemaining;
+          candidateSource = 'remaining';
         } else if (deadlineFromStart !== null) {
           if (actionStartTime <= now + 1500 && (now - actionStartTime) < 120000) {
-            chosen = deadlineFromStart;
-            chosenSource = 'start';
+            candidate = deadlineFromStart;
+            candidateSource = 'start';
           }
         }
 
-        if (chosen === null) {
-          chosen = now + effectiveActionTime * 1000;
-          chosenSource = 'now';
+        if (candidate !== null && candidateSource !== null) {
+          const candidateRemaining = Math.max(0, (candidate - now) / 1000);
+          const minExpectedAtStart = Math.max(0, effectiveActionTime - 1.5);
+
+          // If the candidate implies we are already "deep" into a brand new turn, it's almost certainly
+          // stale previous-turn timing leaking into a seat-changed snapshot. Keep baseline_full.
+          if (candidateRemaining >= minExpectedAtStart) {
+            chosen = candidate;
+            chosenSource = candidateSource;
+          } else {
+            console.log('[TIMER SYNC] Using baseline_full for new turn (candidate too low):', {
+              candidateSource,
+              candidateRemaining,
+              minExpectedAtStart,
+              effectiveActionTime,
+              rawServerRemaining,
+              actionStartTime,
+              phaseChanged,
+              seatChanged,
+            });
+          }
         }
 
         deadlineMsRef.current = chosen;
