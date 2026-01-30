@@ -933,64 +933,28 @@ export function FullscreenPokerTableWrapper({
         });
       }
     } else {
-      // SAME TURN: Check for drift from server
-      // Only resync if server's remaining differs by more than 2 seconds
-      if (serverRemaining !== null && serverRemaining !== undefined) {
-        const shouldIgnoreDriftBecauseStaleStart = Boolean(
-          staleMainTimerActionStartRef.current &&
-            staleMainTimerActionStartRef.current.handId === currentHandId &&
-            typeof actionStartTime === 'number' &&
-            Number.isFinite(actionStartTime) &&
-            actionStartTime === staleMainTimerActionStartRef.current.actionStartTime
-        );
-
-        if (shouldIgnoreDriftBecauseStaleStart) {
-          console.log('[TIMER SYNC] Skipping drift correction due to stale actionStartTime guard:', {
-            handId: currentHandId,
-            actionStartTime,
-            serverRemaining,
-          });
-        } else {
-        const localRemaining = Math.max(0, (deadlineMsRef.current - now) / 1000);
-        const drift = Math.abs(serverRemaining - localRemaining);
-        
-        if (drift > 2) {
-          // Significant drift - resync to server
-          console.log('[TIMER SYNC] Drift correction:', { drift, serverRemaining, localRemaining });
-          deadlineMsRef.current = now + serverRemaining * 1000;
-        }
-        }
-      }
+      // SAME TURN: Do NOT adjust deadlineMsRef during the turn.
+      // Drift correction was causing the ring timer to "jump" and reset visual progress.
+      // The deadline is set once at turn start and counts down smoothly via RAF in SmoothAvatarTimer.
+      // 
+      // If severe clock skew occurs, the player may see a slight difference from server,
+      // but the visual will remain smooth. True sync happens at next turn/phase change.
     }
 
     const getRemaining = (nowMs: number) => Math.max(0, (deadlineMsRef.current - nowMs) / 1000);
 
-    // Store as precise seconds for SmoothAvatarTimer to maintain smooth animation.
+    // Store initial remaining for time bank fallback (no high-frequency state updates)
     const initialNow = Date.now();
     setTurnTimeRemaining(getRemaining(initialNow));
 
-    // Update frequently for smooth UI.
-    // IMPORTANT: drift correction uses serverRemainingRef inside the interval,
-    // so we don't need to re-run this effect on every WS timeRemaining update.
-    let tickCount = 0;
+    // LOW-FREQUENCY update (1Hz) just for fallback hook and sounds - does NOT affect ring animation.
+    // SmoothAvatarTimer runs its own 60fps RAF loop using deadlineMsRef directly.
+    // Previously 200ms with drift correction caused ring jitter and alarm failure.
     const interval = setInterval(() => {
       const t = Date.now();
       const localRemaining = getRemaining(t);
       setTurnTimeRemaining(localRemaining);
-
-      // Drift correction ~1s (every 5 ticks @ 200ms)
-      tickCount++;
-      if (tickCount % 5 === 0) {
-        const sr = serverRemainingRef.current;
-        if (typeof sr === 'number' && Number.isFinite(sr)) {
-          const drift = Math.abs(sr - localRemaining);
-          if (drift > 2) {
-            timerLog('[TIMER SYNC] Drift correction (interval):', { drift, serverRemaining: sr, localRemaining });
-            deadlineMsRef.current = t + sr * 1000;
-          }
-        }
-      }
-    }, 200);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [
