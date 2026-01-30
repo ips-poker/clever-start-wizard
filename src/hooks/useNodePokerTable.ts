@@ -1304,7 +1304,37 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           break;
 
         case 'action_accepted':
-          log('✅ Action accepted:', data.actionType, data.amount);
+          // The server may acknowledge the action immediately but broadcast the new table state a bit later.
+          // To eliminate perceived lag ("action happened but UI updates later"), we actively pull a fresh
+          // snapshot right after acceptance. Realtime/broadcast remains for syncing other clients.
+          {
+            const actionType = (data as any).actionType as string | undefined;
+            const amount = (data as any).amount as number | undefined;
+            log('✅ Action accepted:', actionType, amount);
+
+            // Quick local feedback (doesn't change game logic; just reflects what server already accepted)
+            if (actionType) {
+              setLastAction({
+                playerId: playerId as string,
+                action: actionType,
+                amount,
+              });
+              setTimeout(() => setLastAction(null), 1200);
+            }
+
+            // If server included a state snapshot, apply it immediately.
+            if ((data as any).state && tableId) {
+              applyIncomingState((data as any).state);
+            }
+
+            // CRITICAL: Immediately refetch authoritative state after own action.
+            // Small delay gives engine a tick to advance turn before snapshot is returned.
+            if (tableId && playerId) {
+              setTimeout(() => {
+                sendMessage({ type: 'get_state', tableId, playerId });
+              }, 80);
+            }
+          }
           break;
 
         case 'chips_added':
