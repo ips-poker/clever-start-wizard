@@ -336,6 +336,10 @@ export function FullscreenPokerTableWrapper({
   // Client syncs from server and counts down locally
   // CRITICAL FIX: actionStartTime is the PRIMARY reset signal
   // Server sets actionStartTime = Date.now() for EVERY new turn/phase
+  // CRITICAL FIX: timerResetKey should NOT include isTimeBankPhase!
+  // Including it causes a "reset" of the timer when transitioning main→timebank,
+  // which fights with the smooth continuation logic and causes delays/blocking.
+  // The timer should continue counting on the SAME deadline; only color/visuals change.
   const timerResetKey = useMemo(() => {
     // actionStartTime changes on every turn - this is the key reset signal
     // If server sends same actionStartTime, timer continues from current position
@@ -344,11 +348,11 @@ export function FullscreenPokerTableWrapper({
     const phase = tableState?.phase || 'waiting';
     const seat = tableState?.currentPlayerSeat ?? 'none';
     const handId = tableState?.handId || 'no-hand';
-    const isTimeBank = tableState?.isTimeBankPhase ? 'tb' : 'main';
+    // REMOVED: isTimeBank from key - timer should NOT reset on main→TB transition
     
     // Use full precision for actionStartTime to catch every change
-    return `${handId}-${phase}-${seat}-${isTimeBank}-${actionTs}`;
-  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.isTimeBankPhase, tableState?.actionStartTime]);
+    return `${handId}-${phase}-${seat}-${actionTs}`;
+  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.actionStartTime]);
 
   // --- TIME BANK UI FALLBACK (UI-only) ---
   const timeBankSliceSeconds = useMemo(() => {
@@ -392,6 +396,34 @@ export function FullscreenPokerTableWrapper({
   // 
   // For the hero, we also consider tbFallback.isActive as a UI-only backup.
   const timeBankUiActive = isTimeBankActive || tbFallback.isActive;
+  
+  // CRITICAL FIX: Separate effect to update isTimeBankActive based on server signal.
+  // This runs ONLY when serverIsTimeBankPhase changes, without triggering deadline recalc.
+  const prevServerIsTimeBankPhaseRef = useRef(false);
+  const timeBankTurnIdRef = useRef<string>('');
+  
+  useEffect(() => {
+    const currentTurnId = `${tableState?.handId}-${tableState?.phase}-${tableState?.currentPlayerSeat}`;
+    const turnChanged = timeBankTurnIdRef.current !== currentTurnId;
+    
+    if (turnChanged) {
+      // New turn - reset TB state
+      timeBankTurnIdRef.current = currentTurnId;
+      prevServerIsTimeBankPhaseRef.current = false;
+      // Don't set isTimeBankActive=true on new turn even if server says so (stale data)
+      setIsTimeBankActive(false);
+      return;
+    }
+    
+    // Same turn - apply sticky logic
+    if (serverIsTimeBankPhase && !prevServerIsTimeBankPhaseRef.current) {
+      // Transition false → true: activate TB
+      console.log('[TIME BANK] Activating for current turn:', currentTurnId);
+      setIsTimeBankActive(true);
+      prevServerIsTimeBankPhaseRef.current = true;
+    }
+    // Don't deactivate if server sends false (could be stale) - sticky behavior
+  }, [serverIsTimeBankPhase, tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat]);
   
   // CRITICAL FIX: displayTurnTimeRemaining should use fallback ONLY for hero.
   // When opponent is in time bank, we still use the server's turnTimeRemaining.
@@ -447,9 +479,7 @@ export function FullscreenPokerTableWrapper({
   // for that exact actionStartTime until we see actionStartTime advance.
   const staleMainTimerActionStartRef = useRef<{ handId: string | null; actionStartTime: number } | null>(null);
   
-  // FIX: "Sticky" time bank - once we enter time bank phase, don't exit until turn/seat changes
-  const stickyTimeBankActiveRef = useRef<boolean>(false);
-  const stickyTimeBankTurnIdRef = useRef<string>('');
+  // NOTE: Sticky time bank refs removed - logic moved to dedicated useEffect above
 
   // Server timeRemaining can update frequently; keep it in a ref so we don't re-run
   // the whole timer-sync effect (and recreate intervals) on every server tick.
@@ -649,62 +679,16 @@ export function FullscreenPokerTableWrapper({
     prevActionStartTimeRef.current = actionStartTime || 0;
 
     // ============================================
-    // FIX #2: Sticky Time Bank
+    // Time Bank handling is now in a SEPARATE useEffect above.
+    // This effect only handles timer DEADLINE calculation.
     // ============================================
-    // Once we enter time bank phase for this turn, DON'T exit it even if
-    // server sends updates with isTimeBankPhase=false (stale/redundant broadcasts).
-    // Only reset when turn/seat changes.
-    //
-    // CRITICAL FIX: On NEW turn, we MUST reset sticky AND IGNORE any isTimeBankPhase=true
-    // that might be stale from the previous player's time bank phase.
-    // The new player always starts with their main timer, never time bank.
     
     const isGenuineNewTurn = !isSameTurn || isNewTurn || phaseChanged || seatChanged;
     
-    // Calculate effectiveIsTimeBankPhase BEFORE updating state
-    let effectiveIsTimeBankPhase: boolean;
-    
-    if (isGenuineNewTurn) {
-      // CRITICAL: Always reset sticky on new turn - new player starts with main timer
-      stickyTimeBankActiveRef.current = false;
-      stickyTimeBankTurnIdRef.current = turnId;
-      
-      // CRITICAL FIX: On new turn, IGNORE any isTimeBankPhase=true from server.
-      // This could be a stale update from the previous player's time bank.
-      // The new turn ALWAYS starts with isTimeBankPhase=false.
-      // Only set isTimeBankPhase=true later when server explicitly sends time_bank_activated
-      // for THIS player's turn.
-      if (isTimeBankPhase) {
-        console.log('[TIME BANK STICKY] Ignoring stale isTimeBankPhase=true on new turn:', {
-          turnId,
-          prevTurnId,
-          phaseChanged,
-          seatChanged,
-        });
-      }
-      effectiveIsTimeBankPhase = false;
-    } else {
-      // Same turn - apply sticky logic
-      if (isTimeBankPhase) {
-        stickyTimeBankActiveRef.current = true;
-      }
-      
-      // Use sticky time bank: if we ever saw isTimeBankPhase=true for this turn, stay in it
-      effectiveIsTimeBankPhase = stickyTimeBankActiveRef.current || isTimeBankPhase;
-      
-      // Log changes
-      if (effectiveIsTimeBankPhase !== isTimeBankActive) {
-        console.log('[TIME BANK STICKY]', {
-          serverIsTimeBankPhase: isTimeBankPhase,
-          stickyActive: stickyTimeBankActiveRef.current,
-          effectiveIsTimeBankPhase,
-          turnId,
-        });
-      }
-    }
-    
-    // Update UI state
-    setIsTimeBankActive(effectiveIsTimeBankPhase);
+    // CRITICAL FIX: Read current isTimeBankActive from state, but DON'T modify it here.
+    // Modification happens in the dedicated TB effect above.
+    // For deadline calculation, we need to know if we're currently in TB phase.
+    const effectiveIsTimeBankPhase = isTimeBankActive;
 
     // POKERSTARS-STYLE SYNC:
     // 1. On NEW turn: calculate deadline from actionStartTime (server's authoritative start)
@@ -962,7 +946,12 @@ export function FullscreenPokerTableWrapper({
     tableState?.actionTimer,
     tableState?.actionTimeTotal, // POKERSTARS-STYLE: Phase-aware timing
     tableState?.actionStartTime,
-    tableState?.isTimeBankPhase,
+    // CRITICAL FIX: REMOVED tableState?.isTimeBankPhase from dependencies!
+    // TB transition should NOT re-run this effect and reset the deadline.
+    // The visual change (blue ring, alarm) is handled via isTimeBankActive state.
+    // NOTE: We DO include isTimeBankActive here to read current TB state for deadline calc,
+    // but the dedicated TB effect handles setting it (one-way dependency).
+    isTimeBankActive,
     // If settings are edited, fallbacks (dbActionTime/dbTimeBank) must refresh too.
     fullTableSettings
   ]);
