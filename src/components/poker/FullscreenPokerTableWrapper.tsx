@@ -108,6 +108,42 @@ export function FullscreenPokerTableWrapper({
   
   const sounds = usePokerSounds();
 
+  // Hard-disable all debug flags that can hurt FPS/inputs.
+  // NOTE: Some modules read localStorage at import time, so we also suppress spammy logs below.
+  useEffect(() => {
+    try {
+      localStorage.removeItem('POKER_DEBUG');
+      localStorage.removeItem('POKER_TIMER_DEBUG');
+      localStorage.removeItem('POKER_RENDER_DEBUG');
+      localStorage.removeItem('POKER_OPTIMISTIC_DEBUG');
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Suppress known high-frequency debug logs that can block the main thread and make clicks “disappear”.
+  useEffect(() => {
+    const original = console.log;
+    console.log = (...args: any[]) => {
+      const first = args?.[0];
+      if (typeof first === 'string') {
+        if (
+          first.startsWith('[TIMER SYNC]') ||
+          first.startsWith('[TIMER CONFIG]') ||
+          first.startsWith('[NodePoker]') ||
+          first.startsWith('[FullscreenPokerTable]')
+        ) {
+          return;
+        }
+      }
+      original(...args);
+    };
+
+    return () => {
+      console.log = original;
+    };
+  }, []);
+
   // Keep tournament blinds in sync with DB (realtime + polling fallback)
   useEffect(() => {
     const enabled = Boolean(isTournament);

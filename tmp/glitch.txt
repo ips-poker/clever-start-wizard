@@ -1,0 +1,916 @@
+index-BbcWrIvC.js:7845 Auth state changed: SIGNED_IN casinofix@ya.ru
+index-BbcWrIvC.js:7845 Auth state changed: INITIAL_SESSION casinofix@ya.ru
+index-BbcWrIvC.js:7845 Initial session check: casinofix@ya.ru
+index-BbcWrIvC.js:7845 Fetching profile for user: a13085b9-923b-4acc-86a3-104d8eea19fe
+index-BbcWrIvC.js:7845 Profile RPC result: {data: Array(1), error: null, userId: 'a13085b9-923b-4acc-86a3-104d8eea19fe'}
+index-BbcWrIvC.js:7845 Profile fetched successfully: {id: 'be686b26-2b66-4fb3-a9bd-236883204a1c', user_id: 'a13085b9-923b-4acc-86a3-104d8eea19fe', email: 'casinofix@ya.ru', full_name: 'Nikola', avatar_url: 'https://api.syndicate-poker.ru/storage/v1/object/p…b9553-1c88-4e98-ba48-ad0649a97c94-gsvkh545aea.png', …}
+index-BbcWrIvC.js:8991 [NodePoker] canCheck: true callAmount: 0
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: undefined, phase: 'waiting', dealerSeat: 0, playerCount: 0}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: undefined, actionTimer: undefined, dbActionTime: undefined, dbTimeBank: undefined, finalActionTimer: 25, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: undefined, phase: 'waiting', dealerSeat: 0, playerCount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: undefined, phase: 'waiting', dealerSeat: 0, playerCount: 0}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: undefined, actionTimer: undefined, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: undefined, phase: 'waiting', dealerSeat: 0, playerCount: 0}
+index-BbcWrIvC.js:8991 ✅ Server connected: {serverVersion: '3.5.0+lovable-build-2026-01-15-fix-health-endpoint', buildTag: 'lovable-build-2026-01-15-fix-health-endpoint', engine: 'Professional Poker Engine v3.5 (Tournament-Grade)', timestamp: 1769685030942}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: undefined, phase: 'waiting', dealerSeat: 0, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: undefined, phase: 'waiting', dealerSeat: 0, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: undefined, phase: 'waiting', dealerSeat: 0, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 5, myBetAmount: 2, callAmount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] canCheck: false callAmount: 3
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'preflop', seat: 7, actionTimer: 15, actionStartTime: 1769685032851, serverRemaining: 14.6, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main clock skew estimate: {clockSkewMs: 826, startInFutureMs: -1226, chosenSource: 'start', effectiveActionTime: 15, serverRemaining: 14.6, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'start', deadline: 1769685047851, remainingSeconds: 13.774, effectiveActionTime: 15, serverRemaining: 14.6, …}
+index-BbcWrIvC.js:8709 The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio
+(anonymous) @ index-BbcWrIvC.js:8709
+(anonymous) @ index-BbcWrIvC.js:8709
+(anonymous) @ index-BbcWrIvC.js:9217
+vz @ index-BbcWrIvC.js:40
+g1 @ index-BbcWrIvC.js:40
+(anonymous) @ index-BbcWrIvC.js:40
+j @ index-BbcWrIvC.js:25
+E @ index-BbcWrIvC.js:25
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8709 The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio
+(anonymous) @ index-BbcWrIvC.js:8709
+(anonymous) @ index-BbcWrIvC.js:8709
+setTimeout
+(anonymous) @ index-BbcWrIvC.js:8709
+(anonymous) @ index-BbcWrIvC.js:9217
+vz @ index-BbcWrIvC.js:40
+g1 @ index-BbcWrIvC.js:40
+(anonymous) @ index-BbcWrIvC.js:40
+j @ index-BbcWrIvC.js:25
+E @ index-BbcWrIvC.js:25
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 5, myBetAmount: 5, callAmount: 0}
+index-BbcWrIvC.js:8991 [NodePoker] canCheck: true callAmount: 0
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'preflop', seat: 0, actionTimer: 15, actionStartTime: 1769685033398, serverRemaining: 11.5, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main clock skew estimate: {clockSkewMs: 939, startInFutureMs: -4439, chosenSource: 'start', effectiveActionTime: 15, serverRemaining: 11.5, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'start', deadline: 1769685048398, remainingSeconds: 10.561, effectiveActionTime: 15, serverRemaining: 11.5, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'preflop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'flop', seat: 0, actionTimer: 15, actionStartTime: 1769685036866, serverRemaining: 13.4, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main clock skew estimate: {clockSkewMs: 937, startInFutureMs: -2537, chosenSource: 'start', effectiveActionTime: 15, serverRemaining: 13.4, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'start', deadline: 1769685051866, remainingSeconds: 12.463, effectiveActionTime: 15, serverRemaining: 13.4, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'flop', seat: 7, actionTimer: 15, actionStartTime: 1769685038488, serverRemaining: 12.5, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main clock skew estimate: {clockSkewMs: 842, startInFutureMs: -3342, chosenSource: 'start', effectiveActionTime: 15, serverRemaining: 12.5, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'start', deadline: 1769685053488, remainingSeconds: 11.658, effectiveActionTime: 15, serverRemaining: 12.5, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'flop', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'turn', seat: 0, actionTimer: 15, actionStartTime: 1769685040991, serverRemaining: 6.2, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] CORRECTING stale packet on new turn: {rawServerRemaining: 6.2, correctedTo: 15, reason: 'elapsedSinceStartMs=9756ms > 5000ms proves actionStartTime is from previous player', phaseChanged: true, seatChanged: true, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'remaining', deadline: 1769685065747, remainingSeconds: 15, effectiveActionTime: 15, serverRemaining: 15, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'turn', seat: 7, actionTimer: 15, actionStartTime: 1769685049776, serverRemaining: 10.1, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] CORRECTING stale packet on new turn: {rawServerRemaining: 10.1, correctedTo: 15, reason: 'elapsedSinceStartMs=5739ms > 5000ms proves actionStartTime is from previous player', phaseChanged: false, seatChanged: true, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'remaining', deadline: 1769685070515, remainingSeconds: 15, effectiveActionTime: 15, serverRemaining: 15, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:9206 [TIME BANK FALLBACK] Activating fallback time bank: {mainRemaining: 0.399, minMainRemainingThisTurn: 0.399, playerTimeBank: 10, slice: 10, duration: 10, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 10, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIME BANK STICKY] Ignoring stale isTimeBankPhase=true on new turn: {turnId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75-turn-7', prevTurnId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75-turn-7', phaseChanged: false, seatChanged: false}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'turn', seat: 7, actionTimer: 15, actionStartTime: 1769685069676, serverRemaining: 10, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main clock skew estimate: {clockSkewMs: -4156, startInFutureMs: -844, chosenSource: 'remaining', effectiveActionTime: 15, serverRemaining: 10, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'remaining', deadline: 1769685080520, remainingSeconds: 10, effectiveActionTime: 15, serverRemaining: 10, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'turn', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [POKER TIMEOUT DIAG] {tableId: '5bcd7338-00c0-4e00-a2ee-68b5b727c3fe', data: {…}, timing: {…}, now: 1769685080638}
+(anonymous) @ index-BbcWrIvC.js:8991
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'river', seat: 0, actionTimer: 15, actionStartTime: 1769685079678, serverRemaining: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main clock skew estimate: {clockSkewMs: 964, startInFutureMs: -964, chosenSource: 'start', effectiveActionTime: 15, serverRemaining: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'start', deadline: 1769685094678, remainingSeconds: 14.036, effectiveActionTime: 15, serverRemaining: 15, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:7845 Auth state changed: SIGNED_IN casinofix@ya.ru
+index-BbcWrIvC.js:7845 Profile already fetched or currently fetching, skipping
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 6, myBetAmount: 0, callAmount: 6}
+index-BbcWrIvC.js:8991 [NodePoker] canCheck: false callAmount: 6
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9206 [TIME BANK FALLBACK] Activating fallback time bank: {mainRemaining: 0, minMainRemainingThisTurn: 0, playerTimeBank: 10, slice: 10, duration: 10, …}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 10, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIME BANK STICKY] Ignoring stale isTimeBankPhase=true on new turn: {turnId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75-river-7', prevTurnId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75-river-0', phaseChanged: false, seatChanged: true}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'river', seat: 7, actionTimer: 15, actionStartTime: 1769685098536, serverRemaining: 10, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main clock skew estimate: {clockSkewMs: -4124, startInFutureMs: -876, chosenSource: 'remaining', effectiveActionTime: 15, serverRemaining: 10, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'remaining', deadline: 1769685109412, remainingSeconds: 10, effectiveActionTime: 15, serverRemaining: 10, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'river', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8991 [NodePoker] canCheck: true callAmount: 0
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'showdown', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [PlayerSeat] Showdown render: {playerName: 'xlucasx', isWinner: false, winningCardIndices: Array(0), handName: undefined, displayCards: Array(2)}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 10, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'showdown', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'showdown', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'showdown', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [PlayerSeat] Showdown render: {playerName: 'xlucasx', isWinner: false, winningCardIndices: Array(0), handName: 'Flush', displayCards: Array(2)}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'showdown', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'showdown', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:8991 [evaluateShowdown] Input: {holeCards: Array(2), communityCards: Array(5), parsedHole: Array(2), parsedComm: Array(5)}
+index-BbcWrIvC.js:8991 [evaluateShowdown] Best hand found: {handType: 'FLUSH', rank: 6, cards: Array(5), tiebreakers: Array(5)}
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card As matched to COMM index 2
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card Ks matched to HOLE index 1
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card Qs matched to COMM index 4
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card Ts matched to COMM index 1
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card 4s matched to COMM index 3
+index-BbcWrIvC.js:8991 [evaluateShowdown] RESULT: {handName: 'Flush', handNameRu: 'Флеш', winningCardIndices: Array(1), communityCardIndices: Array(4), bestFiveCards: Array(5)}
+index-BbcWrIvC.js:8991 [evaluateShowdown] Input: {holeCards: Array(2), communityCards: Array(5), parsedHole: Array(2), parsedComm: Array(5)}
+index-BbcWrIvC.js:8991 [evaluateShowdown] Best hand found: {handType: 'FLUSH', rank: 6, cards: Array(5), tiebreakers: Array(5)}
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card As matched to COMM index 2
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card Qs matched to COMM index 4
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card Ts matched to COMM index 1
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card 5s matched to HOLE index 1
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card 4s matched to COMM index 3
+index-BbcWrIvC.js:8991 [evaluateShowdown] RESULT: {handName: 'Flush', handNameRu: 'Флеш', winningCardIndices: Array(1), communityCardIndices: Array(4), bestFiveCards: Array(5)}
+index-BbcWrIvC.js:8991 [evaluateShowdown] Input: {holeCards: Array(2), communityCards: Array(5), parsedHole: Array(2), parsedComm: Array(5)}
+index-BbcWrIvC.js:8991 [evaluateShowdown] Best hand found: {handType: 'FLUSH', rank: 6, cards: Array(5), tiebreakers: Array(5)}
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card As matched to COMM index 2
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card Ks matched to HOLE index 1
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card Qs matched to COMM index 4
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card Ts matched to COMM index 1
+index-BbcWrIvC.js:8991 [evaluateShowdown] Card 4s matched to COMM index 3
+index-BbcWrIvC.js:8991 [evaluateShowdown] RESULT: {handName: 'Flush', handNameRu: 'Флеш', winningCardIndices: Array(1), communityCardIndices: Array(4), bestFiveCards: Array(5)}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'showdown', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [PlayerSeat] Showdown render: {playerName: 'xlucasx', isWinner: false, winningCardIndices: Array(1), handName: 'Flush', displayCards: Array(2)}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'showdown', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'showdown', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [PlayerSeat] Showdown render: {playerName: 'xlucasx', isWinner: false, winningCardIndices: Array(1), handName: 'Flush', displayCards: Array(2)}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'showdown', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'showdown', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'showdown', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', phase: 'showdown', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '89f1cf9d-0cde-4a80-8788-e9bf6a8d9a75', dealerSeat: 7, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: undefined, phase: 'showdown', dealerSeat: 7, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 5, myBetAmount: 5, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', dealerSeat: 8, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'preflop', seat: 8, actionTimer: 15, actionStartTime: 1769685106433, serverRemaining: 14.7, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main clock skew estimate: {clockSkewMs: 906, startInFutureMs: -1206, chosenSource: 'start', effectiveActionTime: 15, serverRemaining: 14.7, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'start', deadline: 1769685121433, remainingSeconds: 13.794, effectiveActionTime: 15, serverRemaining: 14.7, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 5, myBetAmount: 5, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', dealerSeat: 8, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'preflop', seat: 0, actionTimer: 15, actionStartTime: 1769685106964, serverRemaining: 11.7, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main clock skew estimate: {clockSkewMs: 847, startInFutureMs: -4147, chosenSource: 'start', effectiveActionTime: 15, serverRemaining: 11.7, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'start', deadline: 1769685121964, remainingSeconds: 10.853, effectiveActionTime: 15, serverRemaining: 11.7, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 33, myBetAmount: 5, callAmount: 28}
+index-BbcWrIvC.js:8991 [NodePoker] canCheck: false callAmount: 28
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', dealerSeat: 8, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'preflop', seat: 7, actionTimer: 15, actionStartTime: 1769685110268, serverRemaining: 13.4, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main clock skew estimate: {clockSkewMs: 890, startInFutureMs: -2490, chosenSource: 'start', effectiveActionTime: 15, serverRemaining: 13.4, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'start', deadline: 1769685125268, remainingSeconds: 12.51, effectiveActionTime: 15, serverRemaining: 13.4, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:9206 [TIME BANK FALLBACK] Activating fallback time bank: {mainRemaining: 0.31, minMainRemainingThisTurn: 0.31, playerTimeBank: 10, slice: 10, duration: 10, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 33, myBetAmount: 33, callAmount: 0}
+index-BbcWrIvC.js:8991 [NodePoker] canCheck: true callAmount: 0
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', dealerSeat: 8, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'preflop', seat: 8, actionTimer: 15, actionStartTime: 1769685111905, serverRemaining: 2.3, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] CORRECTING stale packet on new turn: {rawServerRemaining: 2.3, correctedTo: 15, reason: 'elapsedSinceStartMs=13629ms > 5000ms proves actionStartTime is from previous player', phaseChanged: false, seatChanged: true, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'remaining', deadline: 1769685140534, remainingSeconds: 15, effectiveActionTime: 15, serverRemaining: 15, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'preflop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', dealerSeat: 8, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'flop', seat: 0, actionTimer: 15, actionStartTime: 1769685124561, serverRemaining: 4.8, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] CORRECTING stale packet on new turn: {rawServerRemaining: 4.8, correctedTo: 15, reason: 'elapsedSinceStartMs=11079ms > 5000ms proves actionStartTime is from previous player', phaseChanged: true, seatChanged: true, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'remaining', deadline: 1769685150640, remainingSeconds: 15, effectiveActionTime: 15, serverRemaining: 15, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', dealerSeat: 8, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'flop', seat: 7, actionTimer: 15, actionStartTime: 1769685134799, serverRemaining: 11.1, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main clock skew estimate: {clockSkewMs: 863, startInFutureMs: -4763, chosenSource: 'start', effectiveActionTime: 15, serverRemaining: 11.1, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'start', deadline: 1769685149799, remainingSeconds: 10.237, effectiveActionTime: 15, serverRemaining: 11.1, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:9206 [TIME BANK FALLBACK] Activating fallback time bank: {mainRemaining: 0.425, minMainRemainingThisTurn: 0.425, playerTimeBank: 10, slice: 10, duration: 10, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', dealerSeat: 8, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'flop', seat: 8, actionTimer: 15, actionStartTime: 1769685138720, serverRemaining: 3.9, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] CORRECTING stale packet on new turn: {rawServerRemaining: 3.9, correctedTo: 15, reason: 'elapsedSinceStartMs=11954ms > 5000ms proves actionStartTime is from previous player', phaseChanged: false, seatChanged: true, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'remaining', deadline: 1769685165674, remainingSeconds: 15, effectiveActionTime: 15, serverRemaining: 15, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'flop', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 0, myBetAmount: 0, callAmount: 0}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', dealerSeat: 8, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'turn', seat: 0, actionTimer: 15, actionStartTime: 1769685149835, serverRemaining: 10, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] CORRECTING stale packet on new turn: {rawServerRemaining: 10, correctedTo: 15, reason: 'elapsedSinceStartMs=5854ms > 5000ms proves actionStartTime is from previous player', phaseChanged: true, seatChanged: true, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'remaining', deadline: 1769685170689, remainingSeconds: 15, effectiveActionTime: 15, serverRemaining: 15, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 66, myBetAmount: 0, callAmount: 66}
+index-BbcWrIvC.js:8991 [NodePoker] canCheck: false callAmount: 66
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', dealerSeat: 8, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 15, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'turn', seat: 7, actionTimer: 15, actionStartTime: 1769685154851, serverRemaining: 11.7, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main clock skew estimate: {clockSkewMs: 869, startInFutureMs: -4169, chosenSource: 'start', effectiveActionTime: 15, serverRemaining: 11.7, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'start', deadline: 1769685169851, remainingSeconds: 10.831, effectiveActionTime: 15, serverRemaining: 11.7, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 66, myBetAmount: 0, callAmount: 66}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:9217 [TIMER CONFIG] {actionTimeTotal: 10, actionTimer: 15, dbActionTime: 15, dbTimeBank: 10, finalActionTimer: 15, …}
+index-BbcWrIvC.js:9217 [TIME BANK STICKY] Ignoring stale isTimeBankPhase=true on new turn: {turnId: '936b6edb-dd7b-486e-bfbb-1c76ad010476-turn-7', prevTurnId: '936b6edb-dd7b-486e-bfbb-1c76ad010476-turn-7', phaseChanged: false, seatChanged: false}
+index-BbcWrIvC.js:9217 [TIMER SYNC] New turn detected: {phase: 'turn', seat: 7, actionTimer: 15, actionStartTime: 1769685159341, serverRemaining: 10, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main clock skew estimate: {clockSkewMs: -4154, startInFutureMs: -846, chosenSource: 'remaining', effectiveActionTime: 15, serverRemaining: 10, …}
+index-BbcWrIvC.js:9217 [TIMER SYNC] Main deadline chosen: {chosenSource: 'remaining', deadline: 1769685170187, remainingSeconds: 10, effectiveActionTime: 15, serverRemaining: 10, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8991 [NodePoker] callAmount calculation: {currentBet: 66, myBetAmount: 0, callAmount: 66}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] Hand sync data: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', dealerSeat: 8, dealOrderMap: {…}, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:9206 [TIME BANK FALLBACK] Activating fallback time bank: {mainRemaining: 0.393, minMainRemainingThisTurn: 0.393, playerTimeBank: 10, slice: 10, duration: 10, …}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
+index-BbcWrIvC.js:8607 [FullscreenPokerTable] RENDER: {handId: '936b6edb-dd7b-486e-bfbb-1c76ad010476', phase: 'turn', dealerSeat: 8, playerCount: 3}
