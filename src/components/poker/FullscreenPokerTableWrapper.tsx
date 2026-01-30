@@ -456,30 +456,8 @@ export function FullscreenPokerTableWrapper({
   // Only recalculate when turn/phase actually changes
   const deadlineMsRef = useRef<number>(0);
   
-  // FIX: Track MAXIMUM actionStartTime seen for this turn to ignore stale updates
-  // When server broadcasts redundant state_updates, older ones may arrive after newer ones.
-  // We ignore any update where actionStartTime < maxActionStartTime for the same turn.
-  const maxActionStartTimeForTurnRef = useRef<number>(0);
-
-  // FIX (GLOBAL MONOTONIC GUARD): actionStartTime must be monotonic within a hand.
-  // We observed (in logs) that after time bank activation a delayed state_update can arrive for the next
-  // phase/seat carrying an *older* actionStartTime + small timeRemaining, which makes the UI think
-  // the new player is already in time bank / almost expired.
-  // This guard ignores any update that moves actionStartTime backwards within the same hand.
-  const maxActionStartTimeInHandRef = useRef<number>(0);
-  const maxActionStartTimeHandIdRef = useRef<string | null>(null);
-
-  // FIX (STALE-DRIFT GUARD): If we detect a stale "new turn" packet (seat/phase changed but
-  // actionStartTime implies we're already far into the previous player's turn), we correct the
-  // first packet to full time.
-  // However, the server may still send more stale packets with the SAME actionStartTime + low
-  // timeRemaining, and our SAME-TURN drift correction would snap the deadline back down.
-  // 
-  // So: when we correct a stale packet on a new turn, we temporarily ignore drift correction
-  // for that exact actionStartTime until we see actionStartTime advance.
-  const staleMainTimerActionStartRef = useRef<{ handId: string | null; actionStartTime: number } | null>(null);
-  
-  // NOTE: Sticky time bank refs removed - logic moved to dedicated useEffect above
+  // NOTE: Stale-packet guards removed in v5 - now we always process turn changes.
+  // The timer resets cleanly on seat/phase changes without rejecting packets.
 
   // Server timeRemaining can update frequently; keep it in a ref so we don't re-run
   // the whole timer-sync effect (and recreate intervals) on every server tick.
@@ -542,52 +520,12 @@ export function FullscreenPokerTableWrapper({
     const actionStartTime = tableState?.actionStartTime;
 
     // ============================================
-    // FIX #0: Global monotonic guard (per hand)
+    // FIX v5: REMOVED global monotonic guard!
     // ============================================
-    // Reset guard on new hand.
+    // Previous logic ignored packets where actionStartTime went backwards.
+    // This caused the UI to "stick" when out-of-order packets arrived after user action.
+    // Now we always process updates. Timer deadline is set on genuine turn changes.
     const currentHandId = tableState?.handId ?? null;
-    if (maxActionStartTimeHandIdRef.current !== currentHandId) {
-      maxActionStartTimeHandIdRef.current = currentHandId;
-      maxActionStartTimeInHandRef.current = 0;
-    }
-
-    // Reset stale-drift guard on new hand.
-    if (staleMainTimerActionStartRef.current?.handId !== currentHandId) {
-      staleMainTimerActionStartRef.current = null;
-    }
-
-    // If server finally advanced actionStartTime, clear the stale-drift guard.
-    if (
-      staleMainTimerActionStartRef.current &&
-      typeof actionStartTime === 'number' &&
-      Number.isFinite(actionStartTime) &&
-      actionStartTime > staleMainTimerActionStartRef.current.actionStartTime
-    ) {
-      staleMainTimerActionStartRef.current = null;
-    }
-
-    if (typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0) {
-      const seen = maxActionStartTimeInHandRef.current;
-      // Allow tiny jitter, but never accept a real backwards jump.
-      const BACKWARDS_TOLERANCE_MS = 50;
-
-      if (seen > 0 && actionStartTime < seen - BACKWARDS_TOLERANCE_MS) {
-        console.log('[TIMER SYNC] Ignoring GLOBAL STALE update (actionStartTime went backwards):', {
-          handId: currentHandId,
-          receivedActionStartTime: actionStartTime,
-          maxSeenActionStartTimeInHand: seen,
-          phase: tableState?.phase,
-          seat: tableState?.currentPlayerSeat,
-          serverRemaining,
-          isTimeBankPhase,
-        });
-        return;
-      }
-
-      if (actionStartTime > seen) {
-        maxActionStartTimeInHandRef.current = actionStartTime;
-      }
-    }
 
     // CRITICAL FIX: Detect phase change or seat change separately from timerResetKey
     // This ensures timer ALWAYS resets on flop→turn→river transitions
@@ -597,74 +535,21 @@ export function FullscreenPokerTableWrapper({
     const seatChanged = prevSeatRef.current !== currentSeat;
 
     // ============================================
-    // FIX #0.5: Handle stale seat change packets  
+    // FIX v5: REMOVED stale seat change guard!
     // ============================================
-    // Your logs show a critical pattern:
-    // - seatChanged=true
-    // - but actionStartTime DID NOT advance
-    // - and actionTimeTotal was 10 (time bank slice)
-    // This is an out-of-order / stale packet that makes the new player "inherit" the previous timer.
-    // 
-    // CRITICAL FIX: Instead of ignoring the packet (which causes timer inheritance),
-    // we detect stale packets and FORCE a clean timer reset using Date.now().
+    // Previous logic ignored seat changes if actionStartTime didn't advance.
+    // This caused the UI to "stick" on the previous player after user's action.
+    // Now we always process seat/phase changes and let the timer reset.
+    // If actionStartTime is stale, we use Date.now() as fallback (handled below).
     const prevActionStartTime = prevActionStartTimeRef.current || 0;
 
-    // STRICT SERVER-AUTH RULE:
-    // If we see a seat change but actionStartTime did NOT advance, this packet is stale/out-of-order.
-    // We must IGNORE it entirely so the UI never shows the new seat with the old timer (inheritance).
-    //
-    // IMPORTANT: Do NOT "fix" with Date.now() here — user requested server-driven timing.
-    if (
-      seatChanged &&
-      typeof actionStartTime === 'number' &&
-      Number.isFinite(actionStartTime) &&
-      actionStartTime > 0 &&
-      prevActionStartTime > 0 &&
-      actionStartTime <= prevActionStartTime
-    ) {
-      console.log('[TIMER SYNC] Ignoring STALE seat change (actionStartTime did not advance):', {
-        handId: currentHandId,
-        prevSeat: prevSeatRef.current,
-        nextSeat: currentSeat,
-        prevActionStartTime,
-        receivedActionStartTime: actionStartTime,
-        serverRemaining,
-        serverActionTimeTotal,
-      });
-      return;
-    }
-
     // ============================================
-    // FIX #1: Ignore stale (outdated) state updates
+    // FIX v5: REMOVED per-turn stale update guard!
     // ============================================
-    // Server can broadcast redundant state_updates out of order.
-    // If this update has an OLDER actionStartTime than we've already seen for this turn,
-    // skip processing to avoid "jumping back" the timer or resetting time bank.
+    // Now we always process updates - timer deadline is set on genuine new turns only.
     const turnId = `${tableState?.handId}-${currentPhase}-${currentSeat}`;
     const prevTurnId = `${tableState?.handId}-${prevPhaseRef.current}-${prevSeatRef.current}`;
     const isSameTurn = turnId === prevTurnId && !phaseChanged && !seatChanged;
-
-    if (isSameTurn && actionStartTime && maxActionStartTimeForTurnRef.current > 0) {
-      // Same turn - check if this update is stale
-      if (actionStartTime < maxActionStartTimeForTurnRef.current) {
-        console.log('[TIMER SYNC] Ignoring STALE update:', {
-          receivedActionStartTime: actionStartTime,
-          maxSeenActionStartTime: maxActionStartTimeForTurnRef.current,
-          turnId,
-        });
-        return; // Skip this stale update entirely
-      }
-    }
-    
-    // Track the maximum actionStartTime we've seen for this turn
-    if (actionStartTime && actionStartTime > 0) {
-      if (!isSameTurn) {
-        // New turn - reset tracking
-        maxActionStartTimeForTurnRef.current = actionStartTime;
-      } else if (actionStartTime > maxActionStartTimeForTurnRef.current) {
-        maxActionStartTimeForTurnRef.current = actionStartTime;
-      }
-    }
 
     prevPhaseRef.current = currentPhase;
     prevSeatRef.current = currentSeat ?? null;
@@ -838,14 +723,8 @@ export function FullscreenPokerTableWrapper({
           typeof rawServerRemaining === 'number' &&
           rawServerRemaining < 2;
 
-        // FIX (v3): If startLooksStale is true, ALWAYS correct - don't check isSuspiciouslyLow.
-        // The elapsed time being > 5s is conclusive proof that actionStartTime is from a previous player.
+        // FIX v5: Simplified stale packet handling - just correct the remaining time, no guards needed.
         if (isGenuineNewTurn && (startLooksStale || isDefinitelyStale)) {
-          // Arm the stale-drift guard so subsequent stale packets can't snap the timer back down.
-          if (typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0) {
-            staleMainTimerActionStartRef.current = { handId: currentHandId, actionStartTime };
-          }
-
           console.log('[TIMER SYNC] CORRECTING stale packet on new turn:', {
             rawServerRemaining,
             correctedTo: effectiveActionTime,

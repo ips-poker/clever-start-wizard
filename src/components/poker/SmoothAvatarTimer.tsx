@@ -86,11 +86,12 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     };
   }, [startAnimation]);
 
-  // React ONLY to meaningful prop changes (deadline jump, total change, time bank phase change)
-  // This effect decides IF we need to restart animation (not run the animation itself)
+  // React ONLY to meaningful prop changes (deadline jump, total change)
+  // CRITICAL FIX v5: REMOVED isTimeBankPhase from triggers!
+  // isTimeBankPhase change should NOT restart animation - ring continues counting down,
+  // only color changes (handled via strokeColor prop).
   useEffect(() => {
     const totalChanged = total !== prevTotalRef.current;
-    const timeBankPhaseChanged = isTimeBankPhase !== prevTimeBankPhaseRef.current;
 
     // Deadline jump detection: only restart if difference > 2 seconds (new turn)
     let deadlineJumped = false;
@@ -109,16 +110,13 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     prevTotalRef.current = total;
     prevTimeBankPhaseRef.current = isTimeBankPhase;
 
-    // CRITICAL FIX: When deadline jumps (new turn), ALWAYS restart animation
-    // Previously we only restarted if animationRef.current === null, but the animation
-    // was still running with the OLD deadline, causing visual "jitter" instead of clean reset.
-    if (deadlineJumped || totalChanged || timeBankPhaseChanged) {
+    // Restart animation ONLY on deadline jump or total change (NOT on isTimeBankPhase change)
+    if (deadlineJumped || totalChanged) {
       // Force update the stable ref immediately so the animation uses the new deadline
       if (curr > 0) {
         deadlineMsStableRef.current = curr;
       }
       
-      // ALWAYS restart animation on new turn to reset from 100%
       // Cancel existing animation first to prevent overlap
       if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current);
@@ -136,7 +134,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
         startAnimation();
       }
     }
-  }, [deadlineMs, total, isTimeBankPhase, startAnimation]);
+  }, [deadlineMs, total, startAnimation]);
 
   const progress = total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;
 
