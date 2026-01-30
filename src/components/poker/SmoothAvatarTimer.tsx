@@ -1,13 +1,16 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Style
-// Designed to stay visually smooth even when parent updates `remaining` every second.
+// REFACTORED: Uses deadlineMs (timestamp) instead of remaining to avoid resync issues
 // Supports Time Bank phase with distinct blue coloring and enhanced pulsation
-// CRITICAL: Timer MUST reset on every new turn (detected via remaining jump or total change)
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { isTimerCritical, getTimerColorHex, getTimerGlowColor, POKERSTARS_TIMER } from '@/constants/pokerTimerConfig';
 
 interface SmoothAvatarTimerProps {
-  remaining: number;
+  /** DEPRECATED: Use deadlineMs instead. Kept for backward compatibility */
+  remaining?: number;
+  /** Timestamp (ms) when the timer expires. Primary prop for smooth animation */
+  deadlineMs?: number;
+  /** Total duration in seconds for progress calculation */
   total: number;
   size: number;
   strokeWidth?: number;
@@ -19,7 +22,8 @@ interface SmoothAvatarTimerProps {
 }
 
 export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
-  remaining,
+  remaining: remainingProp,
+  deadlineMs,
   total,
   size,
   strokeWidth = 4,
@@ -27,35 +31,41 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   isTimeBankPhase = false,
   timeBankRemaining
 }: SmoothAvatarTimerProps) {
-  const [currentRemaining, setCurrentRemaining] = useState(remaining);
+  const [currentRemaining, setCurrentRemaining] = useState(() => {
+    if (deadlineMs) {
+      return Math.max(0, (deadlineMs - Date.now()) / 1000);
+    }
+    return remainingProp ?? total;
+  });
 
   const animationRef = useRef<number | null>(null);
-  const startTimeRef = useRef<number>(Date.now());
-  const startRemainingRef = useRef<number>(remaining);
-
-  // Keep a ref in sync so we can measure drift vs. incoming props.
-  const currentRemainingRef = useRef<number>(remaining);
+  const lastDeadlineMsRef = useRef<number | null>(deadlineMs ?? null);
   const lastTotalRef = useRef<number>(total);
   const lastTimeBankPhaseRef = useRef<boolean>(isTimeBankPhase);
-  const lastRemainingRef = useRef<number>(remaining);
-  // CRITICAL FIX: Track previous remaining to detect significant jumps (new turn)
-  const lastPropsRemainingRef = useRef<number>(remaining);
+  // For backward compatibility with remaining prop
+  const lastRemainingPropRef = useRef<number | undefined>(remainingProp);
 
-  const startAnimation = (startRemaining: number) => {
+  // Start/restart the 60fps animation loop
+  const startAnimation = (initialRemaining: number) => {
     if (animationRef.current !== null) {
       cancelAnimationFrame(animationRef.current);
     }
 
-    startTimeRef.current = Date.now();
-    startRemainingRef.current = startRemaining;
-    currentRemainingRef.current = startRemaining;
-    setCurrentRemaining(startRemaining);
+    const startTime = Date.now();
+    const startRemaining = initialRemaining;
 
     const animate = () => {
-      const elapsed = (Date.now() - startTimeRef.current) / 1000;
-      const newRemaining = Math.max(0, startRemainingRef.current - elapsed);
+      let newRemaining: number;
+      
+      if (deadlineMs && deadlineMs > 0) {
+        // PRIMARY: Calculate from deadline timestamp (most accurate)
+        newRemaining = Math.max(0, (deadlineMs - Date.now()) / 1000);
+      } else {
+        // FALLBACK: Calculate from elapsed time since animation start
+        const elapsed = (Date.now() - startTime) / 1000;
+        newRemaining = Math.max(0, startRemaining - elapsed);
+      }
 
-      currentRemainingRef.current = newRemaining;
       setCurrentRemaining(newRemaining);
 
       if (newRemaining > 0) {
@@ -68,13 +78,13 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     animationRef.current = requestAnimationFrame(animate);
   };
 
-  // Start once on mount.
+  // Initial mount
   useEffect(() => {
-    startAnimation(remaining);
-    lastTotalRef.current = total;
-    lastTimeBankPhaseRef.current = isTimeBankPhase;
-    lastRemainingRef.current = remaining;
-    lastPropsRemainingRef.current = remaining;
+    const initialRemaining = deadlineMs 
+      ? Math.max(0, (deadlineMs - Date.now()) / 1000)
+      : (remainingProp ?? total);
+    
+    startAnimation(initialRemaining);
 
     return () => {
       if (animationRef.current !== null) {
@@ -84,56 +94,44 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-sync only on *meaningful* changes.
-  // This avoids restarting the animation every second (which causes "спешит/опаздывает").
-  // 
-  // CRITICAL FIX: Increased drift threshold from 1.25s to 3s.
-  // The parent component (FullscreenPokerTableWrapper) updates `remaining` every 200ms via setInterval.
-  // With a 1.25s threshold, small timing discrepancies between the parent's calculation
-  // and this component's internal RAF loop caused constant "resync" triggers,
-  // making the ring animation jump/restart repeatedly.
+  // React to meaningful changes
   useEffect(() => {
     const totalChanged = total !== lastTotalRef.current;
     const timeBankPhaseChanged = isTimeBankPhase !== lastTimeBankPhaseRef.current;
     
-    // Drift between props and internal animation
-    const drift = Math.abs(remaining - currentRemainingRef.current);
+    // Deadline-based detection (primary)
+    let deadlineChanged = false;
+    if (deadlineMs !== undefined && deadlineMs !== null) {
+      const prevDeadline = lastDeadlineMsRef.current;
+      // New deadline is significantly different (more than 2 seconds)
+      deadlineChanged = prevDeadline === null || Math.abs(deadlineMs - prevDeadline) > 2000;
+      lastDeadlineMsRef.current = deadlineMs;
+    }
     
-    // NEW TURN DETECTION: remaining jumped UP significantly from internal state
-    // This means a new turn started (timer reset to full)
-    const jumpedUp = remaining > currentRemainingRef.current + 2;
-    
-    // Also detect jumps from the PROPS perspective (server sent higher remaining than before)
-    const propsJumpedUp = remaining > lastPropsRemainingRef.current + 2;
-    
-    // Detect reset to full duration (new turn just started)
-    const isNearTotal = total > 0 && remaining >= total - 1;
-    const wasNotNearTotal = lastPropsRemainingRef.current < total - 3;
-    const resetToFull = isNearTotal && wasNotNearTotal;
-    
-    lastPropsRemainingRef.current = remaining;
-    lastRemainingRef.current = remaining;
+    // Backward compatibility: remaining prop jump detection
+    let remainingJumped = false;
+    if (remainingProp !== undefined && !deadlineMs) {
+      const prevRemaining = lastRemainingPropRef.current ?? 0;
+      // Remaining jumped up by more than 2 seconds (new turn)
+      remainingJumped = remainingProp > prevRemaining + 2;
+      lastRemainingPropRef.current = remainingProp;
+    }
 
-    // RESYNC CONDITIONS:
-    // 1. Total duration changed (phase change, time bank activation)
-    // 2. Time bank phase changed
-    // 3. Timer jumped UP (new turn started)
-    // 4. Props jumped UP (server reset)
-    // 5. Reset to full (new turn)
-    // 6. Large drift (>3s) - only for major desync correction
-    //
-    // NOTE: Drift threshold raised to 3s to prevent constant resyncs from 200ms update interval
-    const needsResync = totalChanged || timeBankPhaseChanged || jumpedUp || propsJumpedUp || resetToFull || drift > 3;
+    const needsRestart = totalChanged || timeBankPhaseChanged || deadlineChanged || remainingJumped;
 
-    if (needsResync) {
+    if (needsRestart) {
       lastTotalRef.current = total;
       lastTimeBankPhaseRef.current = isTimeBankPhase;
-      startAnimation(remaining);
+      
+      const newRemaining = deadlineMs 
+        ? Math.max(0, (deadlineMs - Date.now()) / 1000)
+        : (remainingProp ?? total);
+      
+      startAnimation(newRemaining);
     }
-  }, [remaining, total, isTimeBankPhase]);
+  }, [deadlineMs, remainingProp, total, isTimeBankPhase]);
 
-  const progress =
-    total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;
+  const progress = total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;
 
   const radius = size / 2 - strokeWidth / 2;
   const circumference = 2 * Math.PI * radius;
