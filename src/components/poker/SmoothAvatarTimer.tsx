@@ -1,7 +1,8 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Style
 // Designed to stay visually smooth even when parent updates `remaining` every second.
 // Supports Time Bank phase with distinct blue coloring and enhanced pulsation
-// CRITICAL: Timer MUST reset on every new turn (detected via remaining jump or total change)
+// CRITICAL: Timer MUST reset on every new turn - now uses turnKey prop for reliable detection
+// The turnKey changes on every turn transition (includes handId, phase, seat, actionStartTime)
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { isTimerCritical, getTimerColorHex, getTimerGlowColor, POKERSTARS_TIMER } from '@/constants/pokerTimerConfig';
@@ -16,6 +17,13 @@ interface SmoothAvatarTimerProps {
   isTimeBankPhase?: boolean;
   /** Current player's total time bank (for secondary indicator) */
   timeBankRemaining?: number;
+  /** 
+   * CRITICAL: Unique key that changes on every turn transition.
+   * When this changes, the timer animation resets to full.
+   * Without this, if player A uses 10s and player B gets the same 25s total,
+   * the timer may not reset visually because remaining/total didn't change.
+   */
+  turnKey?: string;
 }
 
 export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
@@ -25,7 +33,8 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   strokeWidth = 4,
   className,
   isTimeBankPhase = false,
-  timeBankRemaining
+  timeBankRemaining,
+  turnKey
 }: SmoothAvatarTimerProps) {
   const [currentRemaining, setCurrentRemaining] = useState(remaining);
 
@@ -38,7 +47,9 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const lastTotalRef = useRef<number>(total);
   const lastTimeBankPhaseRef = useRef<boolean>(isTimeBankPhase);
   const lastRemainingRef = useRef<number>(remaining);
-  // CRITICAL FIX: Track previous remaining to detect significant jumps (new turn)
+  // CRITICAL: Track turnKey to detect turn changes
+  const lastTurnKeyRef = useRef<string | undefined>(turnKey);
+  // Track previous remaining to detect significant jumps (new turn)
   const lastPropsRemainingRef = useRef<number>(remaining);
 
   const startAnimation = (startRemaining: number) => {
@@ -75,6 +86,7 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     lastTimeBankPhaseRef.current = isTimeBankPhase;
     lastRemainingRef.current = remaining;
     lastPropsRemainingRef.current = remaining;
+    lastTurnKeyRef.current = turnKey;
 
     return () => {
       if (animationRef.current !== null) {
@@ -92,6 +104,10 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     const drift = Math.abs(remaining - currentRemainingRef.current);
     const jumpedUp = remaining > currentRemainingRef.current + 0.75; // new turn / time bank
     
+    // CRITICAL FIX: Detect turn change via turnKey prop
+    // This is the most reliable way - if turnKey changes, it's definitely a new turn
+    const turnKeyChanged = turnKey !== undefined && turnKey !== lastTurnKeyRef.current;
+    
     // CRITICAL FIX: Detect when remaining changed significantly from PROPS perspective
     // This catches the case when server sends new actionStartTime with same remaining
     // For example: player acted, turn moved to next player who also gets 25s
@@ -105,18 +121,20 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     
     lastPropsRemainingRef.current = remaining;
     lastRemainingRef.current = remaining;
+    lastTurnKeyRef.current = turnKey;
 
     // If server corrects the remaining time by more than ~1.25s, re-sync.
     // Also resync when time bank phase changes (important visual transition)
     // Also resync when props indicate a new turn started
-    const needsResync = totalChanged || timeBankPhaseChanged || jumpedUp || propsJumpedUp || resetToFull || drift > 1.25;
+    // CRITICAL: turnKeyChanged is the PRIMARY reset trigger
+    const needsResync = turnKeyChanged || totalChanged || timeBankPhaseChanged || jumpedUp || propsJumpedUp || resetToFull || drift > 1.25;
 
     if (needsResync) {
       lastTotalRef.current = total;
       lastTimeBankPhaseRef.current = isTimeBankPhase;
       startAnimation(remaining);
     }
-  }, [remaining, total, isTimeBankPhase]);
+  }, [remaining, total, isTimeBankPhase, turnKey]);
 
   const progress =
     total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;

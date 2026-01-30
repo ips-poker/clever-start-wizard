@@ -1560,6 +1560,7 @@ export function FullscreenPokerTableWrapper({
             showdownReveals={showdownReveals}
             winnerAnnouncement={winnerAnnouncement}
             activeBurnCard={activeBurnCard}
+            timerResetKey={timerResetKey}
           />
         </div>
 

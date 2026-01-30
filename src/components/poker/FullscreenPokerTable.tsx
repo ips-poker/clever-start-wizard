@@ -499,6 +499,8 @@ interface PlayerSeatProps {
   // POKERSTARS-STYLE: Sequential card dealing sync
   dealOrder?: number; // Order in which this player receives cards (0 = first from dealer)
   handId?: string;    // Unique hand ID to reset animations on new hands
+  // CRITICAL: Timer reset key - changes on every turn transition
+  timerResetKey?: string;
 }
 
 // ============= ACTION BADGE - PPPoker style status above player =============
@@ -566,7 +568,9 @@ const PlayerSeat = memo(function PlayerSeat({
   displayFormat = 'chips',
   // POKERSTARS-STYLE: Sequential card dealing
   dealOrder = 0,
-  handId
+  handId,
+  // CRITICAL: Timer reset key - changes on every turn transition
+  timerResetKey
 }: PlayerSeatProps & { lastAction?: string }) {
   // Avatar sizes - same for all players
   const avatarSize = 56;
@@ -917,6 +921,7 @@ const PlayerSeat = memo(function PlayerSeat({
               size={avatarSize + 6}
               strokeWidth={3}
               isTimeBankPhase={isTimeBankActive}
+              turnKey={timerResetKey}
             />
           </div>
         )}
@@ -1689,6 +1694,8 @@ export interface FullscreenPokerTableProps {
     phase: 'flop' | 'turn' | 'river';
     timestamp: number;
   } | null;
+  // CRITICAL: Timer reset key - changes on every turn transition for proper ring animation reset
+  timerResetKey?: string;
 }
 
 export const FullscreenPokerTable = memo(function FullscreenPokerTable({
@@ -1732,7 +1739,9 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   phaseTimings,
   showdownReveals,
   winnerAnnouncement,
-  activeBurnCard
+  activeBurnCard,
+  // CRITICAL: Timer reset key
+  timerResetKey
 }: FullscreenPokerTableProps) {
   // DEBUG: Log tableState to verify handId is received
   console.log('[FullscreenPokerTable] RENDER:', { 
@@ -2037,6 +2046,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
                   : 0
               }
               handId={handId}
+              timerResetKey={player?.seatNumber === currentPlayerSeat ? timerResetKey : undefined}
             />
 
             {/* Bet amount (incl. SB/BB fallback) - anchored to avatar center in table coordinates */}
