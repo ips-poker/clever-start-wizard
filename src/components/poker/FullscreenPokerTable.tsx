@@ -487,6 +487,7 @@ interface PlayerSeatProps {
   isCurrentTurn: boolean;
   turnTimeRemaining?: number;
   turnTimeTotal?: number;
+  turnDeadlineMs?: number; // Timestamp when timer expires - for smooth animation
   isTimeBankActive?: boolean; // POKERSTARS-STYLE: Time bank phase
   timeBankRemaining?: number;  // PPPoker-STYLE: Remaining time bank seconds for alarm badge
   timeBankTotalSeconds?: number; // PPPoker-STYLE: Total seconds for the current time bank slice
@@ -555,6 +556,7 @@ const PlayerSeat = memo(function PlayerSeat({
   isCurrentTurn,
   turnTimeRemaining,
   turnTimeTotal = 15,
+  turnDeadlineMs,
   isTimeBankActive = false,
   timeBankRemaining = 0,
   timeBankTotalSeconds = 30,
@@ -571,7 +573,7 @@ const PlayerSeat = memo(function PlayerSeat({
   // POKERSTARS-STYLE: Sequential card dealing
   dealOrder = 0,
   handId
-}: PlayerSeatProps & { lastAction?: string }) {
+}: PlayerSeatProps & { lastAction?: string; turnDeadlineMs?: number }) {
   // Avatar sizes - same for all players
   const avatarSize = 56;
   
@@ -917,6 +919,7 @@ const PlayerSeat = memo(function PlayerSeat({
           >
             <SmoothAvatarTimer 
               remaining={turnTimeRemaining} 
+              deadlineMs={turnDeadlineMs}
               total={turnTimeTotal}
               size={avatarSize + 6}
               strokeWidth={3}
@@ -1623,6 +1626,7 @@ export interface FullscreenPokerTableProps {
   currentPlayerSeat: number | null;
   turnTimeRemaining?: number;
   turnTimeTotal?: number;
+  turnDeadlineMs?: number; // Timestamp when timer expires - for smooth animation
   isTimeBankActive?: boolean; // POKERSTARS-STYLE: Time bank phase indicator
   timeBankRemaining?: number;  // PPPoker-STYLE: Remaining time bank for alarm badge
   timeBankTotalSeconds?: number; // PPPoker-STYLE: Total seconds for the current time bank slice
@@ -1709,6 +1713,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   currentPlayerSeat,
   turnTimeRemaining,
   turnTimeTotal,
+  turnDeadlineMs,
   isTimeBankActive,
   timeBankRemaining = 0,
   timeBankTotalSeconds = 30,
@@ -2022,6 +2027,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               isCurrentTurn={player?.seatNumber === currentPlayerSeat}
               turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
               turnTimeTotal={turnTimeTotal}
+              turnDeadlineMs={player?.seatNumber === currentPlayerSeat ? turnDeadlineMs : undefined}
               isTimeBankActive={player?.seatNumber === currentPlayerSeat ? isTimeBankActive : false}
               timeBankRemaining={player?.seatNumber === currentPlayerSeat ? timeBankRemaining : 0}
               timeBankTotalSeconds={player?.seatNumber === currentPlayerSeat ? timeBankTotalSeconds : undefined}

@@ -1754,6 +1754,7 @@ export function FullscreenPokerTableWrapper({
             currentPlayerSeat={currentPlayerSeat}
             turnTimeRemaining={displayTurnTimeRemaining ?? undefined}
             turnTimeTotal={displayTurnTimeTotal}
+            turnDeadlineMs={deadlineMsRef.current > 0 ? deadlineMsRef.current : undefined}
             isTimeBankActive={timeBankUiActive}
             timeBankRemaining={timeBankUiActive ? (displayTurnTimeRemaining ?? timeBankSliceSeconds) : (currentTurnPlayerTimeBank || timeBankSliceSeconds)}
             timeBankTotalSeconds={timeBankUiActive ? displayTurnTimeTotal : timeBankSliceSeconds}
