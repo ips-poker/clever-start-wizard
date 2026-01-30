@@ -2431,7 +2431,6 @@ export type Database = {
         Returns: Json
       }
       cleanup_stale_hands_and_consolidate: { Args: never; Returns: Json }
-      cleanup_stuck_hands_aggressive: { Args: never; Returns: Json }
       cleanup_stuck_hands_watchdog: {
         Args: { p_timeout_seconds?: number }
         Returns: Json

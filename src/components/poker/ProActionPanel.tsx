@@ -257,38 +257,40 @@ export const ProActionPanel = memo(function ProActionPanel({
     if (!isMyTurn) setShowSlider(false);
   }, [isMyTurn]);
 
-  // Execute pre-action IMMEDIATELY (no delay for instant response)
+  // Execute pre-action
   useEffect(() => {
     if (isMyTurn && preAction && !disabled) {
-      // Execute immediately - no setTimeout delay
-      switch (preAction) {
-        case 'fold': 
-          sounds.playFold();
-          onFold(); 
-          break;
-        case 'check': 
-          if (canCheck) {
-            sounds.playCheck();
-            onCheck();
-          }
-          break;
-        case 'call': 
-          if (!canCheck && callAmount <= myStack) {
-            sounds.playCall();
-            onCall();
-          }
-          break;
-        case 'callAny':
-          if (canCheck) {
-            sounds.playCheck();
-            onCheck();
-          } else if (callAmount <= myStack) {
-            sounds.playCall();
-            onCall();
-          }
-          break;
-      }
-      setPreAction(null);
+      const timeout = setTimeout(() => {
+        switch (preAction) {
+          case 'fold': 
+            sounds.playFold();
+            onFold(); 
+            break;
+          case 'check': 
+            if (canCheck) {
+              sounds.playCheck();
+              onCheck();
+            }
+            break;
+          case 'call': 
+            if (!canCheck && callAmount <= myStack) {
+              sounds.playCall();
+              onCall();
+            }
+            break;
+          case 'callAny':
+            if (canCheck) {
+              sounds.playCheck();
+              onCheck();
+            } else if (callAmount <= myStack) {
+              sounds.playCall();
+              onCall();
+            }
+            break;
+        }
+        setPreAction(null);
+      }, 200);
+      return () => clearTimeout(timeout);
     }
   }, [isMyTurn, preAction, canCheck, callAmount, myStack, disabled, onFold, onCheck, onCall, sounds]);
 
@@ -308,7 +310,7 @@ export const ProActionPanel = memo(function ProActionPanel({
   // Handle raise confirm
   const handleRaiseConfirm = useCallback(() => {
     const finalAmount = roundToSB(Math.max(raiseAmount, minRaise));
-    // Debug removed for production - console.log causes jank
+    console.log('[ProActionPanel] handleRaiseConfirm - finalAmount:', finalAmount, 'minRaise:', minRaise, 'maxRaise:', maxRaise);
     sounds.playRaise();
     onRaise(finalAmount);
     setShowSlider(false);
@@ -585,7 +587,7 @@ export const ProActionPanel = memo(function ProActionPanel({
             subLabel={formatAmount(raiseAmount)}
             variant="raise"
             onClick={() => {
-              // Debug removed for production
+              console.log('[ProActionPanel] Confirm clicked, raiseAmount:', raiseAmount, 'minRaise:', minRaise, 'maxRaise:', maxRaise);
               handleRaiseConfirm();
             }}
             disabled={disabled}
@@ -600,7 +602,7 @@ export const ProActionPanel = memo(function ProActionPanel({
             label={currentBet > 0 ? "Raise" : "Bet"}
             variant="raise"
             onClick={() => {
-              // Debug removed for production
+              console.log('[ProActionPanel] Raise/Bet clicked, opening slider. minRaise:', minRaise, 'maxRaise:', maxRaise, 'myStack:', myStack, 'currentBet:', currentBet);
               setShowSlider(true);
             }}
             disabled={disabled || minRaise > maxRaise}

@@ -3,10 +3,6 @@
 // =====================================================
 // Used to highlight winning cards during showdown (like PPPoker)
 
-// Debug logs OFF by default - can spam console and degrade performance
-// Enable: localStorage.setItem('POKER_SHOWDOWN_DEBUG','1')
-const DEBUG_SHOWDOWN = localStorage.getItem('POKER_SHOWDOWN_DEBUG') === '1';
-
 interface Card {
   rank: number;  // 2-14 (14 = Ace)
   suit: string;
@@ -346,7 +342,7 @@ export function evaluateShowdown(
   const parsedHole = holeCards.map(parseCard).filter((c): c is Card => c !== null);
   const parsedComm = communityCards.map(parseCard).filter((c): c is Card => c !== null);
   
-  DEBUG_SHOWDOWN && console.log('[evaluateShowdown] Input:', { 
+  console.log('[evaluateShowdown] Input:', { 
     holeCards, 
     communityCards,
     parsedHole: parsedHole.map(cardToString),
@@ -354,7 +350,7 @@ export function evaluateShowdown(
   });
   
   if (parsedHole.length < 2 || parsedComm.length < 3) {
-    DEBUG_SHOWDOWN && console.log('[evaluateShowdown] Not enough cards, returning null');
+    console.log('[evaluateShowdown] Not enough cards, returning null');
     return null;
   }
   
@@ -373,7 +369,7 @@ export function evaluateShowdown(
     const allCards = [...parsedHole, ...parsedComm];
     bestHand = findBestHand(allCards);
     
-    DEBUG_SHOWDOWN && console.log('[evaluateShowdown] Best hand found:', {
+    console.log('[evaluateShowdown] Best hand found:', {
       handType: bestHand.handType,
       rank: bestHand.rank,
       cards: bestHand.cards.map(cardToString),
@@ -398,7 +394,7 @@ export function evaluateShowdown(
           holeUsedIndices.push(i);
           holeMatched[i] = true;
           found = true;
-          DEBUG_SHOWDOWN && console.log(`[evaluateShowdown] Card ${cardToString(usedCard)} matched to HOLE index ${i}`);
+          console.log(`[evaluateShowdown] Card ${cardToString(usedCard)} matched to HOLE index ${i}`);
           break;
         }
       }
@@ -410,7 +406,7 @@ export function evaluateShowdown(
             commUsedIndices.push(i);
             commMatched[i] = true;
             found = true;
-            DEBUG_SHOWDOWN && console.log(`[evaluateShowdown] Card ${cardToString(usedCard)} matched to COMM index ${i}`);
+            console.log(`[evaluateShowdown] Card ${cardToString(usedCard)} matched to COMM index ${i}`);
             break;
           }
         }
@@ -432,7 +428,7 @@ export function evaluateShowdown(
     bestFiveCards: bestHand.cards.map(cardToString)
   };
   
-  DEBUG_SHOWDOWN && console.log('[evaluateShowdown] RESULT:', result);
+  console.log('[evaluateShowdown] RESULT:', result);
   
   return result;
 }

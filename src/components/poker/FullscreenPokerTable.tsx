@@ -46,10 +46,6 @@ import { SitOutIndicator, SitOutOverlay } from './SitOutIndicator';
 import { WaitForBBIndicator } from './WaitForBBIndicator';
 import { CARD_DEAL_TIMINGS, HAND_TRANSITION_TIMINGS } from '@/config/pokerTimings';
 
-// Constant render logging can cause noticeable jank (especially on mobile/Telegram WebView).
-// OFF by default even in dev. Enable only when needed: localStorage.setItem('POKER_RENDER_DEBUG','1')
-const DEBUG_TABLE = localStorage.getItem('POKER_RENDER_DEBUG') === '1';
-
 // ============= SUIT CONFIGURATION =============
 const SUITS = {
   h: { symbol: '♥', color: '#ef4444', name: 'hearts' },
@@ -487,7 +483,6 @@ interface PlayerSeatProps {
   isCurrentTurn: boolean;
   turnTimeRemaining?: number;
   turnTimeTotal?: number;
-  turnDeadlineMs?: number; // Timestamp when timer expires - for smooth animation
   isTimeBankActive?: boolean; // POKERSTARS-STYLE: Time bank phase
   timeBankRemaining?: number;  // PPPoker-STYLE: Remaining time bank seconds for alarm badge
   timeBankTotalSeconds?: number; // PPPoker-STYLE: Total seconds for the current time bank slice
@@ -556,7 +551,6 @@ const PlayerSeat = memo(function PlayerSeat({
   isCurrentTurn,
   turnTimeRemaining,
   turnTimeTotal = 15,
-  turnDeadlineMs,
   isTimeBankActive = false,
   timeBankRemaining = 0,
   timeBankTotalSeconds = 30,
@@ -573,7 +567,7 @@ const PlayerSeat = memo(function PlayerSeat({
   // POKERSTARS-STYLE: Sequential card dealing
   dealOrder = 0,
   handId
-}: PlayerSeatProps & { lastAction?: string; turnDeadlineMs?: number }) {
+}: PlayerSeatProps & { lastAction?: string }) {
   // Avatar sizes - same for all players
   const avatarSize = 56;
   
@@ -919,7 +913,6 @@ const PlayerSeat = memo(function PlayerSeat({
           >
             <SmoothAvatarTimer 
               remaining={turnTimeRemaining} 
-              deadlineMs={turnDeadlineMs}
               total={turnTimeTotal}
               size={avatarSize + 6}
               strokeWidth={3}
@@ -1626,7 +1619,6 @@ export interface FullscreenPokerTableProps {
   currentPlayerSeat: number | null;
   turnTimeRemaining?: number;
   turnTimeTotal?: number;
-  turnDeadlineMs?: number; // Timestamp when timer expires - for smooth animation
   isTimeBankActive?: boolean; // POKERSTARS-STYLE: Time bank phase indicator
   timeBankRemaining?: number;  // PPPoker-STYLE: Remaining time bank for alarm badge
   timeBankTotalSeconds?: number; // PPPoker-STYLE: Total seconds for the current time bank slice
@@ -1713,7 +1705,6 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   currentPlayerSeat,
   turnTimeRemaining,
   turnTimeTotal,
-  turnDeadlineMs,
   isTimeBankActive,
   timeBankRemaining = 0,
   timeBankTotalSeconds = 30,
@@ -1743,12 +1734,12 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   winnerAnnouncement,
   activeBurnCard
 }: FullscreenPokerTableProps) {
-  // DEBUG: Log tableState to verify handId is received (debug only)
-  DEBUG_TABLE && console.log('[FullscreenPokerTable] RENDER:', {
+  // DEBUG: Log tableState to verify handId is received
+  console.log('[FullscreenPokerTable] RENDER:', { 
     handId: (tableState as any)?.handId,
     phase,
     dealerSeat,
-    playerCount: players.length,
+    playerCount: players.length
   });
   
   // Use dynamic positions based on max seats
@@ -1923,7 +1914,7 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
   // Debug: log handId and dealOrderMap for synchronization verification
   React.useEffect(() => {
     if (handId) {
-      DEBUG_TABLE && console.log('[FullscreenPokerTable] Hand sync data:', {
+      console.log('[FullscreenPokerTable] Hand sync data:', {
         handId,
         dealerSeat,
         dealOrderMap: Object.fromEntries(dealOrderMap),
@@ -2027,7 +2018,6 @@ export const FullscreenPokerTable = memo(function FullscreenPokerTable({
               isCurrentTurn={player?.seatNumber === currentPlayerSeat}
               turnTimeRemaining={player?.seatNumber === currentPlayerSeat ? turnTimeRemaining : undefined}
               turnTimeTotal={turnTimeTotal}
-              turnDeadlineMs={player?.seatNumber === currentPlayerSeat ? turnDeadlineMs : undefined}
               isTimeBankActive={player?.seatNumber === currentPlayerSeat ? isTimeBankActive : false}
               timeBankRemaining={player?.seatNumber === currentPlayerSeat ? timeBankRemaining : 0}
               timeBankTotalSeconds={player?.seatNumber === currentPlayerSeat ? timeBankTotalSeconds : undefined}

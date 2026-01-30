@@ -74,9 +74,12 @@ export function useTimeBankFallback({
   // IMPORTANT: This is a FALLBACK visual - if server is correctly sending seat-specific
   // time_bank_activated events, this may not be needed. But we keep it for edge cases.
   useEffect(() => {
-    // CRITICAL: isMyTurn must be EXPLICITLY true, not just truthy
-    // This prevents activation when isMyTurn is undefined/null
-    if (isMyTurn !== true) {
+    // CRITICAL: Only activate if:
+    // 1. Server says time bank phase is active
+    // 2. It's the HERO's turn (isMyTurn === true)
+    // 3. Hero has time bank remaining
+    // 4. Fallback not already activated for this turn
+    if (!isMyTurn) {
       // Not hero's turn - NEVER show time bank fallback for opponents
       return;
     }
@@ -103,9 +106,8 @@ export function useTimeBankFallback({
     if (serverIsTimeBankPhase) return;
     // Already activated for this turn
     if (activatedForTurnRef.current === currentTurnId && fallback) return;
-    // CRITICAL: isMyTurn must be EXPLICITLY true, not just truthy
-    // This prevents activation when isMyTurn is undefined/null
-    if (isMyTurn !== true) return;
+    // NOT the hero's turn - don't activate fallback for other players
+    if (!isMyTurn) return;
 
     const remaining = mainTurnRemaining ?? null;
     const tb = Number(currentPlayerTimeBank ?? 0);
@@ -119,8 +121,8 @@ export function useTimeBankFallback({
     if (!Number.isFinite(slice) || slice <= 0) return;
     if (!Number.isFinite(tb) || tb <= 0) return;
 
-    // FIX: Use threshold of 0.5s — the timer now updates at 1Hz which is reliable enough.
-    // Previously 1.5s caused premature alarm. 0.5s catches the last second smoothly.
+    // FIX: Use a slightly higher threshold (0.5s) to catch near-zero states
+    // since timer updates at 200ms intervals
     const mainExpired =
       (remaining !== null && remaining <= 0.5) ||
       minMainRemainingThisTurnRef.current <= 0.5;

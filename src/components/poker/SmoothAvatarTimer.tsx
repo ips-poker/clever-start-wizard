@@ -1,16 +1,13 @@
 // Smooth 60fps Timer Ring Around Avatar - PokerStars Style
-// REFACTORED: Uses deadlineMs (timestamp) instead of remaining to avoid resync issues
+// Designed to stay visually smooth even when parent updates `remaining` every second.
 // Supports Time Bank phase with distinct blue coloring and enhanced pulsation
-import React, { memo, useEffect, useRef, useState, useCallback } from 'react';
+// CRITICAL: Timer MUST reset on every new turn (detected via remaining jump or total change)
+import React, { memo, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { isTimerCritical, getTimerColorHex, getTimerGlowColor, POKERSTARS_TIMER } from '@/constants/pokerTimerConfig';
 
 interface SmoothAvatarTimerProps {
-  /** DEPRECATED: Use deadlineMs instead. Kept for backward compatibility */
-  remaining?: number;
-  /** Timestamp (ms) when the timer expires. Primary prop for smooth animation */
-  deadlineMs?: number;
-  /** Total duration in seconds for progress calculation */
+  remaining: number;
   total: number;
   size: number;
   strokeWidth?: number;
@@ -22,8 +19,7 @@ interface SmoothAvatarTimerProps {
 }
 
 export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
-  remaining: remainingProp,
-  deadlineMs,
+  remaining,
   total,
   size,
   strokeWidth = 4,
@@ -31,112 +27,99 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   isTimeBankPhase = false,
   timeBankRemaining
 }: SmoothAvatarTimerProps) {
-  // Current remaining is calculated locally via RAF; no external state updates cause re-renders.
-  const [currentRemaining, setCurrentRemaining] = useState(() => {
-    if (deadlineMs && deadlineMs > 0) {
-      return Math.max(0, (deadlineMs - Date.now()) / 1000);
-    }
-    return remainingProp ?? total;
-  });
+  const [currentRemaining, setCurrentRemaining] = useState(remaining);
 
   const animationRef = useRef<number | null>(null);
-  // Store values to detect meaningful changes
-  const prevDeadlineMsRef = useRef<number | null>(deadlineMs ?? null);
-  const prevTotalRef = useRef<number>(total);
-  const prevTimeBankPhaseRef = useRef<boolean>(isTimeBankPhase);
-  // Store deadline in ref for stable animation loop closure
-  const deadlineMsStableRef = useRef<number>(deadlineMs ?? 0);
+  const startTimeRef = useRef<number>(Date.now());
+  const startRemainingRef = useRef<number>(remaining);
 
-  // Update stable ref when deadlineMs prop changes
-  useEffect(() => {
-    if (deadlineMs && deadlineMs > 0) {
-      deadlineMsStableRef.current = deadlineMs;
-    }
-  }, [deadlineMs]);
+  // Keep a ref in sync so we can measure drift vs. incoming props.
+  const currentRemainingRef = useRef<number>(remaining);
+  const lastTotalRef = useRef<number>(total);
+  const lastTimeBankPhaseRef = useRef<boolean>(isTimeBankPhase);
+  const lastRemainingRef = useRef<number>(remaining);
+  // CRITICAL FIX: Track previous remaining to detect significant jumps (new turn)
+  const lastPropsRemainingRef = useRef<number>(remaining);
 
-  // Start/restart the 60fps animation loop - uses ref for deadline so it auto-follows updates
-  const startAnimation = useCallback(() => {
+  const startAnimation = (startRemaining: number) => {
     if (animationRef.current !== null) {
       cancelAnimationFrame(animationRef.current);
     }
 
+    startTimeRef.current = Date.now();
+    startRemainingRef.current = startRemaining;
+    currentRemainingRef.current = startRemaining;
+    setCurrentRemaining(startRemaining);
+
     const animate = () => {
-      const dl = deadlineMsStableRef.current;
-      if (dl > 0) {
-        const newRemaining = Math.max(0, (dl - Date.now()) / 1000);
-        setCurrentRemaining(newRemaining);
-        if (newRemaining > 0) {
-          animationRef.current = requestAnimationFrame(animate);
-        } else {
-          animationRef.current = null;
-        }
+      const elapsed = (Date.now() - startTimeRef.current) / 1000;
+      const newRemaining = Math.max(0, startRemainingRef.current - elapsed);
+
+      currentRemainingRef.current = newRemaining;
+      setCurrentRemaining(newRemaining);
+
+      if (newRemaining > 0) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        animationRef.current = null;
       }
     };
 
     animationRef.current = requestAnimationFrame(animate);
-  }, []);
+  };
 
-  // Initial mount - start animation
+  // Start once on mount.
   useEffect(() => {
-    startAnimation();
+    startAnimation(remaining);
+    lastTotalRef.current = total;
+    lastTimeBankPhaseRef.current = isTimeBankPhase;
+    lastRemainingRef.current = remaining;
+    lastPropsRemainingRef.current = remaining;
+
     return () => {
       if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [startAnimation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // React ONLY to meaningful prop changes (deadline jump, total change)
-  // CRITICAL FIX v5: REMOVED isTimeBankPhase from triggers!
-  // isTimeBankPhase change should NOT restart animation - ring continues counting down,
-  // only color changes (handled via strokeColor prop).
+  // Re-sync only on *meaningful* changes.
+  // This avoids restarting the animation every second (which causes "спешит/опаздывает").
   useEffect(() => {
-    const totalChanged = total !== prevTotalRef.current;
+    const totalChanged = total !== lastTotalRef.current;
+    const timeBankPhaseChanged = isTimeBankPhase !== lastTimeBankPhaseRef.current;
+    const drift = Math.abs(remaining - currentRemainingRef.current);
+    const jumpedUp = remaining > currentRemainingRef.current + 0.75; // new turn / time bank
+    
+    // CRITICAL FIX: Detect when remaining changed significantly from PROPS perspective
+    // This catches the case when server sends new actionStartTime with same remaining
+    // For example: player acted, turn moved to next player who also gets 25s
+    // The key insight: if remaining jumps UP from what we received in last props, it's a new turn
+    const propsJumpedUp = remaining > lastPropsRemainingRef.current + 1;
+    
+    // Also detect when remaining is close to total (new turn just started)
+    const isNearTotal = total > 0 && remaining >= total - 1;
+    const wasNotNearTotal = lastPropsRemainingRef.current < total - 2;
+    const resetToFull = isNearTotal && wasNotNearTotal;
+    
+    lastPropsRemainingRef.current = remaining;
+    lastRemainingRef.current = remaining;
 
-    // Deadline jump detection: only restart if difference > 2 seconds (new turn)
-    let deadlineJumped = false;
-    const prev = prevDeadlineMsRef.current;
-    const curr = deadlineMs ?? 0;
-    if (curr > 0 && prev !== null) {
-      const diffMs = Math.abs(curr - prev);
-      deadlineJumped = diffMs > 2000;
-    } else if (curr > 0 && prev === null) {
-      // First time getting a valid deadline
-      deadlineJumped = true;
+    // If server corrects the remaining time by more than ~1.25s, re-sync.
+    // Also resync when time bank phase changes (important visual transition)
+    // Also resync when props indicate a new turn started
+    const needsResync = totalChanged || timeBankPhaseChanged || jumpedUp || propsJumpedUp || resetToFull || drift > 1.25;
+
+    if (needsResync) {
+      lastTotalRef.current = total;
+      lastTimeBankPhaseRef.current = isTimeBankPhase;
+      startAnimation(remaining);
     }
+  }, [remaining, total, isTimeBankPhase]);
 
-    // Update refs
-    prevDeadlineMsRef.current = curr > 0 ? curr : prev;
-    prevTotalRef.current = total;
-    prevTimeBankPhaseRef.current = isTimeBankPhase;
-
-    // Restart animation ONLY on deadline jump or total change (NOT on isTimeBankPhase change)
-    if (deadlineJumped || totalChanged) {
-      // Force update the stable ref immediately so the animation uses the new deadline
-      if (curr > 0) {
-        deadlineMsStableRef.current = curr;
-      }
-      
-      // Cancel existing animation first to prevent overlap
-      if (animationRef.current !== null) {
-        cancelAnimationFrame(animationRef.current);
-        animationRef.current = null;
-      }
-      
-      // Immediately set currentRemaining to full value for instant visual reset
-      if (curr > 0) {
-        const newRemaining = Math.max(0, (curr - Date.now()) / 1000);
-        setCurrentRemaining(newRemaining);
-      }
-      
-      // Start fresh animation loop
-      if (curr > Date.now()) {
-        startAnimation();
-      }
-    }
-  }, [deadlineMs, total, startAnimation]);
-
-  const progress = total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;
+  const progress =
+    total > 0 ? Math.min(1, Math.max(0, currentRemaining / total)) : 0;
 
   const radius = size / 2 - strokeWidth / 2;
   const circumference = 2 * Math.PI * radius;

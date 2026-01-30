@@ -119,9 +119,8 @@ const WS_URL = 'wss://poker.syndicate-poker.ru/ws/poker';
 const RECONNECT_DELAYS = [1000, 2000, 5000, 10000, 30000];
 const PING_INTERVAL = 25000;
 
-// Debug logging: OFF by default even in dev (can cause UI jank).
-// Enable manually: localStorage.setItem('POKER_DEBUG','1')
-const DEBUG = localStorage.getItem('POKER_DEBUG') === '1';
+// Debug logging: enable in dev or via localStorage.setItem('POKER_DEBUG','1')
+const DEBUG = import.meta.env.DEV || localStorage.getItem('POKER_DEBUG') === '1';
 const log = (...args: unknown[]) => DEBUG && console.log('[NodePoker]', ...args);
 
 
@@ -648,73 +647,6 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
 
         setTableState((prev) => {
           let newState = transformServerState(incomingState as any, tableId);
-
-          // ------------------------------
-          // SERVER-AUTH TIMER CONSISTENCY GUARD (STRICT)
-          // ------------------------------
-          // Goal:
-          // Make the client strictly follow the server's turn boundary.
-          // A NEW turn must come with a NEW actionStartTime.
-          //
-          // IMPORTANT:
-          // Previously we used a 50ms tolerance. In practice, server timestamps can advance by only
-          // a few milliseconds (or be very tight under load), and the tolerance caused us to ignore
-          // legitimate turn changes, which then:
-          // - kept isMyTurn=false (blocking actions), and
-          // - caused timer inheritance/pulse artifacts.
-          if (prev?.handId && newState.handId && prev.handId === newState.handId) {
-            const prevAst = typeof prev.actionStartTime === 'number' && Number.isFinite(prev.actionStartTime)
-              ? prev.actionStartTime
-              : null;
-            const nextAst = typeof newState.actionStartTime === 'number' && Number.isFinite(newState.actionStartTime)
-              ? newState.actionStartTime
-              : null;
-
-            // Global monotonic guard (same hand): never allow a real backwards jump.
-            if (prevAst !== null && nextAst !== null) {
-              const BACKWARDS_TOL_MS = 50;
-              if (nextAst < prevAst - BACKWARDS_TOL_MS) {
-                log('[TimerGuard] Ignoring stale snapshot: actionStartTime went backwards', {
-                  handId: prev.handId,
-                  prevActionStartTime: prevAst,
-                  nextActionStartTime: nextAst,
-                  prevSeat: prev.currentPlayerSeat,
-                  nextSeat: newState.currentPlayerSeat,
-                  prevPhase: prev.phase,
-                  nextPhase: newState.phase,
-                });
-                return prev;
-              }
-            }
-
-            // Seat-change must be accompanied by a fresh actionStartTime.
-            // If not, this snapshot is stale and must not be allowed to move the UI turn.
-            const prevSeat = prev.currentPlayerSeat;
-            const nextSeat = newState.currentPlayerSeat;
-            const seatChanged =
-              prevSeat !== null && prevSeat !== undefined &&
-              nextSeat !== null && nextSeat !== undefined &&
-              prevSeat !== nextSeat;
-
-            if (seatChanged) {
-              // STRICT: A seat change without an increased actionStartTime is considered a stale/out-of-order snapshot.
-              // No tolerance here — if server advanced by 1ms, we must accept it.
-              if (prevAst !== null && nextAst !== null && nextAst <= prevAst) {
-                log('[TimerGuard] Ignoring stale seat-change snapshot (actionStartTime did not advance)', {
-                  handId: prev.handId,
-                  prevSeat,
-                  nextSeat,
-                  prevActionStartTime: prevAst,
-                  nextActionStartTime: nextAst,
-                  prevTimeRemaining: prev.timeRemaining,
-                  nextTimeRemaining: newState.timeRemaining,
-                  prevIsTimeBankPhase: prev.isTimeBankPhase,
-                  nextIsTimeBankPhase: newState.isTimeBankPhase,
-                });
-                return prev;
-              }
-            }
-          }
 
           // ------------------------------
           // POKERSTARS-STYLE STABILITY LAYER
@@ -1304,37 +1236,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
           break;
 
         case 'action_accepted':
-          // The server may acknowledge the action immediately but broadcast the new table state a bit later.
-          // To eliminate perceived lag ("action happened but UI updates later"), we actively pull a fresh
-          // snapshot right after acceptance. Realtime/broadcast remains for syncing other clients.
-          {
-            const actionType = (data as any).actionType as string | undefined;
-            const amount = (data as any).amount as number | undefined;
-            log('✅ Action accepted:', actionType, amount);
-
-            // Quick local feedback (doesn't change game logic; just reflects what server already accepted)
-            if (actionType) {
-              setLastAction({
-                playerId: playerId as string,
-                action: actionType,
-                amount,
-              });
-              setTimeout(() => setLastAction(null), 1200);
-            }
-
-            // If server included a state snapshot, apply it immediately.
-            if ((data as any).state && tableId) {
-              applyIncomingState((data as any).state);
-            }
-
-            // CRITICAL: Immediately refetch authoritative state after own action.
-            // Small delay gives engine a tick to advance turn before snapshot is returned.
-            if (tableId && playerId) {
-              setTimeout(() => {
-                sendMessage({ type: 'get_state', tableId, playerId });
-              }, 80);
-            }
-          }
+          log('✅ Action accepted:', data.actionType, data.amount);
           break;
 
         case 'chips_added':
@@ -1405,59 +1307,50 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             setTableState((prev) => {
               if (!prev) return prev;
 
-              // CRITICAL FIX v5: ALWAYS apply turn_changed unconditionally.
-              // Previous logic checked if actionStartTime advanced, but this caused the UI
-              // to "stick" on the previous player when out-of-order packets arrived.
-              // turn_changed is an authoritative event - trust it.
-              
+              // IMPORTANT:
+              // - actionTimeTotal is PER-TURN and may be time-bank slice (e.g. 10s) during TB.
+              //   We must NOT fall back to prev.actionTimeTotal, otherwise after a time bank
+              //   the next player's *main* timer can incorrectly become 10s.
+              // - Never synthesize actionStartTime with Date.now(); it can go "ahead" of server
+              //   and then monotonic guards reject the next authoritative snapshot.
+              // - FIXED: Use table's actionTimer from settings, NOT prev.actionTimeTotal which
+              //   could be 10s from a time bank phase.
+
               const parsedActionStartTime = toMs(turnData.actionStartTime);
-              
-              // Fallback to table's base action time (actionTimer), never prev.actionTimeTotal
-              const fallbackMainTotal = prev.actionTimer ?? 25;
+              // CRITICAL FIX: Fallback to table's base action time (actionTimer), never prev.actionTimeTotal
+              // prev.actionTimeTotal might be 10s from time bank, causing premature timeouts
+              const fallbackMainTotal = prev.actionTimer ?? 25; // Use 25s as safe default (table config)
               const nextActionTimeTotal =
                 (typeof turnData.actionTimeTotal === 'number' && Number.isFinite(turnData.actionTimeTotal))
                   ? turnData.actionTimeTotal
                   : fallbackMainTotal;
-
-              // If server didn't send actionStartTime, use Date.now()
-              const nextActionStartTime = parsedActionStartTime ?? Date.now();
 
               const nextTimeRemaining =
                 (typeof turnData.timeRemaining === 'number' && Number.isFinite(turnData.timeRemaining))
                   ? turnData.timeRemaining
                   : nextActionTimeTotal;
 
-              log('🔄 Turn changed - UNCONDITIONAL RESET:', {
-                prevSeat: prev.currentPlayerSeat,
-                newSeat: turnData.currentPlayerSeat,
-                prevActionStartTime: prev.actionStartTime,
-                newActionStartTime: nextActionStartTime,
-                actionTimeTotal: nextActionTimeTotal,
-              });
-
               return {
                 ...prev,
                 currentPlayerSeat: turnData.currentPlayerSeat,
                 phase: turnData.phase as any,
-                actionStartTime: nextActionStartTime,
+                // Normalize seconds/ISO to ms; if missing, keep previous (do NOT use Date.now()).
+                actionStartTime: parsedActionStartTime ?? prev.actionStartTime ?? null,
+                // Per-turn total for ring animation
                 actionTimeTotal: nextActionTimeTotal,
+                // Ensure the wrapper's drift logic doesn't read stale remaining from previous turn
                 timeRemaining: nextTimeRemaining,
-                // ALWAYS reset to false on turn change
-                isTimeBankPhase: false,
+                isTimeBankPhase: typeof turnData.isTimeBankPhase === 'boolean' ? turnData.isTimeBankPhase : false,
               };
             });
           }
           break;
 
         // POKERSTARS-STYLE: Time Bank activated - immediate visual feedback
-        // CRITICAL FIX (v3): Do NOT update actionStartTime at all!
-        // Updating actionStartTime here causes the monotonic guard in applyIncomingState
-        // to reject subsequent turn_changed/state_update packets for the NEXT player,
-        // because their actionStartTime may be <= the time bank's actionStartTime.
-        // This is the ROOT CAUSE of timer inheritance and stuck isMyTurn.
-        //
-        // Solution: Only set the visual flag (isTimeBankPhase) and timing totals.
-        // Do NOT touch actionStartTime - let it remain from the original turn start.
+        // CRITICAL FIX: Do NOT override actionStartTime with Date.now() - this causes
+        // the global monotonic guard to reject subsequent state_update packets from server,
+        // leading to desync. Only set the visual flag; let the subsequent state_update
+        // provide the authoritative actionStartTime.
         case 'time_bank_activated':
           log('⏱️ Time Bank ACTIVATED:', data);
           {
@@ -1474,9 +1367,8 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             
             const timeUsed = tbData?.timeUsed ?? 0;
             const remaining = tbData?.remaining ?? 0;
-            // CRITICAL FIX: Do NOT use serverActionStartTime - it breaks monotonic guard
-            // const serverActionStartTime = tbData?.actionStartTime;
-            const serverActionTimeTotal = tbData?.actionTimeTotal ?? tbData?.remaining ?? 10;
+            const serverActionStartTime = tbData?.actionStartTime;
+            const serverActionTimeTotal = tbData?.actionTimeTotal ?? timeUsed;
             const eventSeat = tbData?.seat;
             const eventPlayerId = tbData?.playerId;
             
@@ -1486,7 +1378,7 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             // We need to check if `eventSeat === mySeat` (the player viewing the table).
             //
             // For the HERO: show time bank alarm + blue ring + update state
-            // For OPPONENTS: just update timer timing values but NOT isTimeBankPhase
+            // For OPPONENTS: just update timer timing values (actionStartTime/Total) but NOT isTimeBankPhase
             //
             // mySeatRef is defined at hook level, use it here.
             const heroSeat = mySeatRef.current;
@@ -1514,34 +1406,29 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
               
               // CRITICAL: Only set isTimeBankPhase for the HERO (the client whose seat matches eventSeat)
               // For other clients, just update timing values but keep isTimeBankPhase = false
-              //
-              // CRITICAL FIX (v4): Use `remaining` from the event for timeRemaining!
-              // Previously we set timeRemaining = serverActionTimeTotal (which is the TB slice total, e.g., 10s).
-              // But if player already used some time bank, `remaining` is lower (e.g., 7s).
-              // This caused the UI to show wrong countdown.
-              const effectiveRemaining = remaining > 0 ? remaining : serverActionTimeTotal;
-              
               if (isEventForHero) {
-                log('⏱️ Time Bank activated for HERO', { eventSeat, heroSeat, remaining, effectiveRemaining });
+                log('⏱️ Time Bank activated for HERO', { eventSeat, heroSeat });
                 return {
                   ...prev,
                   isTimeBankPhase: true,
-                  // CRITICAL FIX: Do NOT update actionStartTime!
-                  // This prevents monotonic guard from rejecting next player's turn.
-                  // Use server's actionTimeTotal for consistent ring animation (total for the TB slice)
-                  actionTimeTotal: serverActionTimeTotal > 0 ? serverActionTimeTotal : (prev.timeBankSeconds ?? 10),
-                  // CRITICAL FIX: Use actual remaining, not the total!
-                  timeRemaining: effectiveRemaining
+                  // Use server's authoritative timestamps
+                  actionStartTime: serverActionStartTime ?? prev.actionStartTime,
+                  // Use server's actionTimeTotal for consistent ring animation
+                  actionTimeTotal: serverActionTimeTotal > 0 ? serverActionTimeTotal : (prev.timeBankSeconds ?? 30),
+                  // Initial remaining = full slice
+                  timeRemaining: serverActionTimeTotal > 0 ? serverActionTimeTotal : prev.timeBankSeconds
                 };
               } else {
                 // Opponent entered time bank - update timer values but NOT isTimeBankPhase
                 // This ensures opponent's ring still counts down correctly
-                log('⏱️ Time Bank activated for OPPONENT (not hero)', { eventSeat, heroSeat, remaining });
+                log('⏱️ Time Bank activated for OPPONENT (not hero)', { eventSeat, heroSeat });
                 return {
                   ...prev,
                   // DON'T set isTimeBankPhase: true for opponents!
-                  actionTimeTotal: serverActionTimeTotal > 0 ? serverActionTimeTotal : (prev.actionTimeTotal ?? 10),
-                  timeRemaining: effectiveRemaining
+                  // Update timing so ring animation is correct
+                  actionStartTime: serverActionStartTime ?? prev.actionStartTime,
+                  actionTimeTotal: serverActionTimeTotal > 0 ? serverActionTimeTotal : (prev.actionTimeTotal ?? 30),
+                  timeRemaining: serverActionTimeTotal > 0 ? serverActionTimeTotal : prev.timeRemaining
                 };
               }
             });
