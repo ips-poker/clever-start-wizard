@@ -1375,27 +1375,21 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
             setTableState((prev) => {
               if (!prev) return prev;
 
-              // IMPORTANT: turn_changed means a NEW TURN is starting for a different player.
-              // 
-              // KEY FIXES for visual transition issues:
-              // 1. actionTimeTotal: Use server's value OR table's base action time (never prev which could be 10s TB)
-              // 2. actionStartTime: If server doesn't send it, use Date.now() - this is a NEW turn, not continuation
-              // 3. isTimeBankPhase: ALWAYS reset to false - new turn always starts with main timer
-              // 4. timeRemaining: Reset to full action time for clean ring animation
-
+              // CRITICAL FIX v5: ALWAYS apply turn_changed unconditionally.
+              // Previous logic checked if actionStartTime advanced, but this caused the UI
+              // to "stick" on the previous player when out-of-order packets arrived.
+              // turn_changed is an authoritative event - trust it.
+              
               const parsedActionStartTime = toMs(turnData.actionStartTime);
               
-              // CRITICAL FIX: Fallback to table's base action time (actionTimer), never prev.actionTimeTotal
+              // Fallback to table's base action time (actionTimer), never prev.actionTimeTotal
               const fallbackMainTotal = prev.actionTimer ?? 25;
               const nextActionTimeTotal =
                 (typeof turnData.actionTimeTotal === 'number' && Number.isFinite(turnData.actionTimeTotal))
                   ? turnData.actionTimeTotal
                   : fallbackMainTotal;
 
-              // CRITICAL FIX: For turn_changed, if server didn't send actionStartTime, 
-              // use Date.now() because this is a NEW turn starting NOW.
-              // Previously we kept prev.actionStartTime which could be from the previous player's time bank,
-              // causing the new player to "inherit" an already-elapsed timer.
+              // If server didn't send actionStartTime, use Date.now()
               const nextActionStartTime = parsedActionStartTime ?? Date.now();
 
               const nextTimeRemaining =
@@ -1403,27 +1397,22 @@ export function useNodePokerTable(options: UseNodePokerTableOptions | null) {
                   ? turnData.timeRemaining
                   : nextActionTimeTotal;
 
-              log('🔄 Turn changed - CLEAN RESET:', {
+              log('🔄 Turn changed - UNCONDITIONAL RESET:', {
                 prevSeat: prev.currentPlayerSeat,
                 newSeat: turnData.currentPlayerSeat,
-                prevIsTimeBankPhase: prev.isTimeBankPhase,
                 prevActionStartTime: prev.actionStartTime,
                 newActionStartTime: nextActionStartTime,
                 actionTimeTotal: nextActionTimeTotal,
-                serverSentActionStartTime: !!parsedActionStartTime,
               });
 
               return {
                 ...prev,
                 currentPlayerSeat: turnData.currentPlayerSeat,
                 phase: turnData.phase as any,
-                // NEW: Always set fresh actionStartTime for new turn
                 actionStartTime: nextActionStartTime,
-                // Per-turn total for ring animation
                 actionTimeTotal: nextActionTimeTotal,
-                // Reset to full time for clean ring animation
                 timeRemaining: nextTimeRemaining,
-                // ALWAYS reset to false on turn change - new turn starts with main timer
+                // ALWAYS reset to false on turn change
                 isTimeBankPhase: false,
               };
             });
