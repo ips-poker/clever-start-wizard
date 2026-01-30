@@ -257,40 +257,38 @@ export const ProActionPanel = memo(function ProActionPanel({
     if (!isMyTurn) setShowSlider(false);
   }, [isMyTurn]);
 
-  // Execute pre-action
+  // Execute pre-action IMMEDIATELY when it's our turn
   useEffect(() => {
     if (isMyTurn && preAction && !disabled) {
-      const timeout = setTimeout(() => {
-        switch (preAction) {
-          case 'fold': 
-            sounds.playFold();
-            onFold(); 
-            break;
-          case 'check': 
-            if (canCheck) {
-              sounds.playCheck();
-              onCheck();
-            }
-            break;
-          case 'call': 
-            if (!canCheck && callAmount <= myStack) {
-              sounds.playCall();
-              onCall();
-            }
-            break;
-          case 'callAny':
-            if (canCheck) {
-              sounds.playCheck();
-              onCheck();
-            } else if (callAmount <= myStack) {
-              sounds.playCall();
-              onCall();
-            }
-            break;
-        }
-        setPreAction(null);
-      }, 200);
-      return () => clearTimeout(timeout);
+      // Execute immediately - no artificial delay (PokerStars standard)
+      switch (preAction) {
+        case 'fold': 
+          sounds.playFold();
+          onFold(); 
+          break;
+        case 'check': 
+          if (canCheck) {
+            sounds.playCheck();
+            onCheck();
+          }
+          break;
+        case 'call': 
+          if (!canCheck && callAmount <= myStack) {
+            sounds.playCall();
+            onCall();
+          }
+          break;
+        case 'callAny':
+          if (canCheck) {
+            sounds.playCheck();
+            onCheck();
+          } else if (callAmount <= myStack) {
+            sounds.playCall();
+            onCall();
+          }
+          break;
+      }
+      setPreAction(null);
     }
   }, [isMyTurn, preAction, canCheck, callAmount, myStack, disabled, onFold, onCheck, onCall, sounds]);
 
