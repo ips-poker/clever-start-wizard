@@ -365,8 +365,10 @@ export function FullscreenPokerTableWrapper({
   // We MUST NOT use it directly for UI because it can contain stale data from previous player.
   // The useEffect below filters stale data and sets isTimeBankActive state correctly.
   const serverIsTimeBankPhase = Boolean(tableState?.isTimeBankPhase);
+  // CRITICAL FIX: Fallback to timeBankSliceSeconds if server doesn't report per-player time bank.
+  // This ensures the fallback hook activates even when server only sends table-level time_bank_seconds.
   const currentTurnPlayerTimeBank =
-    (tableState?.currentPlayerTimeBank ?? myPlayer?.timeBankRemaining ?? 0) as number;
+    (tableState?.currentPlayerTimeBank ?? myPlayer?.timeBankRemaining ?? timeBankSliceSeconds) as number;
 
   // CRITICAL FIX: Pass isTimeBankActive STATE (which is filtered for stale data) instead of raw serverIsTimeBankPhase.
   // This prevents the fallback hook from activating on stale time bank data from previous player.
