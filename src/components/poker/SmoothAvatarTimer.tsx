@@ -48,9 +48,11 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
   const lastTimeBankPhaseRef = useRef<boolean>(isTimeBankPhase);
   const lastRemainingRef = useRef<number>(remaining);
   // CRITICAL: Track turnKey to detect turn changes
-  const lastTurnKeyRef = useRef<string | undefined>(turnKey);
+  // IMPORTANT: Initialize to undefined so first useEffect always triggers resync on mount
+  const lastTurnKeyRef = useRef<string | undefined>(undefined);
   // Track previous remaining to detect significant jumps (new turn)
-  const lastPropsRemainingRef = useRef<number>(remaining);
+  // IMPORTANT: Initialize to 0 so new mount always sees a "jump up" to remaining
+  const lastPropsRemainingRef = useRef<number>(0);
 
   const startAnimation = (startRemaining: number) => {
     if (animationRef.current !== null) {
@@ -79,23 +81,14 @@ export const SmoothAvatarTimer = memo(function SmoothAvatarTimer({
     animationRef.current = requestAnimationFrame(animate);
   };
 
-  // Start once on mount.
+  // Cleanup on unmount only
   useEffect(() => {
-    startAnimation(remaining);
-    lastTotalRef.current = total;
-    lastTimeBankPhaseRef.current = isTimeBankPhase;
-    lastRemainingRef.current = remaining;
-    lastPropsRemainingRef.current = remaining;
-    lastTurnKeyRef.current = turnKey;
-
     return () => {
       if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   // Re-sync only on *meaningful* changes.
   // This avoids restarting the animation every second (which causes "спешит/опаздывает").
   useEffect(() => {
