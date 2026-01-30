@@ -5,7 +5,7 @@ The poker timer now follows a **deadline-based** architecture for smooth animati
 
 1. **Deadline set once per turn:** `deadlineMsRef` is computed on `isGenuineNewTurn` (seat change, phase change, or actionStartTime advance) and not modified until the next turn. This eliminates mid-turn jitter caused by drift correction.
 
-2. **Local RAF animation:** `SmoothAvatarTimer` runs a 60fps `requestAnimationFrame` loop that reads `deadlineMsStableRef` directly. It no longer depends on parent-provided `remaining` state updates.
+2. **Local RAF animation with forced restart:** `SmoothAvatarTimer` runs a 60fps `requestAnimationFrame` loop. On new turn (deadline jump > 2s), the animation is **forcibly restarted** — the old RAF is cancelled, `currentRemaining` is immediately set to full duration, and a fresh animation loop begins. This ensures the ring visually resets to 100%.
 
 3. **1Hz state updates for fallback:** `FullscreenPokerTableWrapper` updates `turnTimeRemaining` at 1Hz (not 200ms) purely for the time-bank fallback hook and sound triggers—NOT for ring animation.
 
