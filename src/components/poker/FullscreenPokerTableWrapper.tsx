@@ -1,5 +1,6 @@
 // ============================================
 // FULLSCREEN POKER TABLE WRAPPER - Integration with Game Logic
+// POKERSTARS-PROFESSIONAL IMPLEMENTATION
 // ============================================
 import React, { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { useNodePokerTable, PokerPlayer, TableState } from '@/hooks/useNodePoker
 import { usePokerSounds } from '@/hooks/usePokerSounds';
 import { usePokerPreferences } from '@/hooks/usePokerPreferences';
 import { useCalibrationSync } from '@/hooks/useCalibrationSync';
+import { usePokerTimerSync } from '@/hooks/usePokerTimerSync';
 import { PokerErrorBoundary } from './PokerErrorBoundary';
 import { ConnectionStatusBanner } from './ConnectionStatusBanner';
 import { TableSettingsPanel } from './TableSettingsPanel';
@@ -36,25 +38,9 @@ import { ThemePageBackground } from './ThemePageBackground';
 import { CASH_ACTION_TIMING, TIME_BANK_CONFIG } from '@/config/pokerTimings';
 import { ProFeaturesOverlay } from './ProFeaturesOverlay';
 import { BombPotIndicator } from './BombPotIndicator';
-import { useTimeBankFallback } from '@/hooks/useTimeBankFallback';
-
 
 // Syndikate branding
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
-
-// Heavy debug logging (especially inside timer effects) can noticeably degrade UI responsiveness.
-// OFF by default even in dev. Enable only when needed: localStorage.setItem('POKER_TIMER_DEBUG','1')
-const isPokerTimerDebugEnabled = () => {
-  try {
-    return localStorage.getItem('POKER_TIMER_DEBUG') === '1';
-  } catch {
-    return false;
-  }
-};
-
-const timerLog = (...args: any[]) => {
-  if (isPokerTimerDebugEnabled()) console.log(...args);
-};
 
 interface FullscreenPokerTableWrapperProps {
   tableId: string;
@@ -88,9 +74,6 @@ export function FullscreenPokerTableWrapper({
   wideMode = false
 }: FullscreenPokerTableWrapperProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [turnDeadlineMs, setTurnDeadlineMs] = useState<number | null>(null);
-  const [turnTimeRemaining, setTurnTimeRemaining] = useState<number | null>(null);
-  const [turnTimeTotal, setTurnTimeTotal] = useState<number>(CASH_ACTION_TIMING.default);
   const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPersonalSettings, setShowPersonalSettings] = useState(false);
@@ -103,7 +86,6 @@ export function FullscreenPokerTableWrapper({
   const [selectedSeatForJoin, setSelectedSeatForJoin] = useState<number | null>(null);
   const [isProcessingCashout, setIsProcessingCashout] = useState(false);
   const [actualBuyIn, setActualBuyIn] = useState<number>(buyIn);
-  const [isTimeBankActive, setIsTimeBankActive] = useState(false);
   const [autoStraddleEnabled, setAutoStraddleEnabled] = useState(false);
   
   // Full table settings fetched from DB for the settings panel
@@ -331,30 +313,12 @@ export function FullscreenPokerTableWrapper({
     }
   }, [straddlePosted]);
 
-  // POKERSTARS-STYLE TIMER: Server-authoritative timing
-  // Server sends: timeRemaining, actionStartTime, isTimeBankPhase
-  // Client syncs from server and counts down locally
-  // CRITICAL FIX: actionStartTime is the PRIMARY reset signal
-  // Server sets actionStartTime = Date.now() for EVERY new turn/phase
-  // CRITICAL FIX: timerResetKey should NOT include isTimeBankPhase!
-  // Including it causes a "reset" of the timer when transitioning main→timebank,
-  // which fights with the smooth continuation logic and causes delays/blocking.
-  // The timer should continue counting on the SAME deadline; only color/visuals change.
-  const timerResetKey = useMemo(() => {
-    // actionStartTime changes on every turn - this is the key reset signal
-    // If server sends same actionStartTime, timer continues from current position
-    // If server sends new actionStartTime, timer MUST reset
-    const actionTs = tableState?.actionStartTime || 0;
-    const phase = tableState?.phase || 'waiting';
-    const seat = tableState?.currentPlayerSeat ?? 'none';
-    const handId = tableState?.handId || 'no-hand';
-    // REMOVED: isTimeBank from key - timer should NOT reset on main→TB transition
-    
-    // Use full precision for actionStartTime to catch every change
-    return `${handId}-${phase}-${seat}-${actionTs}`;
-  }, [tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat, tableState?.actionStartTime]);
-
-  // --- TIME BANK UI FALLBACK (UI-only) ---
+  // =============================================================================
+  // POKERSTARS-PROFESSIONAL TIMER IMPLEMENTATION
+  // =============================================================================
+  // Using dedicated hook for clean, professional timer sync
+  
+  // Calculate time bank slice seconds from settings
   const timeBankSliceSeconds = useMemo(() => {
     const rawSettings: any = fullTableSettings as any;
     const fromDb =
@@ -365,475 +329,41 @@ export function FullscreenPokerTableWrapper({
     return (fromWs ?? fromDb ?? fromConfig ?? 30) as number;
   }, [fullTableSettings, tableState?.timeBankSeconds, isTournament]);
 
-  // NOTE: serverIsTimeBankPhase is the RAW value from tableState.
-  // We MUST NOT use it directly for UI because it can contain stale data from previous player.
-  // The useEffect below filters stale data and sets isTimeBankActive state correctly.
-  const serverIsTimeBankPhase = Boolean(tableState?.isTimeBankPhase);
-  // CRITICAL FIX: Fallback to timeBankSliceSeconds if server doesn't report per-player time bank.
-  // This ensures the fallback hook activates even when server only sends table-level time_bank_seconds.
-  const currentTurnPlayerTimeBank =
-    (tableState?.currentPlayerTimeBank ?? myPlayer?.timeBankRemaining ?? timeBankSliceSeconds) as number;
+  // Calculate action time total from settings
+  const actionTimeTotal = useMemo(() => {
+    const rawSettings: any = fullTableSettings as any;
+    const fromDb =
+      (typeof rawSettings?.actionTimeSeconds === 'number' ? rawSettings.actionTimeSeconds : undefined) ??
+      (typeof rawSettings?.action_time_seconds === 'number' ? rawSettings.action_time_seconds : undefined);
+    const fromWs = tableState?.actionTimer ?? tableState?.actionTimeTotal;
+    return (fromWs ?? fromDb ?? CASH_ACTION_TIMING.default) as number;
+  }, [fullTableSettings, tableState?.actionTimer, tableState?.actionTimeTotal]);
 
-  // CRITICAL FIX: Pass isTimeBankActive STATE (which is filtered for stale data) instead of raw serverIsTimeBankPhase.
-  // This prevents the fallback hook from activating on stale time bank data from previous player.
-  const tbFallback = useTimeBankFallback({
-    serverIsTimeBankPhase: isTimeBankActive, // Use FILTERED state, not raw server value
-    mainTurnRemaining: turnTimeRemaining,
-    currentPlayerTimeBank: currentTurnPlayerTimeBank,
-    timeBankSliceSeconds,
-    handId: tableState?.handId,
+  // Professional timer sync using dedicated hook
+  const timerSync = usePokerTimerSync({
+    actionStartTime: tableState?.actionStartTime,
+    timeRemaining: tableState?.timeRemaining,
+    actionTimeTotal,
     currentPlayerSeat: tableState?.currentPlayerSeat,
-    currentPhase: tableState?.phase,
-    isMyTurn,
+    phase: tableState?.phase || 'waiting',
+    handId: tableState?.handId,
+    isTimeBankPhase: Boolean(tableState?.isTimeBankPhase),
+    timeBankSliceSeconds,
   });
 
-  // CRITICAL FIX: timeBankUiActive controls the timer RING color (blue vs green).
-  // It should reflect whether the CURRENT PLAYER (whoever's turn it is) is in time bank.
-  // 
-  // IMPORTANT: We use isTimeBankActive STATE (set in useEffect with sticky logic and stale filtering)
-  // NOT serverIsTimeBankPhase directly, because serverIsTimeBankPhase can contain stale data
-  // from the previous player's time bank phase.
-  // 
-  // For the hero, we also consider tbFallback.isActive as a UI-only backup.
-  const timeBankUiActive = isTimeBankActive || tbFallback.isActive;
-  
-  // CRITICAL FIX: Separate effect to update isTimeBankActive based on server signal.
-  // This runs ONLY when serverIsTimeBankPhase changes, without triggering deadline recalc.
-  const prevServerIsTimeBankPhaseRef = useRef(false);
-  const timeBankTurnIdRef = useRef<string>('');
-  
-  useEffect(() => {
-    const currentTurnId = `${tableState?.handId}-${tableState?.phase}-${tableState?.currentPlayerSeat}`;
-    const turnChanged = timeBankTurnIdRef.current !== currentTurnId;
-    
-    if (turnChanged) {
-      // New turn - reset TB state
-      timeBankTurnIdRef.current = currentTurnId;
-      prevServerIsTimeBankPhaseRef.current = false;
-      // Don't set isTimeBankActive=true on new turn even if server says so (stale data)
-      setIsTimeBankActive(false);
-      return;
-    }
-    
-    // Same turn - apply sticky logic
-    if (serverIsTimeBankPhase && !prevServerIsTimeBankPhaseRef.current) {
-      // Transition false → true: activate TB
-      console.log('[TIME BANK] Activating for current turn:', currentTurnId);
-      setIsTimeBankActive(true);
-      prevServerIsTimeBankPhaseRef.current = true;
-    }
-    // Don't deactivate if server sends false (could be stale) - sticky behavior
-  }, [serverIsTimeBankPhase, tableState?.handId, tableState?.phase, tableState?.currentPlayerSeat]);
-  
-  // CRITICAL FIX: displayTurnTimeRemaining should use fallback ONLY for hero.
-  // When opponent is in time bank, we still use the server's turnTimeRemaining.
-  const displayTurnTimeRemaining = isMyTurn
-    ? (serverIsTimeBankPhase
-        ? turnTimeRemaining
-        : tbFallback.isActive
-          ? tbFallback.remainingSeconds
-          : turnTimeRemaining)
-    : turnTimeRemaining; // For opponents, always use server value
-    
-  const displayTurnTimeTotal = isMyTurn
-    ? (serverIsTimeBankPhase
-        ? turnTimeTotal
-        : tbFallback.isActive
-          ? tbFallback.totalSeconds
-          : turnTimeTotal)
-    : turnTimeTotal; // For opponents, always use server value
+  // Map timer sync results to component state
+  const turnDeadlineMs = timerSync.deadlineMs;
+  const turnTimeRemaining = timerSync.timeRemaining;
+  const turnTimeTotal = timerSync.timeTotal;
+  const isTimeBankActive = timerSync.isTimeBankActive;
+  const timerResetKey = timerSync.turnKey;
 
-  // Track previous phase for phase-change detection
-  const prevPhaseRef = useRef<string>('');
-  const prevSeatRef = useRef<number | null>(null);
+  // For UI: time bank visual active state (includes fallback for hero)
+  const timeBankUiActive = isTimeBankActive;
 
-  // Track previous timerResetKey to detect new turn/phase
-  const prevTimerResetKeyRef = useRef<string>('');
-  // CRITICAL FIX: Track actionStartTime separately for reliable turn change detection
-  const prevActionStartTimeRef = useRef<number>(0);
-
-  // Store the deadline in a ref so it persists across re-renders
-  // Only recalculate when turn/phase actually changes
-  const deadlineMsRef = useRef<number>(0);
-  
-  // NOTE: Stale-packet guards removed in v5 - now we always process turn changes.
-  // The timer resets cleanly on seat/phase changes without rejecting packets.
-
-  // Server timeRemaining can update frequently; keep it in a ref so we don't re-run
-  // the whole timer-sync effect (and recreate intervals) on every server tick.
-  const serverRemainingRef = useRef<number | null | undefined>(undefined);
-  useEffect(() => {
-    serverRemainingRef.current = tableState?.timeRemaining;
-  }, [tableState?.timeRemaining]);
-  
-  useEffect(() => {
-    // POKERSTARS-STYLE: Use server's actionTimeTotal (phase-aware) or fallback to table settings from DB.
-    // This prevents rare ticks where WS snapshot omits timing fields and UI falls back to 15s.
-    const toNumberOrUndef = (v: unknown): number | undefined => {
-      if (v === null || v === undefined) return undefined;
-      const n = typeof v === 'number' ? v : Number(v);
-      return Number.isFinite(n) ? n : undefined;
-    };
-
-    // DB settings can be camelCase (frontend) or snake_case (raw row / older code paths)
-    const rawSettings = fullTableSettings as any;
-    const dbActionTime =
-      toNumberOrUndef(rawSettings?.actionTimeSeconds) ??
-      toNumberOrUndef(rawSettings?.action_time_seconds);
-    const dbTimeBank =
-      toNumberOrUndef(rawSettings?.timeBankSeconds) ??
-      toNumberOrUndef(rawSettings?.time_bank_seconds);
-
-    // IMPORTANT:
-    // `actionTimer` = main action time per turn (table setting)
-    // `actionTimeTotal` from WS is per-phase/per-slice total, but can be STALE (e.g., still 10s from time bank)
-    // and must NOT be treated as the main timer source.
-    const mainActionTimer = tableState?.actionTimer || dbActionTime || 25;
-    const serverActionTimeTotal =
-      typeof tableState?.actionTimeTotal === 'number' && Number.isFinite(tableState.actionTimeTotal)
-        ? tableState.actionTimeTotal
-        : undefined;
-    
-    // DIAGNOSTIC: Log where action time comes from (debug only)
-    timerLog('[TIMER CONFIG]', {
-      actionTimeTotal: serverActionTimeTotal,
-      actionTimer: tableState?.actionTimer,
-      dbActionTime,
-      dbTimeBank,
-      finalActionTimer: mainActionTimer,
-      phase: tableState?.phase,
-      seat: tableState?.currentPlayerSeat
-    });
-    if (tableState?.currentPlayerSeat === null || tableState?.currentPlayerSeat === undefined) {
-      setTurnTimeRemaining(null);
-      setIsTimeBankActive(false);
-      prevPhaseRef.current = tableState?.phase || 'waiting';
-      prevSeatRef.current = null;
-      return;
-    }
-
-    // Parse time bank phase from server (will be made "sticky" below)
-    const isTimeBankPhase = Boolean(tableState?.isTimeBankPhase);
-
-    const now = Date.now();
-    const serverRemaining = serverRemainingRef.current ?? tableState?.timeRemaining;
-    const actionStartTime = tableState?.actionStartTime;
-
-    // ============================================
-    // FIX v5: REMOVED global monotonic guard!
-    // ============================================
-    // Previous logic ignored packets where actionStartTime went backwards.
-    // This caused the UI to "stick" when out-of-order packets arrived after user action.
-    // Now we always process updates. Timer deadline is set on genuine turn changes.
-    const currentHandId = tableState?.handId ?? null;
-
-    // CRITICAL FIX: Detect phase change or seat change separately from timerResetKey
-    // This ensures timer ALWAYS resets on flop→turn→river transitions
-    const currentPhase = tableState?.phase || 'waiting';
-    const currentSeat = tableState?.currentPlayerSeat;
-    const phaseChanged = prevPhaseRef.current !== currentPhase;
-    const seatChanged = prevSeatRef.current !== currentSeat;
-
-    // ============================================
-    // FIX v5: REMOVED stale seat change guard!
-    // ============================================
-    // Previous logic ignored seat changes if actionStartTime didn't advance.
-    // This caused the UI to "stick" on the previous player after user's action.
-    // Now we always process seat/phase changes and let the timer reset.
-    // If actionStartTime is stale, we use Date.now() as fallback (handled below).
-    const prevActionStartTime = prevActionStartTimeRef.current || 0;
-
-    // ============================================
-    // FIX v5: REMOVED per-turn stale update guard!
-    // ============================================
-    // Now we always process updates - timer deadline is set on genuine new turns only.
-    const turnId = `${tableState?.handId}-${currentPhase}-${currentSeat}`;
-    const prevTurnId = `${tableState?.handId}-${prevPhaseRef.current}-${prevSeatRef.current}`;
-    const isSameTurn = turnId === prevTurnId && !phaseChanged && !seatChanged;
-
-    prevPhaseRef.current = currentPhase;
-    prevSeatRef.current = currentSeat ?? null;
-
-    // Detect if this is a NEW turn/phase
-    // CRITICAL FIX: actionStartTime change is the PRIMARY indicator of a new turn
-    // Phase/seat change are SECONDARY indicators (catch edge cases)
-    const actionStartTimeChanged =
-      actionStartTime && actionStartTime !== (prevActionStartTimeRef.current || 0);
-    const isNewTurn = timerResetKey !== prevTimerResetKeyRef.current || phaseChanged || seatChanged || actionStartTimeChanged;
-    prevTimerResetKeyRef.current = timerResetKey;
-    prevActionStartTimeRef.current = actionStartTime || 0;
-
-    // ============================================
-    // Time Bank handling is now in a SEPARATE useEffect above.
-    // This effect only handles timer DEADLINE calculation.
-    // ============================================
-    
-    const isGenuineNewTurn = !isSameTurn || isNewTurn || phaseChanged || seatChanged;
-    
-    // CRITICAL FIX: Read current isTimeBankActive from state, but DON'T modify it here.
-    // Modification happens in the dedicated TB effect above.
-    // For deadline calculation, we need to know if we're currently in TB phase.
-    const effectiveIsTimeBankPhase = isTimeBankActive;
-
-    // POKERSTARS-STYLE SYNC:
-    // 1. On NEW turn: calculate deadline from actionStartTime (server's authoritative start)
-    // 2. During turn: only adjust if server's remaining differs significantly (drift correction)
-    //
-    // CRITICAL FIX: Use isGenuineNewTurn (same as time bank reset logic) to ensure
-    // timer reset is synchronized with time bank reset. Previously we used isNewTurn
-    // which could be false when isGenuineNewTurn was true, causing desync.
-    
-    if (isGenuineNewTurn) {
-      // DEBUG: Log timer reset details
-      console.log('[TIMER SYNC] New turn detected:', {
-        phase: currentPhase,
-        seat: currentSeat,
-        actionTimer: mainActionTimer,
-        actionStartTime,
-        serverRemaining,
-        phaseChanged,
-        seatChanged,
-        isTimeBankPhase,
-        // Extra debug info
-        tableStateActionTimeTotal: tableState?.actionTimeTotal,
-        tableStateActionTimer: tableState?.actionTimer,
-        dbActionTime,
-      });
-      
-      // NEW TURN: Set up fresh timer
-      // Main timer total must come from table settings (actionTimer / DB), not from actionTimeTotal.
-      // actionTimeTotal may still reflect a previous time-bank slice (10s) due to stale WS packets.
-      const mainTotalFromSettings = mainActionTimer;
-
-      // If server sends actionTimeTotal that looks like a normal main timer (close to settings), accept it.
-      // Otherwise, ignore and use mainTotalFromSettings.
-      const mainTotalFromServerIsSane =
-        typeof serverActionTimeTotal === 'number' &&
-        serverActionTimeTotal >= mainTotalFromSettings * 0.8;
-
-      const effectiveActionTime =
-        !effectiveIsTimeBankPhase && mainTotalFromServerIsSane
-          ? serverActionTimeTotal!
-          : mainTotalFromSettings;
-      
-      if (effectiveIsTimeBankPhase) {
-        // Time bank: DO NOT use `serverRemaining` as the *total* (it changes every tick).
-        // Use server-provided `actionTimeTotal` (time bank slice total) when available.
-        const tbTotal =
-          typeof dbTimeBank === 'number' && Number.isFinite(dbTimeBank)
-            ? dbTimeBank
-            : (typeof tableState?.timeBankSeconds === 'number' && Number.isFinite(tableState.timeBankSeconds)
-              ? tableState.timeBankSeconds
-              : 10);
-
-        setTurnTimeTotal(tbTotal);
-
-        // IMPORTANT: actionStartTime is an absolute epoch ms from the server.
-        // If the client's clock is skewed (ahead/behind), using it directly can show extra seconds and cause
-        // "early sit-out" while UI still shows 6–7s. So we prefer serverRemaining when skew is detected.
-        const hasServerRemaining = typeof serverRemaining === 'number' && Number.isFinite(serverRemaining);
-        const hasActionStartTime = typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0;
-
-        const deadlineFromRemaining = hasServerRemaining ? (now + Math.max(0, serverRemaining) * 1000) : null;
-        const deadlineFromStart = hasActionStartTime ? (actionStartTime + tbTotal * 1000) : null;
-
-        let chosen: number | null = null;
-        let chosenSource: 'start' | 'remaining' | 'now' = 'now';
-
-        if (deadlineFromStart !== null && deadlineFromRemaining !== null) {
-          const sr = serverRemaining as number;
-          const ast = actionStartTime as number;
-          // Estimate skew: serverNow ~= actionStartTime + (total - remaining)
-          const impliedServerNow = ast + (tbTotal - sr) * 1000;
-          const clockSkewMs = now - impliedServerNow;
-          const startInFutureMs = ast - now;
-
-          // If start timestamp is in the future (client clock behind) OR skew is noticeable, trust remaining.
-          const skewTooHigh = Math.abs(clockSkewMs) > 1500;
-          const startTooFuture = startInFutureMs > 1500;
-
-          chosen = (skewTooHigh || startTooFuture) ? deadlineFromRemaining : deadlineFromStart;
-          chosenSource = (skewTooHigh || startTooFuture) ? 'remaining' : 'start';
-
-          console.log('[TIMER SYNC] Time bank clock skew estimate:', {
-            clockSkewMs,
-            startInFutureMs,
-            chosenSource,
-            tbTotal,
-            serverRemaining: sr,
-          });
-        } else if (deadlineFromRemaining !== null) {
-          chosen = deadlineFromRemaining;
-          chosenSource = 'remaining';
-        } else if (deadlineFromStart !== null) {
-          // Only trust absolute start if it's not in the future by a noticeable margin.
-          if (actionStartTime <= now + 1500 && (now - actionStartTime) < 120000) {
-            chosen = deadlineFromStart;
-            chosenSource = 'start';
-          }
-        }
-
-        if (chosen === null) {
-          chosen = now + tbTotal * 1000;
-          chosenSource = 'now';
-        }
-
-        deadlineMsRef.current = chosen;
-        console.log('[TIMER SYNC] Time bank deadline chosen:', {
-          chosenSource,
-          deadline: deadlineMsRef.current,
-          remainingSeconds: (deadlineMsRef.current - now) / 1000,
-          tbTotal,
-          serverRemaining,
-          actionStartTime,
-        });
-      } else {
-        // Main timer: always starts at full actionTime (server's per-turn value)
-        setTurnTimeTotal(effectiveActionTime);
-        
-        // Normal path: use server data with stale detection
-        // FIX: For NEW turn, if serverRemaining is 0 or very low (< 1s), this is a stale/race update.
-        // The server just started the turn, so serverRemaining should be ~effectiveActionTime.
-        // Trust actionStartTime in this case, or fallback to full effectiveActionTime.
-        const rawServerRemaining = serverRemaining;
-        let correctedServerRemaining = rawServerRemaining;
-
-        const hasActionStartTime =
-          typeof actionStartTime === 'number' && Number.isFinite(actionStartTime) && actionStartTime > 0;
-        const elapsedSinceStartMs = hasActionStartTime ? now - (actionStartTime as number) : null;
-
-        // CRITICAL HARDENING (v2):
-        // Detect stale packets on ANY new turn (phase OR seat change), not just phase changes.
-        // A stale packet has:
-        //   - Low serverRemaining (< 3s or < 25% of actionTime)
-        //   - Large elapsedSinceStartMs (> 5s) implying we're "late" into someone else's turn
-        //
-        // FIX: Also include seatChanged in the condition, because logs show:
-        //   seat 7 → seat 0 (same phase 'flop'), but stale packet with serverRemaining=1
-        // CRITICAL HARDENING (v3):
-        // If elapsedSinceStartMs > 5s on a NEW turn (phase or seat), this packet belongs to 
-        // the PREVIOUS player's turn. We must ALWAYS correct, regardless of serverRemaining value.
-        // Previous bug: serverRemaining=4.2 wasn't "suspiciously low" (< 3s), so correction skipped.
-        const startLooksStale =
-          Boolean(isGenuineNewTurn && (phaseChanged || seatChanged) && elapsedSinceStartMs !== null && elapsedSinceStartMs > 5000);
-
-        // Also catch: new turn with serverRemaining < 2s (definitely stale regardless of elapsed)
-        const isDefinitelyStale =
-          isGenuineNewTurn &&
-          typeof rawServerRemaining === 'number' &&
-          rawServerRemaining < 2;
-
-        // FIX v5: Simplified stale packet handling - just correct the remaining time, no guards needed.
-        if (isGenuineNewTurn && (startLooksStale || isDefinitelyStale)) {
-          console.log('[TIMER SYNC] CORRECTING stale packet on new turn:', {
-            rawServerRemaining,
-            correctedTo: effectiveActionTime,
-            reason: startLooksStale
-              ? `elapsedSinceStartMs=${elapsedSinceStartMs}ms > 5000ms proves actionStartTime is from previous player`
-              : 'serverRemaining < 2s on brand new turn = definitely stale packet',
-            phaseChanged,
-            seatChanged,
-            elapsedSinceStartMs,
-          });
-          correctedServerRemaining = effectiveActionTime;
-        }
-
-        const hasServerRemaining = typeof correctedServerRemaining === 'number' && Number.isFinite(correctedServerRemaining);
-
-        const deadlineFromRemaining = hasServerRemaining ? (now + Math.max(0, correctedServerRemaining) * 1000) : null;
-        // FIX: If we detected a stale packet, do NOT use deadlineFromStart (it's based on old actionStartTime)
-        const deadlineFromStart =
-          hasActionStartTime && !startLooksStale && !isDefinitelyStale ? (actionStartTime + effectiveActionTime * 1000) : null;
-
-        let chosen: number | null = null;
-        let chosenSource: 'start' | 'remaining' | 'now' = 'now';
-
-        if (deadlineFromStart !== null && deadlineFromRemaining !== null) {
-          const sr = correctedServerRemaining as number;
-          const ast = actionStartTime as number;
-          const impliedServerNow = ast + (effectiveActionTime - sr) * 1000;
-          const clockSkewMs = now - impliedServerNow;
-          const startInFutureMs = ast - now;
-
-          const skewTooHigh = Math.abs(clockSkewMs) > 1500;
-          const startTooFuture = startInFutureMs > 1500;
-
-          chosen = (skewTooHigh || startTooFuture) ? deadlineFromRemaining : deadlineFromStart;
-          chosenSource = (skewTooHigh || startTooFuture) ? 'remaining' : 'start';
-
-          console.log('[TIMER SYNC] Main clock skew estimate:', {
-            clockSkewMs,
-            startInFutureMs,
-            chosenSource,
-            effectiveActionTime,
-            serverRemaining: sr,
-            rawServerRemaining,
-          });
-        } else if (deadlineFromRemaining !== null) {
-          chosen = deadlineFromRemaining;
-          chosenSource = 'remaining';
-        } else if (deadlineFromStart !== null) {
-          if (actionStartTime <= now + 1500 && (now - actionStartTime) < 120000) {
-            chosen = deadlineFromStart;
-            chosenSource = 'start';
-          }
-        }
-
-        if (chosen === null) {
-          chosen = now + effectiveActionTime * 1000;
-          chosenSource = 'now';
-        }
-
-        deadlineMsRef.current = chosen;
-        console.log('[TIMER SYNC] Main deadline chosen:', {
-          chosenSource,
-          deadline: deadlineMsRef.current,
-          remainingSeconds: (deadlineMsRef.current - now) / 1000,
-          effectiveActionTime,
-          serverRemaining: correctedServerRemaining,
-          rawServerRemaining,
-          actionStartTime,
-        });
-      }
-    } else {
-      // SAME TURN: Do NOT adjust deadlineMsRef during the turn.
-      // Drift correction was causing the ring timer to "jump" and reset visual progress.
-      // The deadline is set once at turn start and counts down smoothly via RAF in SmoothAvatarTimer.
-      // 
-      // If severe clock skew occurs, the player may see a slight difference from server,
-      // but the visual will remain smooth. True sync happens at next turn/phase change.
-    }
-
-    const getRemaining = (nowMs: number) => Math.max(0, (deadlineMsRef.current - nowMs) / 1000);
-
-    // Store initial remaining for time bank fallback (no high-frequency state updates)
-    const initialNow = Date.now();
-    setTurnTimeRemaining(getRemaining(initialNow));
-
-    // LOW-FREQUENCY update (1Hz) just for fallback hook and sounds - does NOT affect ring animation.
-    // SmoothAvatarTimer runs its own 60fps RAF loop using deadlineMsRef directly.
-    // Previously 200ms with drift correction caused ring jitter and alarm failure.
-    const interval = setInterval(() => {
-      const t = Date.now();
-      const localRemaining = getRemaining(t);
-      setTurnTimeRemaining(localRemaining);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [
-    timerResetKey,
-    tableState?.actionTimer,
-    tableState?.actionTimeTotal, // POKERSTARS-STYLE: Phase-aware timing
-    tableState?.actionStartTime,
-    // CRITICAL FIX: REMOVED tableState?.isTimeBankPhase from dependencies!
-    // TB transition should NOT re-run this effect and reset the deadline.
-    // The visual change (blue ring, alarm) is handled via isTimeBankActive state.
-    // NOTE: We DO include isTimeBankActive here to read current TB state for deadline calc,
-    // but the dedicated TB effect handles setting it (one-way dependency).
-    isTimeBankActive,
-    // If settings are edited, fallbacks (dbActionTime/dbTimeBank) must refresh too.
-    fullTableSettings
-  ]);
+  // Display values (direct from timer sync - no complex fallback needed)
+  const displayTurnTimeRemaining = turnTimeRemaining;
+  const displayTurnTimeTotal = turnTimeTotal;
 
   // Auto-connect handled inside useNodePokerTable
 
@@ -1586,9 +1116,9 @@ export function FullscreenPokerTableWrapper({
             currentPlayerSeat={currentPlayerSeat}
             turnTimeRemaining={displayTurnTimeRemaining ?? undefined}
             turnTimeTotal={displayTurnTimeTotal}
-            turnDeadlineMs={deadlineMsRef.current > 0 ? deadlineMsRef.current : undefined}
+            turnDeadlineMs={turnDeadlineMs > 0 ? turnDeadlineMs : undefined}
             isTimeBankActive={timeBankUiActive}
-            timeBankRemaining={timeBankUiActive ? (displayTurnTimeRemaining ?? timeBankSliceSeconds) : (currentTurnPlayerTimeBank || timeBankSliceSeconds)}
+            timeBankRemaining={timeBankUiActive ? (displayTurnTimeRemaining ?? timeBankSliceSeconds) : timeBankSliceSeconds}
             timeBankTotalSeconds={timeBankUiActive ? displayTurnTimeTotal : timeBankSliceSeconds}
             smallBlind={effectiveSmallBlind}
             bigBlind={effectiveBigBlind}
