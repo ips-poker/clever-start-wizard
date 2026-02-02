@@ -268,8 +268,14 @@ const TableSeating = ({
       return;
     }
 
-    // Сохраняем playersPerTable в localStorage для восстановления после перезагрузки
+    // Сохраняем playersPerTable в БД турнира для синхронизации с игроками
     localStorage.setItem(`tournament_${tournamentId}_playersPerTable`, playersPerTable.toString());
+    
+    // Также сохраняем в БД для синхронизации с Telegram Mini App
+    await supabase
+      .from('tournaments')
+      .update({ players_per_table: playersPerTable })
+      .eq('id', tournamentId);
 
     await supabase
       .from('tournament_registrations')

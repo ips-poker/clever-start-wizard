@@ -120,9 +120,23 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
     durationRef.current = tournament.timer_duration ?? null;
   }, [tournament.timer_duration]);
   
-  // Load players per table by analyzing actual seating pattern
+  // Load players per table from database (set by admin in TableSeating)
   useEffect(() => {
-    const detectTableSize = async () => {
+    const loadPlayersPerTable = async () => {
+      // First try to get from tournament's players_per_table field
+      const { data: tournamentData } = await supabase
+        .from('tournaments')
+        .select('players_per_table')
+        .eq('id', tournament.id)
+        .single();
+      
+      if (tournamentData?.players_per_table) {
+        setPlayersPerTable(tournamentData.players_per_table);
+        console.log(`[Seat Sync] Loaded ${tournamentData.players_per_table} players per table from DB`);
+        return;
+      }
+      
+      // Fallback: detect from seat pattern
       const { data } = await supabase
         .from('tournament_registrations')
         .select('seat_number')
@@ -134,11 +148,11 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
         const seatNumbers = data.map(d => d.seat_number as number);
         const detected = detectPlayersPerTable(seatNumbers);
         setPlayersPerTable(detected);
-        console.log(`[Seat Sync] Detected ${detected} players per table`);
+        console.log(`[Seat Sync] Detected ${detected} players per table from pattern`);
       }
     };
     
-    detectTableSize();
+    loadPlayersPerTable();
   }, [tournament.id]);
   
   // Calculate table and seat using consistent formula with admin panel
