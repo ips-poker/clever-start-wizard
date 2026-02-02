@@ -192,35 +192,62 @@ export type Database = {
       }
       clans: {
         Row: {
+          auto_post_registrations: boolean | null
+          auto_post_results: boolean | null
           created_at: string
           description: string | null
           don_player_id: string
           emblem_id: number
           id: string
+          logo_url: string | null
+          mini_app_enabled: boolean | null
+          mini_app_url: string | null
           name: string
+          primary_color: string | null
           seal_id: number
+          secondary_color: string | null
+          telegram_bot_token: string | null
+          telegram_channel_id: string | null
           total_rating: number | null
           updated_at: string
         }
         Insert: {
+          auto_post_registrations?: boolean | null
+          auto_post_results?: boolean | null
           created_at?: string
           description?: string | null
           don_player_id: string
           emblem_id?: number
           id?: string
+          logo_url?: string | null
+          mini_app_enabled?: boolean | null
+          mini_app_url?: string | null
           name: string
+          primary_color?: string | null
           seal_id?: number
+          secondary_color?: string | null
+          telegram_bot_token?: string | null
+          telegram_channel_id?: string | null
           total_rating?: number | null
           updated_at?: string
         }
         Update: {
+          auto_post_registrations?: boolean | null
+          auto_post_results?: boolean | null
           created_at?: string
           description?: string | null
           don_player_id?: string
           emblem_id?: number
           id?: string
+          logo_url?: string | null
+          mini_app_enabled?: boolean | null
+          mini_app_url?: string | null
           name?: string
+          primary_color?: string | null
           seal_id?: number
+          secondary_color?: string | null
+          telegram_bot_token?: string | null
+          telegram_channel_id?: string | null
           total_rating?: number | null
           updated_at?: string
         }
