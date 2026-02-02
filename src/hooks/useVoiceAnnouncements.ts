@@ -95,9 +95,14 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
         });
 
         if (error) {
-          console.error('❌ ElevenLabs TTS error, trying browser speech:', error);
-          // Fallback на встроенную речь браузера
-          await playBrowserSpeech(text);
+          console.error('❌ ElevenLabs TTS error:', error);
+          // Fallback на встроенную речь браузера только если включено
+          if (settings.browser_tts_fallback !== false) {
+            console.log('🔄 Trying browser speech fallback...');
+            await playBrowserSpeech(text);
+          } else {
+            console.log('🚫 Browser TTS fallback is disabled');
+          }
           return;
         }
 
@@ -141,17 +146,22 @@ export const useVoiceAnnouncements = (options: VoiceAnnouncementOptions = { enab
             throw new Error('Failed to decode audio content');
           }
         } else {
-          // Fallback на встроенную речь
-          await playBrowserSpeech(text);
+          // Fallback на встроенную речь только если включено
+          if (settings.browser_tts_fallback !== false) {
+            await playBrowserSpeech(text);
+          }
         }
       } else {
         // Используем системный голос
         await playBrowserSpeech(text);
       }
     } catch (error) {
-      console.error('❌ Failed to play voice announcement, trying browser speech:', error);
-      // Fallback на встроенную речь браузера
-      await playBrowserSpeech(text);
+      console.error('❌ Failed to play voice announcement:', error);
+      // Fallback на встроенную речь браузера только если включено
+      if (settings.browser_tts_fallback !== false) {
+        console.log('🔄 Trying browser speech fallback after error...');
+        await playBrowserSpeech(text);
+      }
     }
   }, [options.enabled, settings]);
 
