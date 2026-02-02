@@ -27,6 +27,7 @@ import Privacy from "./pages/Privacy";
 import PokerDemo from "./pages/PokerDemo";
 import OnlinePoker from "./pages/OnlinePoker";
 import PokerTable from "./pages/PokerTable";
+import Stickers from "./pages/Stickers";
 const queryClient = new QueryClient();
 
 function App() {
@@ -79,6 +80,7 @@ function App() {
                 <Route path="/online-poker" element={<OnlinePoker />} />
                 <Route path="/table/:tableId" element={<PokerTable />} />
                 <Route path="/tournament/:tournamentId/table/:tableId" element={<PokerTable />} />
+                <Route path="/stickers" element={<Stickers />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <MobileBottomNav />
