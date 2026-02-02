@@ -33,12 +33,17 @@ import {
   ChevronLeft,
   Loader2,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Send,
+  Download
 } from "lucide-react";
 import { ClubTournamentOverview } from "./ClubTournamentOverview";
 import { ClubTournamentPlayerManagement } from "./ClubTournamentPlayerManagement";
-import { ClubTournamentSeating } from "./ClubTournamentSeating";
+import { ClubTableSeating } from "./ClubTableSeating";
 import { ClubTournamentResults } from "./ClubTournamentResults";
+import { ClubFullscreenTimer } from "./ClubFullscreenTimer";
+import { ClubTelegramIntegration } from "./ClubTelegramIntegration";
+import { ClubExportTools } from "./ClubExportTools";
 
 interface Tournament {
   id: string;
@@ -118,6 +123,7 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
   const [currentTime, setCurrentTime] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [showFullscreenTimer, setShowFullscreenTimer] = useState(false);
 
   // Load tournament data
   const loadTournament = useCallback(async () => {
@@ -457,6 +463,14 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
           </div>
         </div>
         <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setShowFullscreenTimer(true)}
+          title="Полноэкранный таймер"
+        >
+          <Maximize className="w-5 h-5" />
+        </Button>
+        <Button
           variant="ghost"
           size="icon"
           onClick={() => setSoundEnabled(!soundEnabled)}
@@ -619,9 +633,27 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
         </CardContent>
       </Card>
 
+      {/* Fullscreen Timer */}
+      {showFullscreenTimer && (
+        <ClubFullscreenTimer
+          tournament={tournament}
+          registrations={registrations}
+          currentTime={currentTime}
+          timerActive={timerActive}
+          onToggleTimer={toggleTimer}
+          onResetTimer={resetTimer}
+          onNextLevel={handleNextLevel}
+          onPrevLevel={handlePrevLevel}
+          onClose={() => setShowFullscreenTimer(false)}
+          onTimerAdjust={adjustTimer}
+          clubName={club?.name}
+          blindLevels={blindLevels}
+        />
+      )}
+
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4 h-auto p-1 bg-card/50">
+        <TabsList className="grid w-full grid-cols-6 h-auto p-1 bg-card/50">
           <TabsTrigger value="overview" className="flex items-center gap-2 py-2">
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">Обзор</span>
@@ -637,6 +669,14 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
           <TabsTrigger value="results" className="flex items-center gap-2 py-2">
             <Trophy className="w-4 h-4" />
             <span className="hidden sm:inline">Результаты</span>
+          </TabsTrigger>
+          <TabsTrigger value="telegram" className="flex items-center gap-2 py-2">
+            <Send className="w-4 h-4" />
+            <span className="hidden sm:inline">Telegram</span>
+          </TabsTrigger>
+          <TabsTrigger value="export" className="flex items-center gap-2 py-2">
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Экспорт</span>
           </TabsTrigger>
         </TabsList>
 
@@ -658,10 +698,12 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
         </TabsContent>
 
         <TabsContent value="seating">
-          <ClubTournamentSeating
-            tournament={tournament}
+          <ClubTableSeating
+            tournamentId={tournament.id}
             registrations={registrations}
-            onUpdate={loadRegistrations}
+            playersPerTable={tournament.players_per_table || 9}
+            bigBlind={tournament.current_big_blind}
+            onSeatingUpdate={loadRegistrations}
           />
         </TabsContent>
 
@@ -670,6 +712,14 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
             tournament={tournament}
             registrations={registrations}
           />
+        </TabsContent>
+
+        <TabsContent value="telegram">
+          <ClubTelegramIntegration tournamentId={tournament.id} />
+        </TabsContent>
+
+        <TabsContent value="export">
+          <ClubExportTools tournament={tournament} registrations={registrations} />
         </TabsContent>
       </Tabs>
     </div>
