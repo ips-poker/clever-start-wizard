@@ -119,6 +119,15 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
   useEffect(() => {
     durationRef.current = tournament.timer_duration ?? null;
   }, [tournament.timer_duration]);
+
+  // ExternalTimer-style snapshot tracking:
+  // tournaments.timer_remaining is persisted only periodically; we need the timestamp of that snapshot.
+  // IMPORTANT: tournaments.updated_at can change for unrelated updates (e.g., players_per_table),
+  // so we only treat updated_at as a timer snapshot moment when timer_remaining actually changes.
+  const timerSnapshotRef = useRef<{ dbRemaining: number; snapshotMs: number }>({
+    dbRemaining: tournament.timer_remaining || 0,
+    snapshotMs: Date.now(),
+  });
   
   // Load players per table from database (set by admin in TableSeating)
   const loadPlayersPerTable = useCallback(async () => {
@@ -306,7 +315,7 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
       try {
         const { data } = await supabase
           .from('tournaments')
-          .select('timer_remaining, timer_duration, current_level, current_small_blind, current_big_blind, status')
+          .select('timer_remaining, timer_duration, current_level, current_small_blind, current_big_blind, status, updated_at')
           .eq('id', tournament.id)
           .single();
         
@@ -320,10 +329,34 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
             current_big_blind: data.current_big_blind,
             status: data.status,
           }));
-          
+
+          // ExternalTimer-style: timer_remaining is a snapshot saved at `updated_at`.
+          // We must subtract elapsed time since that snapshot to avoid being behind.
+          const now = Date.now();
+          const updatedAtMs = data.updated_at ? Date.parse(data.updated_at) : now;
+
+          const dbRemaining = data.timer_remaining || 0;
+          const levelChanged =
+            data.current_level != null && levelRef.current != null && data.current_level !== levelRef.current;
+
+          // Update our snapshot timestamp ONLY if this update likely carries a new timer snapshot.
+          if (dbRemaining !== timerSnapshotRef.current.dbRemaining || levelChanged) {
+            timerSnapshotRef.current = {
+              dbRemaining,
+              snapshotMs: updatedAtMs,
+            };
+          }
+
+          const snapshotMs = timerSnapshotRef.current.snapshotMs;
+          const elapsedMs = now - snapshotMs;
+          // Clock-skew guard: if snapshot time appears to be in the future (client clock behind), don't add time.
+          const safeElapsedMs = elapsedMs < -1500 ? 0 : Math.max(0, elapsedMs);
+          const elapsedSeconds = Math.floor(safeElapsedMs / 1000);
+          const remainingNow = Math.max(0, dbRemaining - elapsedSeconds);
+
           applyServerTimerUpdate({
             source: 'poll',
-            serverRemaining: data.timer_remaining || 0,
+            serverRemaining: remainingNow,
             serverLevel: data.current_level,
             serverDuration: data.timer_duration,
           });
