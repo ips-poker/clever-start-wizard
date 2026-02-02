@@ -313,12 +313,12 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
     try {
       console.log('Loading tournaments for player:', player.id);
       
-      // Сначала получаем регистрации игрока
+      // Сначала получаем регистрации игрока (только активные статусы)
       const { data: registrations, error: regError } = await supabase
         .from('tournament_registrations')
         .select('*')
         .eq('player_id', player.id)
-        .in('status', ['registered', 'confirmed', 'playing', 'eliminated'])
+        .in('status', ['registered', 'confirmed', 'playing']) // Removed 'eliminated' - they shouldn't show in active tournaments
         .order('created_at', { ascending: false });
 
       if (regError) throw regError;
@@ -331,11 +331,13 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
       // Получаем ID турниров
       const tournamentIds = registrations.map(r => r.tournament_id);
       
-      // Загружаем турниры из view с актуальными данными
+      // Загружаем турниры из view с актуальными данными (исключая архивные и завершенные)
       const { data: tournaments, error: tournamentError } = await supabase
         .from('tournaments_display')
         .select('*')
-        .in('id', tournamentIds);
+        .in('id', tournamentIds)
+        .or('is_archived.is.null,is_archived.eq.false') // Exclude archived tournaments
+        .in('status', ['scheduled', 'registration', 'running', 'paused']); // Only active tournaments
 
       if (tournamentError) throw tournamentError;
 
@@ -343,7 +345,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
       const combinedData: TournamentRegistration[] = registrations
         .map(reg => {
           const tournament = tournaments?.find(t => t.id === reg.tournament_id);
-          if (!tournament) return null;
+          if (!tournament) return null; // Will be filtered out if tournament is archived/finished
           return {
             ...reg,
             tournament: tournament as Tournament
@@ -562,7 +564,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
     return sum + (result.elo_change > 0 ? result.elo_change : 0);
   }, 0);
   
-  const recentForm = gameResults.slice(0, 5).map(r => r.position <= 3 ? '✅' : '❌').join('');
+  const recentForm = gameResults.slice(0, 5).map(r => r.position <= 3 ? '🏆' : '•').join(' ');
   
   // Get rank-specific profile styling
   const rankStyle = getRankProfileStyle(mafiaRank);
@@ -828,8 +830,9 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
               <Flame className="h-4 w-4 text-background" />
             </div>
             <div className="flex-1">
-              <h3 className="text-foreground font-bold text-sm uppercase tracking-wider">Последние результаты</h3>
+              <h3 className="text-foreground font-bold text-sm uppercase tracking-wider">Форма (последние 5 игр)</h3>
               <p className="text-syndikate-orange text-sm font-mono font-bold tracking-wider">{recentForm || 'Нет данных'}</p>
+              <p className="text-muted-foreground text-[10px] mt-1">🏆 = Топ-3 • = Вне призов</p>
             </div>
           </div>
         </CardContent>
