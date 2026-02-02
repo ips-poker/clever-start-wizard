@@ -107,66 +107,105 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Премиум эмодзи для мест
+    // Премиум эмодзи для мест с красивыми Unicode символами
     const getPlaceEmoji = (position: number): string => {
       switch (position) {
-        case 1: return '👑'
+        case 1: return '🏆'
         case 2: return '🥈'
         case 3: return '🥉'
-        case 4: return '④'
-        case 5: return '⑤'
-        case 6: return '⑥'
-        case 7: return '⑦'
-        case 8: return '⑧'
-        case 9: return '⑨'
-        case 10: return '⑩'
+        case 4: return '🎯'
+        case 5: return '⭐'
+        case 6: return '✨'
+        case 7: return '💫'
+        case 8: return '🔸'
+        case 9: return '🔹'
+        case 10: return '◆'
         default: return `${position}.`
       }
     }
 
-    // Завораживающие вступления
+    // Премиум Unicode символы для декора
+    const symbols = {
+      crown: '👑',
+      diamond: '💎',
+      star: '⭐',
+      sparkle: '✨',
+      fire: '🔥',
+      trophy: '🏆',
+      medal: '🎖',
+      gem: '💠',
+      spade: '♠',
+      heart: '♥',
+      diamond_suit: '♦',
+      club: '♣',
+      arrow_up: '▲',
+      arrow_down: '▼',
+      dot: '•',
+      circle: '○',
+      bullet: '◉',
+      star_filled: '★',
+      star_empty: '☆',
+      lightning: '⚡',
+      infinity: '∞',
+      check: '✓',
+      x_mark: '✗',
+      fleur: '⚜',
+    }
+
+    // Завораживающие вступления с премиум символами
     const introVariants = [
-      '╭─────────────────────╮\n│ ✨ Карты легли, судьба решена... │\n│ Ещё один вечер, который │\n│ войдёт в легенды клуба! │\n╰─────────────────────╯',
-      '╭─────────────────────╮\n│ 🌙 Под светом покерных │\n│ софитов разыгралась │\n│ настоящая драма! │\n╰─────────────────────╯',
-      '╭─────────────────────╮\n│ 💫 Напряжение достигло │\n│ предела, блефы раскрыты, │\n│ чемпион определён! │\n╰─────────────────────╯',
-      '╭─────────────────────╮\n│ 🔮 Фортуна благоволила │\n│ смелым — история │\n│ написана! │\n╰─────────────────────╯',
-      '╭─────────────────────╮\n│ ⚡ Адреналин, стратегия, │\n│ хладнокровие — всё │\n│ сошлось воедино! │\n╰─────────────────────╯',
+      `╔═══════════════════════╗\n║ ${symbols.crown} 𝐋𝐄𝐆𝐄𝐍𝐃𝐒 𝐀𝐑𝐄 𝐁𝐎𝐑𝐍 ${symbols.crown} ║\n║ ━━━━━━━━━━━━━━━━━━━━━ ║\n║ Карты легли, судьба решена... ║\n║ Ещё один вечер величия! ║\n╚═══════════════════════╝`,
+      
+      `╭───────────────────────╮\n│ ${symbols.fire} 𝐓𝐇𝐄 𝐁𝐀𝐓𝐓𝐋𝐄 𝐈𝐒 𝐎𝐕𝐄𝐑 ${symbols.fire} │\n├───────────────────────┤\n│ Под светом покерных софитов │\n│ разыгралась настоящая драма! │\n╰───────────────────────╯`,
+      
+      `┏━━━━━━━━━━━━━━━━━━━━━━━┓\n┃ ${symbols.lightning} 𝐕𝐈𝐂𝐓𝐎𝐑𝐘 𝐀𝐖𝐀𝐈𝐓𝐒 ${symbols.lightning} ┃\n┣━━━━━━━━━━━━━━━━━━━━━━━┫\n┃ Напряжение достигло предела, ┃\n┃ блефы раскрыты, чемпион избран! ┃\n┗━━━━━━━━━━━━━━━━━━━━━━━┛`,
+      
+      `╔╦══════════════════════╦╗\n║║ ${symbols.fleur} 𝐅𝐎𝐑𝐓𝐔𝐍𝐀 𝐅𝐀𝐕𝐄𝐓 ${symbols.fleur} ║║\n╠╬══════════════════════╬╣\n║║ Фортуна благоволила смелым — ║║\n║║ история написана кровью! ║║\n╚╩══════════════════════╩╝`,
+      
+      `▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n░ ${symbols.star_filled} 𝐆𝐋𝐎𝐑𝐘 𝐀𝐖𝐀𝐈𝐓𝐒 ${symbols.star_filled} ░\n▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n░ Адреналин, стратегия, ░\n░ хладнокровие — всё сошлось! ░\n▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓`,
     ]
     
     const getRandomIntro = () => introVariants[Math.floor(Math.random() * introVariants.length)]
 
-    // Формат турнира
+    // Формат турнира с премиум иконками
     const getFormatDescription = (format: string | null): string => {
       switch (format) {
-        case 'knockout': return '💀 Нокаут'
-        case 'bounty': return '🎯 Баунти'
-        case 'deepstack': return '📚 Дипстек'
-        case 'turbo': return '⚡ Турбо'
-        case 'hyper': return '🚀 Гипер-турбо'
-        case 'rebuy': return '🔄 С ребаями'
-        case 'freezeout': return '❄️ Фризаут'
-        case 'reentry': return '🔁 С доп. входами'
-        default: return '🃏 Классика'
+        case 'knockout': return `${symbols.fire} Нокаут`
+        case 'bounty': return `🎯 Баунти`
+        case 'deepstack': return `📚 Дипстек`
+        case 'turbo': return `${symbols.lightning} Турбо`
+        case 'hyper': return `🚀 Гипер-турбо`
+        case 'rebuy': return `🔄 С ребаями`
+        case 'freezeout': return `❄️ Фризаут`
+        case 'reentry': return `🔁 С доп. входами`
+        default: return `🃏 Классика`
       }
     }
 
     // Формируем сообщение с премиум оформлением
     let message = `${getRandomIntro()}\n\n`
     
-    message += `⠀⠀⠀⠀♠️ ♥️ ♦️ ♣️\n`
-    message += `⠀⠀🏆 <b>${tournament.name}</b> 🏆\n`
-    message += `⠀⠀⠀⠀♣️ ♦️ ♥️ ♠️\n\n`
+    // Красивый заголовок турнира
+    message += `\n`
+    message += `⠀⠀⠀⠀${symbols.spade}${symbols.heart}${symbols.diamond_suit}${symbols.club}\n`
+    message += `\n`
+    message += `⠀⠀⠀${symbols.trophy} <b>${tournament.name}</b> ${symbols.trophy}\n`
+    message += `\n`
+    message += `⠀⠀⠀⠀${symbols.club}${symbols.diamond_suit}${symbols.heart}${symbols.spade}\n`
+    message += `\n`
     
-    message += `┌──────────────────┐\n`
+    // Информационный блок
+    message += `┌─────────────────────┐\n`
     message += `│ 📅 ${formatDate(startDate)}\n`
     message += `│ ⏰ ${formatTime(startDate)} — ${endDate ? formatTime(endDate) : '...'} МСК\n`
     message += `│ ${getFormatDescription(tournament.tournament_format)}\n`
     message += `│ 👥 Участников: <b>${results?.length || 0}</b>\n`
-    message += `└──────────────────┘\n\n`
+    message += `└─────────────────────┘\n\n`
     
-    message += `╔══════════════════════╗\n`
-    message += `║⠀⠀⠀📊 <b>РЕЗУЛЬТАТЫ</b> ⠀⠀⠀║\n`
-    message += `╚══════════════════════╝\n\n`
+    // Заголовок результатов
+    message += `╔════════════════════════╗\n`
+    message += `║ ${symbols.star_filled} <b>𝐑𝐄𝐒𝐔𝐋𝐓𝐒</b> ${symbols.star_filled} ║\n`
+    message += `╚════════════════════════╝\n\n`
 
     // Топ-10 с премиум оформлением
     const top10 = results?.slice(0, 10) || []
@@ -174,17 +213,22 @@ Deno.serve(async (req) => {
       const playerName = (result.players as any)?.name || 'Неизвестный'
       const placeEmoji = getPlaceEmoji(result.position)
       const rpsChange = result.elo_change > 0 ? `+${result.elo_change}` : `${result.elo_change}`
-      const rpsIcon = result.elo_change > 0 ? '🔺' : result.elo_change < 0 ? '🔻' : '▪️'
+      const rpsIcon = result.elo_change > 0 ? `${symbols.arrow_up}` : result.elo_change < 0 ? `${symbols.arrow_down}` : `${symbols.dot}`
       
       if (result.position === 1) {
-        message += `┏━━━━━━━━━━━━━━━━━━━┓\n`
+        // Чемпион с особым оформлением
+        message += `┏━━━━━━━━━━━━━━━━━━━━━━━┓\n`
+        message += `┃ ${symbols.crown} <b>ЧЕМПИОН</b> ${symbols.crown}\n`
+        message += `┃\n`
         message += `┃ ${placeEmoji} <b>${playerName}</b>\n`
-        message += `┃ ⠀⠀${rpsIcon} RPS: ${rpsChange} ➜ <b>${result.elo_after}</b>\n`
-        message += `┗━━━━━━━━━━━━━━━━━━━┛\n\n`
+        message += `┃ ⠀⠀RPS: ${rpsIcon} ${rpsChange} ➜ <b>${result.elo_after}</b>\n`
+        message += `┗━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`
       } else if (result.position <= 3) {
+        // Призёры
         message += `┃ ${placeEmoji} <b>${playerName}</b>\n`
-        message += `┃ ⠀⠀${rpsIcon} RPS: ${rpsChange} ➜ ${result.elo_after}\n\n`
+        message += `┃ ⠀⠀RPS: ${rpsIcon} ${rpsChange} ➜ ${result.elo_after}\n\n`
       } else {
+        // Остальные из топ-10
         message += `│ ${placeEmoji} ${playerName}\n`
         message += `│ ⠀⠀${rpsIcon} ${rpsChange} ➜ ${result.elo_after}\n\n`
       }
@@ -199,17 +243,19 @@ Deno.serve(async (req) => {
       for (const result of restResults) {
         const playerName = (result.players as any)?.name || 'Неизвестный'
         const rpsChange = result.elo_change > 0 ? `+${result.elo_change}` : `${result.elo_change}`
-        const rpsIcon = result.elo_change > 0 ? '🔺' : result.elo_change < 0 ? '🔻' : '▪️'
+        const rpsIcon = result.elo_change > 0 ? `${symbols.arrow_up}` : result.elo_change < 0 ? `${symbols.arrow_down}` : `${symbols.dot}`
         
         message += `${result.position}. ${playerName} ${rpsIcon} ${rpsChange}\n`
       }
       message += `</blockquote>\n\n`
     }
 
-    message += `═══════════════════════\n\n`
-    message += `⠀⠀💎 <i>Благодарим за игру!</i> 💎\n\n`
-    message += `⠀♠️♥️ <b>SYNDICATE</b> ♦️♣️\n`
-    message += `⠀⠀⠀<b>POKER CLUB</b>`
+    // Красивый футер
+    message += `═══════════════════════════\n\n`
+    message += `⠀⠀${symbols.diamond} <i>Благодарим за игру!</i> ${symbols.diamond}\n\n`
+    message += `⠀⠀${symbols.spade}${symbols.heart} <b>𝐒𝐘𝐍𝐃𝐈𝐂𝐀𝐓𝐄</b> ${symbols.diamond_suit}${symbols.club}\n`
+    message += `⠀⠀⠀<b>𝐏𝐎𝐊𝐄𝐑 𝐂𝐋𝐔𝐁</b>\n`
+    message += `⠀⠀⠀⠀${symbols.fleur} ${symbols.star_filled} ${symbols.fleur}`
 
     console.log('Sending message to Telegram channel:', TELEGRAM_CHANNEL_ID)
 
