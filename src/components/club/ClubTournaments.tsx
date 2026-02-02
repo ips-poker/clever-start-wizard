@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useClub } from "@/contexts/ClubContext";
 import { useClubTournaments } from "@/hooks/useClubTournaments";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,8 +43,9 @@ import {
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ClubTournamentDirector } from "./ClubTournamentDirector";
-import { ClubTournamentCard } from "./ClubTournamentCard";
+import { ClubTournamentCompactCard } from "./ClubTournamentCompactCard";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 
 const STATUS_CONFIG = {
@@ -110,7 +111,52 @@ export function ClubTournaments() {
   const [newTournament, setNewTournament] = useState<TournamentFormData>(DEFAULT_FORM_DATA);
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const queryClient = useQueryClient();
+
+  // Real-time subscription for tournaments and registrations
+  useEffect(() => {
+    if (!club?.id) return;
+
+    // Subscribe to tournament changes
+    const tournamentsChannel = supabase
+      .channel(`club_tournaments_realtime_${club.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournaments',
+          filter: `clan_id=eq.${club.id}`
+        },
+        () => {
+          refetch();
+          queryClient.invalidateQueries({ queryKey: ["tournament-registration-counts", club.id] });
+        }
+      )
+      .subscribe();
+
+    // Subscribe to registration changes
+    const registrationsChannel = supabase
+      .channel(`club_registrations_realtime_${club.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_registrations'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["tournament-registration-counts", club.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(tournamentsChannel);
+      supabase.removeChannel(registrationsChannel);
+    };
+  }, [club?.id, refetch, queryClient]);
 
   // Fetch registration counts for all tournaments
   const { data: registrationCounts } = useQuery({
@@ -134,10 +180,16 @@ export function ClubTournaments() {
     enabled: tournaments.length > 0,
   });
 
-  // Filter tournaments by status
+  // Filter tournaments by status (exclude archived unless specifically filtered)
   const filteredTournaments = useMemo(() => {
-    if (statusFilter === "all") return tournaments;
-    return tournaments.filter(t => t.status === statusFilter);
+    // Base filter: exclude archived tournaments
+    let filtered = tournaments.filter(t => !t.is_archived);
+    
+    if (statusFilter === "all") return filtered;
+    if (statusFilter === "running") {
+      return filtered.filter(t => t.status === 'running' || t.status === 'paused');
+    }
+    return filtered.filter(t => t.status === statusFilter);
   }, [tournaments, statusFilter]);
 
   // Enhance tournaments with registration counts
@@ -148,14 +200,15 @@ export function ClubTournaments() {
     }));
   }, [filteredTournaments, registrationCounts]);
 
-  // Status counts for filters
+  // Status counts for filters (exclude archived)
   const statusCounts = useMemo(() => {
+    const activeTournaments = tournaments.filter(t => !t.is_archived);
     return {
-      all: tournaments.length,
-      scheduled: tournaments.filter(t => t.status === 'scheduled').length,
-      registration: tournaments.filter(t => t.status === 'registration').length,
-      running: tournaments.filter(t => t.status === 'running' || t.status === 'paused').length,
-      completed: tournaments.filter(t => t.status === 'completed').length,
+      all: activeTournaments.length,
+      scheduled: activeTournaments.filter(t => t.status === 'scheduled').length,
+      registration: activeTournaments.filter(t => t.status === 'registration').length,
+      running: activeTournaments.filter(t => t.status === 'running' || t.status === 'paused').length,
+      completed: activeTournaments.filter(t => t.status === 'completed').length,
     };
   }, [tournaments]);
 
@@ -585,11 +638,11 @@ export function ClubTournaments() {
         </Card>
       ) : (
         <div className={viewMode === "grid" 
-          ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" 
-          : "space-y-4"
+          ? "grid gap-3 md:grid-cols-2 lg:grid-cols-3" 
+          : "space-y-2"
         }>
           {enhancedTournaments.map((tournament, index) => (
-            <ClubTournamentCard
+            <ClubTournamentCompactCard
               key={tournament.id}
               tournament={tournament}
               index={index}
@@ -597,7 +650,10 @@ export function ClubTournaments() {
               onDelete={async (id) => {
                 await deleteTournament.mutateAsync(id);
               }}
-              onRefresh={refetch}
+              onRefresh={() => {
+                refetch();
+                queryClient.invalidateQueries({ queryKey: ["tournament-registration-counts", club?.id] });
+              }}
               canManage={canManageTournaments}
             />
           ))}
