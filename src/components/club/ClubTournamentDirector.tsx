@@ -44,6 +44,7 @@ import { ClubTournamentResults } from "./ClubTournamentResults";
 import { ClubFullscreenTimer } from "./ClubFullscreenTimer";
 import { ClubTelegramIntegration } from "./ClubTelegramIntegration";
 import { ClubExportTools } from "./ClubExportTools";
+import { ClubBlindStructure } from "./ClubBlindStructure";
 
 interface Tournament {
   id: string;
@@ -653,7 +654,7 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6 h-auto p-1 bg-card/50">
+        <TabsList className="grid w-full grid-cols-7 h-auto p-1 bg-card/50">
           <TabsTrigger value="overview" className="flex items-center gap-2 py-2">
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">Обзор</span>
@@ -665,6 +666,10 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
           <TabsTrigger value="seating" className="flex items-center gap-2 py-2">
             <Shuffle className="w-4 h-4" />
             <span className="hidden sm:inline">Рассадка</span>
+          </TabsTrigger>
+          <TabsTrigger value="blinds" className="flex items-center gap-2 py-2">
+            <Clock className="w-4 h-4" />
+            <span className="hidden sm:inline">Блайнды</span>
           </TabsTrigger>
           <TabsTrigger value="results" className="flex items-center gap-2 py-2">
             <Trophy className="w-4 h-4" />
@@ -704,6 +709,14 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
             playersPerTable={tournament.players_per_table || 9}
             bigBlind={tournament.current_big_blind}
             onSeatingUpdate={loadRegistrations}
+          />
+        </TabsContent>
+
+        <TabsContent value="blinds">
+          <ClubBlindStructure
+            tournamentId={tournament.id}
+            currentLevel={tournament.current_level}
+            onUpdate={loadBlindLevels}
           />
         </TabsContent>
 
