@@ -85,13 +85,30 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
   const [registration, setRegistration] = useState(initialRegistration);
   const [tournament, setTournament] = useState<Tournament>(initialRegistration.tournament);
   const [blindLevels, setBlindLevels] = useState<BlindLevel[]>([]);
-  const [timerRemaining, setTimerRemaining] = useState(tournament.timer_remaining || 0);
   const [isSubmitting, setIsSubmitting] = useState<'reentry' | 'addon' | null>(null);
   const [averageStack, setAverageStack] = useState(0);
   const [playersRemaining, setPlayersRemaining] = useState(0);
   
+  // Timer sync: use server anchor time for accurate countdown
+  const [timerAnchor, setTimerAnchor] = useState<{
+    serverRemaining: number;
+    anchorTime: number; // local timestamp when we received server data
+  }>({ serverRemaining: tournament.timer_remaining || 0, anchorTime: Date.now() });
+  
+  // Calculated timer remaining based on anchor (single source of truth)
+  const [displayTimer, setDisplayTimer] = useState(tournament.timer_remaining || 0);
+  
   const tableNumber = registration.seat_number ? Math.ceil(registration.seat_number / 9) : null;
   const seatNumber = registration.seat_number ? ((registration.seat_number - 1) % 9) + 1 : null;
+  
+  // Update anchor when receiving new server data
+  const updateTimerAnchor = useCallback((serverRemaining: number) => {
+    console.log('[Timer] Anchor update:', serverRemaining);
+    setTimerAnchor({
+      serverRemaining,
+      anchorTime: Date.now()
+    });
+  }, []);
   
   // Load blind levels
   useEffect(() => {
@@ -129,14 +146,14 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
     loadStats();
   }, [tournament.id]);
   
-  // Real-time subscription for tournament updates + polling fallback for timer sync
+  // Polling for tournament data (single source, no realtime conflicts)
   useEffect(() => {
     let pollTimeoutId: NodeJS.Timeout;
-    let pollInterval = 3000; // Start with 3 second polling
-    let lastTimerValue: number | null = null;
+    let isActive = true;
     
-    // Polling function for timer sync reliability
     const pollTournamentData = async () => {
+      if (!isActive) return;
+      
       try {
         const { data } = await supabase
           .from('tournaments')
@@ -144,14 +161,7 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
           .eq('id', tournament.id)
           .single();
         
-        if (data) {
-          // Check if timer value changed (indicates level change or admin action)
-          if (lastTimerValue !== null && data.timer_remaining !== lastTimerValue) {
-            console.log('Timer sync: polling detected change', { old: lastTimerValue, new: data.timer_remaining });
-            pollInterval = 3000; // Reset interval on changes
-          }
-          lastTimerValue = data.timer_remaining;
-          
+        if (data && isActive) {
           setTournament(prev => ({
             ...prev,
             timer_remaining: data.timer_remaining,
@@ -161,43 +171,33 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
             current_big_blind: data.current_big_blind,
             status: data.status,
           }));
-          setTimerRemaining(data.timer_remaining || 0);
           
-          // Exponential backoff if no changes, cap at 15 seconds
-          pollInterval = Math.min(pollInterval * 1.3, 15000);
+          // Update anchor only - display timer will be calculated from this
+          updateTimerAnchor(data.timer_remaining || 0);
         }
       } catch (error) {
         console.error('Timer polling error:', error);
       }
       
-      pollTimeoutId = setTimeout(pollTournamentData, pollInterval);
+      // Fixed 2 second polling for accurate timer sync
+      if (isActive) {
+        pollTimeoutId = setTimeout(pollTournamentData, 2000);
+      }
     };
     
-    // Start polling
-    pollTimeoutId = setTimeout(pollTournamentData, pollInterval);
+    // Initial poll
+    pollTournamentData();
     
-    // Realtime subscription
+    return () => {
+      isActive = false;
+      clearTimeout(pollTimeoutId);
+    };
+  }, [tournament.id, updateTimerAnchor]);
+  
+  // Registration updates via realtime (separate from timer)
+  useEffect(() => {
     const channel = supabase
-      .channel(`player_lobby_${registration.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tournaments',
-          filter: `id=eq.${tournament.id}`
-        },
-        (payload) => {
-          console.log('Tournament updated (realtime):', payload);
-          if (payload.new) {
-            const newData = payload.new as any;
-            setTournament(prev => ({ ...prev, ...newData }));
-            setTimerRemaining(newData.timer_remaining || 0);
-            lastTimerValue = newData.timer_remaining;
-            pollInterval = 3000; // Reset polling interval when realtime works
-          }
-        }
-      )
+      .channel(`player_lobby_reg_${registration.id}`)
       .on(
         'postgres_changes',
         {
@@ -227,24 +227,36 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
       .subscribe();
     
     return () => {
-      clearTimeout(pollTimeoutId);
       supabase.removeChannel(channel);
     };
-  }, [tournament.id, registration.id, onUpdate]);
+  }, [registration.id, onUpdate]);
   
-  // Timer countdown (local countdown between syncs)
+  // Local timer countdown from anchor (requestAnimationFrame for smooth updates)
   useEffect(() => {
     if (tournament.status !== 'running') return;
     
-    const interval = setInterval(() => {
-      setTimerRemaining(prev => {
-        if (prev <= 0) return 0;
-        return prev - 1;
-      });
-    }, 1000);
+    let animationFrameId: number;
+    let lastSecond = -1;
     
-    return () => clearInterval(interval);
-  }, [tournament.status]);
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - timerAnchor.anchorTime) / 1000);
+      const remaining = Math.max(0, timerAnchor.serverRemaining - elapsed);
+      
+      // Only update state when second changes to avoid excessive re-renders
+      if (remaining !== lastSecond) {
+        lastSecond = remaining;
+        setDisplayTimer(remaining);
+      }
+      
+      animationFrameId = requestAnimationFrame(tick);
+    };
+    
+    animationFrameId = requestAnimationFrame(tick);
+    
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [tournament.status, timerAnchor]);
   
   // Format timer
   const formatTimer = (seconds: number) => {
@@ -318,12 +330,12 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
   
   // Timer progress percentage
   const timerProgress = tournament.timer_duration 
-    ? (timerRemaining / tournament.timer_duration) * 100 
+    ? (displayTimer / tournament.timer_duration) * 100 
     : 0;
   
   // Check if timer is low
-  const isTimerLow = timerRemaining <= 60;
-  const isTimerCritical = timerRemaining <= 30;
+  const isTimerLow = displayTimer <= 60;
+  const isTimerCritical = displayTimer <= 30;
 
   return (
     <AnimatePresence>
@@ -455,7 +467,7 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
                   "text-5xl font-display font-black text-center mb-3 tracking-wider",
                   isTimerCritical ? "text-red-400" : isTimerLow ? "text-amber-400" : "text-syndikate-orange"
                 )}>
-                  {formatTimer(timerRemaining)}
+                  {formatTimer(displayTimer)}
                 </div>
                 
                 <Progress 
