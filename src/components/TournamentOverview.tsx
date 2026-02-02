@@ -87,6 +87,10 @@ interface Registration {
   additional_sets: number;
   seat_number: number;
   position?: number;
+  pending_reentry?: boolean;
+  pending_addon?: boolean;
+  pending_reentry_at?: string;
+  pending_addon_at?: string;
 }
 
 interface TournamentOverviewProps {
