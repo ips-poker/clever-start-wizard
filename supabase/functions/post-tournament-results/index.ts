@@ -167,9 +167,9 @@ Deno.serve(async (req) => {
     message += `┃    📊 <b>РЕЗУЛЬТАТЫ</b>    ┃\n`
     message += `┗━━━━━━━━━━━━━━━━━━━━━┛\n\n`
 
-    // Топ-3 с особым оформлением
-    const top3 = results?.slice(0, 3) || []
-    for (const result of top3) {
+    // Топ-10 с особым оформлением
+    const top10 = results?.slice(0, 10) || []
+    for (const result of top10) {
       const playerName = (result.players as any)?.name || 'Неизвестный'
       const placeEmoji = getPlaceEmoji(result.position)
       const rpsChange = result.elo_change > 0 ? `+${result.elo_change}` : `${result.elo_change}`
@@ -180,18 +180,17 @@ Deno.serve(async (req) => {
     }
 
     // Остальные игроки в расширяемом блоке
-    const restResults = results?.slice(3) || []
+    const restResults = results?.slice(10) || []
     if (restResults.length > 0) {
       message += `<blockquote expandable>\n`
-      message += `📋 <b>Полный список участников:</b>\n\n`
+      message += `📋 <b>Остальные участники:</b>\n\n`
       
       for (const result of restResults) {
         const playerName = (result.players as any)?.name || 'Неизвестный'
-        const placeEmoji = getPlaceEmoji(result.position)
         const rpsChange = result.elo_change > 0 ? `+${result.elo_change}` : `${result.elo_change}`
         const rpsIcon = result.elo_change > 0 ? '📈' : result.elo_change < 0 ? '📉' : '➡️'
         
-        message += `${placeEmoji} ${playerName} ${rpsIcon} ${rpsChange}\n`
+        message += `${result.position}. ${playerName} ${rpsIcon} ${rpsChange}\n`
       }
       message += `</blockquote>\n\n`
     }
