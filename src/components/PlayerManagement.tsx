@@ -115,6 +115,39 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     setStartingChips(tournament.starting_chips || 10000);
   }, [tournament.starting_chips]);
 
+  // Realtime subscription для мгновенных обновлений
+  useEffect(() => {
+    if (!tournament?.id) return;
+
+    console.log('Setting up realtime subscription for PlayerManagement:', tournament.id);
+
+    const channel = supabase
+      .channel(`player_management_${tournament.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_registrations',
+          filter: `tournament_id=eq.${tournament.id}`
+        },
+        (payload) => {
+          console.log('Registration changed (realtime):', payload);
+          if (isMountedRef.current) {
+            onRegistrationUpdate();
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('PlayerManagement realtime subscription:', status);
+      });
+
+    return () => {
+      console.log('Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [tournament?.id, onRegistrationUpdate]);
+
   const getPlayerAvatar = (playerId: string) => {
     const player = registrations.find(r => r.player.id === playerId);
     if (player?.player.avatar_url) {

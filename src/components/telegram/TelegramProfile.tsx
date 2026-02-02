@@ -166,6 +166,49 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
     }
   }, [player]);
 
+  // Realtime subscription для обновления турниров и регистраций
+  useEffect(() => {
+    if (!player) return;
+
+    console.log('Setting up realtime subscription for player:', player.id);
+
+    const channel = supabase
+      .channel(`telegram_profile_${player.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_registrations',
+          filter: `player_id=eq.${player.id}`
+        },
+        (payload) => {
+          console.log('Tournament registration changed:', payload);
+          loadUserTournaments();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournaments'
+        },
+        (payload) => {
+          console.log('Tournament changed:', payload);
+          loadUserTournaments();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Telegram profile realtime subscription:', status);
+      });
+
+    return () => {
+      console.log('Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [player?.id]);
+
   const createPlayerProfile = async () => {
     if (!telegramUser) return;
     
