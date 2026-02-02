@@ -25,6 +25,12 @@ import { GlitchText } from '@/components/ui/glitch-text';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { 
+  calculateTableNumber, 
+  calculateSeatAtTable, 
+  detectPlayersPerTable,
+  DEFAULT_PLAYERS_PER_TABLE 
+} from '@/utils/tournamentSeating';
 
 interface Tournament {
   id: string;
@@ -88,6 +94,7 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
   const [isSubmitting, setIsSubmitting] = useState<'reentry' | 'addon' | null>(null);
   const [averageStack, setAverageStack] = useState(0);
   const [playersRemaining, setPlayersRemaining] = useState(0);
+  const [playersPerTable, setPlayersPerTable] = useState(9);
   
   // Timer sync: use server anchor time for accurate countdown
   const [timerAnchor, setTimerAnchor] = useState<{
@@ -98,8 +105,30 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
   // Calculated timer remaining based on anchor (single source of truth)
   const [displayTimer, setDisplayTimer] = useState(tournament.timer_remaining || 0);
   
-  const tableNumber = registration.seat_number ? Math.ceil(registration.seat_number / 9) : null;
-  const seatNumber = registration.seat_number ? ((registration.seat_number - 1) % 9) + 1 : null;
+  // Load players per table by analyzing actual seating pattern
+  useEffect(() => {
+    const detectTableSize = async () => {
+      const { data } = await supabase
+        .from('tournament_registrations')
+        .select('seat_number')
+        .eq('tournament_id', tournament.id)
+        .not('seat_number', 'is', null)
+        .order('seat_number', { ascending: true });
+      
+      if (data && data.length >= 2) {
+        const seatNumbers = data.map(d => d.seat_number as number);
+        const detected = detectPlayersPerTable(seatNumbers);
+        setPlayersPerTable(detected);
+        console.log(`[Seat Sync] Detected ${detected} players per table`);
+      }
+    };
+    
+    detectTableSize();
+  }, [tournament.id]);
+  
+  // Calculate table and seat using consistent formula with admin panel
+  const tableNumber = registration.seat_number ? calculateTableNumber(registration.seat_number, playersPerTable) : null;
+  const seatNumber = registration.seat_number ? calculateSeatAtTable(registration.seat_number, playersPerTable) : null;
   
   // Update anchor when receiving new server data
   const updateTimerAnchor = useCallback((serverRemaining: number) => {
