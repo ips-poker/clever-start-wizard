@@ -79,9 +79,11 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
     !registrations.find(r => r.player.id === p.id)
   );
 
-  const activePlayers = registrations.filter(r => 
-    r.status === 'registered' || r.status === 'playing'
-  );
+  // Зарегистрированные но еще не подтвержденные (ожидают прихода)
+  const pendingPlayers = registrations.filter(r => r.status === 'registered');
+  
+  // Активные игроки - только те кто подтвержден и играет
+  const activePlayers = registrations.filter(r => r.status === 'playing');
 
   const eliminatedPlayers = registrations
     .filter(r => r.status === 'eliminated')
@@ -295,8 +297,11 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-secondary/60 border-2 border-border p-1">
+        <TabsList className="grid w-full grid-cols-5 bg-secondary/60 border-2 border-border p-1">
           <TabsTrigger value="overview" className="font-black text-xs uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Обзор</TabsTrigger>
+          <TabsTrigger value="registration" className="font-black text-xs uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            Регистрация ({pendingPlayers.length})
+          </TabsTrigger>
           <TabsTrigger value="active" className="font-black text-xs uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Активные ({activePlayers.length})</TabsTrigger>
           <TabsTrigger value="eliminated" className="font-black text-xs uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Выбывшие ({eliminatedPlayers.length})</TabsTrigger>
           <TabsTrigger value="seating" className="font-black text-xs uppercase data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Рассадка</TabsTrigger>
@@ -326,10 +331,14 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div className="p-4 bg-blue-500/10 rounded-xl border-2 border-blue-500/30 text-center">
                   <div className="text-3xl font-black text-blue-500">{registrations.length}</div>
                   <div className="text-xs text-muted-foreground font-bold uppercase mt-1">Всего</div>
+                </div>
+                <div className="p-4 bg-yellow-500/10 rounded-xl border-2 border-yellow-500/30 text-center">
+                  <div className="text-3xl font-black text-yellow-500">{pendingPlayers.length}</div>
+                  <div className="text-xs text-muted-foreground font-bold uppercase mt-1">Ожидают</div>
                 </div>
                 <div className="p-4 bg-green-500/10 rounded-xl border-2 border-green-500/30 text-center">
                   <div className="text-3xl font-black text-green-500">{activePlayers.length}</div>
@@ -412,6 +421,101 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
                   </div>
                 )}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ВКЛАДКА РЕГИСТРАЦИИ - игроки ожидающие подтверждения */}
+        <TabsContent value="registration" className="space-y-4">
+          <Card className="bg-card brutal-border overflow-hidden">
+            <CardHeader className="bg-yellow-500/10 border-b-2 border-yellow-500/30">
+              <CardTitle className="flex items-center gap-3 text-foreground font-black text-lg">
+                <div className="p-2 bg-yellow-500/20 rounded-lg border border-yellow-500/30">
+                  <Clock className="w-5 h-5 text-yellow-500" />
+                </div>
+                ОЖИДАЮТ ПОДТВЕРЖДЕНИЯ
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Подтвердите участие игроков когда они придут на турнир
+              </p>
+            </CardHeader>
+            <CardContent className="p-4">
+              {pendingPlayers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p className="font-bold">Нет ожидающих игроков</p>
+                  <p className="text-sm">Все зарегистрированные игроки подтверждены</p>
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {pendingPlayers.map((registration) => (
+                    <div 
+                      key={registration.id} 
+                      className="flex items-center justify-between p-4 bg-secondary/40 rounded-xl border-2 border-yellow-500/30 hover:border-yellow-500/50 transition-all"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <Avatar className="w-12 h-12 border-2 border-yellow-500/30">
+                          <AvatarImage src={registration.player.avatar_url} />
+                          <AvatarFallback className="bg-yellow-500/20 text-yellow-600 font-black">
+                            {registration.player.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-black text-foreground">{registration.player.name}</h3>
+                          <div className="flex items-center space-x-2 text-sm">
+                            <Badge className="bg-yellow-500/20 text-yellow-600 border-yellow-500/50 font-bold text-xs">
+                              ОЖИДАЕТ
+                            </Badge>
+                            <span className="text-muted-foreground">
+                              {registration.chips.toLocaleString()} фишек
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {/* Кнопка подтверждения участия */}
+                        <Button
+                          onClick={() => markAsPlaying(registration.id, registration.player.name)}
+                          className="bg-green-500 hover:bg-green-600 text-white font-black"
+                        >
+                          <UserCheck className="w-4 h-4 mr-2" />
+                          ПОДТВЕРДИТЬ
+                        </Button>
+                        {/* Кнопка удаления */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-10 px-3 border-2 border-destructive/50 text-destructive hover:bg-destructive/20"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Удалить регистрацию?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Игрок {registration.player.name} будет удален из списка зарегистрированных. 
+                                Он не пришел на турнир и не будет учитываться в призовых местах.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Отмена</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => removeFromRegistration(registration.id, registration.player.name)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Удалить
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

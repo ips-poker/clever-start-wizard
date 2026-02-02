@@ -92,13 +92,9 @@ const TableSeating = ({
   };
 
   const getActivePlayers = () => {
-    // Проверяем все возможные статусы активных игроков
-    return registrations.filter(r => 
-      r.status === 'registered' || 
-      r.status === 'playing' || 
-      r.status === 'confirmed' ||
-      (!r.status || r.status === 'active')  // На случай если статус не установлен
-    );
+    // ТОЛЬКО игроки со статусом 'playing' считаются активными для рассадки
+    // 'registered' - это игроки которые еще не подтверждены админом
+    return registrations.filter(r => r.status === 'playing');
   };
 
   const getEliminatedPlayers = () => {
