@@ -1837,6 +1837,7 @@ export type Database = {
           max_players: number
           name: string
           participation_fee: number | null
+          players_per_table: number | null
           rebuy_chips: number | null
           rebuy_cost: number | null
           rebuy_end_level: number | null
@@ -1875,6 +1876,7 @@ export type Database = {
           max_players?: number
           name: string
           participation_fee?: number | null
+          players_per_table?: number | null
           rebuy_chips?: number | null
           rebuy_cost?: number | null
           rebuy_end_level?: number | null
@@ -1913,6 +1915,7 @@ export type Database = {
           max_players?: number
           name?: string
           participation_fee?: number | null
+          players_per_table?: number | null
           rebuy_chips?: number | null
           rebuy_cost?: number | null
           rebuy_end_level?: number | null
