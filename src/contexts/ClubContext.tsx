@@ -51,13 +51,13 @@ export function ClubProvider({ children }: { children: ReactNode }) {
     isDirector: userClub.isDirector,
     
     // Права
-    canManageTournaments: userClub.canManageTournaments && subscription.limits.canCreateTournament,
-    canManageStaff: userClub.canManageStaff && subscription.limits.canAddStaff,
+    canManageTournaments: userClub.canManageTournaments,
+    canManageStaff: userClub.canManageStaff,
     
     // Лимиты подписки
-    canCreateTournament: subscription.limits.canCreateTournament,
-    canAddPlayer: subscription.limits.canAddPlayer,
-    canAddStaff: subscription.limits.canAddStaff,
+    canCreateTournament: subscription.limits.canCreateTournament && userClub.canManageTournaments,
+    canAddPlayer: subscription.limits.canAddPlayer && userClub.isAdmin,
+    canAddStaff: subscription.limits.canAddStaff && userClub.canManageStaff,
     hasFeature: subscription.hasFeature,
     
     // План
