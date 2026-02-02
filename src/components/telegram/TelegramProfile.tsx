@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +34,8 @@ import {
   Flame,
   Plus,
   Brain,
-  UserCircle
+  UserCircle,
+  ChevronRight
 } from 'lucide-react';
 import { GlitchText } from '@/components/ui/glitch-text';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,6 +50,7 @@ import { GlitchAvatarFrame } from '@/components/ui/glitch-avatar-frame';
 import { TelegramClanPanel } from './TelegramClanPanel';
 import { DiamondWallet } from '@/components/profile/DiamondWallet';
 import { PlayerTickets } from '@/components/poker/PlayerTickets';
+import { TournamentPlayerLobby } from './TournamentPlayerLobby';
 
 interface Player {
   id: string;
@@ -136,6 +138,12 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
   const [editingName, setEditingName] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState("");
   const [unregistering, setUnregistering] = useState<string>("");
+  const [selectedTournamentLobby, setSelectedTournamentLobby] = useState<TournamentRegistration | null>(null);
+  
+  // Memoized callback for lobby updates
+  const handleLobbyUpdate = useCallback(() => {
+    loadUserTournaments();
+  }, []);
   
 
   // Инициализируем игрока только один раз
@@ -837,7 +845,16 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
         {userTournaments.length > 0 ? (
           <div className="space-y-4">
             {userTournaments.map((reg) => (
-              <div key={reg.id} className="relative group">
+              <div 
+                key={reg.id} 
+                className="relative group cursor-pointer"
+                onClick={() => {
+                  // Open lobby for active players in running tournaments
+                  if (reg.status === 'playing' && reg.tournament.status === 'running') {
+                    setSelectedTournamentLobby(reg);
+                  }
+                }}
+              >
                 {/* External Neon Glow */}
                 <div className="absolute -inset-1 bg-gradient-to-r from-syndikate-orange via-syndikate-red to-syndikate-orange rounded opacity-0 group-hover:opacity-30 blur-xl transition-all duration-500"></div>
                 
@@ -976,80 +993,31 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                       </div>
                     </div>
                     
-                    {/* Re-entry & Addon Request Buttons - only for running tournaments */}
+                    {/* Open Lobby CTA - for running tournaments with active players */}
                     {reg.status === 'playing' && reg.tournament.status === 'running' && (
-                      <div className="grid grid-cols-2 gap-2 mb-3">
-                        {/* Request Re-entry */}
-                        <Button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (reg.pending_reentry) return;
-                            const { error } = await supabase
-                              .from('tournament_registrations')
-                              .update({ pending_reentry: true, pending_reentry_at: new Date().toISOString() })
-                              .eq('id', reg.id);
-                            if (!error) {
-                              toast.success('Запрос на Re-entry отправлен');
-                              loadUserTournaments();
-                            }
-                          }}
-                          variant="outline"
-                          size="sm"
-                          disabled={reg.pending_reentry}
-                          className={`brutal-border transition-all duration-300 text-xs font-bold uppercase tracking-wider ${
-                            reg.pending_reentry 
-                              ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
-                              : 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
-                          }`}
+                      <div className="mb-3">
+                        <div 
+                          className="bg-gradient-to-r from-syndikate-orange/20 via-syndikate-red/20 to-syndikate-orange/20 brutal-border p-3 flex items-center justify-between group-hover:from-syndikate-orange/30 group-hover:via-syndikate-red/30 group-hover:to-syndikate-orange/30 transition-all duration-300"
                         >
-                          {reg.pending_reentry ? (
-                            <>
-                              <Clock className="h-3 w-3 mr-1" />
-                              ОЖИДАНИЕ...
-                            </>
-                          ) : (
-                            <>
-                              <Zap className="h-3 w-3 mr-1" />
-                              RE-ENTRY
-                            </>
-                          )}
-                        </Button>
-                        
-                        {/* Request Addon */}
-                        <Button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (reg.pending_addon) return;
-                            const { error } = await supabase
-                              .from('tournament_registrations')
-                              .update({ pending_addon: true, pending_addon_at: new Date().toISOString() })
-                              .eq('id', reg.id);
-                            if (!error) {
-                              toast.success('Запрос на Доп. набор отправлен');
-                              loadUserTournaments();
-                            }
-                          }}
-                          variant="outline"
-                          size="sm"
-                          disabled={reg.pending_addon}
-                          className={`brutal-border transition-all duration-300 text-xs font-bold uppercase tracking-wider ${
-                            reg.pending_addon 
-                              ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
-                              : 'bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20'
-                          }`}
-                        >
-                          {reg.pending_addon ? (
-                            <>
-                              <Clock className="h-3 w-3 mr-1" />
-                              ОЖИДАНИЕ...
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="h-3 w-3 mr-1" />
-                              ДОП. НАБОР
-                            </>
-                          )}
-                        </Button>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-syndikate-orange to-syndikate-red brutal-border flex items-center justify-center shadow-neon-orange">
+                              <Zap className="h-5 w-5 text-background" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-syndikate-orange uppercase tracking-wider">
+                                Лобби игрока
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {reg.pending_reentry || reg.pending_addon ? (
+                                  <span className="text-yellow-400">⏳ Есть ожидающие запросы</span>
+                                ) : (
+                                  'Таймер • Стеки • Действия'
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-syndikate-orange group-hover:translate-x-1 transition-transform" />
+                        </div>
                       </div>
                     )}
                     
@@ -1171,6 +1139,22 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
             />
           </div>
         </div>
+      )}
+
+      {/* Tournament Player Lobby Modal */}
+      {selectedTournamentLobby && (
+        <TournamentPlayerLobby
+          registration={selectedTournamentLobby}
+          onClose={() => setSelectedTournamentLobby(null)}
+          onUpdate={() => {
+            loadUserTournaments();
+            // Update the selected lobby with fresh data
+            const updatedReg = userTournaments.find(r => r.id === selectedTournamentLobby.id);
+            if (updatedReg) {
+              setSelectedTournamentLobby(updatedReg);
+            }
+          }}
+        />
       )}
     </div>
   );
