@@ -340,7 +340,10 @@ export const TelegramApp = () => {
       const { data } = await supabase.from('tournaments').select(`
           *,
           tournament_registrations(count)
-        `).eq('is_published', true).order('start_time', { ascending: true });
+        `)
+        .eq('is_published', true)
+        .or('is_archived.is.null,is_archived.eq.false') // Exclude archived tournaments
+        .order('start_time', { ascending: true });
       if (data) {
         setTournaments(data as Tournament[]);
       }
