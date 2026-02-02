@@ -22,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { 
   Plus, 
   Trophy, 
@@ -40,6 +39,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { ClubTournamentDirector } from "./ClubTournamentDirector";
 
 const STATUS_CONFIG = {
   scheduled: { label: "Запланирован", color: "bg-blue-500/10 text-blue-500", icon: Clock },
@@ -102,6 +102,17 @@ export function ClubTournaments() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [formTab, setFormTab] = useState("basic");
   const [newTournament, setNewTournament] = useState<TournamentFormData>(DEFAULT_FORM_DATA);
+  const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
+
+  // If a tournament is selected, show the full Tournament Director
+  if (selectedTournamentId) {
+    return (
+      <ClubTournamentDirector
+        tournamentId={selectedTournamentId}
+        onBack={() => setSelectedTournamentId(null)}
+      />
+    );
+  }
 
   const handleCreate = async () => {
     if (!newTournament.name || !newTournament.start_time) return;
@@ -490,7 +501,7 @@ export function ClubTournaments() {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => window.location.href = `/director?tournament=${tournament.id}`}
+                        onClick={() => setSelectedTournamentId(tournament.id)}
                       >
                         <Settings className="w-4 h-4 mr-1" />
                         Управление
