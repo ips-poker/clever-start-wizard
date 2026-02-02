@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -28,8 +28,7 @@ import { cn } from '@/lib/utils';
 import { 
   calculateTableNumber, 
   calculateSeatAtTable, 
-  detectPlayersPerTable,
-  DEFAULT_PLAYERS_PER_TABLE 
+  detectPlayersPerTable
 } from '@/utils/tournamentSeating';
 
 interface Tournament {
@@ -104,6 +103,22 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
   
   // Calculated timer remaining based on anchor (single source of truth)
   const [displayTimer, setDisplayTimer] = useState(tournament.timer_remaining || 0);
+
+  // Refs for monotonic / no-jump timer reconciliation
+  const displayTimerRef = useRef(displayTimer);
+  useEffect(() => {
+    displayTimerRef.current = displayTimer;
+  }, [displayTimer]);
+
+  const levelRef = useRef<number | null>(tournament.current_level ?? null);
+  useEffect(() => {
+    levelRef.current = tournament.current_level ?? null;
+  }, [tournament.current_level]);
+
+  const durationRef = useRef<number | null>(tournament.timer_duration ?? null);
+  useEffect(() => {
+    durationRef.current = tournament.timer_duration ?? null;
+  }, [tournament.timer_duration]);
   
   // Load players per table by analyzing actual seating pattern
   useEffect(() => {
@@ -130,13 +145,76 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
   const tableNumber = registration.seat_number ? calculateTableNumber(registration.seat_number, playersPerTable) : null;
   const seatNumber = registration.seat_number ? calculateSeatAtTable(registration.seat_number, playersPerTable) : null;
   
-  // Update anchor when receiving new server data
-  const updateTimerAnchor = useCallback((serverRemaining: number) => {
-    console.log('[Timer] Anchor update:', serverRemaining);
-    setTimerAnchor({
-      serverRemaining,
-      anchorTime: Date.now()
-    });
+  /**
+   * Apply timer update from server without visible "jumping".
+   * - Resets (level change / near-full duration) are applied immediately.
+   * - Small upward corrections are smoothed (no instant increase on UI).
+   */
+  const applyServerTimerUpdate = useCallback((params: {
+    serverRemaining: number;
+    serverLevel?: number | null;
+    serverDuration?: number | null;
+    source: 'poll' | 'realtime';
+  }) => {
+    const now = Date.now();
+    const prevDisplay = displayTimerRef.current;
+    const prevLevel = levelRef.current;
+    const duration = params.serverDuration ?? durationRef.current;
+
+    const levelChanged =
+      params.serverLevel != null && prevLevel != null && params.serverLevel !== prevLevel;
+
+    const isNearFullReset = duration != null && params.serverRemaining >= duration - 2;
+    const isLargeIncrease = params.serverRemaining > prevDisplay + 10;
+    const shouldReset = levelChanged || isNearFullReset || isLargeIncrease;
+
+    if (shouldReset) {
+      setTimerAnchor({ serverRemaining: params.serverRemaining, anchorTime: now });
+      setDisplayTimer(params.serverRemaining);
+      console.log('[LobbyTimer] reset/apply', {
+        source: params.source,
+        prevDisplay,
+        serverRemaining: params.serverRemaining,
+        prevLevel,
+        serverLevel: params.serverLevel,
+        duration,
+      });
+      return;
+    }
+
+    const delta = params.serverRemaining - prevDisplay;
+
+    // Smooth upward corrections (avoid visible +1/+2 jumps)
+    if (delta > 0) {
+      const adjustedAnchorTime = now - delta * 1000;
+      setTimerAnchor({ serverRemaining: params.serverRemaining, anchorTime: adjustedAnchorTime });
+      if (delta >= 2) {
+        console.log('[LobbyTimer] smooth_up', {
+          source: params.source,
+          prevDisplay,
+          serverRemaining: params.serverRemaining,
+          delta,
+        });
+      }
+      return;
+    }
+
+    // Downward corrections (server says less remaining) apply immediately
+    if (delta < 0) {
+      setTimerAnchor({ serverRemaining: params.serverRemaining, anchorTime: now });
+      if (delta <= -2) {
+        console.log('[LobbyTimer] snap_down', {
+          source: params.source,
+          prevDisplay,
+          serverRemaining: params.serverRemaining,
+          delta,
+        });
+      }
+      return;
+    }
+
+    // No change
+    // (avoid unnecessary anchor churn)
   }, []);
   
   // Load blind levels
@@ -201,8 +279,12 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
             status: data.status,
           }));
           
-          // Update anchor only - display timer will be calculated from this
-          updateTimerAnchor(data.timer_remaining || 0);
+          applyServerTimerUpdate({
+            source: 'poll',
+            serverRemaining: data.timer_remaining || 0,
+            serverLevel: data.current_level,
+            serverDuration: data.timer_duration,
+          });
         }
       } catch (error) {
         console.error('Timer polling error:', error);
@@ -221,7 +303,7 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
       isActive = false;
       clearTimeout(pollTimeoutId);
     };
-  }, [tournament.id, updateTimerAnchor]);
+  }, [tournament.id, applyServerTimerUpdate]);
   
   // Registration updates via realtime (separate from timer)
   useEffect(() => {
