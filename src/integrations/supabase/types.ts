@@ -2135,6 +2135,7 @@ export type Database = {
       voice_settings: {
         Row: {
           auto_confirm_critical: boolean | null
+          browser_tts_fallback: boolean | null
           confidence_threshold: number | null
           created_at: string
           elevenlabs_voice: string | null
@@ -2150,6 +2151,7 @@ export type Database = {
         }
         Insert: {
           auto_confirm_critical?: boolean | null
+          browser_tts_fallback?: boolean | null
           confidence_threshold?: number | null
           created_at?: string
           elevenlabs_voice?: string | null
@@ -2165,6 +2167,7 @@ export type Database = {
         }
         Update: {
           auto_confirm_critical?: boolean | null
+          browser_tts_fallback?: boolean | null
           confidence_threshold?: number | null
           created_at?: string
           elevenlabs_voice?: string | null
