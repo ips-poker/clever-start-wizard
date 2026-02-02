@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { ClubProvider, useClub } from "@/contexts/ClubContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClubOverview } from "@/components/club/ClubOverview";
@@ -7,11 +8,13 @@ import { ClubTournaments } from "@/components/club/ClubTournaments";
 import { ClubStaffManagement } from "@/components/club/ClubStaffManagement";
 import { ClubSubscriptionPanel } from "@/components/club/ClubSubscriptionPanel";
 import { ClubSettings } from "@/components/club/ClubSettings";
+import { CreateClubForm } from "@/components/club/CreateClubForm";
 import { Loader2, Building2, Trophy, Users, CreditCard, Settings } from "lucide-react";
 
 function ClubAdminContent() {
   const { club, loading, hasClub, role, isOwner, isAdmin } = useClub();
   const [activeTab, setActiveTab] = useState("overview");
+  const queryClient = useQueryClient();
 
   if (loading) {
     return (
@@ -24,14 +27,11 @@ function ClubAdminContent() {
   if (!hasClub) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-md mx-auto text-center space-y-4">
-          <Building2 className="w-16 h-16 mx-auto text-muted-foreground" />
-          <h1 className="text-2xl font-bold">Нет клуба</h1>
-          <p className="text-muted-foreground">
-            Вы не являетесь членом или владельцем клуба. 
-            Создайте свой клуб или примите приглашение.
-          </p>
-        </div>
+        <CreateClubForm 
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["user-club"] });
+          }} 
+        />
       </div>
     );
   }
