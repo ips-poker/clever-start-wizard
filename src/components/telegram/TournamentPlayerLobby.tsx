@@ -81,8 +81,9 @@ interface TournamentPlayerLobbyProps {
   onUpdate: () => void;
 }
 
-export function TournamentPlayerLobby({ registration, onClose, onUpdate }: TournamentPlayerLobbyProps) {
-  const [tournament, setTournament] = useState<Tournament>(registration.tournament);
+export function TournamentPlayerLobby({ registration: initialRegistration, onClose, onUpdate }: TournamentPlayerLobbyProps) {
+  const [registration, setRegistration] = useState(initialRegistration);
+  const [tournament, setTournament] = useState<Tournament>(initialRegistration.tournament);
   const [blindLevels, setBlindLevels] = useState<BlindLevel[]>([]);
   const [timerRemaining, setTimerRemaining] = useState(tournament.timer_remaining || 0);
   const [isSubmitting, setIsSubmitting] = useState<'reentry' | 'addon' | null>(null);
@@ -157,7 +158,21 @@ export function TournamentPlayerLobby({ registration, onClose, onUpdate }: Tourn
           filter: `id=eq.${registration.id}`
         },
         (payload) => {
-          console.log('Registration updated:', payload);
+          console.log('Registration updated (realtime):', payload);
+          // Directly update local registration state for instant UI update
+          if (payload.new) {
+            const newData = payload.new as any;
+            setRegistration(prev => ({
+              ...prev,
+              chips: newData.chips ?? prev.chips,
+              pending_reentry: newData.pending_reentry ?? prev.pending_reentry,
+              pending_addon: newData.pending_addon ?? prev.pending_addon,
+              reentries: newData.reentries ?? prev.reentries,
+              additional_sets: newData.additional_sets ?? prev.additional_sets,
+              status: newData.status ?? prev.status,
+              seat_number: newData.seat_number ?? prev.seat_number,
+            }));
+          }
           onUpdate();
         }
       )
