@@ -65,12 +65,39 @@ export function useClubTournaments({ clanId, status }: UseClubTournamentsOptions
         .insert({
           ...tournamentData,
           clan_id: clanId,
-          status: 'scheduled'
+          status: 'scheduled',
+          current_level: 1,
+          current_small_blind: 25,
+          current_big_blind: 50
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Create default blind structure for the tournament
+      const defaultLevels = [
+        { level: 1, small_blind: 25, big_blind: 50, ante: 0, duration: tournamentData.timer_duration || 900, is_break: false },
+        { level: 2, small_blind: 50, big_blind: 100, ante: 0, duration: tournamentData.timer_duration || 900, is_break: false },
+        { level: 3, small_blind: 75, big_blind: 150, ante: 0, duration: tournamentData.timer_duration || 900, is_break: false },
+        { level: 4, small_blind: 100, big_blind: 200, ante: 25, duration: tournamentData.timer_duration || 900, is_break: false },
+        { level: 5, small_blind: 0, big_blind: 0, ante: 0, duration: 600, is_break: true },
+        { level: 6, small_blind: 150, big_blind: 300, ante: 50, duration: tournamentData.timer_duration || 900, is_break: false },
+        { level: 7, small_blind: 200, big_blind: 400, ante: 50, duration: tournamentData.timer_duration || 900, is_break: false },
+        { level: 8, small_blind: 300, big_blind: 600, ante: 75, duration: tournamentData.timer_duration || 900, is_break: false },
+        { level: 9, small_blind: 400, big_blind: 800, ante: 100, duration: tournamentData.timer_duration || 900, is_break: false },
+        { level: 10, small_blind: 0, big_blind: 0, ante: 0, duration: 600, is_break: true },
+        { level: 11, small_blind: 500, big_blind: 1000, ante: 100, duration: tournamentData.timer_duration || 900, is_break: false },
+        { level: 12, small_blind: 600, big_blind: 1200, ante: 200, duration: tournamentData.timer_duration || 900, is_break: false },
+      ];
+
+      await supabase
+        .from('blind_levels')
+        .insert(defaultLevels.map(level => ({
+          tournament_id: data.id,
+          ...level
+        })));
+
       return data;
     },
     onSuccess: () => {

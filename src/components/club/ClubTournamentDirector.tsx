@@ -25,7 +25,7 @@ import { ClubTournamentMainView } from "./ClubTournamentMainView";
 import { ClubTournamentPlayerManagement } from "./ClubTournamentPlayerManagement";
 import { ClubTableSeating } from "./ClubTableSeating";
 import { ClubTournamentResults } from "./ClubTournamentResults";
-import { ClubFullscreenTimer } from "./ClubFullscreenTimer";
+
 import { ClubTelegramIntegration } from "./ClubTelegramIntegration";
 import { ClubExportTools } from "./ClubExportTools";
 import { ClubPayoutStructure } from "./ClubPayoutStructure";
@@ -110,7 +110,6 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
   // Timer state
   const [currentTime, setCurrentTime] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
-  const [showFullscreenTimer, setShowFullscreenTimer] = useState(false);
 
   // Load tournament data
   const loadTournament = useCallback(async () => {
@@ -216,19 +215,21 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
     return () => { supabase.removeChannel(channel); };
   }, [tournamentId, loadRegistrations, loadTournament, loadBlindLevels]);
 
-  // Timer effect with auto level transition
+  // Timer effect with auto level transition and external timer sync
   useEffect(() => {
     if (timerActive && tournament) {
       timerRef.current = setInterval(() => {
         setCurrentTime(prev => {
           if (prev <= 1) {
             setTimerActive(false);
-            // Save completed state
-            localStorage.setItem(`club_timer_${tournament.id}`, JSON.stringify({
+            // Save completed state to both localStorage keys
+            const completedState = JSON.stringify({
               currentTime: 0,
               timerActive: false,
               lastUpdate: Date.now()
-            }));
+            });
+            localStorage.setItem(`club_timer_${tournament.id}`, completedState);
+            localStorage.setItem(`timer_${tournament.id}`, completedState);
             updateTimerInDatabase(0);
             // Auto transition to next level
             handleNextLevel({ autoResume: true });
@@ -237,13 +238,17 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
           
           const newTime = prev - 1;
           
-          // Save state every 30 seconds
+          // Sync with localStorage every second for external timer
+          const timerState = JSON.stringify({
+            currentTime: newTime,
+            timerActive: true,
+            lastUpdate: Date.now()
+          });
+          localStorage.setItem(`timer_${tournament.id}`, timerState);
+          
+          // Save to DB every 30 seconds
           if (newTime % 30 === 0) {
-            localStorage.setItem(`club_timer_${tournament.id}`, JSON.stringify({
-              currentTime: newTime,
-              timerActive: true,
-              lastUpdate: Date.now()
-            }));
+            localStorage.setItem(`club_timer_${tournament.id}`, timerState);
             updateTimerInDatabase(newTime);
           }
           
@@ -270,11 +275,14 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
     const newActive = !timerActive;
     setTimerActive(newActive);
     if (tournament) {
-      localStorage.setItem(`club_timer_${tournament.id}`, JSON.stringify({
+      // Save to both localStorage keys for external timer sync
+      const timerState = JSON.stringify({
         currentTime,
         timerActive: newActive,
         lastUpdate: Date.now()
-      }));
+      });
+      localStorage.setItem(`club_timer_${tournament.id}`, timerState);
+      localStorage.setItem(`timer_${tournament.id}`, timerState);
     }
   };
 
@@ -284,11 +292,15 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
       const resetTime = currentBlind?.duration || tournament.timer_duration || 900;
       setCurrentTime(resetTime);
       setTimerActive(false);
-      localStorage.setItem(`club_timer_${tournament.id}`, JSON.stringify({
+      
+      // Save to both localStorage keys
+      const timerState = JSON.stringify({
         currentTime: resetTime,
         timerActive: false,
         lastUpdate: Date.now()
-      }));
+      });
+      localStorage.setItem(`club_timer_${tournament.id}`, timerState);
+      localStorage.setItem(`timer_${tournament.id}`, timerState);
       updateTimerInDatabase(resetTime);
     }
   };
@@ -329,7 +341,15 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
       setTimerActive(true);
     }
 
+    // Save to localStorage for external timer sync (using same key format as ExternalTimer expects)
     localStorage.setItem(`club_timer_${tournament.id}`, JSON.stringify({
+      currentTime: resetTime,
+      timerActive: willBeActive,
+      lastUpdate: Date.now()
+    }));
+    
+    // Also save to the key that ExternalTimer uses
+    localStorage.setItem(`timer_${tournament.id}`, JSON.stringify({
       currentTime: resetTime,
       timerActive: willBeActive,
       lastUpdate: Date.now()
@@ -408,11 +428,13 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
     setCurrentTime(newTime);
     updateTimerInDatabase(newTime);
     if (tournament) {
-      localStorage.setItem(`club_timer_${tournament.id}`, JSON.stringify({
+      const timerState = JSON.stringify({
         currentTime: newTime,
         timerActive,
         lastUpdate: Date.now()
-      }));
+      });
+      localStorage.setItem(`club_timer_${tournament.id}`, timerState);
+      localStorage.setItem(`timer_${tournament.id}`, timerState);
     }
   };
 
@@ -509,23 +531,7 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
         </div>
       </div>
 
-      {/* Fullscreen Timer */}
-      {showFullscreenTimer && (
-        <ClubFullscreenTimer
-          tournament={tournament}
-          registrations={registrations}
-          currentTime={currentTime}
-          timerActive={timerActive}
-          onToggleTimer={toggleTimer}
-          onResetTimer={resetTimer}
-          onNextLevel={() => handleNextLevel()}
-          onPrevLevel={handlePrevLevel}
-          onClose={() => setShowFullscreenTimer(false)}
-          onTimerAdjust={adjustTimer}
-          clubName={club?.name}
-          blindLevels={blindLevels}
-        />
-      )}
+      {/* Fullscreen Timer - opens in a separate browser window via ExternalTimer page */}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -580,7 +586,10 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
             onPauseTournament={handlePauseTournament}
             onResumeTournament={handleResumeTournament}
             onFinishTournament={handleFinishTournament}
-            onOpenFullscreen={() => setShowFullscreenTimer(true)}
+            onOpenFullscreen={() => {
+              const timerUrl = `/external-timer?tournamentId=${tournament.id}`;
+              window.open(timerUrl, 'tournament-timer', 'width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no');
+            }}
             clubName={club?.name}
           />
         </TabsContent>

@@ -321,10 +321,14 @@ export function ClubTournamentMainView({
               <Button 
                 variant="outline" 
                 size="icon" 
-                onClick={onOpenFullscreen} 
-                title="Полноэкранный режим"
+                onClick={() => {
+                  // Open timer in new browser window
+                  const timerUrl = `/external-timer?tournamentId=${tournament.id}`;
+                  window.open(timerUrl, 'tournament-timer', 'width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no');
+                }} 
+                title="Открыть таймер в новом окне"
               >
-                <Maximize className="w-5 h-5" />
+                <ExternalLink className="w-5 h-5" />
               </Button>
             </div>
           </div>
