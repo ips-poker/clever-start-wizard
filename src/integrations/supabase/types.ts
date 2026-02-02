@@ -2377,8 +2377,8 @@ export type Database = {
         Returns: Json
       }
       archive_tournament: {
-        Args: { tournament_id_param: string }
-        Returns: boolean
+        Args: { p_tournament_id: string }
+        Returns: undefined
       }
       assign_player_rank_safe: {
         Args: { p_player_id: string; p_rank: string }
@@ -2596,6 +2596,15 @@ export type Database = {
       }
       get_server_time: { Args: never; Returns: string }
       get_system_statistics: { Args: never; Returns: Json }
+      get_tournament_stats: {
+        Args: { p_tournament_id: string }
+        Returns: {
+          prize_places: number
+          total_addons: number
+          total_entries: number
+          total_rebuys: number
+        }[]
+      }
       get_tournament_voice_stats: {
         Args: { tournament_id_param: string }
         Returns: Json
