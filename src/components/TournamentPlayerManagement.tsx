@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, UserX, Trophy, Clock, TrendingUp, TrendingDown, Shuffle, Upload, Plus, Minus, X, UserMinus, Trash2, UserCheck, Zap, AlertTriangle, Check } from 'lucide-react';
+import { Users, UserX, Trophy, Clock, TrendingUp, TrendingDown, Shuffle, Upload, Plus, Minus, X, UserMinus, Trash2, UserCheck, Zap, AlertTriangle, Check, Send } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { calculateTotalRPSPool, formatRPSPoints, formatParticipationFee } from '@/utils/rpsCalculations';
 import TableSeating from './TableSeating';
@@ -78,6 +78,7 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [seatConfiguration, setSeatConfiguration] = useState<{[key: string]: number}>({});
+  const [isPostingToTelegram, setIsPostingToTelegram] = useState(false);
   const { toast } = useToast();
 
   // Realtime subscription для мгновенных обновлений
@@ -127,6 +128,36 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
   const eliminatedPlayers = registrations
     .filter(r => r.status === 'eliminated')
     .sort((a, b) => (b.final_position || 0) - (a.final_position || 0));
+
+  // Публикация списка регистраций в Telegram
+  const handlePostRegistrationsToTelegram = async () => {
+    setIsPostingToTelegram(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('post-tournament-registrations', {
+        body: { tournament_id: tournament.id }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast({
+          title: "Опубликовано в Telegram!",
+          description: `Список из ${data.registered_count} участников отправлен в канал`,
+        });
+      } else {
+        throw new Error(data?.error || 'Ошибка публикации');
+      }
+    } catch (error: any) {
+      console.error('Error posting to Telegram:', error);
+      toast({
+        title: "Ошибка публикации",
+        description: error.message || "Не удалось отправить в Telegram",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPostingToTelegram(false);
+    }
+  };
 
   const handleSingleRegistration = async (playerId: string) => {
     const player = availablePlayers.find(p => p.id === playerId);
@@ -558,15 +589,30 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
         <TabsContent value="registration" className="space-y-4">
           <Card className="bg-card brutal-border overflow-hidden">
             <CardHeader className="bg-yellow-500/10 border-b-2 border-yellow-500/30">
-              <CardTitle className="flex items-center gap-3 text-foreground font-black text-lg">
-                <div className="p-2 bg-yellow-500/20 rounded-lg border border-yellow-500/30">
-                  <Clock className="w-5 h-5 text-yellow-500" />
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-3 text-foreground font-black text-lg">
+                    <div className="p-2 bg-yellow-500/20 rounded-lg border border-yellow-500/30">
+                      <Clock className="w-5 h-5 text-yellow-500" />
+                    </div>
+                    ОЖИДАЮТ ПОДТВЕРЖДЕНИЯ
+                    <Badge className="bg-yellow-500/20 text-yellow-600 border-yellow-500/50 font-bold ml-2">
+                      {pendingPlayers.length + activePlayers.length} / {tournament.max_players}
+                    </Badge>
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Подтвердите участие игроков когда они придут на турнир
+                  </p>
                 </div>
-                ОЖИДАЮТ ПОДТВЕРЖДЕНИЯ
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Подтвердите участие игроков когда они придут на турнир
-              </p>
+                <Button
+                  onClick={handlePostRegistrationsToTelegram}
+                  disabled={isPostingToTelegram || (pendingPlayers.length + activePlayers.length) === 0}
+                  className="bg-[#0088cc] hover:bg-[#0077b5] text-white font-bold shadow-lg"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  {isPostingToTelegram ? 'Отправка...' : 'В Telegram'}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-4">
               {pendingPlayers.length === 0 ? (
