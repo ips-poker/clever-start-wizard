@@ -80,6 +80,37 @@ const TournamentPlayerManagement = ({ tournament, players, registrations, onRegi
   const [seatConfiguration, setSeatConfiguration] = useState<{[key: string]: number}>({});
   const { toast } = useToast();
 
+  // Realtime subscription для мгновенных обновлений
+  useEffect(() => {
+    if (!tournament?.id) return;
+
+    console.log('Setting up realtime subscription for tournament:', tournament.id);
+
+    const channel = supabase
+      .channel(`tournament_management_${tournament.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_registrations',
+          filter: `tournament_id=eq.${tournament.id}`
+        },
+        (payload) => {
+          console.log('Registration changed (realtime):', payload);
+          onRegistrationUpdate();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Tournament management realtime subscription:', status);
+      });
+
+    return () => {
+      console.log('Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [tournament?.id, onRegistrationUpdate]);
+
   const availablePlayers = players.filter(p => 
     !registrations.find(r => r.player.id === p.id)
   );
