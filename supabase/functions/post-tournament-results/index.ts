@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Эмодзи для мест
+    // Премиум эмодзи для мест
     const getPlaceEmoji = (position: number): string => {
       switch (position) {
         case 1: return '🥇'
@@ -124,20 +124,43 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Формируем сообщение
-    let message = `🏆 <b>ИТОГИ ТУРНИРА</b> 🏆\n\n`
-    message += `📌 <b>${tournament.name}</b>\n\n`
-    message += `📅 Дата: ${formatDate(startDate)}\n`
-    message += `🕐 Начало: ${formatTime(startDate)} МСК\n`
-    if (endDate) {
-      message += `🏁 Завершение: ${formatTime(endDate)} МСК\n`
+    // Вариативные вступления
+    const introVariants = [
+      '🔥 Состоялся незабываемый турнир!',
+      '🎯 Завершился грандиозный турнир!',
+      '⚡️ Эпичный покерный вечер позади!',
+      '🌟 Очередной турнир вошёл в историю!',
+      '💫 Невероятные эмоции и напряжённая борьба!',
+      '🎲 Карты розданы, победители определены!',
+    ]
+    
+    const getRandomIntro = () => introVariants[Math.floor(Math.random() * introVariants.length)]
+
+    // Формат турнира
+    const getFormatDescription = (format: string | null): string => {
+      switch (format) {
+        case 'knockout': return '💀 Нокаут'
+        case 'bounty': return '🎯 Баунти'
+        case 'deepstack': return '📚 Дипстек'
+        case 'turbo': return '⚡️ Турбо'
+        case 'hyper': return '🚀 Гипер-турбо'
+        case 'rebuy': return '🔄 С ребаями'
+        case 'freezeout': return '❄️ Фризаут'
+        default: return '🃏 Классика'
+      }
     }
-    message += `💰 Бай-ин: ${tournament.buy_in}₽\n`
+
+    // Формируем сообщение
+    let message = `${getRandomIntro()}\n\n`
+    message += `🏆 <b>${tournament.name}</b>\n\n`
+    message += `📅 ${formatDate(startDate)}\n`
+    message += `⏰ ${formatTime(startDate)} — ${endDate ? formatTime(endDate) : '...'} МСК\n`
+    message += `${getFormatDescription(tournament.tournament_format)}\n`
     message += `👥 Участников: ${results?.length || 0}\n\n`
     
-    message += `━━━━━━━━━━━━━━━━━━━━━\n`
-    message += `📊 <b>РЕЗУЛЬТАТЫ</b>\n`
-    message += `━━━━━━━━━━━━━━━━━━━━━\n\n`
+    message += `╔═══════════════════════╗\n`
+    message += `║   📊 <b>РЕЗУЛЬТАТЫ</b>   ║\n`
+    message += `╚═══════════════════════╝\n\n`
 
     // Добавляем результаты (топ-10 или все, если меньше)
     const displayResults = results?.slice(0, 10) || []
@@ -146,19 +169,19 @@ Deno.serve(async (req) => {
       const playerName = (result.players as any)?.name || 'Неизвестный'
       const placeEmoji = getPlaceEmoji(result.position)
       const rpsChange = result.elo_change > 0 ? `+${result.elo_change}` : `${result.elo_change}`
-      const rpsIcon = result.elo_change > 0 ? '📈' : result.elo_change < 0 ? '📉' : '➖'
+      const rpsIcon = result.elo_change > 0 ? '📈' : result.elo_change < 0 ? '📉' : '➡️'
       
       message += `${placeEmoji} <b>${playerName}</b>\n`
-      message += `   ${rpsIcon} RPS: ${rpsChange} (${result.elo_after})\n\n`
+      message += `     ${rpsIcon} RPS: ${rpsChange} → ${result.elo_after}\n\n`
     }
 
     if (results && results.length > 10) {
-      message += `\n<i>... и ещё ${results.length - 10} участников</i>\n`
+      message += `<i>... и ещё ${results.length - 10} участников</i>\n\n`
     }
 
-    message += `\n━━━━━━━━━━━━━━━━━━━━━\n`
-    message += `🎰 <b>SYNDICATE POKER</b>\n`
-    message += `━━━━━━━━━━━━━━━━━━━━━`
+    message += `━━━━━━━━━━━━━━━━━━━━━━━\n\n`
+    message += `🙏 <i>Всем спасибо за участие!</i>\n`
+    message += `♠️♥️ <b>Ваш SYNDICATE Poker Club</b> ♦️♣️`
 
     console.log('Sending message to Telegram channel:', TELEGRAM_CHANNEL_ID)
 
