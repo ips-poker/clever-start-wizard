@@ -30,7 +30,9 @@ import {
   AlertTriangle,
   Mic,
   Volume2,
-  Gamepad2
+  Gamepad2,
+  Archive,
+  FolderArchive
 } from "lucide-react";
 
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -758,11 +760,40 @@ const TournamentDirector = () => {
       } else {
         throw error;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Ошибка удаления турнира:', error);
+      const errorMessage = error?.message || "Не удалось удалить турнир";
       toast({ 
         title: "Ошибка", 
-        description: "Не удалось удалить турнир", 
+        description: errorMessage.includes('завершенный') 
+          ? "Завершенные турниры нельзя удалить. Используйте архивирование." 
+          : errorMessage, 
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const archiveTournament = async (id: string) => {
+    try {
+      const { error } = await supabase.rpc('archive_tournament', {
+        p_tournament_id: id
+      });
+
+      if (!error) {
+        toast({ title: "Турнир архивирован", description: "Турнир перемещен в архив" });
+        loadTournaments();
+        if (selectedTournament?.id === id) {
+          setSelectedTournament(null);
+          localStorage.removeItem('selectedTournamentId');
+        }
+      } else {
+        throw error;
+      }
+    } catch (error) {
+      console.error('Ошибка архивирования турнира:', error);
+      toast({ 
+        title: "Ошибка", 
+        description: "Не удалось архивировать турнир", 
         variant: "destructive" 
       });
     }
@@ -935,7 +966,7 @@ const TournamentDirector = () => {
               )}
             </TabsContent>
 
-            <TabsContent value="tournaments" className="space-y-10 animate-fade-in">
+            <TabsContent value="tournaments" className="space-y-6 animate-fade-in">
               {/* Create Tournament Section */}
               <Card className="bg-card brutal-border overflow-hidden group hover:shadow-neon-orange/20 transition-all duration-300">
                 <CardHeader className="bg-secondary/60 border-b-2 border-border pb-4">
@@ -960,9 +991,23 @@ const TournamentDirector = () => {
                 </CardContent>
               </Card>
 
-              {/* Tournaments Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {tournaments.map((tournament) => (
+              {/* Active/Archive Tabs */}
+              <Tabs defaultValue="active" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 max-w-md">
+                  <TabsTrigger value="active" className="font-black uppercase text-xs">
+                    <Trophy className="w-4 h-4 mr-2" />
+                    Активные ({tournaments.filter(t => !t.is_archived).length})
+                  </TabsTrigger>
+                  <TabsTrigger value="archive" className="font-black uppercase text-xs">
+                    <FolderArchive className="w-4 h-4 mr-2" />
+                    Архив ({tournaments.filter(t => t.is_archived).length})
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="active" className="mt-6">
+                  {/* Active Tournaments Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {tournaments.filter(t => !t.is_archived).map((tournament) => (
                   <Card 
                     key={tournament.id} 
                     className={`bg-card brutal-border overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-neon-orange/20 relative ${
@@ -1166,19 +1211,39 @@ const TournamentDirector = () => {
                             </Button>
                           )}
                           
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              if (confirm('Вы уверены, что хотите удалить этот турнир?')) {
-                                deleteTournament(tournament.id);
-                              }
-                            }}
-                            className="border-2 border-destructive/50 text-destructive hover:bg-destructive/20 font-black text-xs"
-                          >
-                            <Trash2 className="w-3 h-3 mr-1" />
-                            Удалить
-                          </Button>
+                          {/* Archive button for finished tournaments */}
+                          {tournament.status === 'finished' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm('Архивировать турнир? Он будет перемещен во вкладку "Архив".')) {
+                                  archiveTournament(tournament.id);
+                                }
+                              }}
+                              className="border-2 border-purple-500/50 text-purple-500 hover:bg-purple-500/20 font-black text-xs"
+                            >
+                              <Archive className="w-3 h-3 mr-1" />
+                              В архив
+                            </Button>
+                          )}
+
+                          {/* Delete button - hidden for finished tournaments */}
+                          {tournament.status !== 'finished' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm('Вы уверены, что хотите удалить этот турнир?')) {
+                                  deleteTournament(tournament.id);
+                                }
+                              }}
+                              className="border-2 border-destructive/50 text-destructive hover:bg-destructive/20 font-black text-xs"
+                            >
+                              <Trash2 className="w-3 h-3 mr-1" />
+                              Удалить
+                            </Button>
+                          )}
                         </div>
 
                         {/* Quick Actions */}
@@ -1230,25 +1295,92 @@ const TournamentDirector = () => {
                       )}
                     </CardContent>
                   </Card>
-                ))}
-              </div>
+                  ))}
 
-              {tournaments.length === 0 && (
-                <Card className="bg-card brutal-border">
-                  <CardContent className="text-center py-16">
-                    <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-lg font-black text-foreground mb-2">НЕТ СОЗДАННЫХ ТУРНИРОВ</h3>
-                    <p className="text-muted-foreground mb-6 font-bold uppercase text-sm">Создайте первый турнир для начала работы</p>
-                    <Button
-                      onClick={() => setIsModalOpen(true)}
-                      className="bg-primary hover:bg-primary/80 text-primary-foreground font-black uppercase"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Новый турнир
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
+                    {tournaments.filter(t => !t.is_archived).length === 0 && (
+                      <Card className="bg-card brutal-border col-span-full">
+                        <CardContent className="text-center py-16">
+                          <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                          <h3 className="text-lg font-black text-foreground mb-2">НЕТ АКТИВНЫХ ТУРНИРОВ</h3>
+                          <p className="text-muted-foreground mb-6 font-bold uppercase text-sm">Создайте первый турнир для начала работы</p>
+                          <Button
+                            onClick={() => setIsModalOpen(true)}
+                            className="bg-primary hover:bg-primary/80 text-primary-foreground font-black uppercase"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Новый турнир
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="archive" className="mt-6">
+                  {/* Archived Tournaments Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {tournaments.filter(t => t.is_archived).map((tournament) => (
+                      <Card 
+                        key={tournament.id} 
+                        className="bg-card/60 brutal-border overflow-hidden transition-all duration-300 opacity-80 hover:opacity-100"
+                      >
+                        <CardHeader className="bg-secondary/40 border-b-2 border-border pb-3">
+                          <div className="flex items-start justify-between mb-1">
+                            <CardTitle className="text-base font-black text-muted-foreground">
+                              {tournament.name}
+                            </CardTitle>
+                            <Badge className="bg-secondary text-muted-foreground border-border text-xs">
+                              <Archive className="w-3 h-3 mr-1" />
+                              АРХИВ
+                            </Badge>
+                          </div>
+                          <CardDescription className="text-muted-foreground text-xs">
+                            {new Date(tournament.start_time).toLocaleDateString('ru-RU')}
+                          </CardDescription>
+                        </CardHeader>
+                        
+                        <CardContent className="p-4 space-y-3">
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="p-2 bg-secondary/40 rounded-lg text-center">
+                              <div className="text-xs text-muted-foreground font-bold">ВЗНОС</div>
+                              <div className="font-black text-foreground">{(tournament.participation_fee || tournament.buy_in).toLocaleString()} ₽</div>
+                            </div>
+                            <div className="p-2 bg-secondary/40 rounded-lg text-center">
+                              <div className="text-xs text-muted-foreground font-bold">СТАТУС</div>
+                              <div className="font-black text-foreground capitalize">{tournament.status === 'finished' ? 'Завершен' : tournament.status}</div>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 pt-2 border-t border-border">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                handleTournamentSelect(tournament);
+                                setActiveTab('results');
+                              }}
+                              className="flex-1 border-border text-muted-foreground hover:bg-secondary font-black text-xs"
+                            >
+                              <Trophy className="w-3 h-3 mr-1" />
+                              Результаты
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+
+                    {tournaments.filter(t => t.is_archived).length === 0 && (
+                      <Card className="bg-card brutal-border col-span-full">
+                        <CardContent className="text-center py-12">
+                          <FolderArchive className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                          <h3 className="text-lg font-black text-foreground mb-2">АРХИВ ПУСТ</h3>
+                          <p className="text-muted-foreground font-bold uppercase text-sm">Завершенные турниры появятся здесь после архивации</p>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </TabsContent>
 
             <TabsContent value="control" className="space-y-8 animate-fade-in">
