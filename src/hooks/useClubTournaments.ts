@@ -45,6 +45,18 @@ export function useClubTournaments({ clanId, status }: UseClubTournamentsOptions
       starting_chips?: number;
       participation_fee?: number;
       tournament_format?: string;
+      // Re-entry settings
+      reentry_fee?: number;
+      reentry_chips?: number;
+      reentry_end_level?: number;
+      // Addon settings
+      additional_fee?: number;
+      additional_chips?: number;
+      additional_level?: number;
+      // Timer settings
+      timer_duration?: number;
+      break_start_level?: number;
+      players_per_table?: number;
     }) => {
       if (!clanId) throw new Error("No clan ID");
 
