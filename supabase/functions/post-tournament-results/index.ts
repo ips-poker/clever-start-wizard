@@ -107,155 +107,98 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Премиум эмодзи для мест с красивыми Unicode символами
+    // Премиум эмодзи для мест
     const getPlaceEmoji = (position: number): string => {
       switch (position) {
-        case 1: return '🏆'
+        case 1: return '🥇'
         case 2: return '🥈'
         case 3: return '🥉'
-        case 4: return '🎯'
-        case 5: return '⭐'
-        case 6: return '✨'
-        case 7: return '💫'
-        case 8: return '🔸'
-        case 9: return '🔹'
-        case 10: return '◆'
+        case 4: return '4️⃣'
+        case 5: return '5️⃣'
+        case 6: return '6️⃣'
+        case 7: return '7️⃣'
+        case 8: return '8️⃣'
+        case 9: return '9️⃣'
+        case 10: return '🔟'
         default: return `${position}.`
       }
     }
 
-    // Премиум Unicode символы для декора
-    const symbols = {
-      crown: '👑',
-      diamond: '💎',
-      star: '⭐',
-      sparkle: '✨',
-      fire: '🔥',
-      trophy: '🏆',
-      medal: '🎖',
-      gem: '💠',
-      spade: '♠',
-      heart: '♥',
-      diamond_suit: '♦',
-      club: '♣',
-      arrow_up: '▲',
-      arrow_down: '▼',
-      dot: '•',
-      circle: '○',
-      bullet: '◉',
-      star_filled: '★',
-      star_empty: '☆',
-      lightning: '⚡',
-      infinity: '∞',
-      check: '✓',
-      x_mark: '✗',
-      fleur: '⚜',
-    }
-
-    // Завораживающие вступления с премиум символами
+    // Завораживающие вступления
     const introVariants = [
-      `╔═══════════════════════╗\n║ ${symbols.crown} 𝐋𝐄𝐆𝐄𝐍𝐃𝐒 𝐀𝐑𝐄 𝐁𝐎𝐑𝐍 ${symbols.crown} ║\n║ ━━━━━━━━━━━━━━━━━━━━━ ║\n║ Карты легли, судьба решена... ║\n║ Ещё один вечер величия! ║\n╚═══════════════════════╝`,
-      
-      `╭───────────────────────╮\n│ ${symbols.fire} 𝐓𝐇𝐄 𝐁𝐀𝐓𝐓𝐋𝐄 𝐈𝐒 𝐎𝐕𝐄𝐑 ${symbols.fire} │\n├───────────────────────┤\n│ Под светом покерных софитов │\n│ разыгралась настоящая драма! │\n╰───────────────────────╯`,
-      
-      `┏━━━━━━━━━━━━━━━━━━━━━━━┓\n┃ ${symbols.lightning} 𝐕𝐈𝐂𝐓𝐎𝐑𝐘 𝐀𝐖𝐀𝐈𝐓𝐒 ${symbols.lightning} ┃\n┣━━━━━━━━━━━━━━━━━━━━━━━┫\n┃ Напряжение достигло предела, ┃\n┃ блефы раскрыты, чемпион избран! ┃\n┗━━━━━━━━━━━━━━━━━━━━━━━┛`,
-      
-      `╔╦══════════════════════╦╗\n║║ ${symbols.fleur} 𝐅𝐎𝐑𝐓𝐔𝐍𝐀 𝐅𝐀𝐕𝐄𝐓 ${symbols.fleur} ║║\n╠╬══════════════════════╬╣\n║║ Фортуна благоволила смелым — ║║\n║║ история написана кровью! ║║\n╚╩══════════════════════╩╝`,
-      
-      `▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n░ ${symbols.star_filled} 𝐆𝐋𝐎𝐑𝐘 𝐀𝐖𝐀𝐈𝐓𝐒 ${symbols.star_filled} ░\n▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓\n░ Адреналин, стратегия, ░\n░ хладнокровие — всё сошлось! ░\n▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓`,
+      '✨ Карты легли, судьба решена... Ещё один вечер, который войдёт в легенды!',
+      '🌙 Под светом покерных софитов разыгралась настоящая драма — и вот её финал...',
+      '💫 Напряжение достигло предела, блефы раскрыты, чемпион определён!',
+      '🔮 Фортуна благоволила смелым — турнир завершён, история написана!',
+      '⚡️ Адреналин, стратегия, хладнокровие — всё сошлось в одной точке. Итоги!',
+      '🎭 Маски сброшены, карты открыты — встречайте героев вечера!',
+      '🌟 Когда за столом сходятся лучшие, рождается магия. Вот чем всё закончилось...',
+      '💎 Бриллиантовый вечер позади — время узнать, кто забрал главный трофей!',
     ]
     
     const getRandomIntro = () => introVariants[Math.floor(Math.random() * introVariants.length)]
 
-    // Формат турнира с премиум иконками
+    // Формат турнира с красивыми иконками
     const getFormatDescription = (format: string | null): string => {
       switch (format) {
-        case 'knockout': return `${symbols.fire} Нокаут`
-        case 'bounty': return `🎯 Баунти`
-        case 'deepstack': return `📚 Дипстек`
-        case 'turbo': return `${symbols.lightning} Турбо`
-        case 'hyper': return `🚀 Гипер-турбо`
-        case 'rebuy': return `🔄 С ребаями`
-        case 'freezeout': return `❄️ Фризаут`
-        case 'reentry': return `🔁 С доп. входами`
-        default: return `🃏 Классика`
+        case 'knockout': return '💀 Нокаут'
+        case 'bounty': return '🎯 Баунти'
+        case 'deepstack': return '📚 Дипстек'
+        case 'turbo': return '⚡️ Турбо'
+        case 'hyper': return '🚀 Гипер-турбо'
+        case 'rebuy': return '🔄 С ребаями'
+        case 'freezeout': return '❄️ Фризаут'
+        case 'reentry': return '🔁 С доп. входами'
+        default: return '🃏 Классика'
       }
     }
 
-    // Формируем сообщение с премиум оформлением
+    // Формируем сообщение
     let message = `${getRandomIntro()}\n\n`
+    message += `♠️♥️♦️♣️\n`
+    message += `🏆 <b>${tournament.name}</b>\n`
+    message += `♣️♦️♥️♠️\n\n`
+    message += `📅 ${formatDate(startDate)}\n`
+    message += `⏰ ${formatTime(startDate)} — ${endDate ? formatTime(endDate) : '...'} МСК\n`
+    message += `${getFormatDescription(tournament.tournament_format)}\n`
+    message += `👥 Участников: ${results?.length || 0}\n\n`
     
-    // Красивый заголовок турнира
-    message += `\n`
-    message += `⠀⠀⠀⠀${symbols.spade}${symbols.heart}${symbols.diamond_suit}${symbols.club}\n`
-    message += `\n`
-    message += `⠀⠀⠀${symbols.trophy} <b>${tournament.name}</b> ${symbols.trophy}\n`
-    message += `\n`
-    message += `⠀⠀⠀⠀${symbols.club}${symbols.diamond_suit}${symbols.heart}${symbols.spade}\n`
-    message += `\n`
-    
-    // Информационный блок
-    message += `┌─────────────────────┐\n`
-    message += `│ 📅 ${formatDate(startDate)}\n`
-    message += `│ ⏰ ${formatTime(startDate)} — ${endDate ? formatTime(endDate) : '...'} МСК\n`
-    message += `│ ${getFormatDescription(tournament.tournament_format)}\n`
-    message += `│ 👥 Участников: <b>${results?.length || 0}</b>\n`
-    message += `└─────────────────────┘\n\n`
-    
-    // Заголовок результатов
-    message += `╔════════════════════════╗\n`
-    message += `║ ${symbols.star_filled} <b>𝐑𝐄𝐒𝐔𝐋𝐓𝐒</b> ${symbols.star_filled} ║\n`
-    message += `╚════════════════════════╝\n\n`
+    message += `┏━━━━━━━━━━━━━━━━━━━━━┓\n`
+    message += `┃    📊 <b>РЕЗУЛЬТАТЫ</b>    ┃\n`
+    message += `┗━━━━━━━━━━━━━━━━━━━━━┛\n\n`
 
-    // Топ-10 с премиум оформлением
-    const top10 = results?.slice(0, 10) || []
-    for (const result of top10) {
+    // Топ-3 с особым оформлением
+    const top3 = results?.slice(0, 3) || []
+    for (const result of top3) {
       const playerName = (result.players as any)?.name || 'Неизвестный'
       const placeEmoji = getPlaceEmoji(result.position)
       const rpsChange = result.elo_change > 0 ? `+${result.elo_change}` : `${result.elo_change}`
-      const rpsIcon = result.elo_change > 0 ? `${symbols.arrow_up}` : result.elo_change < 0 ? `${symbols.arrow_down}` : `${symbols.dot}`
+      const rpsIcon = result.elo_change > 0 ? '📈' : result.elo_change < 0 ? '📉' : '➡️'
       
-      if (result.position === 1) {
-        // Чемпион с особым оформлением
-        message += `┏━━━━━━━━━━━━━━━━━━━━━━━┓\n`
-        message += `┃ ${symbols.crown} <b>ЧЕМПИОН</b> ${symbols.crown}\n`
-        message += `┃\n`
-        message += `┃ ${placeEmoji} <b>${playerName}</b>\n`
-        message += `┃ ⠀⠀RPS: ${rpsIcon} ${rpsChange} ➜ <b>${result.elo_after}</b>\n`
-        message += `┗━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`
-      } else if (result.position <= 3) {
-        // Призёры
-        message += `┃ ${placeEmoji} <b>${playerName}</b>\n`
-        message += `┃ ⠀⠀RPS: ${rpsIcon} ${rpsChange} ➜ ${result.elo_after}\n\n`
-      } else {
-        // Остальные из топ-10
-        message += `│ ${placeEmoji} ${playerName}\n`
-        message += `│ ⠀⠀${rpsIcon} ${rpsChange} ➜ ${result.elo_after}\n\n`
-      }
+      message += `${placeEmoji} <b>${playerName}</b>\n`
+      message += `     ${rpsIcon} RPS: ${rpsChange} → ${result.elo_after}\n\n`
     }
 
     // Остальные игроки в расширяемом блоке
-    const restResults = results?.slice(10) || []
+    const restResults = results?.slice(3) || []
     if (restResults.length > 0) {
       message += `<blockquote expandable>\n`
-      message += `📋 <b>Остальные участники:</b>\n\n`
+      message += `📋 <b>Полный список участников:</b>\n\n`
       
       for (const result of restResults) {
         const playerName = (result.players as any)?.name || 'Неизвестный'
+        const placeEmoji = getPlaceEmoji(result.position)
         const rpsChange = result.elo_change > 0 ? `+${result.elo_change}` : `${result.elo_change}`
-        const rpsIcon = result.elo_change > 0 ? `${symbols.arrow_up}` : result.elo_change < 0 ? `${symbols.arrow_down}` : `${symbols.dot}`
+        const rpsIcon = result.elo_change > 0 ? '📈' : result.elo_change < 0 ? '📉' : '➡️'
         
-        message += `${result.position}. ${playerName} ${rpsIcon} ${rpsChange}\n`
+        message += `${placeEmoji} ${playerName} ${rpsIcon} ${rpsChange}\n`
       }
       message += `</blockquote>\n\n`
     }
 
-    // Красивый футер
-    message += `═══════════════════════════\n\n`
-    message += `⠀⠀${symbols.diamond} <i>Благодарим за игру!</i> ${symbols.diamond}\n\n`
-    message += `⠀⠀${symbols.spade}${symbols.heart} <b>𝐒𝐘𝐍𝐃𝐈𝐂𝐀𝐓𝐄</b> ${symbols.diamond_suit}${symbols.club}\n`
-    message += `⠀⠀⠀<b>𝐏𝐎𝐊𝐄𝐑 𝐂𝐋𝐔𝐁</b>\n`
-    message += `⠀⠀⠀⠀${symbols.fleur} ${symbols.star_filled} ${symbols.fleur}`
+    message += `━━━━━━━━━━━━━━━━━━━━━━━\n\n`
+    message += `🙏 <i>Благодарим всех за невероятную игру!</i>\n\n`
+    message += `♠️ <b>Ваш SYNDICATE Poker Club</b> ♥️`
 
     console.log('Sending message to Telegram channel:', TELEGRAM_CHANNEL_ID)
 
@@ -284,60 +227,11 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Отправляем стикер из нашего пака после результатов
-    const stickerPackName = 'YYTTYYTTY'
-    const stickerOptions = [
-      'trophy',      // Кубок победителя
-      'crown',       // Корона чемпиона  
-      'chips',       // Покерные фишки
-      'cards',       // Карты
-      'royal_flush', // Роял флеш
-      'all_in',      // All-in
-    ]
-    
-    // Выбираем случайный стикер
-    const randomSticker = stickerOptions[Math.floor(Math.random() * stickerOptions.length)]
-    
-    try {
-      // Получаем стикерпак
-      const stickerSetResponse = await fetch(
-        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getStickerSet?name=${stickerPackName}`
-      )
-      const stickerSet = await stickerSetResponse.json()
-      
-      if (stickerSet.ok && stickerSet.result?.stickers?.length > 0) {
-        // Выбираем случайный стикер из пака
-        const stickers = stickerSet.result.stickers
-        const randomIndex = Math.floor(Math.random() * stickers.length)
-        const stickerId = stickers[randomIndex].file_id
-        
-        // Отправляем стикер
-        const stickerResponse = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendSticker`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: TELEGRAM_CHANNEL_ID,
-            sticker: stickerId,
-            reply_to_message_id: telegramResult.result?.message_id
-          })
-        })
-        
-        const stickerResult = await stickerResponse.json()
-        console.log('Sticker sent:', stickerResult.ok ? 'success' : stickerResult.description)
-      } else {
-        console.log('Sticker pack not found or empty:', stickerSet)
-      }
-    } catch (stickerError) {
-      console.error('Failed to send sticker (non-critical):', stickerError)
-      // Не прерываем выполнение - стикер опционален
-    }
-
     return new Response(
       JSON.stringify({ 
         success: true, 
         message_id: telegramResult.result?.message_id,
-        channel_id: TELEGRAM_CHANNEL_ID,
-        sticker_pack: stickerPackName
+        channel_id: TELEGRAM_CHANNEL_ID
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
