@@ -20,6 +20,7 @@ interface VoiceSettingsData {
   voice_speed: number;
   voice_provider: 'system' | 'elevenlabs';
   elevenlabs_voice: string;
+  browser_tts_fallback: boolean;
   warning_intervals: {
     five_minutes: boolean;
     two_minutes: boolean;
@@ -59,6 +60,7 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
     voice_speed: 1.0,
     voice_provider: 'elevenlabs',
     elevenlabs_voice: 'Aria',
+    browser_tts_fallback: true,
     warning_intervals: {
       five_minutes: true,
       two_minutes: true,
@@ -109,6 +111,7 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
           voice_speed: data.voice_speed ?? 1.0,
           voice_provider: (data.voice_provider as 'system' | 'elevenlabs') ?? 'elevenlabs',
           elevenlabs_voice: data.elevenlabs_voice ?? 'Aria',
+          browser_tts_fallback: (data as any).browser_tts_fallback ?? true,
           warning_intervals: (typeof data.warning_intervals === 'object' && data.warning_intervals !== null) 
             ? data.warning_intervals as {
                 five_minutes: boolean;
@@ -178,6 +181,7 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
         voice_speed: settings.voice_speed,
         voice_provider: settings.voice_provider,
         elevenlabs_voice: settings.elevenlabs_voice,
+        browser_tts_fallback: settings.browser_tts_fallback,
         warning_intervals: settings.warning_intervals,
         updated_at: new Date().toISOString()
       };
@@ -238,6 +242,7 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
         voice_speed: newSettings.voice_speed,
         voice_provider: newSettings.voice_provider,
         elevenlabs_voice: newSettings.elevenlabs_voice,
+        browser_tts_fallback: newSettings.browser_tts_fallback,
         warning_intervals: newSettings.warning_intervals,
         updated_at: new Date().toISOString()
       };
@@ -432,6 +437,22 @@ export function VoiceSettings({ onSettingsChange }: VoiceSettingsProps) {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {/* Браузерный TTS fallback */}
+          {settings.voice_provider === 'elevenlabs' && (
+            <div className="flex items-center justify-between ml-4 pt-2 border-t border-border/50">
+              <div className="space-y-0.5">
+                <Label className="text-sm">Резервный браузерный TTS</Label>
+                <p className="text-xs text-muted-foreground">
+                  Использовать браузерный синтез речи при ошибке ElevenLabs
+                </p>
+              </div>
+              <Switch
+                checked={settings.browser_tts_fallback}
+                onCheckedChange={(checked) => updateSetting('browser_tts_fallback', checked)}
+              />
             </div>
           )}
         </div>

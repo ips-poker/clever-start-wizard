@@ -10,6 +10,7 @@ interface VoiceSettings {
   voice_speed: number;
   voice_provider: 'system' | 'elevenlabs';
   elevenlabs_voice: string;
+  browser_tts_fallback: boolean;
   warning_intervals: {
     five_minutes: boolean;
     two_minutes: boolean;
@@ -28,6 +29,7 @@ const defaultSettings: VoiceSettings = {
   voice_speed: 1.0,
   voice_provider: 'elevenlabs',
   elevenlabs_voice: 'Aria',
+  browser_tts_fallback: true,
   warning_intervals: {
     five_minutes: true,
     two_minutes: true,
@@ -75,6 +77,7 @@ export const useVoiceSettings = () => {
         voice_speed: data.voice_speed ?? defaultSettings.voice_speed,
         voice_provider: (data.voice_provider as 'system' | 'elevenlabs') ?? defaultSettings.voice_provider,
         elevenlabs_voice: data.elevenlabs_voice ?? defaultSettings.elevenlabs_voice,
+        browser_tts_fallback: (data as any).browser_tts_fallback ?? defaultSettings.browser_tts_fallback,
         warning_intervals: (typeof data.warning_intervals === 'object' && data.warning_intervals !== null)
           ? data.warning_intervals as VoiceSettings['warning_intervals']
           : defaultSettings.warning_intervals
@@ -176,6 +179,7 @@ export const useVoiceSettings = () => {
         voice_speed: settingsToSave.voice_speed,
         voice_provider: settingsToSave.voice_provider,
         elevenlabs_voice: settingsToSave.elevenlabs_voice,
+        browser_tts_fallback: settingsToSave.browser_tts_fallback,
         warning_intervals: settingsToSave.warning_intervals,
         updated_at: new Date().toISOString()
       };
