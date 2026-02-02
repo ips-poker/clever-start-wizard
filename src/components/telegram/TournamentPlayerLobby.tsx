@@ -129,8 +129,54 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
     loadStats();
   }, [tournament.id]);
   
-  // Real-time subscription for tournament updates
+  // Real-time subscription for tournament updates + polling fallback for timer sync
   useEffect(() => {
+    let pollTimeoutId: NodeJS.Timeout;
+    let pollInterval = 3000; // Start with 3 second polling
+    let lastTimerValue: number | null = null;
+    
+    // Polling function for timer sync reliability
+    const pollTournamentData = async () => {
+      try {
+        const { data } = await supabase
+          .from('tournaments')
+          .select('timer_remaining, timer_duration, current_level, current_small_blind, current_big_blind, status')
+          .eq('id', tournament.id)
+          .single();
+        
+        if (data) {
+          // Check if timer value changed (indicates level change or admin action)
+          if (lastTimerValue !== null && data.timer_remaining !== lastTimerValue) {
+            console.log('Timer sync: polling detected change', { old: lastTimerValue, new: data.timer_remaining });
+            pollInterval = 3000; // Reset interval on changes
+          }
+          lastTimerValue = data.timer_remaining;
+          
+          setTournament(prev => ({
+            ...prev,
+            timer_remaining: data.timer_remaining,
+            timer_duration: data.timer_duration,
+            current_level: data.current_level,
+            current_small_blind: data.current_small_blind,
+            current_big_blind: data.current_big_blind,
+            status: data.status,
+          }));
+          setTimerRemaining(data.timer_remaining || 0);
+          
+          // Exponential backoff if no changes, cap at 15 seconds
+          pollInterval = Math.min(pollInterval * 1.3, 15000);
+        }
+      } catch (error) {
+        console.error('Timer polling error:', error);
+      }
+      
+      pollTimeoutId = setTimeout(pollTournamentData, pollInterval);
+    };
+    
+    // Start polling
+    pollTimeoutId = setTimeout(pollTournamentData, pollInterval);
+    
+    // Realtime subscription
     const channel = supabase
       .channel(`player_lobby_${registration.id}`)
       .on(
@@ -142,10 +188,13 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
           filter: `id=eq.${tournament.id}`
         },
         (payload) => {
-          console.log('Tournament updated:', payload);
+          console.log('Tournament updated (realtime):', payload);
           if (payload.new) {
-            setTournament(prev => ({ ...prev, ...payload.new as Partial<Tournament> }));
-            setTimerRemaining((payload.new as any).timer_remaining || 0);
+            const newData = payload.new as any;
+            setTournament(prev => ({ ...prev, ...newData }));
+            setTimerRemaining(newData.timer_remaining || 0);
+            lastTimerValue = newData.timer_remaining;
+            pollInterval = 3000; // Reset polling interval when realtime works
           }
         }
       )
@@ -159,7 +208,6 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
         },
         (payload) => {
           console.log('Registration updated (realtime):', payload);
-          // Directly update local registration state for instant UI update
           if (payload.new) {
             const newData = payload.new as any;
             setRegistration(prev => ({
@@ -179,15 +227,14 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
       .subscribe();
     
     return () => {
+      clearTimeout(pollTimeoutId);
       supabase.removeChannel(channel);
     };
   }, [tournament.id, registration.id, onUpdate]);
   
-  // Timer countdown
+  // Timer countdown (local countdown between syncs)
   useEffect(() => {
     if (tournament.status !== 'running') return;
-    
-    setTimerRemaining(tournament.timer_remaining || 0);
     
     const interval = setInterval(() => {
       setTimerRemaining(prev => {
@@ -197,7 +244,7 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [tournament.timer_remaining, tournament.status]);
+  }, [tournament.status]);
   
   // Format timer
   const formatTimer = (seconds: number) => {
@@ -286,13 +333,13 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-xl"
       >
-        {/* Header */}
-        <div className="relative p-4 pt-14 bg-gradient-to-b from-syndikate-metal/90 to-transparent">
+        {/* Header - increased top padding for Telegram fullscreen buttons */}
+        <div className="relative p-4 pt-20 bg-gradient-to-b from-syndikate-metal/90 to-transparent">
           <Button
             onClick={onClose}
             variant="ghost"
             size="icon"
-            className="absolute top-14 right-4 w-10 h-10 brutal-border bg-syndikate-metal/50 hover:bg-syndikate-red/20"
+            className="absolute top-20 right-4 w-10 h-10 brutal-border bg-syndikate-metal/50 hover:bg-syndikate-red/20"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -324,8 +371,8 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
           </div>
         </div>
         
-        {/* Main Content */}
-        <div className="flex-1 overflow-y-auto px-4 pb-8 space-y-4">
+        {/* Main Content - extended bottom padding for control panel */}
+        <div className="flex-1 overflow-y-auto px-4 pb-32 space-y-4">
           {/* Seat Assignment - Hero Card */}
           {tableNumber && seatNumber && (
             <motion.div
