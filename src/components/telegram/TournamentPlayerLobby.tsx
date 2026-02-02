@@ -121,38 +121,66 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
   }, [tournament.timer_duration]);
   
   // Load players per table from database (set by admin in TableSeating)
-  useEffect(() => {
-    const loadPlayersPerTable = async () => {
-      // First try to get from tournament's players_per_table field
-      const { data: tournamentData } = await supabase
-        .from('tournaments')
-        .select('players_per_table')
-        .eq('id', tournament.id)
-        .single();
-      
-      if (tournamentData?.players_per_table) {
-        setPlayersPerTable(tournamentData.players_per_table);
-        console.log(`[Seat Sync] Loaded ${tournamentData.players_per_table} players per table from DB`);
-        return;
-      }
-      
-      // Fallback: detect from seat pattern
-      const { data } = await supabase
-        .from('tournament_registrations')
-        .select('seat_number')
-        .eq('tournament_id', tournament.id)
-        .not('seat_number', 'is', null)
-        .order('seat_number', { ascending: true });
-      
-      if (data && data.length >= 2) {
-        const seatNumbers = data.map(d => d.seat_number as number);
-        const detected = detectPlayersPerTable(seatNumbers);
-        setPlayersPerTable(detected);
-        console.log(`[Seat Sync] Detected ${detected} players per table from pattern`);
-      }
-    };
+  const loadPlayersPerTable = useCallback(async () => {
+    // First try to get from tournament's players_per_table field
+    const { data: tournamentData } = await supabase
+      .from('tournaments')
+      .select('players_per_table')
+      .eq('id', tournament.id)
+      .single();
     
+    if (tournamentData?.players_per_table) {
+      setPlayersPerTable(tournamentData.players_per_table);
+      console.log(`[Seat Sync] Loaded ${tournamentData.players_per_table} players per table from DB`);
+      return;
+    }
+    
+    // Fallback: detect from seat pattern
+    const { data } = await supabase
+      .from('tournament_registrations')
+      .select('seat_number')
+      .eq('tournament_id', tournament.id)
+      .not('seat_number', 'is', null)
+      .order('seat_number', { ascending: true });
+    
+    if (data && data.length >= 2) {
+      const seatNumbers = data.map(d => d.seat_number as number);
+      const detected = detectPlayersPerTable(seatNumbers);
+      setPlayersPerTable(detected);
+      console.log(`[Seat Sync] Detected ${detected} players per table from pattern`);
+    }
+  }, [tournament.id]);
+  
+  useEffect(() => {
     loadPlayersPerTable();
+  }, [loadPlayersPerTable]);
+  
+  // Real-time subscription for tournament settings changes (including players_per_table)
+  useEffect(() => {
+    const channel = supabase
+      .channel(`player_lobby_tournament_${tournament.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tournaments',
+          filter: `id=eq.${tournament.id}`
+        },
+        (payload) => {
+          console.log('[Lobby] Tournament updated:', payload);
+          const newData = payload.new as any;
+          if (newData.players_per_table) {
+            setPlayersPerTable(newData.players_per_table);
+            console.log(`[Seat Sync] Realtime update: ${newData.players_per_table} players per table`);
+          }
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [tournament.id]);
   
   // Calculate table and seat using consistent formula with admin panel
@@ -332,9 +360,15 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
           filter: `id=eq.${registration.id}`
         },
         (payload) => {
-          console.log('Registration updated (realtime):', payload);
+          console.log('[Lobby] Registration updated (realtime):', payload);
           if (payload.new) {
             const newData = payload.new as any;
+            
+            // Log seat changes specifically
+            if (newData.seat_number !== registration.seat_number) {
+              console.log(`[Seat Sync] Seat changed: ${registration.seat_number} -> ${newData.seat_number}`);
+            }
+            
             setRegistration(prev => ({
               ...prev,
               chips: newData.chips ?? prev.chips,
@@ -343,7 +377,7 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
               reentries: newData.reentries ?? prev.reentries,
               additional_sets: newData.additional_sets ?? prev.additional_sets,
               status: newData.status ?? prev.status,
-              seat_number: newData.seat_number ?? prev.seat_number,
+              seat_number: newData.seat_number !== undefined ? newData.seat_number : prev.seat_number,
             }));
           }
           onUpdate();
@@ -354,7 +388,7 @@ export function TournamentPlayerLobby({ registration: initialRegistration, onClo
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [registration.id, onUpdate]);
+  }, [registration.id, registration.seat_number, onUpdate]);
   
   // Local timer countdown from anchor (requestAnimationFrame for smooth updates)
   useEffect(() => {
