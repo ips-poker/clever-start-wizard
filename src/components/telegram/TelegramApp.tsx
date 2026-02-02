@@ -38,6 +38,19 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CLAN_EMBLEMS } from '@/utils/clanEmblems';
 import { TelegramPokerLobby } from './TelegramPokerLobby';
 import syndikateBg from '@/assets/syndikate-poker-bg.jpg';
+import { ClubSelector } from './ClubSelector';
+import { ClubMiniApp } from './ClubMiniApp';
+
+interface Club {
+  id: string;
+  name: string;
+  description: string | null;
+  logo_url: string | null;
+  emblem_id: number;
+  primary_color: string;
+  secondary_color?: string;
+  total_rating: number | null;
+}
 
 interface Tournament {
   id: string;
@@ -104,6 +117,10 @@ export const TelegramApp = () => {
   const [scrollY, setScrollY] = useState(0);
   const [playerBalance, setPlayerBalance] = useState(10000);
   const [isAtPokerTable, setIsAtPokerTable] = useState(false);
+  
+  // Club selection state
+  const [showClubSelector, setShowClubSelector] = useState(true); // Show club selector by default
+  const [selectedClub, setSelectedClub] = useState<Club | null>(null);
   
   // Make body transparent when at poker table for immersive theme backgrounds
   useEffect(() => {
@@ -1472,6 +1489,38 @@ export const TelegramApp = () => {
           <p className="text-foreground font-display uppercase tracking-wider">Загрузка...</p>
         </div>
       </div>
+    );
+  }
+
+  // Show club selector if no club is selected
+  if (showClubSelector && !selectedClub) {
+    return (
+      <ClubSelector 
+        onSelectClub={(club) => {
+          setSelectedClub(club);
+          setShowClubSelector(false);
+        }}
+        onContinueWithoutClub={() => {
+          setSelectedClub(null);
+          setShowClubSelector(false);
+        }}
+      />
+    );
+  }
+
+  // Show club-specific Mini App if a club is selected
+  if (selectedClub) {
+    return (
+      <ClubMiniApp
+        club={selectedClub}
+        telegramUser={telegramUser}
+        userStats={userStats}
+        onBack={() => {
+          setSelectedClub(null);
+          setShowClubSelector(true);
+        }}
+        onStatsUpdate={setUserStats}
+      />
     );
   }
 
