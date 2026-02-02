@@ -16,8 +16,11 @@ import {
   Minus,
   Users,
   Target,
-  BarChart3
+  BarChart3,
+  Send,
+  Loader2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Tournament {
   id: string;
@@ -69,6 +72,7 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
   const [recentGames, setRecentGames] = useState<GameResult[]>([]);
   const [completedTournaments, setCompletedTournaments] = useState<CompletedTournament[]>([]);
   const [loading, setLoading] = useState(false);
+  const [postingToTelegram, setPostingToTelegram] = useState(false);
 
   useEffect(() => {
     loadResults();
@@ -267,6 +271,38 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
     return 'bg-poker-surface';
   };
 
+  const handlePostToTelegram = async () => {
+    if (!selectedTournament) {
+      toast.error('Выберите турнир для публикации');
+      return;
+    }
+
+    if (results.length === 0) {
+      toast.error('Нет результатов для публикации');
+      return;
+    }
+
+    setPostingToTelegram(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('post-tournament-results', {
+        body: { tournament_id: selectedTournament.id }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success('Результаты опубликованы в Telegram канал! 🎉');
+      } else {
+        toast.error(data?.error || 'Ошибка при публикации');
+      }
+    } catch (error) {
+      console.error('Error posting to Telegram:', error);
+      toast.error('Не удалось опубликовать результаты');
+    } finally {
+      setPostingToTelegram(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="tournament" className="w-full">
@@ -336,15 +372,38 @@ const TournamentResults = ({ selectedTournament }: TournamentResultsProps) => {
         <TabsContent value="tournament" className="space-y-4">
           <Card className="bg-gradient-card border-poker-border shadow-elevated">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-poker-text-primary">
-                <Trophy className="h-5 w-5 text-poker-warning" />
-                {selectedTournament ? `Результаты: ${selectedTournament.name}` : 'Выберите турнир'}
-              </CardTitle>
-              {selectedTournament && (
-                <CardDescription className="text-poker-text-secondary">
-                  Бай-ин: {selectedTournament.buy_in}₽ • {results.length} участников
-                </CardDescription>
-              )}
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-poker-text-primary">
+                    <Trophy className="h-5 w-5 text-poker-warning" />
+                    {selectedTournament ? `Результаты: ${selectedTournament.name}` : 'Выберите турнир'}
+                  </CardTitle>
+                  {selectedTournament && (
+                    <CardDescription className="text-poker-text-secondary mt-1">
+                      Бай-ин: {selectedTournament.buy_in}₽ • {results.length} участников
+                    </CardDescription>
+                  )}
+                </div>
+                {selectedTournament && results.length > 0 && (
+                  <Button
+                    onClick={handlePostToTelegram}
+                    disabled={postingToTelegram}
+                    className="bg-[#0088cc] hover:bg-[#006699] text-white"
+                  >
+                    {postingToTelegram ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Публикация...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        В Telegram
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {loading ? (

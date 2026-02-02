@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.issue-tournament-tickets]
 verify_jwt = false
+
+[functions.post-tournament-results]
+verify_jwt = false
