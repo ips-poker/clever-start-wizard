@@ -343,6 +343,8 @@ export const TelegramApp = () => {
         `)
         .eq('is_published', true)
         .or('is_archived.is.null,is_archived.eq.false') // Exclude archived tournaments
+        // Exclude finished tournaments from the "Tournaments" tab in Telegram Mini App
+        .not('status', 'in', '(finished,completed)')
         .order('start_time', { ascending: true });
       if (data) {
         setTournaments(data as Tournament[]);
