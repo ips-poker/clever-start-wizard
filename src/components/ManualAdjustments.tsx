@@ -29,10 +29,12 @@ import {
   Target,
   Award,
   Crown,
-  Shield
+  Shield,
+  CheckSquare
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { MAFIA_RANKS, getCurrentMafiaRank, MafiaRank } from '@/utils/mafiaRanks';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Player {
   id: string;
@@ -81,6 +83,7 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
   const [loading, setLoading] = useState(false);
   const [rankAssignPlayer, setRankAssignPlayer] = useState<Player | null>(null);
   const [selectedRank, setSelectedRank] = useState<string>('');
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -251,20 +254,39 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
 
   const deletePlayer = async (playerId: string, playerName: string) => {
     try {
-      const { error: resultsError } = await supabase
-        .from('game_results')
-        .delete()
-        .eq('player_id', playerId);
+      // Удаляем все связанные данные из дочерних таблиц
+      // game_results
+      await supabase.from('game_results').delete().eq('player_id', playerId);
+      
+      // tournament_registrations
+      await supabase.from('tournament_registrations').delete().eq('player_id', playerId);
+      
+      // diamond_transactions и diamond_wallets
+      await supabase.from('diamond_transactions').delete().eq('player_id', playerId);
+      await supabase.from('diamond_wallets').delete().eq('player_id', playerId);
+      
+      // player_balances
+      await supabase.from('player_balances').delete().eq('player_id', playerId);
+      
+      // poker_table_players
+      await supabase.from('poker_table_players').delete().eq('player_id', playerId);
+      
+      // poker_hand_players и poker_actions
+      await supabase.from('poker_hand_players').delete().eq('player_id', playerId);
+      await supabase.from('poker_actions').delete().eq('player_id', playerId);
+      
+      // clan_members и clan_invitations
+      await supabase.from('clan_members').delete().eq('player_id', playerId);
+      await supabase.from('clan_invitations').delete().eq('player_id', playerId);
+      
+      // online_poker_tournament_participants и payouts
+      await supabase.from('online_poker_tournament_participants').delete().eq('player_id', playerId);
+      await supabase.from('online_poker_tournament_payouts').delete().eq('player_id', playerId);
+      
+      // tournament_tickets
+      await supabase.from('tournament_tickets').delete().eq('player_id', playerId);
 
-      if (resultsError) throw resultsError;
-
-      const { error: registrationsError } = await supabase
-        .from('tournament_registrations')
-        .delete()
-        .eq('player_id', playerId);
-
-      if (registrationsError) throw registrationsError;
-
+      // Теперь удаляем самого игрока
       const { error: playerError } = await supabase
         .from('players')
         .delete()
@@ -279,12 +301,67 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
 
       loadPlayers();
       onRefresh();
+      // Убираем из выбранных
+      setSelectedPlayerIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(playerId);
+        return newSet;
+      });
+    } catch (error: any) {
+      console.error('Error deleting player:', error);
+      toast({
+        title: 'Ошибка удаления',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleSelectPlayer = (playerId: string, isChecked: boolean) => {
+    setSelectedPlayerIds(prev => {
+      const newSet = new Set(prev);
+      if (isChecked) {
+        newSet.add(playerId);
+      } else {
+        newSet.delete(playerId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (isChecked: boolean) => {
+    if (isChecked) {
+      setSelectedPlayerIds(new Set(players.map(p => p.id)));
+    } else {
+      setSelectedPlayerIds(new Set());
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedPlayerIds.size === 0) return;
+
+    setLoading(true);
+    const count = selectedPlayerIds.size;
+    try {
+      for (const playerId of selectedPlayerIds) {
+        const player = players.find(p => p.id === playerId);
+        if (player) {
+          await deletePlayer(player.id, player.name);
+        }
+      }
+      toast({
+        title: 'Игроки удалены',
+        description: `Удалено ${count} игроков`,
+      });
+      setSelectedPlayerIds(new Set());
     } catch (error: any) {
       toast({
         title: 'Ошибка удаления',
         description: error.message,
         variant: 'destructive'
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -531,54 +608,98 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
                       </CardDescription>
                     </div>
                   </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="destructive" 
-                        className="flex items-center gap-2 shadow-[0_0_15px_hsl(var(--destructive)/0.3)]"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Очистить весь список
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-card brutal-border">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2 text-foreground">
-                          <AlertTriangle className="h-5 w-5 text-destructive" />
-                          Очистить весь список игроков
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="space-y-2 text-muted-foreground">
-                          <p>
-                            Вы собираетесь <strong className="text-foreground">полностью удалить всех игроков</strong> из рейтинговой системы.
-                          </p>
-                          <div className="text-destructive font-medium">
-                            <p>Это действие удалит:</p>
-                            <ul className="list-disc list-inside space-y-1 text-sm mt-2">
-                              <li>Всех игроков</li>
-                              <li>Все результаты турниров</li>
-                              <li>Всю историю изменений рейтинга</li>
-                              <li>Все регистрации на турниры</li>
-                            </ul>
-                          </div>
-                          <p className="text-destructive font-medium">
-                            Это действие <strong>необратимо</strong>!
-                          </p>
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-background border-border/50 text-foreground hover:bg-muted">
-                          Отмена
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={clearAllPlayers}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  <div className="flex gap-2 flex-wrap">
+                    {selectedPlayerIds.size > 0 && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            variant="destructive" 
+                            className="flex items-center gap-2 shadow-[0_0_15px_hsl(var(--destructive)/0.3)]"
+                            disabled={loading}
+                          >
+                            <CheckSquare className="h-4 w-4" />
+                            Удалить отмеченные ({selectedPlayerIds.size})
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-card brutal-border">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="flex items-center gap-2 text-foreground">
+                              <AlertTriangle className="h-5 w-5 text-destructive" />
+                              Удалить выбранных игроков
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="space-y-2 text-muted-foreground">
+                              <p>
+                                Вы собираетесь удалить <strong className="text-foreground">{selectedPlayerIds.size} игроков</strong> из рейтинговой системы.
+                              </p>
+                              <p className="text-destructive font-medium">
+                                Это действие <strong>необратимо</strong>!
+                              </p>
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="bg-background border-border/50 text-foreground hover:bg-muted">
+                              Отмена
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={handleDeleteSelected}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Удалить навсегда
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="destructive" 
+                          className="flex items-center gap-2 shadow-[0_0_15px_hsl(var(--destructive)/0.3)]"
                         >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Очистить всё
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                          <Trash2 className="h-4 w-4" />
+                          Очистить весь список
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-card brutal-border">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="flex items-center gap-2 text-foreground">
+                            <AlertTriangle className="h-5 w-5 text-destructive" />
+                            Очистить весь список игроков
+                          </AlertDialogTitle>
+                          <AlertDialogDescription className="space-y-2 text-muted-foreground">
+                            <p>
+                              Вы собираетесь <strong className="text-foreground">полностью удалить всех игроков</strong> из рейтинговой системы.
+                            </p>
+                            <div className="text-destructive font-medium">
+                              <p>Это действие удалит:</p>
+                              <ul className="list-disc list-inside space-y-1 text-sm mt-2">
+                                <li>Всех игроков</li>
+                                <li>Все результаты турниров</li>
+                                <li>Всю историю изменений рейтинга</li>
+                                <li>Все регистрации на турниры</li>
+                              </ul>
+                            </div>
+                            <p className="text-destructive font-medium">
+                              Это действие <strong>необратимо</strong>!
+                            </p>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="bg-background border-border/50 text-foreground hover:bg-muted">
+                            Отмена
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={clearAllPlayers}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Очистить всё
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -586,6 +707,12 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-background/50 border-b border-border/50 hover:bg-background/50">
+                        <TableHead className="w-[50px] text-muted-foreground font-medium">
+                          <Checkbox
+                            checked={selectedPlayerIds.size === players.length && players.length > 0}
+                            onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                          />
+                        </TableHead>
                         <TableHead className="text-muted-foreground font-medium">Игрок</TableHead>
                         <TableHead className="text-muted-foreground font-medium">Ранг</TableHead>
                         <TableHead className="text-muted-foreground font-medium">Рейтинг</TableHead>
@@ -609,6 +736,12 @@ const ManualAdjustments = ({ tournaments, selectedTournament, onRefresh }: Manua
                             transition={{ delay: index * 0.02 }}
                             className="border-b border-border/30 hover:bg-muted/30 transition-colors"
                           >
+                            <TableCell className="w-[50px]">
+                              <Checkbox
+                                checked={selectedPlayerIds.has(player.id)}
+                                onCheckedChange={(checked) => handleSelectPlayer(player.id, checked as boolean)}
+                              />
+                            </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-9 w-9 border-2 border-primary/30">
