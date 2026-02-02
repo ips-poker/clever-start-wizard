@@ -1,43 +1,26 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClub } from "@/contexts/ClubContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { motion, AnimatePresence } from "framer-motion";
 import { 
   Trophy, 
   Users, 
-  Play, 
-  Pause,
-  SkipForward,
-  SkipBack,
-  RotateCcw,
   Clock,
-  Target,
-  TrendingUp,
-  UserX,
-  UserCheck,
-  Shuffle,
-  Settings,
-  BarChart3,
-  Coins,
-  Coffee,
-  Zap,
-  Maximize,
-  Volume2,
-  VolumeX,
   ChevronLeft,
   Loader2,
-  CheckCircle,
   AlertCircle,
   Send,
-  Download
+  Download,
+  BarChart3,
+  Shuffle,
+  Maximize,
+  Volume2,
+  VolumeX
 } from "lucide-react";
-import { ClubTournamentOverview } from "./ClubTournamentOverview";
+import { ClubTournamentMainView } from "./ClubTournamentMainView";
 import { ClubTournamentPlayerManagement } from "./ClubTournamentPlayerManagement";
 import { ClubTableSeating } from "./ClubTableSeating";
 import { ClubTournamentResults } from "./ClubTournamentResults";
@@ -45,6 +28,7 @@ import { ClubFullscreenTimer } from "./ClubFullscreenTimer";
 import { ClubTelegramIntegration } from "./ClubTelegramIntegration";
 import { ClubExportTools } from "./ClubExportTools";
 import { ClubBlindStructure } from "./ClubBlindStructure";
+import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
 interface Tournament {
   id: string;
@@ -112,18 +96,18 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
   const { club } = useClub();
   const { toast } = useToast();
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const voiceAnnouncements = useVoiceAnnouncements();
   
   // State
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [blindLevels, setBlindLevels] = useState<BlindLevel[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("main");
   
   // Timer state
   const [currentTime, setCurrentTime] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const [showFullscreenTimer, setShowFullscreenTimer] = useState(false);
 
   // Load tournament data
@@ -140,7 +124,23 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
     }
 
     setTournament(data);
-    setCurrentTime(data.timer_remaining || data.timer_duration || 900);
+    
+    // Restore timer state from localStorage
+    const savedTimerState = localStorage.getItem(`club_timer_${tournamentId}`);
+    if (savedTimerState) {
+      const { currentTime: savedTime, timerActive: savedActive, lastUpdate } = JSON.parse(savedTimerState);
+      const timePassed = Math.floor((Date.now() - lastUpdate) / 1000);
+      
+      if (savedActive && savedTime > timePassed) {
+        setCurrentTime(savedTime - timePassed);
+        setTimerActive(true);
+      } else {
+        setCurrentTime(savedTime);
+        setTimerActive(false);
+      }
+    } else {
+      setCurrentTime(data.timer_remaining || data.timer_duration || 900);
+    }
   }, [tournamentId]);
 
   // Load registrations
@@ -203,22 +203,49 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
         table: 'tournaments',
         filter: `id=eq.${tournamentId}`
       }, () => loadTournament())
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'blind_levels',
+        filter: `tournament_id=eq.${tournamentId}`
+      }, () => loadBlindLevels())
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [tournamentId, loadRegistrations, loadTournament]);
+  }, [tournamentId, loadRegistrations, loadTournament, loadBlindLevels]);
 
-  // Timer effect
+  // Timer effect with auto level transition
   useEffect(() => {
     if (timerActive && tournament) {
       timerRef.current = setInterval(() => {
         setCurrentTime(prev => {
           if (prev <= 1) {
             setTimerActive(false);
-            handleNextLevel();
+            // Save completed state
+            localStorage.setItem(`club_timer_${tournament.id}`, JSON.stringify({
+              currentTime: 0,
+              timerActive: false,
+              lastUpdate: Date.now()
+            }));
+            updateTimerInDatabase(0);
+            // Auto transition to next level
+            handleNextLevel({ autoResume: true });
             return 0;
           }
-          return prev - 1;
+          
+          const newTime = prev - 1;
+          
+          // Save state every 30 seconds
+          if (newTime % 30 === 0) {
+            localStorage.setItem(`club_timer_${tournament.id}`, JSON.stringify({
+              currentTime: newTime,
+              timerActive: true,
+              lastUpdate: Date.now()
+            }));
+            updateTimerInDatabase(newTime);
+          }
+          
+          return newTime;
         });
       }, 1000);
     } else {
@@ -238,11 +265,12 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
 
   // Timer controls
   const toggleTimer = () => {
-    setTimerActive(!timerActive);
+    const newActive = !timerActive;
+    setTimerActive(newActive);
     if (tournament) {
       localStorage.setItem(`club_timer_${tournament.id}`, JSON.stringify({
         currentTime,
-        timerActive: !timerActive,
+        timerActive: newActive,
         lastUpdate: Date.now()
       }));
     }
@@ -250,9 +278,15 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
 
   const resetTimer = () => {
     if (tournament) {
-      const resetTime = tournament.timer_duration || 900;
+      const currentBlind = blindLevels.find(bl => bl.level === tournament.current_level);
+      const resetTime = currentBlind?.duration || tournament.timer_duration || 900;
       setCurrentTime(resetTime);
       setTimerActive(false);
+      localStorage.setItem(`club_timer_${tournament.id}`, JSON.stringify({
+        currentTime: resetTime,
+        timerActive: false,
+        lastUpdate: Date.now()
+      }));
       updateTimerInDatabase(resetTime);
     }
   };
@@ -265,7 +299,7 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
       .eq('id', tournament.id);
   };
 
-  const handleNextLevel = async () => {
+  const handleNextLevel = async (opts?: { autoResume?: boolean }) => {
     if (!tournament) return;
 
     const newLevel = tournament.current_level + 1;
@@ -278,7 +312,7 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
 
     const resetTime = nextBlind.duration || 900;
 
-    // Local update
+    // Instant local update
     setTournament(prev => prev ? ({
       ...prev,
       current_level: newLevel,
@@ -287,10 +321,20 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
       timer_duration: resetTime
     }) : prev);
     setCurrentTime(resetTime);
-    setTimerActive(true);
 
-    // DB update
-    await supabase
+    const willBeActive = opts?.autoResume ? true : timerActive;
+    if (opts?.autoResume) {
+      setTimerActive(true);
+    }
+
+    localStorage.setItem(`club_timer_${tournament.id}`, JSON.stringify({
+      currentTime: resetTime,
+      timerActive: willBeActive,
+      lastUpdate: Date.now()
+    }));
+
+    // Background DB update
+    supabase
       .from('tournaments')
       .update({
         current_level: newLevel,
@@ -299,13 +343,25 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
         timer_remaining: resetTime,
         timer_duration: resetTime
       })
-      .eq('id', tournament.id);
+      .eq('id', tournament.id)
+      .then(({ error }) => {
+        if (error) console.error('Error updating level:', error);
+      });
+
+    // Voice announcements
+    setTimeout(() => {
+      if (nextBlind.is_break) {
+        voiceAnnouncements.announceBreakStart(Math.floor(resetTime / 60));
+      } else {
+        voiceAnnouncements.announceLevelStart(nextBlind);
+      }
+    }, 300);
 
     toast({
       title: nextBlind.is_break ? "Перерыв" : `Уровень ${newLevel}`,
       description: nextBlind.is_break 
         ? `Перерыв ${Math.floor(resetTime / 60)} минут`
-        : `Блайнды: ${nextBlind.small_blind}/${nextBlind.big_blind}`
+        : `Блайнды: ${nextBlind.small_blind}/${nextBlind.big_blind}${nextBlind.ante ? ` (анте ${nextBlind.ante})` : ''}`
     });
   };
 
@@ -343,6 +399,19 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
       title: `Уровень ${newLevel}`,
       description: `Блайнды: ${prevBlind.small_blind}/${prevBlind.big_blind}`
     });
+  };
+
+  const adjustTimer = (seconds: number) => {
+    const newTime = Math.max(0, currentTime + seconds);
+    setCurrentTime(newTime);
+    updateTimerInDatabase(newTime);
+    if (tournament) {
+      localStorage.setItem(`club_timer_${tournament.id}`, JSON.stringify({
+        currentTime: newTime,
+        timerActive,
+        lastUpdate: Date.now()
+      }));
+    }
   };
 
   const handleStartTournament = async () => {
@@ -399,33 +468,6 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
     }
   };
 
-  const adjustTimer = (seconds: number) => {
-    const newTime = Math.max(0, currentTime + seconds);
-    setCurrentTime(newTime);
-    updateTimerInDatabase(newTime);
-  };
-
-  // Format time
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Calculate stats
-  const activePlayers = registrations.filter(r => r.status === 'playing');
-  const eliminatedPlayers = registrations.filter(r => r.status === 'eliminated');
-  const pendingPlayers = registrations.filter(r => r.status === 'registered');
-  const totalChips = registrations.reduce((sum, r) => sum + (r.chips || 0), 0);
-  const avgStack = activePlayers.length > 0 ? Math.round(totalChips / activePlayers.length) : 0;
-
-  // Current blind level info
-  const currentBlind = blindLevels.find(bl => bl.level === tournament?.current_level);
-  const nextBlind = blindLevels.find(bl => bl.level === (tournament?.current_level || 0) + 1);
-  const timerProgress = tournament?.timer_duration 
-    ? (currentTime / tournament.timer_duration) * 100 
-    : 0;
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -463,176 +505,7 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
             </span>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setShowFullscreenTimer(true)}
-          title="Полноэкранный таймер"
-        >
-          <Maximize className="w-5 h-5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setSoundEnabled(!soundEnabled)}
-        >
-          {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-        </Button>
       </div>
-
-      {/* Timer and Controls Card */}
-      <Card className="bg-gradient-to-br from-card to-card/80 border-primary/20">
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Timer */}
-            <div className="lg:col-span-2">
-              <div className="text-center">
-                {/* Current Blinds */}
-                <div className="flex items-center justify-center gap-4 mb-4">
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Малый блайнд</p>
-                    <p className="text-3xl font-bold text-primary">{tournament.current_small_blind}</p>
-                  </div>
-                  <div className="text-2xl text-muted-foreground">/</div>
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">Большой блайнд</p>
-                    <p className="text-3xl font-bold text-primary">{tournament.current_big_blind}</p>
-                  </div>
-                  {currentBlind?.ante && (
-                    <>
-                      <div className="text-2xl text-muted-foreground">/</div>
-                      <div className="text-center">
-                        <p className="text-sm text-muted-foreground">Анте</p>
-                        <p className="text-3xl font-bold text-amber-500">{currentBlind.ante}</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Timer Display */}
-                <motion.div 
-                  className={`text-7xl font-mono font-bold mb-4 ${
-                    currentTime <= 60 ? 'text-destructive' : 
-                    currentTime <= 120 ? 'text-amber-500' : 'text-foreground'
-                  }`}
-                  animate={currentTime <= 30 ? { scale: [1, 1.02, 1] } : {}}
-                  transition={{ duration: 0.5, repeat: currentTime <= 30 ? Infinity : 0 }}
-                >
-                  {formatTime(currentTime)}
-                </motion.div>
-
-                {/* Progress Bar */}
-                <Progress 
-                  value={timerProgress} 
-                  className={`h-2 mb-4 ${
-                    timerProgress < 20 ? '[&>div]:bg-destructive' : 
-                    timerProgress < 40 ? '[&>div]:bg-amber-500' : ''
-                  }`}
-                />
-
-                {/* Next Level Info */}
-                {nextBlind && (
-                  <p className="text-sm text-muted-foreground">
-                    Следующий уровень: {nextBlind.is_break ? 'Перерыв' : `${nextBlind.small_blind}/${nextBlind.big_blind}`}
-                  </p>
-                )}
-              </div>
-
-              {/* Timer Controls */}
-              <div className="flex items-center justify-center gap-2 mt-6">
-                <Button variant="outline" size="icon" onClick={handlePrevLevel}>
-                  <SkipBack className="w-4 h-4" />
-                </Button>
-                <Button variant="outline" onClick={() => adjustTimer(-60)}>
-                  -1 мин
-                </Button>
-                <Button 
-                  size="lg" 
-                  className="px-8"
-                  onClick={toggleTimer}
-                >
-                  {timerActive ? (
-                    <><Pause className="w-5 h-5 mr-2" /> Пауза</>
-                  ) : (
-                    <><Play className="w-5 h-5 mr-2" /> Старт</>
-                  )}
-                </Button>
-                <Button variant="outline" onClick={() => adjustTimer(60)}>
-                  +1 мин
-                </Button>
-                <Button variant="outline" size="icon" onClick={handleNextLevel}>
-                  <SkipForward className="w-4 h-4" />
-                </Button>
-                <Button variant="outline" size="icon" onClick={resetTimer}>
-                  <RotateCcw className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <Card className="bg-muted/50">
-                  <CardContent className="p-3 text-center">
-                    <Users className="w-5 h-5 mx-auto mb-1 text-green-500" />
-                    <p className="text-2xl font-bold">{activePlayers.length}</p>
-                    <p className="text-xs text-muted-foreground">Активных</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/50">
-                  <CardContent className="p-3 text-center">
-                    <UserX className="w-5 h-5 mx-auto mb-1 text-red-500" />
-                    <p className="text-2xl font-bold">{eliminatedPlayers.length}</p>
-                    <p className="text-xs text-muted-foreground">Выбыло</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/50">
-                  <CardContent className="p-3 text-center">
-                    <Coins className="w-5 h-5 mx-auto mb-1 text-amber-500" />
-                    <p className="text-2xl font-bold">{(totalChips / 1000).toFixed(0)}K</p>
-                    <p className="text-xs text-muted-foreground">Всего фишек</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-muted/50">
-                  <CardContent className="p-3 text-center">
-                    <Target className="w-5 h-5 mx-auto mb-1 text-primary" />
-                    <p className="text-2xl font-bold">{(avgStack / 1000).toFixed(0)}K</p>
-                    <p className="text-xs text-muted-foreground">Средний стек</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Tournament Controls */}
-              <div className="space-y-2">
-                {tournament.status === 'scheduled' && (
-                  <Button className="w-full" onClick={handleStartTournament}>
-                    <Play className="w-4 h-4 mr-2" />
-                    Начать турнир
-                  </Button>
-                )}
-                {tournament.status === 'running' && (
-                  <Button variant="outline" className="w-full" onClick={handlePauseTournament}>
-                    <Pause className="w-4 h-4 mr-2" />
-                    Приостановить
-                  </Button>
-                )}
-                {tournament.status === 'paused' && (
-                  <Button className="w-full" onClick={handleResumeTournament}>
-                    <Play className="w-4 h-4 mr-2" />
-                    Возобновить
-                  </Button>
-                )}
-                {(tournament.status === 'running' || tournament.status === 'paused') && (
-                  <Button variant="destructive" className="w-full" onClick={handleFinishTournament}>
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Завершить турнир
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Fullscreen Timer */}
       {showFullscreenTimer && (
@@ -643,7 +516,7 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
           timerActive={timerActive}
           onToggleTimer={toggleTimer}
           onResetTimer={resetTimer}
-          onNextLevel={handleNextLevel}
+          onNextLevel={() => handleNextLevel()}
           onPrevLevel={handlePrevLevel}
           onClose={() => setShowFullscreenTimer(false)}
           onTimerAdjust={adjustTimer}
@@ -655,7 +528,7 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-7 h-auto p-1 bg-card/50">
-          <TabsTrigger value="overview" className="flex items-center gap-2 py-2">
+          <TabsTrigger value="main" className="flex items-center gap-2 py-2">
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">Обзор</span>
           </TabsTrigger>
@@ -685,12 +558,24 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
-          <ClubTournamentOverview
+        <TabsContent value="main">
+          <ClubTournamentMainView
             tournament={tournament}
             registrations={registrations}
             blindLevels={blindLevels}
             currentTime={currentTime}
+            timerActive={timerActive}
+            onToggleTimer={toggleTimer}
+            onResetTimer={resetTimer}
+            onNextLevel={() => handleNextLevel()}
+            onPrevLevel={handlePrevLevel}
+            onTimerAdjust={adjustTimer}
+            onStartTournament={handleStartTournament}
+            onPauseTournament={handlePauseTournament}
+            onResumeTournament={handleResumeTournament}
+            onFinishTournament={handleFinishTournament}
+            onOpenFullscreen={() => setShowFullscreenTimer(true)}
+            clubName={club?.name}
           />
         </TabsContent>
 
