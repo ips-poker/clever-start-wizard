@@ -194,7 +194,7 @@ export function ClubSelector({ onSelectClub, onContinueWithoutClub }: ClubSelect
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden" ref={scrollRef}>
+    <div className="min-h-screen bg-background relative overflow-x-hidden overflow-y-auto" ref={scrollRef}>
       {/* Industrial Background Layers */}
       <div className="fixed inset-0 industrial-texture opacity-50 pointer-events-none" />
       
