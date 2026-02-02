@@ -124,19 +124,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Вариативные вступления
+    // Завораживающие вступления
     const introVariants = [
-      '🔥 Состоялся незабываемый турнир!',
-      '🎯 Завершился грандиозный турнир!',
-      '⚡️ Эпичный покерный вечер позади!',
-      '🌟 Очередной турнир вошёл в историю!',
-      '💫 Невероятные эмоции и напряжённая борьба!',
-      '🎲 Карты розданы, победители определены!',
+      '✨ Карты легли, судьба решена... Ещё один вечер, который войдёт в легенды!',
+      '🌙 Под светом покерных софитов разыгралась настоящая драма — и вот её финал...',
+      '💫 Напряжение достигло предела, блефы раскрыты, чемпион определён!',
+      '🔮 Фортуна благоволила смелым — турнир завершён, история написана!',
+      '⚡️ Адреналин, стратегия, хладнокровие — всё сошлось в одной точке. Итоги!',
+      '🎭 Маски сброшены, карты открыты — встречайте героев вечера!',
+      '🌟 Когда за столом сходятся лучшие, рождается магия. Вот чем всё закончилось...',
+      '💎 Бриллиантовый вечер позади — время узнать, кто забрал главный трофей!',
     ]
     
     const getRandomIntro = () => introVariants[Math.floor(Math.random() * introVariants.length)]
 
-    // Формат турнира
+    // Формат турнира с красивыми иконками
     const getFormatDescription = (format: string | null): string => {
       switch (format) {
         case 'knockout': return '💀 Нокаут'
@@ -146,26 +148,28 @@ Deno.serve(async (req) => {
         case 'hyper': return '🚀 Гипер-турбо'
         case 'rebuy': return '🔄 С ребаями'
         case 'freezeout': return '❄️ Фризаут'
+        case 'reentry': return '🔁 С доп. входами'
         default: return '🃏 Классика'
       }
     }
 
     // Формируем сообщение
     let message = `${getRandomIntro()}\n\n`
-    message += `🏆 <b>${tournament.name}</b>\n\n`
+    message += `♠️♥️♦️♣️\n`
+    message += `🏆 <b>${tournament.name}</b>\n`
+    message += `♣️♦️♥️♠️\n\n`
     message += `📅 ${formatDate(startDate)}\n`
     message += `⏰ ${formatTime(startDate)} — ${endDate ? formatTime(endDate) : '...'} МСК\n`
     message += `${getFormatDescription(tournament.tournament_format)}\n`
     message += `👥 Участников: ${results?.length || 0}\n\n`
     
-    message += `╔═══════════════════════╗\n`
-    message += `║   📊 <b>РЕЗУЛЬТАТЫ</b>   ║\n`
-    message += `╚═══════════════════════╝\n\n`
+    message += `┏━━━━━━━━━━━━━━━━━━━━━┓\n`
+    message += `┃    📊 <b>РЕЗУЛЬТАТЫ</b>    ┃\n`
+    message += `┗━━━━━━━━━━━━━━━━━━━━━┛\n\n`
 
-    // Добавляем результаты (топ-10 или все, если меньше)
-    const displayResults = results?.slice(0, 10) || []
-    
-    for (const result of displayResults) {
+    // Топ-3 с особым оформлением
+    const top3 = results?.slice(0, 3) || []
+    for (const result of top3) {
       const playerName = (result.players as any)?.name || 'Неизвестный'
       const placeEmoji = getPlaceEmoji(result.position)
       const rpsChange = result.elo_change > 0 ? `+${result.elo_change}` : `${result.elo_change}`
@@ -175,13 +179,26 @@ Deno.serve(async (req) => {
       message += `     ${rpsIcon} RPS: ${rpsChange} → ${result.elo_after}\n\n`
     }
 
-    if (results && results.length > 10) {
-      message += `<i>... и ещё ${results.length - 10} участников</i>\n\n`
+    // Остальные игроки в расширяемом блоке
+    const restResults = results?.slice(3) || []
+    if (restResults.length > 0) {
+      message += `<blockquote expandable>\n`
+      message += `📋 <b>Полный список участников:</b>\n\n`
+      
+      for (const result of restResults) {
+        const playerName = (result.players as any)?.name || 'Неизвестный'
+        const placeEmoji = getPlaceEmoji(result.position)
+        const rpsChange = result.elo_change > 0 ? `+${result.elo_change}` : `${result.elo_change}`
+        const rpsIcon = result.elo_change > 0 ? '📈' : result.elo_change < 0 ? '📉' : '➡️'
+        
+        message += `${placeEmoji} ${playerName} ${rpsIcon} ${rpsChange}\n`
+      }
+      message += `</blockquote>\n\n`
     }
 
     message += `━━━━━━━━━━━━━━━━━━━━━━━\n\n`
-    message += `🙏 <i>Всем спасибо за участие!</i>\n`
-    message += `♠️♥️ <b>Ваш SYNDICATE Poker Club</b> ♦️♣️`
+    message += `🙏 <i>Благодарим всех за невероятную игру!</i>\n\n`
+    message += `♠️ <b>Ваш SYNDICATE Poker Club</b> ♥️`
 
     console.log('Sending message to Telegram channel:', TELEGRAM_CHANNEL_ID)
 
