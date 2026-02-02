@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,11 +69,51 @@ const TableSeating = ({
   const [balancingInProgress, setBalancingInProgress] = useState(false);
   const [isFinalTableReady, setIsFinalTableReady] = useState(false);
   const [playersPerTable, setPlayersPerTable] = useState<number>(9);
+  const [pollingInterval, setPollingInterval] = useState<number>(2000);
   const { toast } = useToast();
 
+  // Real-time subscription for tournament registrations
   useEffect(() => {
     loadSavedSeating();
-  }, [tournamentId]);
+
+    // Real-time subscription
+    const channel = supabase
+      .channel(`table-seating-${tournamentId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_registrations',
+          filter: `tournament_id=eq.${tournamentId}`
+        },
+        (payload) => {
+          console.log('Real-time seating update:', payload);
+          // Reset polling interval on realtime event
+          setPollingInterval(2000);
+          loadSavedSeating();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Seating subscription status:', status);
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          // Fallback to polling if realtime fails
+          console.log('Realtime failed, using polling fallback');
+        }
+      });
+
+    // Polling fallback with exponential backoff
+    const pollInterval = setInterval(() => {
+      loadSavedSeating();
+      // Exponential backoff up to 10 seconds
+      setPollingInterval(prev => Math.min(prev * 1.5, 10000));
+    }, pollingInterval);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(pollInterval);
+    };
+  }, [tournamentId, pollingInterval]);
 
   useEffect(() => {
     if (tables.length === 0 && registrations.length > 0) {
@@ -91,15 +131,72 @@ const TableSeating = ({
     setIsFinalTableReady(readyForFinal);
   };
 
-  const getActivePlayers = () => {
+  const getActivePlayers = useCallback(() => {
     // ТОЛЬКО игроки со статусом 'playing' считаются активными для рассадки
     // 'registered' - это игроки которые еще не подтверждены админом
     return registrations.filter(r => r.status === 'playing');
-  };
+  }, [registrations]);
 
-  const getEliminatedPlayers = () => {
+  const getEliminatedPlayers = useCallback(() => {
     return registrations.filter(r => r.status === 'eliminated');
-  };
+  }, [registrations]);
+
+  // Расчет информации о расформировании столов
+  const tableDissolveInfo = useMemo(() => {
+    if (tables.length <= 1) return {};
+    
+    const info: Record<number, {
+      canDissolve: boolean;
+      shouldHighlight: boolean;
+      playersToMove: number;
+      availableSeats: number;
+      reason?: string;
+    }> = {};
+    
+    // Общее количество активных игроков
+    const totalActivePlayers = tables.reduce((sum, t) => sum + t.active_players, 0);
+    
+    // Минимальное количество столов, необходимое для размещения всех игроков
+    const minTablesNeeded = Math.ceil(totalActivePlayers / playersPerTable);
+    
+    // Можно расформировать стол, если текущее количество столов > минимально необходимого
+    const canReduceTables = tables.filter(t => t.active_players > 0).length > minTablesNeeded;
+    
+    tables.forEach(table => {
+      // Считаем свободные места на ДРУГИХ столах
+      const availableSeatsOnOtherTables = tables
+        .filter(t => t.table_number !== table.table_number)
+        .reduce((sum, t) => {
+          const emptySeats = t.seats.filter(s => !s.player_id).length;
+          return sum + emptySeats;
+        }, 0);
+      
+      const playersToMove = table.active_players;
+      const canDissolve = availableSeatsOnOtherTables >= playersToMove && playersToMove > 0;
+      
+      // Подсвечиваем стол если:
+      // 1. Можно уменьшить количество столов (есть "лишний" стол)
+      // 2. Этот стол можно расформировать
+      // 3. Это стол с наименьшим количеством игроков (оптимальный кандидат)
+      const activeTablesWithPlayers = tables.filter(t => t.active_players > 0);
+      const minPlayersOnTable = Math.min(...activeTablesWithPlayers.map(t => t.active_players));
+      const isSmallestTable = table.active_players === minPlayersOnTable && table.active_players > 0;
+      
+      const shouldHighlight = canReduceTables && canDissolve && isSmallestTable;
+      
+      info[table.table_number] = {
+        canDissolve,
+        shouldHighlight,
+        playersToMove,
+        availableSeats: availableSeatsOnOtherTables,
+        reason: !canDissolve && playersToMove > 0
+          ? `Нужно ${playersToMove} мест, доступно ${availableSeatsOnOtherTables}`
+          : undefined
+      };
+    });
+    
+    return info;
+  }, [tables, playersPerTable]);
 
   const getPlayerAvatar = (playerId: string) => {
     // Сначала ищем игрока с аватаром из профиля
@@ -1300,50 +1397,78 @@ const TableSeating = ({
       {/* Столы в стиле Brutal Industrial */}
       {tables.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {tables.map(table => (
-            <Card 
-              key={table.table_number} 
-              className={`w-full brutal-border overflow-hidden transition-all duration-300 hover:shadow-neon-orange/20 ${
-                table.is_final_table 
-                  ? 'bg-gradient-to-br from-primary/20 to-primary/5 border-primary/50' 
-                  : 'bg-card border-border'
-              }`}
-            >
-              <CardContent className="p-0">
-                <div className="relative p-6">
-                  {/* Заголовок стола */}
-                  <div className="text-center mb-6 relative">
-                    <div className={`text-xs font-black uppercase tracking-wider mb-2 ${
-                      table.is_final_table ? 'text-primary' : 'text-muted-foreground'
-                    }`}>
-                      {table.is_final_table ? '🏆 ФИНАЛЬНЫЙ СТОЛ' : `СТОЛ ${table.table_number}`}
-                    </div>
-                    <div className="text-2xl font-black text-foreground">
-                      {table.active_players}/{table.max_seats}
-                    </div>
-                    <div className="text-xs text-muted-foreground font-bold uppercase">Игроков</div>
-                    {table.is_final_table && (
-                      <Badge className="mt-2 bg-primary/20 text-primary border border-primary/50 font-black text-xs">
-                        ЧЕМПИОНСКИЙ РАУНД
-                      </Badge>
+          {tables.map(table => {
+            const dissolveInfo = tableDissolveInfo[table.table_number];
+            const canDissolve = dissolveInfo?.canDissolve ?? false;
+            const shouldHighlight = dissolveInfo?.shouldHighlight ?? false;
+            
+            return (
+              <Card 
+                key={table.table_number} 
+                className={`w-full brutal-border overflow-hidden transition-all duration-300 ${
+                  table.is_final_table 
+                    ? 'bg-gradient-to-br from-primary/20 to-primary/5 border-primary/50' 
+                    : shouldHighlight
+                      ? 'bg-gradient-to-br from-amber-500/20 to-amber-500/5 border-amber-500/50 shadow-lg shadow-amber-500/20 animate-pulse'
+                      : 'bg-card border-border hover:shadow-neon-orange/20'
+                }`}
+              >
+                <CardContent className="p-0">
+                  <div className="relative p-6">
+                    {/* Индикатор расформирования */}
+                    {shouldHighlight && (
+                      <div className="absolute -top-1 -right-1 z-10">
+                        <Badge className="bg-amber-500 text-black font-black text-xs animate-bounce">
+                          РАСФОРМИРОВАТЬ
+                        </Badge>
+                      </div>
                     )}
                     
-                    {/* Кнопка расформирования стола */}
-                    {!table.is_final_table && tables.length > 1 && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="absolute top-0 right-0 h-8 px-2 text-destructive hover:bg-destructive/20 hover:text-destructive font-bold text-xs"
-                        onClick={() => closeTable(table.table_number)}
-                        title="Расформировать стол - игроки будут рандомно рассажены за другие столы"
-                      >
-                        <Shuffle className="w-3 h-3 mr-1" />
-                        <X className="w-3 h-3" />
-                      </Button>
-                    )}
-                  </div>
-                  
-                  <Separator className="bg-border/50 mb-6" />
+                    {/* Заголовок стола */}
+                    <div className="text-center mb-6 relative">
+                      <div className={`text-xs font-black uppercase tracking-wider mb-2 ${
+                        table.is_final_table ? 'text-primary' : 
+                        shouldHighlight ? 'text-amber-500' : 'text-muted-foreground'
+                      }`}>
+                        {table.is_final_table ? '🏆 ФИНАЛЬНЫЙ СТОЛ' : `СТОЛ ${table.table_number}`}
+                      </div>
+                      <div className="text-2xl font-black text-foreground">
+                        {table.active_players}/{table.max_seats}
+                      </div>
+                      <div className="text-xs text-muted-foreground font-bold uppercase">Игроков</div>
+                      {table.is_final_table && (
+                        <Badge className="mt-2 bg-primary/20 text-primary border border-primary/50 font-black text-xs">
+                          ЧЕМПИОНСКИЙ РАУНД
+                        </Badge>
+                      )}
+                      
+                      {/* Кнопка расформирования стола */}
+                      {!table.is_final_table && tables.length > 1 && table.active_players > 0 && (
+                        <Button
+                          size="sm"
+                          variant={shouldHighlight ? "default" : "ghost"}
+                          className={`absolute top-0 right-0 h-8 px-2 font-bold text-xs transition-all ${
+                            shouldHighlight 
+                              ? 'bg-amber-500 hover:bg-amber-600 text-black border-0 animate-pulse' 
+                              : canDissolve 
+                                ? 'text-amber-500 hover:bg-amber-500/20 hover:text-amber-400 border border-amber-500/30'
+                                : 'text-muted-foreground opacity-50 cursor-not-allowed'
+                          }`}
+                          onClick={() => canDissolve && closeTable(table.table_number)}
+                          disabled={!canDissolve}
+                          title={
+                            canDissolve 
+                              ? `Расформировать стол - ${dissolveInfo?.playersToMove} игроков будут рандомно рассажены (${dissolveInfo?.availableSeats} мест доступно)`
+                              : dissolveInfo?.reason || 'Недостаточно свободных мест'
+                          }
+                        >
+                          <Shuffle className="w-3 h-3 mr-1" />
+                          {shouldHighlight ? 'РАССАДИТЬ' : <X className="w-3 h-3" />}
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <Separator className="bg-border/50 mb-6" />
                   
                   {/* Места за столом */}
                   <div className="grid grid-cols-3 gap-3 mb-6">
@@ -1499,7 +1624,8 @@ const TableSeating = ({
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
