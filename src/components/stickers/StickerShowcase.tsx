@@ -1,101 +1,120 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Copy } from 'lucide-react';
+import { Download, Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  AnimatedPokerEmoji,
-  AnimatedWinnerBadge,
-  AnimatedChampionTrophy,
-  AnimatedPokerHand,
-  AnimatedFireStreak,
-  AnimatedChipsStack
-} from './AnimatedPokerEmoji';
 
 interface StickerItem {
   id: string;
   name: string;
   description: string;
-  component: React.ReactNode;
+  imagePath: string;
 }
 
 const stickers: StickerItem[] = [
   {
-    id: 'crown',
-    name: 'Корона Победителя',
-    description: 'Золотая корона с сиянием',
-    component: <AnimatedWinnerBadge size={80} />
+    id: 'trophy',
+    name: 'Кубок Победителя',
+    description: 'Золотой кубок с фишками',
+    imagePath: '/stickers/trophy-sticker.png'
   },
   {
-    id: 'trophy',
-    name: 'Кубок Чемпиона',
-    description: 'Анимированный трофей',
-    component: <AnimatedChampionTrophy size={80} />
+    id: 'crown',
+    name: 'Корона Чемпиона',
+    description: 'Королевская корона с камнями',
+    imagePath: '/stickers/crown-sticker.png'
   },
   {
     id: 'suits',
     name: 'Покерные Масти',
-    description: 'Все 4 масти в движении',
-    component: <AnimatedPokerHand size={60} />
+    description: 'Три туза с мастями',
+    imagePath: '/stickers/suits-sticker.png'
+  },
+  {
+    id: 'chips',
+    name: 'Стек Фишек',
+    description: 'Разноцветные покерные фишки',
+    imagePath: '/stickers/chips-sticker.png'
+  },
+  {
+    id: 'cards',
+    name: 'Тройка Тузов',
+    description: 'Пиковые тузы веером',
+    imagePath: '/stickers/cards-sticker.png'
   },
   {
     id: 'fire',
     name: 'Огненный Страйк',
     description: 'Горячая серия побед',
-    component: <AnimatedFireStreak size={60} />
+    imagePath: '/stickers/fire-sticker.png'
   },
   {
-    id: 'chips',
-    name: 'Стек Фишек',
-    description: 'Анимированный стек',
-    component: <AnimatedChipsStack size={60} />
-  },
-  {
-    id: 'diamond-spin',
+    id: 'diamond',
     name: 'Бриллиант',
-    description: 'Вращающийся бриллиант',
-    component: <AnimatedPokerEmoji type="diamond" size={64} />
+    description: 'Сверкающий кристалл',
+    imagePath: '/stickers/diamond-sticker.png'
   },
   {
-    id: 'star-spin',
-    name: 'Звезда',
+    id: 'star',
+    name: 'Золотая Звезда',
     description: 'Звезда рейтинга',
-    component: <AnimatedPokerEmoji type="star" size={64} />
-  },
-  {
-    id: 'cards-flip',
-    name: 'Карты',
-    description: 'Переворачивающиеся карты',
-    component: <AnimatedPokerEmoji type="cards" size={64} />
+    imagePath: '/stickers/star-sticker.png'
   }
 ];
 
 export const StickerShowcase = () => {
-  const handleDownloadInfo = () => {
-    toast.info(
-      'Для создания Telegram стикерпака:\n' +
-      '1. Экспортируйте анимации как Lottie JSON\n' +
-      '2. Используйте @Stickers бота в Telegram\n' +
-      '3. Следуйте инструкциям бота',
-      { duration: 8000 }
-    );
+  const handleDownload = async (sticker: StickerItem) => {
+    try {
+      const response = await fetch(sticker.imagePath);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${sticker.id}-sticker.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success(`${sticker.name} скачан!`);
+    } catch (error) {
+      toast.error('Ошибка при скачивании');
+    }
   };
 
-  const copyLottieGuide = () => {
+  const handleDownloadAll = async () => {
+    toast.info('Скачивание всех стикеров...');
+    for (const sticker of stickers) {
+      await handleDownload(sticker);
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    toast.success('Все стикеры скачаны!');
+  };
+
+  const copyInstructions = () => {
     const guide = `
-# Как создать Telegram стикерпак
+📦 Как создать Telegram стикерпак:
 
 1. Откройте @Stickers в Telegram
 2. Отправьте команду /newpack
-3. Выберите тип: Animated (TGS)
-4. Загрузите Lottie JSON файлы (макс. 64KB)
+3. Выберите тип: Regular (статичные)
+4. Загрузите PNG файлы (512x512)
 5. Добавьте эмодзи для каждого стикера
 
-Требования к TGS файлам:
-- Формат: Lottie JSON (сжатый в TGS)
-- Размер: 512x512 px
-- Длительность: до 3 секунд
-- FPS: 30 или 60
-- Размер файла: до 64KB
+📋 Требования к файлам:
+• Формат: PNG или WEBP
+• Размер: 512x512 пикселей
+• Фон: прозрачный
+• Белая обводка и тень
+• Размер файла: до 512KB
+
+🎯 Рекомендуемые эмодзи:
+• Кубок → 🏆
+• Корона → 👑
+• Масти → ♠️♥️♦️♣️
+• Фишки → 🎰
+• Карты → 🃏
+• Огонь → 🔥
+• Бриллиант → 💎
+• Звезда → ⭐
     `;
     navigator.clipboard.writeText(guide);
     toast.success('Инструкция скопирована!');
@@ -103,37 +122,45 @@ export const StickerShowcase = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Анимированные Покерные Стикеры</h1>
+          <h1 className="text-3xl font-bold">🎰 Покерные Стикеры для Telegram</h1>
           <p className="text-muted-foreground mt-1">
-            Превью анимаций для Telegram стикерпака
+            Готовые PNG 512x512 с белой обводкой и тенью
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={copyLottieGuide}>
+          <Button variant="outline" onClick={copyInstructions}>
             <Copy className="w-4 h-4 mr-2" />
             Инструкция
           </Button>
-          <Button onClick={handleDownloadInfo}>
+          <Button onClick={handleDownloadAll}>
             <Download className="w-4 h-4 mr-2" />
-            Как скачать
+            Скачать все
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {stickers.map((sticker) => (
           <Card 
             key={sticker.id}
-            className="group hover:border-primary/50 transition-colors cursor-pointer"
+            className="group hover:border-primary/50 transition-all hover:shadow-lg cursor-pointer"
+            onClick={() => handleDownload(sticker)}
           >
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">{sticker.name}</CardTitle>
+              <CardTitle className="text-base flex items-center justify-between">
+                {sticker.name}
+                <Download className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-center h-32 bg-gradient-to-br from-background to-muted rounded-lg mb-3">
-                {sticker.component}
+              <div className="flex items-center justify-center h-40 bg-gradient-to-br from-background to-muted rounded-lg mb-3 p-2">
+                <img 
+                  src={sticker.imagePath} 
+                  alt={sticker.name}
+                  className="max-h-full max-w-full object-contain drop-shadow-lg hover:scale-110 transition-transform"
+                />
               </div>
               <p className="text-sm text-muted-foreground text-center">
                 {sticker.description}
@@ -143,15 +170,35 @@ export const StickerShowcase = () => {
         ))}
       </div>
 
-      <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/30">
+      <Card className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30">
         <CardContent className="p-6">
-          <h3 className="text-lg font-semibold mb-2">💡 Как использовать</h3>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>• Эти анимации — превью для веб-интерфейса</li>
-            <li>• Для Telegram нужно экспортировать как Lottie/TGS</li>
-            <li>• Используйте @Stickers бота для создания пака</li>
-            <li>• После создания пака, получите ID эмодзи через web.telegram.org</li>
-          </ul>
+          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+            ✅ Следующие шаги
+          </h3>
+          <ol className="space-y-2 text-sm">
+            <li className="flex items-start gap-2">
+              <span className="font-bold text-primary">1.</span>
+              <span>Нажмите на стикер или «Скачать все» чтобы сохранить PNG файлы</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="font-bold text-primary">2.</span>
+              <span>Откройте <a href="https://t.me/Stickers" target="_blank" rel="noopener" className="text-primary underline">@Stickers</a> в Telegram</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="font-bold text-primary">3.</span>
+              <span>Отправьте боту скачанные PNG файлы по одному</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="font-bold text-primary">4.</span>
+              <span>Присвойте каждому стикеру соответствующий эмодзи</span>
+            </li>
+          </ol>
+          <Button variant="outline" className="mt-4" asChild>
+            <a href="https://t.me/Stickers" target="_blank" rel="noopener">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Открыть @Stickers бота
+            </a>
+          </Button>
         </CardContent>
       </Card>
     </div>
