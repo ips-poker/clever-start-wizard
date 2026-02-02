@@ -239,7 +239,9 @@ const TournamentOverview = ({
     setShowFullscreenTimer(false);
   };
 
-  const activePlayers = registrations.filter(r => r.status === 'registered' || r.status === 'playing');
+  // Только игроки со статусом 'playing' считаются активными (подтвержденными)
+  const activePlayers = registrations.filter(r => r.status === 'playing');
+  const pendingPlayers = registrations.filter(r => r.status === 'registered');
   const eliminatedPlayers = registrations.filter(r => r.status === 'eliminated');
   const totalReentries = registrations.reduce((sum, r) => sum + (r.reentries || 0), 0);
   const totalAdditionalSets = registrations.reduce((sum, r) => sum + (r.additional_sets || 0), 0);
@@ -378,9 +380,15 @@ const TournamentOverview = ({
                 
                 {/* Quick Stats */}
                 <div className="flex items-center gap-4">
-                  <div className="text-center px-5 py-3 bg-secondary/80 rounded-xl border-2 border-border">
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Игроков</p>
-                    <p className="text-3xl font-black text-foreground">{activePlayers.length}</p>
+                  {pendingPlayers.length > 0 && (
+                    <div className="text-center px-5 py-3 bg-yellow-500/10 rounded-xl border-2 border-yellow-500/50">
+                      <p className="text-xs text-yellow-600 font-medium uppercase tracking-wider">Ожидают</p>
+                      <p className="text-3xl font-black text-yellow-500">{pendingPlayers.length}</p>
+                    </div>
+                  )}
+                  <div className="text-center px-5 py-3 bg-green-500/10 rounded-xl border-2 border-green-500/50">
+                    <p className="text-xs text-green-600 font-medium uppercase tracking-wider">Активных</p>
+                    <p className="text-3xl font-black text-green-500">{activePlayers.length}</p>
                   </div>
                   <div className="text-center px-5 py-3 bg-primary/10 rounded-xl border-2 border-primary/50">
                     <p className="text-xs text-primary font-medium uppercase tracking-wider">RPS пул</p>
