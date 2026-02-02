@@ -1644,6 +1644,10 @@ export type Database = {
           eliminated_at: string | null
           final_position: number | null
           id: string
+          pending_addon: boolean | null
+          pending_addon_at: string | null
+          pending_reentry: boolean | null
+          pending_reentry_at: string | null
           player_id: string
           position: number | null
           rebuys: number | null
@@ -1660,6 +1664,10 @@ export type Database = {
           eliminated_at?: string | null
           final_position?: number | null
           id?: string
+          pending_addon?: boolean | null
+          pending_addon_at?: string | null
+          pending_reentry?: boolean | null
+          pending_reentry_at?: string | null
           player_id: string
           position?: number | null
           rebuys?: number | null
@@ -1676,6 +1684,10 @@ export type Database = {
           eliminated_at?: string | null
           final_position?: number | null
           id?: string
+          pending_addon?: boolean | null
+          pending_addon_at?: string | null
+          pending_reentry?: boolean | null
+          pending_reentry_at?: string | null
           player_id?: string
           position?: number | null
           rebuys?: number | null

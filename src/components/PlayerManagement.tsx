@@ -33,8 +33,10 @@ import {
   Activity,
   UserX,
   Grid3X3,
-  Clock
+  Clock,
+  Check
 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Tournament {
   id: string;
@@ -78,6 +80,10 @@ interface Registration {
   position?: number;
   rebuys?: number;
   addons?: number;
+  pending_reentry?: boolean;
+  pending_addon?: boolean;
+  pending_reentry_at?: string;
+  pending_addon_at?: string;
 }
 
 interface PlayerManagementProps {
@@ -406,6 +412,8 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
   const pendingPlayers = registrations.filter(r => r.status === 'registered');
   // Подтверждённые активные игроки
   const activePlayers = registrations.filter(r => r.status === 'playing');
+  // Игроки с pending запросами на re-entry или addon
+  const pendingRequests = registrations.filter(r => r.pending_reentry || r.pending_addon);
   const eliminatedPlayers = registrations.filter(r => r.status === 'eliminated').sort((a, b) => {
     const posA = (a as any).final_position || a.position || 999;
     const posB = (b as any).final_position || b.position || 999;
@@ -444,6 +452,81 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       toast({ title: "Ошибка", description: "Не удалось подтвердить игроков", variant: "destructive" });
     } else {
       toast({ title: "Все игроки подтверждены", description: `${pendingPlayers.length} игроков добавлено в турнир` });
+      onRegistrationUpdate();
+    }
+  };
+
+  // Подтверждение pending re-entry запроса
+  const confirmPendingReentry = async (registrationId: string, playerName: string) => {
+    const registration = registrations.find(r => r.id === registrationId);
+    if (!registration) return;
+
+    const currentReentries = registration.reentries || registration.rebuys || 0;
+    const newReentries = currentReentries + 1;
+    const reentryChips = tournament.reentry_chips || tournament.rebuy_chips || 10000;
+    const newChips = registration.chips + reentryChips;
+
+    const { error } = await supabase
+      .from('tournament_registrations')
+      .update({
+        reentries: newReentries,
+        rebuys: newReentries,
+        chips: newChips,
+        pending_reentry: false,
+        pending_reentry_at: null
+      })
+      .eq('id', registrationId);
+
+    if (error) {
+      toast({ title: "Ошибка", description: "Не удалось подтвердить re-entry", variant: "destructive" });
+    } else {
+      toast({ title: "✅ Re-entry подтвержден", description: `${playerName} получил ${reentryChips} фишек` });
+      onRegistrationUpdate();
+    }
+  };
+
+  // Подтверждение pending addon запроса
+  const confirmPendingAddon = async (registrationId: string, playerName: string) => {
+    const registration = registrations.find(r => r.id === registrationId);
+    if (!registration) return;
+
+    const currentAddons = registration.additional_sets || registration.addons || 0;
+    const newAddons = currentAddons + 1;
+    const addonChips = tournament.additional_chips || tournament.addon_chips || 10000;
+    const newChips = registration.chips + addonChips;
+
+    const { error } = await supabase
+      .from('tournament_registrations')
+      .update({
+        additional_sets: newAddons,
+        addons: newAddons,
+        chips: newChips,
+        pending_addon: false,
+        pending_addon_at: null
+      })
+      .eq('id', registrationId);
+
+    if (error) {
+      toast({ title: "Ошибка", description: "Не удалось подтвердить доп. набор", variant: "destructive" });
+    } else {
+      toast({ title: "✅ Доп. набор подтвержден", description: `${playerName} получил ${addonChips} фишек` });
+      onRegistrationUpdate();
+    }
+  };
+
+  // Отклонить pending запрос
+  const rejectPendingRequest = async (registrationId: string, type: 'reentry' | 'addon') => {
+    const updateData = type === 'reentry' 
+      ? { pending_reentry: false, pending_reentry_at: null }
+      : { pending_addon: false, pending_addon_at: null };
+
+    const { error } = await supabase
+      .from('tournament_registrations')
+      .update(updateData)
+      .eq('id', registrationId);
+
+    if (!error) {
+      toast({ title: "Запрос отклонен", description: type === 'reentry' ? 'Re-entry отклонен' : 'Доп. набор отклонен' });
       onRegistrationUpdate();
     }
   };
@@ -711,6 +794,91 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
 
         {/* Active Players Tab */}
         <TabsContent value="active" className="space-y-6 mt-6">
+          {/* Pending Requests Alert - яркий блок для заметности */}
+          {pendingRequests.length > 0 && (
+            <Alert className="border-2 border-yellow-500 bg-yellow-500/10 animate-pulse">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              <AlertDescription className="ml-2">
+                <div className="font-black text-yellow-500 uppercase mb-2">
+                  ⚠️ ЗАПРОСЫ НА ПОДТВЕРЖДЕНИЕ ({pendingRequests.length})
+                </div>
+                <div className="space-y-2">
+                  {pendingRequests.map(reg => (
+                    <div key={reg.id} className="flex items-center justify-between p-3 bg-card rounded-lg border-2 border-yellow-500/50">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-10 h-10 border-2 border-yellow-500">
+                          <AvatarImage src={getPlayerAvatar(reg.player.id)} />
+                          <AvatarFallback className="bg-yellow-500/20 text-yellow-500 font-black">
+                            {reg.player.name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-black text-foreground">{reg.player.name}</div>
+                          <div className="flex gap-2">
+                            {reg.pending_reentry && (
+                              <Badge className="bg-green-500/20 text-green-500 border-green-500/50 text-xs font-bold">
+                                <Zap className="w-3 h-3 mr-1" />
+                                RE-ENTRY (+{tournament.reentry_chips || tournament.rebuy_chips || 10000})
+                              </Badge>
+                            )}
+                            {reg.pending_addon && (
+                              <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/50 text-xs font-bold">
+                                <Plus className="w-3 h-3 mr-1" />
+                                ДОП. НАБОР (+{tournament.additional_chips || tournament.addon_chips || 10000})
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        {reg.pending_reentry && (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => confirmPendingReentry(reg.id, reg.player.name)}
+                              className="bg-green-500 hover:bg-green-600 text-white font-bold"
+                            >
+                              <Check className="w-4 h-4 mr-1" />
+                              RE-ENTRY
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => rejectPendingRequest(reg.id, 'reentry')}
+                              className="border-destructive text-destructive hover:bg-destructive/20"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
+                        {reg.pending_addon && (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => confirmPendingAddon(reg.id, reg.player.name)}
+                              className="bg-blue-500 hover:bg-blue-600 text-white font-bold"
+                            >
+                              <Check className="w-4 h-4 mr-1" />
+                              ДОП.
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => rejectPendingRequest(reg.id, 'addon')}
+                              className="border-destructive text-destructive hover:bg-destructive/20"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <motion.div variants={itemVariants}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
@@ -750,7 +918,20 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <h4 className="text-lg font-black text-foreground">{registration.player.name}</h4>
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-lg font-black text-foreground">{registration.player.name}</h4>
+                                {/* Pending indicators */}
+                                {registration.pending_reentry && (
+                                  <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50 text-[10px] font-bold animate-pulse">
+                                    ⏳ RE-ENTRY
+                                  </Badge>
+                                )}
+                                {registration.pending_addon && (
+                                  <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/50 text-[10px] font-bold animate-pulse">
+                                    ⏳ ДОП.
+                                  </Badge>
+                                )}
+                              </div>
                               <div className="flex items-center gap-3 text-sm text-muted-foreground">
                                 <span className="flex items-center gap-1">
                                   <Grid3X3 className="w-3 h-3" />

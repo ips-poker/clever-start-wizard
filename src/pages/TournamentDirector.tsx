@@ -112,6 +112,10 @@ interface Registration {
   position?: number;
   rebuys?: number;
   addons?: number;
+  pending_reentry?: boolean;
+  pending_addon?: boolean;
+  pending_reentry_at?: string;
+  pending_addon_at?: string;
 }
 
 const TournamentDirector = () => {

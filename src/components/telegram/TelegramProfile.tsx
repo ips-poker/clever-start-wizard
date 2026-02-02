@@ -32,6 +32,7 @@ import {
   Timer,
   Medal,
   Flame,
+  Plus,
   Brain,
   UserCircle
 } from 'lucide-react';
@@ -98,6 +99,8 @@ interface TournamentRegistration {
   status: string;
   created_at: string;
   seat_number?: number;
+  pending_reentry?: boolean;
+  pending_addon?: boolean;
   chips?: number;
   position?: number;
   rebuys?: number;
@@ -842,7 +845,7 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                     {/* Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <div className="w-7 h-7 bg-syndikate-orange brutal-border flex items-center justify-center animate-pulse shadow-neon-orange">
                             <CheckCircle className="h-3.5 w-3.5 text-background" />
                           </div>
@@ -850,6 +853,14 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                             ✓ ЗАРЕГИСТРИРОВАН
                           </div>
                           {getStatusBadge(reg.tournament.status)}
+                          
+                          {/* Seat Assignment Badge - показываем только для активных игроков с местом */}
+                          {reg.status === 'playing' && reg.seat_number && (
+                            <div className="px-2.5 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/50 brutal-border text-[10px] uppercase font-bold tracking-wider flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              СТОЛ {Math.ceil(reg.seat_number / 9)} • МЕСТО {((reg.seat_number - 1) % 9) + 1}
+                            </div>
+                          )}
                         </div>
                         
                         <h3 className="text-lg font-display font-bold text-foreground tracking-wide uppercase group-hover:text-syndikate-orange transition-colors duration-300 leading-tight">
@@ -921,6 +932,83 @@ export function TelegramProfile({ telegramUser, userStats, onStatsUpdate, onUnre
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Re-entry & Addon Request Buttons - only for running tournaments */}
+                    {reg.status === 'playing' && reg.tournament.status === 'running' && (
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        {/* Request Re-entry */}
+                        <Button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (reg.pending_reentry) return;
+                            const { error } = await supabase
+                              .from('tournament_registrations')
+                              .update({ pending_reentry: true, pending_reentry_at: new Date().toISOString() })
+                              .eq('id', reg.id);
+                            if (!error) {
+                              toast.success('Запрос на Re-entry отправлен');
+                              loadUserTournaments();
+                            }
+                          }}
+                          variant="outline"
+                          size="sm"
+                          disabled={reg.pending_reentry}
+                          className={`brutal-border transition-all duration-300 text-xs font-bold uppercase tracking-wider ${
+                            reg.pending_reentry 
+                              ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
+                              : 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
+                          }`}
+                        >
+                          {reg.pending_reentry ? (
+                            <>
+                              <Clock className="h-3 w-3 mr-1" />
+                              ОЖИДАНИЕ...
+                            </>
+                          ) : (
+                            <>
+                              <Zap className="h-3 w-3 mr-1" />
+                              RE-ENTRY
+                            </>
+                          )}
+                        </Button>
+                        
+                        {/* Request Addon */}
+                        <Button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (reg.pending_addon) return;
+                            const { error } = await supabase
+                              .from('tournament_registrations')
+                              .update({ pending_addon: true, pending_addon_at: new Date().toISOString() })
+                              .eq('id', reg.id);
+                            if (!error) {
+                              toast.success('Запрос на Доп. набор отправлен');
+                              loadUserTournaments();
+                            }
+                          }}
+                          variant="outline"
+                          size="sm"
+                          disabled={reg.pending_addon}
+                          className={`brutal-border transition-all duration-300 text-xs font-bold uppercase tracking-wider ${
+                            reg.pending_addon 
+                              ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
+                              : 'bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20'
+                          }`}
+                        >
+                          {reg.pending_addon ? (
+                            <>
+                              <Clock className="h-3 w-3 mr-1" />
+                              ОЖИДАНИЕ...
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="h-3 w-3 mr-1" />
+                              ДОП. НАБОР
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
                     
                     {/* Actions */}
                     {onUnregister && reg.tournament.status !== 'running' && reg.tournament.status !== 'completed' && (
