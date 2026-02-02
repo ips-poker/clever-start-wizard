@@ -110,41 +110,38 @@ Deno.serve(async (req) => {
     // Премиум эмодзи для мест
     const getPlaceEmoji = (position: number): string => {
       switch (position) {
-        case 1: return '🥇'
+        case 1: return '👑'
         case 2: return '🥈'
         case 3: return '🥉'
-        case 4: return '4️⃣'
-        case 5: return '5️⃣'
-        case 6: return '6️⃣'
-        case 7: return '7️⃣'
-        case 8: return '8️⃣'
-        case 9: return '9️⃣'
-        case 10: return '🔟'
+        case 4: return '④'
+        case 5: return '⑤'
+        case 6: return '⑥'
+        case 7: return '⑦'
+        case 8: return '⑧'
+        case 9: return '⑨'
+        case 10: return '⑩'
         default: return `${position}.`
       }
     }
 
     // Завораживающие вступления
     const introVariants = [
-      '✨ Карты легли, судьба решена... Ещё один вечер, который войдёт в легенды!',
-      '🌙 Под светом покерных софитов разыгралась настоящая драма — и вот её финал...',
-      '💫 Напряжение достигло предела, блефы раскрыты, чемпион определён!',
-      '🔮 Фортуна благоволила смелым — турнир завершён, история написана!',
-      '⚡️ Адреналин, стратегия, хладнокровие — всё сошлось в одной точке. Итоги!',
-      '🎭 Маски сброшены, карты открыты — встречайте героев вечера!',
-      '🌟 Когда за столом сходятся лучшие, рождается магия. Вот чем всё закончилось...',
-      '💎 Бриллиантовый вечер позади — время узнать, кто забрал главный трофей!',
+      '╭─────────────────────╮\n│ ✨ Карты легли, судьба решена... │\n│ Ещё один вечер, который │\n│ войдёт в легенды клуба! │\n╰─────────────────────╯',
+      '╭─────────────────────╮\n│ 🌙 Под светом покерных │\n│ софитов разыгралась │\n│ настоящая драма! │\n╰─────────────────────╯',
+      '╭─────────────────────╮\n│ 💫 Напряжение достигло │\n│ предела, блефы раскрыты, │\n│ чемпион определён! │\n╰─────────────────────╯',
+      '╭─────────────────────╮\n│ 🔮 Фортуна благоволила │\n│ смелым — история │\n│ написана! │\n╰─────────────────────╯',
+      '╭─────────────────────╮\n│ ⚡ Адреналин, стратегия, │\n│ хладнокровие — всё │\n│ сошлось воедино! │\n╰─────────────────────╯',
     ]
     
     const getRandomIntro = () => introVariants[Math.floor(Math.random() * introVariants.length)]
 
-    // Формат турнира с красивыми иконками
+    // Формат турнира
     const getFormatDescription = (format: string | null): string => {
       switch (format) {
         case 'knockout': return '💀 Нокаут'
         case 'bounty': return '🎯 Баунти'
         case 'deepstack': return '📚 Дипстек'
-        case 'turbo': return '⚡️ Турбо'
+        case 'turbo': return '⚡ Турбо'
         case 'hyper': return '🚀 Гипер-турбо'
         case 'rebuy': return '🔄 С ребаями'
         case 'freezeout': return '❄️ Фризаут'
@@ -153,30 +150,44 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Формируем сообщение
+    // Формируем сообщение с премиум оформлением
     let message = `${getRandomIntro()}\n\n`
-    message += `♠️♥️♦️♣️\n`
-    message += `🏆 <b>${tournament.name}</b>\n`
-    message += `♣️♦️♥️♠️\n\n`
-    message += `📅 ${formatDate(startDate)}\n`
-    message += `⏰ ${formatTime(startDate)} — ${endDate ? formatTime(endDate) : '...'} МСК\n`
-    message += `${getFormatDescription(tournament.tournament_format)}\n`
-    message += `👥 Участников: ${results?.length || 0}\n\n`
     
-    message += `┏━━━━━━━━━━━━━━━━━━━━━┓\n`
-    message += `┃    📊 <b>РЕЗУЛЬТАТЫ</b>    ┃\n`
-    message += `┗━━━━━━━━━━━━━━━━━━━━━┛\n\n`
+    message += `⠀⠀⠀⠀♠️ ♥️ ♦️ ♣️\n`
+    message += `⠀⠀🏆 <b>${tournament.name}</b> 🏆\n`
+    message += `⠀⠀⠀⠀♣️ ♦️ ♥️ ♠️\n\n`
+    
+    message += `┌──────────────────┐\n`
+    message += `│ 📅 ${formatDate(startDate)}\n`
+    message += `│ ⏰ ${formatTime(startDate)} — ${endDate ? formatTime(endDate) : '...'} МСК\n`
+    message += `│ ${getFormatDescription(tournament.tournament_format)}\n`
+    message += `│ 👥 Участников: <b>${results?.length || 0}</b>\n`
+    message += `└──────────────────┘\n\n`
+    
+    message += `╔══════════════════════╗\n`
+    message += `║⠀⠀⠀📊 <b>РЕЗУЛЬТАТЫ</b> ⠀⠀⠀║\n`
+    message += `╚══════════════════════╝\n\n`
 
-    // Топ-10 с особым оформлением
+    // Топ-10 с премиум оформлением
     const top10 = results?.slice(0, 10) || []
     for (const result of top10) {
       const playerName = (result.players as any)?.name || 'Неизвестный'
       const placeEmoji = getPlaceEmoji(result.position)
       const rpsChange = result.elo_change > 0 ? `+${result.elo_change}` : `${result.elo_change}`
-      const rpsIcon = result.elo_change > 0 ? '📈' : result.elo_change < 0 ? '📉' : '➡️'
+      const rpsIcon = result.elo_change > 0 ? '🔺' : result.elo_change < 0 ? '🔻' : '▪️'
       
-      message += `${placeEmoji} <b>${playerName}</b>\n`
-      message += `     ${rpsIcon} RPS: ${rpsChange} → ${result.elo_after}\n\n`
+      if (result.position === 1) {
+        message += `┏━━━━━━━━━━━━━━━━━━━┓\n`
+        message += `┃ ${placeEmoji} <b>${playerName}</b>\n`
+        message += `┃ ⠀⠀${rpsIcon} RPS: ${rpsChange} ➜ <b>${result.elo_after}</b>\n`
+        message += `┗━━━━━━━━━━━━━━━━━━━┛\n\n`
+      } else if (result.position <= 3) {
+        message += `┃ ${placeEmoji} <b>${playerName}</b>\n`
+        message += `┃ ⠀⠀${rpsIcon} RPS: ${rpsChange} ➜ ${result.elo_after}\n\n`
+      } else {
+        message += `│ ${placeEmoji} ${playerName}\n`
+        message += `│ ⠀⠀${rpsIcon} ${rpsChange} ➜ ${result.elo_after}\n\n`
+      }
     }
 
     // Остальные игроки в расширяемом блоке
@@ -188,16 +199,17 @@ Deno.serve(async (req) => {
       for (const result of restResults) {
         const playerName = (result.players as any)?.name || 'Неизвестный'
         const rpsChange = result.elo_change > 0 ? `+${result.elo_change}` : `${result.elo_change}`
-        const rpsIcon = result.elo_change > 0 ? '📈' : result.elo_change < 0 ? '📉' : '➡️'
+        const rpsIcon = result.elo_change > 0 ? '🔺' : result.elo_change < 0 ? '🔻' : '▪️'
         
         message += `${result.position}. ${playerName} ${rpsIcon} ${rpsChange}\n`
       }
       message += `</blockquote>\n\n`
     }
 
-    message += `━━━━━━━━━━━━━━━━━━━━━━━\n\n`
-    message += `🙏 <i>Благодарим всех за невероятную игру!</i>\n\n`
-    message += `♠️ <b>Ваш SYNDICATE Poker Club</b> ♥️`
+    message += `═══════════════════════\n\n`
+    message += `⠀⠀💎 <i>Благодарим за игру!</i> 💎\n\n`
+    message += `⠀♠️♥️ <b>SYNDICATE</b> ♦️♣️\n`
+    message += `⠀⠀⠀<b>POKER CLUB</b>`
 
     console.log('Sending message to Telegram channel:', TELEGRAM_CHANNEL_ID)
 
