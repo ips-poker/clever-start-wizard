@@ -34,7 +34,8 @@ import {
   UserX,
   Grid3X3,
   Clock,
-  Check
+  Check,
+  Send
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -100,6 +101,7 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
   const [seatNumber, setSeatNumber] = useState("");
   const [startingChips, setStartingChips] = useState(tournament.starting_chips || 10000);
   const [bulkPlayersList, setBulkPlayersList] = useState("");
+  const [isPostingToTelegram, setIsPostingToTelegram] = useState(false);
   const { toast } = useToast();
   const isMountedRef = useRef(true);
 
@@ -489,6 +491,36 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     }
   };
 
+  // Публикация списка регистраций в Telegram
+  const handlePostRegistrationsToTelegram = async () => {
+    setIsPostingToTelegram(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('post-tournament-registrations', {
+        body: { tournament_id: tournament.id }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast({
+          title: "Опубликовано в Telegram!",
+          description: `Список из ${data.registered_count} участников отправлен в канал`,
+        });
+      } else {
+        throw new Error(data?.error || 'Ошибка публикации');
+      }
+    } catch (error: any) {
+      console.error('Error posting to Telegram:', error);
+      toast({
+        title: "Ошибка публикации",
+        description: error.message || "Не удалось отправить в Telegram",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPostingToTelegram(false);
+    }
+  };
+
   // Подтверждение pending re-entry запроса
   const confirmPendingReentry = async (registrationId: string, playerName: string) => {
     const registration = registrations.find(r => r.id === registrationId);
@@ -741,17 +773,27 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
                   <p className="text-muted-foreground">{pendingPlayers.length} игроков зарегистрировано</p>
                 </div>
               </div>
-              {pendingPlayers.length > 0 && (
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button
-                    onClick={confirmAllPending}
-                    className="bg-green-500 hover:bg-green-600 text-white font-bold"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Подтвердить всех ({pendingPlayers.length})
-                  </Button>
-                </motion.div>
-              )}
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={handlePostRegistrationsToTelegram}
+                  disabled={isPostingToTelegram || pendingPlayers.length === 0}
+                  className="bg-[#0088cc] hover:bg-[#0077b5] text-white font-bold shadow-lg"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  {isPostingToTelegram ? 'Отправка...' : 'В Telegram'}
+                </Button>
+                {pendingPlayers.length > 0 && (
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      onClick={confirmAllPending}
+                      className="bg-green-500 hover:bg-green-600 text-white font-bold"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Подтвердить всех ({pendingPlayers.length})
+                    </Button>
+                  </motion.div>
+                )}
+              </div>
             </div>
             
             {pendingPlayers.length === 0 ? (
