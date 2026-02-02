@@ -18,7 +18,8 @@ import {
   Shuffle,
   Maximize,
   Volume2,
-  VolumeX
+  VolumeX,
+  Coins
 } from "lucide-react";
 import { ClubTournamentMainView } from "./ClubTournamentMainView";
 import { ClubTournamentPlayerManagement } from "./ClubTournamentPlayerManagement";
@@ -27,6 +28,7 @@ import { ClubTournamentResults } from "./ClubTournamentResults";
 import { ClubFullscreenTimer } from "./ClubFullscreenTimer";
 import { ClubTelegramIntegration } from "./ClubTelegramIntegration";
 import { ClubExportTools } from "./ClubExportTools";
+import { ClubPayoutStructure } from "./ClubPayoutStructure";
 import { ClubBlindStructure } from "./ClubBlindStructure";
 import { useVoiceAnnouncements } from "@/hooks/useVoiceAnnouncements";
 
@@ -527,7 +529,7 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-7 h-auto p-1 bg-card/50">
+        <TabsList className="grid w-full grid-cols-8 h-auto p-1 bg-card/50">
           <TabsTrigger value="main" className="flex items-center gap-2 py-2">
             <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">Обзор</span>
@@ -543,6 +545,10 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
           <TabsTrigger value="blinds" className="flex items-center gap-2 py-2">
             <Clock className="w-4 h-4" />
             <span className="hidden sm:inline">Блайнды</span>
+          </TabsTrigger>
+          <TabsTrigger value="payouts" className="flex items-center gap-2 py-2">
+            <Coins className="w-4 h-4" />
+            <span className="hidden sm:inline">Призы</span>
           </TabsTrigger>
           <TabsTrigger value="results" className="flex items-center gap-2 py-2">
             <Trophy className="w-4 h-4" />
@@ -602,6 +608,15 @@ export function ClubTournamentDirector({ tournamentId, onBack }: ClubTournamentD
             tournamentId={tournament.id}
             currentLevel={tournament.current_level}
             onUpdate={loadBlindLevels}
+          />
+        </TabsContent>
+
+        <TabsContent value="payouts">
+          <ClubPayoutStructure
+            tournamentId={tournament.id}
+            registrations={registrations}
+            tournament={tournament}
+            onUpdate={loadRegistrations}
           />
         </TabsContent>
 

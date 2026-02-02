@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Clock, 
@@ -16,7 +18,13 @@ import {
   Loader2,
   ChevronUp,
   ChevronDown,
-  Copy
+  Copy,
+  FolderOpen,
+  Download,
+  Upload,
+  Layers,
+  Timer,
+  Zap
 } from 'lucide-react';
 
 interface BlindLevel {
@@ -29,6 +37,14 @@ interface BlindLevel {
   is_break: boolean;
 }
 
+interface BlindTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  levels: any[];
+  is_default: boolean;
+}
+
 interface ClubBlindStructureProps {
   tournamentId: string;
   currentLevel?: number;
@@ -38,12 +54,18 @@ interface ClubBlindStructureProps {
 export function ClubBlindStructure({ tournamentId, currentLevel = 1, onUpdate }: ClubBlindStructureProps) {
   const { toast } = useToast();
   const [levels, setLevels] = useState<BlindLevel[]>([]);
+  const [templates, setTemplates] = useState<BlindTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [isSaveTemplateDialogOpen, setIsSaveTemplateDialogOpen] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [newTemplateDescription, setNewTemplateDescription] = useState('');
 
   // Load blind levels
   useEffect(() => {
     loadLevels();
+    loadTemplates();
   }, [tournamentId]);
 
   const loadLevels = async () => {
@@ -68,6 +90,29 @@ export function ClubBlindStructure({ tournamentId, currentLevel = 1, onUpdate }:
       setLevels(getDefaultLevels());
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('blind_structure_templates')
+        .select('*')
+        .order('is_default', { ascending: false })
+        .order('name');
+
+      if (!error && data) {
+        const mappedTemplates: BlindTemplate[] = data.map(t => ({
+          id: t.id,
+          name: t.name,
+          description: t.description,
+          levels: Array.isArray(t.levels) ? t.levels : [],
+          is_default: t.is_default || false
+        }));
+        setTemplates(mappedTemplates);
+      }
+    } catch (error) {
+      console.error('Error loading templates:', error);
     }
   };
 
@@ -96,7 +141,7 @@ export function ClubBlindStructure({ tournamentId, currentLevel = 1, onUpdate }:
     const lastLevel = levels[levels.length - 1];
     const newLevel: BlindLevel = {
       level: levels.length + 1,
-      small_blind: isBreak ? 0 : (lastLevel?.big_blind || 0) * 1.5,
+      small_blind: isBreak ? 0 : Math.round((lastLevel?.big_blind || 0) * 1.5),
       big_blind: isBreak ? 0 : (lastLevel?.big_blind || 0) * 2,
       ante: isBreak ? 0 : Math.round((lastLevel?.ante || 0) * 1.5),
       duration: isBreak ? 600 : 900,
@@ -159,10 +204,71 @@ export function ClubBlindStructure({ tournamentId, currentLevel = 1, onUpdate }:
     }
   };
 
+  const applyTemplate = async (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+
+    const newLevels = template.levels.map((level: any, index: number) => ({
+      level: index + 1,
+      small_blind: level.small_blind || 0,
+      big_blind: level.big_blind || 0,
+      ante: level.ante || 0,
+      duration: level.duration || 900,
+      is_break: level.is_break || false
+    }));
+
+    setLevels(newLevels);
+    setIsTemplateDialogOpen(false);
+    
+    toast({ title: "Шаблон применён", description: `Загружен: ${template.name}` });
+  };
+
+  const saveAsTemplate = async () => {
+    if (!newTemplateName.trim()) {
+      toast({ title: "Введите название шаблона", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const levelsData = levels.map(level => ({
+        level: level.level,
+        small_blind: level.small_blind,
+        big_blind: level.big_blind,
+        ante: level.ante,
+        duration: level.duration,
+        is_break: level.is_break
+      }));
+
+      const { error } = await supabase
+        .from('blind_structure_templates')
+        .insert([{
+          name: newTemplateName.trim(),
+          description: newTemplateDescription.trim() || null,
+          levels: levelsData,
+          is_default: false
+        }]);
+
+      if (error) throw error;
+
+      toast({ title: "Шаблон сохранён" });
+      setIsSaveTemplateDialogOpen(false);
+      setNewTemplateName('');
+      setNewTemplateDescription('');
+      loadTemplates();
+    } catch (error) {
+      console.error('Error saving template:', error);
+      toast({ title: "Ошибка сохранения шаблона", variant: "destructive" });
+    }
+  };
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     return `${mins} мин`;
   };
+
+  const totalDuration = levels.reduce((acc, level) => acc + level.duration, 0);
+  const gameLevelsCount = levels.filter(l => !l.is_break).length;
+  const breaksCount = levels.filter(l => l.is_break).length;
 
   if (isLoading) {
     return (
@@ -175,148 +281,302 @@ export function ClubBlindStructure({ tournamentId, currentLevel = 1, onUpdate }:
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Clock className="w-5 h-5 text-primary" />
-          Структура блайндов
-        </CardTitle>
-        <CardDescription>
-          {levels.length} уровней • {levels.filter(l => l.is_break).length} перерывов
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Level List */}
-        <div className="max-h-[400px] overflow-y-auto space-y-2">
-          {levels.map((level, index) => (
-            <div 
-              key={index}
-              className={`p-3 rounded-lg border ${
-                level.is_break 
-                  ? 'bg-amber-500/10 border-amber-500/30' 
-                  : level.level === currentLevel 
-                    ? 'bg-primary/10 border-primary/30 ring-2 ring-primary/20'
-                    : 'bg-muted/50 border-border'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 text-center">
-                  <Badge variant={level.is_break ? "secondary" : level.level === currentLevel ? "default" : "outline"}>
-                    {level.level}
-                  </Badge>
+    <div className="space-y-6">
+      {/* Header Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-primary/20 rounded-lg">
+                <Layers className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Структура блайндов</CardTitle>
+                <CardDescription className="flex items-center gap-3 mt-1">
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {gameLevelsCount} уровней
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Coffee className="w-3 h-3" />
+                    {breaksCount} перерывов
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Timer className="w-3 h-3" />
+                    ~{Math.floor(totalDuration / 60)} мин
+                  </span>
+                </CardDescription>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsTemplateDialogOpen(true)}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Загрузить
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsSaveTemplateDialogOpen(true)}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Сохранить
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="space-y-4">
+          {/* Level List */}
+          <div className="max-h-[500px] overflow-y-auto space-y-2">
+            {levels.map((level, index) => (
+              <div 
+                key={index}
+                className={`p-3 rounded-lg border transition-all ${
+                  level.is_break 
+                    ? 'bg-amber-500/10 border-amber-500/30' 
+                    : level.level === currentLevel 
+                      ? 'bg-primary/10 border-primary/30 ring-2 ring-primary/20'
+                      : level.level < currentLevel
+                        ? 'bg-muted/30 border-border/50 opacity-60'
+                        : 'bg-muted/50 border-border'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 text-center">
+                    <Badge 
+                      variant={level.is_break ? "secondary" : level.level === currentLevel ? "default" : "outline"}
+                      className={level.is_break ? 'bg-amber-500/20 text-amber-600' : ''}
+                    >
+                      {level.level}
+                    </Badge>
+                  </div>
+
+                  {level.is_break ? (
+                    <div className="flex-1 flex items-center gap-3">
+                      <Coffee className="w-4 h-4 text-amber-500" />
+                      <span className="font-medium text-amber-600">Перерыв</span>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          value={Math.floor(level.duration / 60)}
+                          onChange={(e) => updateLevel(index, 'duration', parseInt(e.target.value) * 60)}
+                          className="w-16 h-8 text-center"
+                        />
+                        <span className="text-sm text-muted-foreground">мин</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex-1 grid grid-cols-5 gap-2">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">SB</Label>
+                        <Input
+                          type="number"
+                          value={level.small_blind}
+                          onChange={(e) => updateLevel(index, 'small_blind', parseInt(e.target.value) || 0)}
+                          className="h-8"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">BB</Label>
+                        <Input
+                          type="number"
+                          value={level.big_blind}
+                          onChange={(e) => updateLevel(index, 'big_blind', parseInt(e.target.value) || 0)}
+                          className="h-8"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Анте</Label>
+                        <Input
+                          type="number"
+                          value={level.ante}
+                          onChange={(e) => updateLevel(index, 'ante', parseInt(e.target.value) || 0)}
+                          className="h-8"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Время (мин)</Label>
+                        <Input
+                          type="number"
+                          value={Math.floor(level.duration / 60)}
+                          onChange={(e) => updateLevel(index, 'duration', parseInt(e.target.value) * 60)}
+                          className="h-8"
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <span className="text-xs text-muted-foreground h-8 flex items-center">
+                          {formatDuration(level.duration)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => moveLevel(index, 'up')}
+                      disabled={index === 0}
+                    >
+                      <ChevronUp className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => moveLevel(index, 'down')}
+                      disabled={index === levels.length - 1}
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => removeLevel(index)}
+                      disabled={levels.length <= 1}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
+              </div>
+            ))}
+          </div>
 
-                {level.is_break ? (
-                  <div className="flex-1 flex items-center gap-2">
-                    <Coffee className="w-4 h-4 text-amber-500" />
-                    <span className="font-medium text-amber-500">Перерыв</span>
-                    <Input
-                      type="number"
-                      value={Math.floor(level.duration / 60)}
-                      onChange={(e) => updateLevel(index, 'duration', parseInt(e.target.value) * 60)}
-                      className="w-16 h-8 text-center"
-                    />
-                    <span className="text-sm text-muted-foreground">мин</span>
-                  </div>
-                ) : (
-                  <div className="flex-1 grid grid-cols-4 gap-2">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">SB</Label>
-                      <Input
-                        type="number"
-                        value={level.small_blind}
-                        onChange={(e) => updateLevel(index, 'small_blind', parseInt(e.target.value) || 0)}
-                        className="h-8"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">BB</Label>
-                      <Input
-                        type="number"
-                        value={level.big_blind}
-                        onChange={(e) => updateLevel(index, 'big_blind', parseInt(e.target.value) || 0)}
-                        className="h-8"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Анте</Label>
-                      <Input
-                        type="number"
-                        value={level.ante}
-                        onChange={(e) => updateLevel(index, 'ante', parseInt(e.target.value) || 0)}
-                        className="h-8"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Время</Label>
-                      <Input
-                        type="number"
-                        value={Math.floor(level.duration / 60)}
-                        onChange={(e) => updateLevel(index, 'duration', parseInt(e.target.value) * 60)}
-                        className="h-8"
-                      />
-                    </div>
-                  </div>
-                )}
+          {/* Actions */}
+          <div className="flex flex-wrap gap-2 pt-4 border-t">
+            <Button variant="outline" size="sm" onClick={() => addLevel(false)}>
+              <Plus className="w-4 h-4 mr-1" />
+              Добавить уровень
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => addLevel(true)}>
+              <Coffee className="w-4 h-4 mr-1" />
+              Добавить перерыв
+            </Button>
+            <Button 
+              className="ml-auto" 
+              onClick={saveLevels}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Сохранить структуру
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => moveLevel(index, 'up')}
-                    disabled={index === 0}
-                  >
-                    <ChevronUp className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => moveLevel(index, 'down')}
-                    disabled={index === levels.length - 1}
-                  >
-                    <ChevronDown className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive"
-                    onClick={() => removeLevel(index)}
-                    disabled={levels.length <= 1}
-                  >
-                    <Trash2 className="w-4 h-4" />
+      {/* Load Template Dialog */}
+      <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderOpen className="w-5 h-5 text-primary" />
+              Загрузить шаблон
+            </DialogTitle>
+            <DialogDescription>
+              Выберите готовый шаблон структуры блайндов
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3 max-h-[400px] overflow-y-auto">
+            {templates.map((template) => (
+              <div
+                key={template.id}
+                className="p-4 border rounded-lg hover:bg-secondary/50 cursor-pointer transition-colors"
+                onClick={() => applyTemplate(template.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{template.name}</span>
+                      {template.is_default && (
+                        <Badge variant="secondary" className="text-xs">По умолчанию</Badge>
+                      )}
+                    </div>
+                    {template.description && (
+                      <p className="text-sm text-muted-foreground mt-1">{template.description}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {template.levels?.length || 0} уровней
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm">
+                    Применить
                   </Button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Actions */}
-        <div className="flex flex-wrap gap-2 pt-4 border-t">
-          <Button variant="outline" size="sm" onClick={() => addLevel(false)}>
-            <Plus className="w-4 h-4 mr-1" />
-            Добавить уровень
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => addLevel(true)}>
-            <Coffee className="w-4 h-4 mr-1" />
-            Добавить перерыв
-          </Button>
-          <Button 
-            className="ml-auto" 
-            onClick={saveLevels}
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
+            ))}
+            
+            {templates.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                Нет доступных шаблонов
+              </div>
             )}
-            Сохранить
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Template Dialog */}
+      <Dialog open={isSaveTemplateDialogOpen} onOpenChange={setIsSaveTemplateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="w-5 h-5 text-primary" />
+              Сохранить как шаблон
+            </DialogTitle>
+            <DialogDescription>
+              Сохраните текущую структуру для повторного использования
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="template-name">Название шаблона</Label>
+              <Input
+                id="template-name"
+                value={newTemplateName}
+                onChange={(e) => setNewTemplateName(e.target.value)}
+                placeholder="Например: Турбо структура"
+              />
+            </div>
+            <div>
+              <Label htmlFor="template-desc">Описание (опционально)</Label>
+              <Input
+                id="template-desc"
+                value={newTemplateDescription}
+                onChange={(e) => setNewTemplateDescription(e.target.value)}
+                placeholder="Краткое описание структуры"
+              />
+            </div>
+            <div className="p-3 bg-secondary/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                Будет сохранено: {levels.length} уровней ({gameLevelsCount} игровых, {breaksCount} перерывов)
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSaveTemplateDialogOpen(false)}>
+              Отмена
+            </Button>
+            <Button onClick={saveAsTemplate}>
+              <Save className="w-4 h-4 mr-2" />
+              Сохранить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
