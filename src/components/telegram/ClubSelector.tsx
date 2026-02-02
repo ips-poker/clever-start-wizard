@@ -194,9 +194,9 @@ export function ClubSelector({ onSelectClub, onContinueWithoutClub }: ClubSelect
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-x-hidden overflow-y-auto" ref={scrollRef}>
-      {/* Industrial Background Layers */}
-      <div className="fixed inset-0 industrial-texture opacity-50 pointer-events-none" />
+    <div className="fixed inset-0 bg-background flex flex-col">
+      {/* Fixed Background Layers */}
+      <div className="fixed inset-0 industrial-texture opacity-50 pointer-events-none z-0" />
       
       {/* Metal Grid */}
       <div 
@@ -252,12 +252,17 @@ export function ClubSelector({ onSelectClub, onContinueWithoutClub }: ClubSelect
         />
       ))}
 
-      {/* Top Spacer for Telegram safe area */}
-      <div className="h-16" />
+      {/* Scrollable Content Container */}
+      <div 
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden relative z-10"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        {/* Top Spacer for Telegram safe area */}
+        <div className="h-12" />
 
-      {/* Header - Pushed down with padding */}
-      <div className="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-syndikate-orange/20">
-        <div className="pt-6 pb-4 px-4 safe-area-top">
+        {/* Header */}
+        <div className="bg-background/80 backdrop-blur-xl border-b border-syndikate-orange/20 px-4 py-4">
           {/* Logo and Title */}
           <div className="flex items-center gap-4 mb-4">
             {/* Logo with Metal Frame */}
@@ -317,10 +322,9 @@ export function ClubSelector({ onSelectClub, onContinueWithoutClub }: ClubSelect
             />
           </div>
         </div>
-      </div>
 
-      {/* Featured Syndicate Card */}
-      <div className="p-4 pt-6">
+        {/* Featured Syndicate Card */}
+        <div className="p-4 pt-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -519,8 +523,9 @@ export function ClubSelector({ onSelectClub, onContinueWithoutClub }: ClubSelect
           )}
         </div>
       </div>
-
-      {/* Scanlines Effect */}
+      
+      {/* End of scrollable content */}
+      </div>
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
         style={{
