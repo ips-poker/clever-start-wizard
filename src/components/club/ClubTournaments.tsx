@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useClub } from "@/contexts/ClubContext";
 import { useClubTournaments } from "@/hooks/useClubTournaments";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,11 +35,17 @@ import {
   Settings,
   Coins,
   RefreshCw,
-  PlusCircle
+  PlusCircle,
+  Filter,
+  LayoutGrid,
+  List
 } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ClubTournamentDirector } from "./ClubTournamentDirector";
+import { ClubTournamentCard } from "./ClubTournamentCard";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const STATUS_CONFIG = {
   scheduled: { label: "Запланирован", color: "bg-blue-500/10 text-blue-500", icon: Clock },
@@ -98,11 +104,60 @@ const DEFAULT_FORM_DATA: TournamentFormData = {
 
 export function ClubTournaments() {
   const { club, canCreateTournament, isOwner, isAdmin } = useClub();
-  const { tournaments, loading, createTournament, deleteTournament } = useClubTournaments({ clanId: club?.id });
+  const { tournaments, loading, createTournament, deleteTournament, refetch } = useClubTournaments({ clanId: club?.id });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [formTab, setFormTab] = useState("basic");
   const [newTournament, setNewTournament] = useState<TournamentFormData>(DEFAULT_FORM_DATA);
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  // Fetch registration counts for all tournaments
+  const { data: registrationCounts } = useQuery({
+    queryKey: ["tournament-registration-counts", club?.id],
+    queryFn: async () => {
+      if (!tournaments.length) return {};
+      
+      const { data, error } = await supabase
+        .from('tournament_registrations')
+        .select('tournament_id')
+        .in('tournament_id', tournaments.map(t => t.id));
+      
+      if (error) throw error;
+      
+      const counts: Record<string, number> = {};
+      data.forEach(reg => {
+        counts[reg.tournament_id] = (counts[reg.tournament_id] || 0) + 1;
+      });
+      return counts;
+    },
+    enabled: tournaments.length > 0,
+  });
+
+  // Filter tournaments by status
+  const filteredTournaments = useMemo(() => {
+    if (statusFilter === "all") return tournaments;
+    return tournaments.filter(t => t.status === statusFilter);
+  }, [tournaments, statusFilter]);
+
+  // Enhance tournaments with registration counts
+  const enhancedTournaments = useMemo(() => {
+    return filteredTournaments.map(t => ({
+      ...t,
+      registrations_count: registrationCounts?.[t.id] || 0
+    }));
+  }, [filteredTournaments, registrationCounts]);
+
+  // Status counts for filters
+  const statusCounts = useMemo(() => {
+    return {
+      all: tournaments.length,
+      scheduled: tournaments.filter(t => t.status === 'scheduled').length,
+      registration: tournaments.filter(t => t.status === 'registration').length,
+      running: tournaments.filter(t => t.status === 'running' || t.status === 'paused').length,
+      completed: tournaments.filter(t => t.status === 'completed').length,
+    };
+  }, [tournaments]);
 
   // If a tournament is selected, show the full Tournament Director
   if (selectedTournamentId) {
@@ -164,7 +219,7 @@ export function ClubTournaments() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">Турниры клуба</h2>
           <p className="text-sm text-muted-foreground">
@@ -172,13 +227,34 @@ export function ClubTournaments() {
           </p>
         </div>
 
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button disabled={!canCreateTournament}>
-              <Plus className="w-4 h-4 mr-2" />
-              Новый турнир
+        <div className="flex items-center gap-2">
+          {/* View Toggle */}
+          <div className="flex items-center border rounded-md brutal-border">
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="icon"
+              className="h-8 w-8 rounded-none rounded-l-md"
+              onClick={() => setViewMode("grid")}
+            >
+              <LayoutGrid className="h-4 w-4" />
             </Button>
-          </DialogTrigger>
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="icon"
+              className="h-8 w-8 rounded-none rounded-r-md"
+              onClick={() => setViewMode("list")}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button disabled={!canCreateTournament} className="brutal-border">
+                <Plus className="w-4 h-4 mr-2" />
+                Новый турнир
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -435,83 +511,96 @@ export function ClubTournaments() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
-      {/* Tournaments List */}
-      {tournaments.length === 0 ? (
-        <Card>
+      {/* Status Filter Tabs */}
+      <div className="flex gap-2 flex-wrap">
+        <Button
+          variant={statusFilter === "all" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setStatusFilter("all")}
+          className="brutal-border"
+        >
+          Все ({statusCounts.all})
+        </Button>
+        <Button
+          variant={statusFilter === "scheduled" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setStatusFilter("scheduled")}
+          className="brutal-border"
+        >
+          <Clock className="w-3 h-3 mr-1" />
+          Запланировано ({statusCounts.scheduled})
+        </Button>
+        <Button
+          variant={statusFilter === "registration" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setStatusFilter("registration")}
+          className="brutal-border"
+        >
+          <Users className="w-3 h-3 mr-1" />
+          Регистрация ({statusCounts.registration})
+        </Button>
+        <Button
+          variant={statusFilter === "running" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setStatusFilter("running")}
+          className="brutal-border"
+        >
+          <Play className="w-3 h-3 mr-1" />
+          Идёт ({statusCounts.running})
+        </Button>
+        <Button
+          variant={statusFilter === "completed" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setStatusFilter("completed")}
+          className="brutal-border"
+        >
+          <CheckCircle className="w-3 h-3 mr-1" />
+          Завершено ({statusCounts.completed})
+        </Button>
+      </div>
+
+      {/* Tournaments Grid/List */}
+      {enhancedTournaments.length === 0 ? (
+        <Card className="brutal-border">
           <CardContent className="py-12 text-center">
             <Trophy className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Нет турниров</h3>
+            <h3 className="text-lg font-medium mb-2">
+              {statusFilter === "all" ? "Нет турниров" : "Нет турниров с таким статусом"}
+            </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Создайте первый турнир для вашего клуба
+              {statusFilter === "all" 
+                ? "Создайте первый турнир для вашего клуба"
+                : "Попробуйте изменить фильтр"}
             </p>
-            <Button onClick={() => setIsCreateOpen(true)} disabled={!canCreateTournament}>
-              <Plus className="w-4 h-4 mr-2" />
-              Создать турнир
-            </Button>
+            {statusFilter === "all" && (
+              <Button onClick={() => setIsCreateOpen(true)} disabled={!canCreateTournament} className="brutal-border">
+                <Plus className="w-4 h-4 mr-2" />
+                Создать турнир
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {tournaments.map((tournament) => {
-            const status = STATUS_CONFIG[tournament.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.scheduled;
-            const StatusIcon = status.icon;
-            
-            return (
-              <Card key={tournament.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold truncate">{tournament.name}</h3>
-                        <Badge className={status.color} variant="secondary">
-                          <StatusIcon className="w-3 h-3 mr-1" />
-                          {status.label}
-                        </Badge>
-                        {tournament.tournament_format && tournament.tournament_format !== 'freezeout' && (
-                          <Badge variant="outline" className="text-xs">
-                            {tournament.tournament_format === 'reentry' ? 'Re-entry' : 'Addon'}
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" />
-                          {format(new Date(tournament.start_time), "dd MMM yyyy, HH:mm", { locale: ru })}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="w-3.5 h-3.5" />
-                          {tournament.max_players} мест
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Coins className="w-3.5 h-3.5" />
-                          {tournament.starting_chips?.toLocaleString()} фишек
-                        </span>
-                        {tournament.participation_fee > 0 && (
-                          <span className="text-primary font-medium">
-                            {tournament.participation_fee.toLocaleString()} ₽
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setSelectedTournamentId(tournament.id)}
-                      >
-                        <Settings className="w-4 h-4 mr-1" />
-                        Управление
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+        <div className={viewMode === "grid" 
+          ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" 
+          : "space-y-4"
+        }>
+          {enhancedTournaments.map((tournament, index) => (
+            <ClubTournamentCard
+              key={tournament.id}
+              tournament={tournament}
+              index={index}
+              onManage={(id) => setSelectedTournamentId(id)}
+              onDelete={async (id) => {
+                await deleteTournament.mutateAsync(id);
+              }}
+              onRefresh={refetch}
+              canManage={canManageTournaments}
+            />
+          ))}
         </div>
       )}
     </div>
