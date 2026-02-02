@@ -27,6 +27,7 @@ import Privacy from "./pages/Privacy";
 import PokerDemo from "./pages/PokerDemo";
 import OnlinePoker from "./pages/OnlinePoker";
 import PokerTable from "./pages/PokerTable";
+import ClubAdmin from "./pages/ClubAdmin";
 const queryClient = new QueryClient();
 
 function App() {
@@ -68,6 +69,7 @@ function App() {
                 <Route path="/tournaments" element={<Tournaments />} />
                 <Route path="/rating" element={<Rating />} />
                 <Route path="/clans" element={<Clans />} />
+                <Route path="/club-admin" element={<ClubAdmin />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/external-timer" element={<ExternalTimer />} />
                 <Route path="/invitation/:id" element={<InvitationCard />} />
