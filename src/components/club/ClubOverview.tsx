@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useClub } from "@/contexts/ClubContext";
 import { useClubSubscription } from "@/hooks/useClubSubscription";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -70,6 +70,82 @@ export function ClubOverview() {
   const { club, role, plan, isActive } = useClub();
   const { usage, limits, subscription, hasFeature } = useClubSubscription({ clanId: club?.id });
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isConnected, setIsConnected] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Real-time synchronization with Supabase
+  useEffect(() => {
+    if (!club?.id) return;
+
+    console.log('🔌 Setting up real-time sync for club:', club.id);
+
+    // Subscribe to tournament changes
+    const tournamentsChannel = supabase
+      .channel(`club_tournaments_${club.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournaments',
+          filter: `clan_id=eq.${club.id}`
+        },
+        (payload) => {
+          console.log('📡 Tournament update received:', payload.eventType, payload);
+          // Invalidate and refetch tournament queries
+          queryClient.invalidateQueries({ queryKey: ['club-tournaments-overview', club.id] });
+          queryClient.invalidateQueries({ queryKey: ['club-recent-activity', club.id] });
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Tournaments channel status:', status);
+        setIsConnected(status === 'SUBSCRIBED');
+      });
+
+    // Subscribe to registration changes  
+    const registrationsChannel = supabase
+      .channel(`club_registrations_${club.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_registrations'
+        },
+        (payload) => {
+          console.log('📡 Registration update received:', payload.eventType, payload);
+          // Invalidate tournament queries to recalculate stats
+          queryClient.invalidateQueries({ queryKey: ['club-tournaments-overview', club.id] });
+        }
+      )
+      .subscribe();
+
+    // Subscribe to clan member changes
+    const membersChannel = supabase
+      .channel(`club_members_${club.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'clan_members',
+          filter: `clan_id=eq.${club.id}`
+        },
+        (payload) => {
+          console.log('📡 Member update received:', payload.eventType, payload);
+          queryClient.invalidateQueries({ queryKey: ['club-top-players', club.id] });
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      console.log('🔌 Cleaning up real-time subscriptions');
+      supabase.removeChannel(tournamentsChannel);
+      supabase.removeChannel(registrationsChannel);
+      supabase.removeChannel(membersChannel);
+    };
+  }, [club?.id, queryClient]);
 
   // Fetch tournaments with statistics
   const { data: tournaments, isLoading: tournamentsLoading, refetch: refetchTournaments } = useQuery({
@@ -260,11 +336,19 @@ export function ClubOverview() {
                     <Badge variant="outline" className="bg-primary/10 font-medium">
                       {PLAN_NAMES[plan]}
                     </Badge>
+                    {/* Real-time connection status */}
+                    <Badge 
+                      variant="outline" 
+                      className={`font-medium ${isConnected ? 'bg-green-500/10 text-green-500 border-green-500/30' : 'bg-amber-500/10 text-amber-500 border-amber-500/30'}`}
+                    >
+                      <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1.5 ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}`} />
+                      {isConnected ? 'LIVE' : 'Polling'}
+                    </Badge>
                   </CardDescription>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={handleRefresh}>
-                <RefreshCw className="w-4 h-4" />
+              <Button variant="ghost" size="icon" onClick={handleRefresh} title="Обновить данные">
+                <RefreshCw className={`w-4 h-4 ${tournamentsLoading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </CardHeader>
