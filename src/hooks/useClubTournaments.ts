@@ -134,12 +134,17 @@ export function useClubTournaments({ clanId, status }: UseClubTournamentsOptions
     }
   });
 
+  const refetch = () => {
+    queryClient.invalidateQueries({ queryKey: ["club-tournaments", clanId] });
+  };
+
   return {
     tournaments: tournaments || [],
     loading: isLoading,
     error,
     createTournament,
     updateTournament,
-    deleteTournament
+    deleteTournament,
+    refetch
   };
 }
