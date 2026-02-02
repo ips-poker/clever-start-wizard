@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GlitchText } from '@/components/ui/glitch-text';
+// GlitchText removed - using font-display instead for consistency with loading screen
 import { CLAN_EMBLEMS } from '@/utils/clanEmblems';
 import syndikateLogo from '@/assets/syndikate-logo-main.png';
 
@@ -293,14 +293,15 @@ export function ClubSelector({ onSelectClub, onContinueWithoutClub }: ClubSelect
             </motion.div>
             
             <div className="flex-1">
-              <GlitchText 
-                text="SYNDICATE" 
-                className="text-2xl font-black tracking-wider"
-                glitchIntensity="low"
-              />
-              <div className="flex items-center gap-2 mt-0.5">
-                <div className="h-[1px] w-8 bg-gradient-to-r from-syndikate-orange to-transparent" />
-                <p className="text-xs text-syndikate-orange uppercase tracking-widest font-bold">Poker Aggregator</p>
+              <h1 className="font-display text-2xl uppercase tracking-wider text-foreground">
+                SYNDICATE
+              </h1>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="h-[2px] w-8 bg-gradient-neon" />
+                <p className="font-display text-xs uppercase tracking-widest text-syndikate-orange">
+                  Poker Club
+                </p>
+                <div className="h-[2px] w-8 bg-gradient-neon" />
               </div>
             </div>
           </div>
@@ -375,13 +376,13 @@ export function ClubSelector({ onSelectClub, onContinueWithoutClub }: ClubSelect
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-xl font-black uppercase tracking-wide">SYNDICATE POKER</h3>
-                    <Badge className="bg-syndikate-orange/20 text-syndikate-orange border border-syndikate-orange/40">
+                    <h3 className="font-display text-xl uppercase tracking-wider text-foreground">SYNDICATE POKER</h3>
+                    <Badge className="bg-syndikate-orange/20 text-syndikate-orange border border-syndikate-orange/40 font-display text-[10px] tracking-wider">
                       <Crown className="w-3 h-3 mr-1" />
                       OFFICIAL
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1.5">
+                  <p className="text-sm text-muted-foreground mt-1.5 font-medium">
                     Официальный покерный клуб Syndicate
                   </p>
                   <div className="flex gap-4 mt-3 flex-wrap">
