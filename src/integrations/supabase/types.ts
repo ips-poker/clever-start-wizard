@@ -241,6 +241,123 @@ export type Database = {
           },
         ]
       }
+      club_staff: {
+        Row: {
+          clan_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          permissions: Json
+          player_id: string
+          role: Database["public"]["Enums"]["club_role"]
+          updated_at: string
+        }
+        Insert: {
+          clan_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          permissions?: Json
+          player_id: string
+          role?: Database["public"]["Enums"]["club_role"]
+          updated_at?: string
+        }
+        Update: {
+          clan_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          permissions?: Json
+          player_id?: string
+          role?: Database["public"]["Enums"]["club_role"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_staff_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_staff_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "club_staff_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_public_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      club_subscriptions: {
+        Row: {
+          auto_renew: boolean
+          clan_id: string
+          created_at: string
+          expires_at: string | null
+          features: Json
+          id: string
+          max_online_tables: number
+          max_players: number
+          max_staff: number
+          max_tournaments: number
+          payment_status: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          price_monthly: number
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          auto_renew?: boolean
+          clan_id: string
+          created_at?: string
+          expires_at?: string | null
+          features?: Json
+          id?: string
+          max_online_tables?: number
+          max_players?: number
+          max_staff?: number
+          max_tournaments?: number
+          payment_status?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          price_monthly?: number
+          starts_at?: string
+          updated_at?: string
+        }
+        Update: {
+          auto_renew?: boolean
+          clan_id?: string
+          created_at?: string
+          expires_at?: string | null
+          features?: Json
+          id?: string
+          max_online_tables?: number
+          max_players?: number
+          max_staff?: number
+          max_tournaments?: number
+          payment_status?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          price_monthly?: number
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_subscriptions_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: true
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cms_content: {
         Row: {
           content_key: string
@@ -1824,6 +1941,7 @@ export type Database = {
           addon_level: number | null
           break_start_level: number | null
           buy_in: number
+          clan_id: string | null
           created_at: string
           current_big_blind: number | null
           current_level: number | null
@@ -1863,6 +1981,7 @@ export type Database = {
           addon_level?: number | null
           break_start_level?: number | null
           buy_in?: number
+          clan_id?: string | null
           created_at?: string
           current_big_blind?: number | null
           current_level?: number | null
@@ -1902,6 +2021,7 @@ export type Database = {
           addon_level?: number | null
           break_start_level?: number | null
           buy_in?: number
+          clan_id?: string | null
           created_at?: string
           current_big_blind?: number | null
           current_level?: number | null
@@ -1932,7 +2052,15 @@ export type Database = {
           voice_control_enabled?: boolean | null
           voice_session_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tournaments_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       voice_announcements: {
         Row: {
@@ -2440,6 +2568,10 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: number
       }
+      can_manage_club_tournaments: {
+        Args: { p_clan_id: string; p_user_id: string }
+        Returns: boolean
+      }
       can_view_player_contacts: {
         Args: { player_record: Database["public"]["Tables"]["players"]["Row"] }
         Returns: boolean
@@ -2563,6 +2695,10 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: undefined
       }
+      get_club_role: {
+        Args: { p_clan_id: string; p_user_id: string }
+        Returns: Database["public"]["Enums"]["club_role"]
+      }
       get_pko_bounty_leaderboard: {
         Args: { p_limit?: number; p_tournament_id: string }
         Returns: {
@@ -2619,6 +2755,7 @@ export type Database = {
         Args: { tournament_id_param: string }
         Returns: Json
       }
+      get_user_clan_id: { Args: { p_user_id: string }; Returns: string }
       get_user_profile: {
         Args: { user_uuid: string }
         Returns: {
@@ -2649,6 +2786,10 @@ export type Database = {
         Returns: Json
       }
       is_admin: { Args: { user_uuid: string }; Returns: boolean }
+      is_club_admin: {
+        Args: { p_clan_id: string; p_user_id: string }
+        Returns: boolean
+      }
       issue_offline_tickets_for_winners:
         | {
             Args: {
@@ -2840,6 +2981,8 @@ export type Database = {
       }
     }
     Enums: {
+      club_role: "owner" | "admin" | "director" | "member"
+      subscription_plan: "free" | "basic" | "pro" | "enterprise"
       user_role: "admin" | "editor" | "user"
     }
     CompositeTypes: {
@@ -2968,6 +3111,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      club_role: ["owner", "admin", "director", "member"],
+      subscription_plan: ["free", "basic", "pro", "enterprise"],
       user_role: ["admin", "editor", "user"],
     },
   },
