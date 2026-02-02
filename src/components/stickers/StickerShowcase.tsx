@@ -11,6 +11,56 @@ interface StickerItem {
 }
 
 const stickers: StickerItem[] = [
+  // Premium collection
+  {
+    id: 'royal-flush',
+    name: 'Роял Флеш',
+    description: 'Золотые карты — максимум',
+    imagePath: '/stickers/royal-flush-sticker.png'
+  },
+  {
+    id: 'pocket-aces',
+    name: 'Карманные Тузы',
+    description: 'Лучшая стартовая рука',
+    imagePath: '/stickers/pocket-aces-sticker.png'
+  },
+  {
+    id: 'premium-chips',
+    name: 'Стек Чемпиона',
+    description: 'Разноцветные фишки казино',
+    imagePath: '/stickers/premium-chips-sticker.png'
+  },
+  {
+    id: 'dealer-button',
+    name: 'Баттон Дилера',
+    description: 'Золотая кнопка D',
+    imagePath: '/stickers/dealer-button-sticker.png'
+  },
+  {
+    id: 'joker',
+    name: 'Джокер',
+    description: 'Шут с картами',
+    imagePath: '/stickers/joker-sticker.png'
+  },
+  {
+    id: 'boom',
+    name: 'BOOM!',
+    description: 'Взрывной выигрыш',
+    imagePath: '/stickers/boom-sticker.png'
+  },
+  {
+    id: 'money-stack',
+    name: 'Пачка Денег',
+    description: 'Стопка $100 в золоте',
+    imagePath: '/stickers/money-stack-sticker.png'
+  },
+  {
+    id: 'all-in',
+    name: 'ALL-IN',
+    description: 'Ва-банк момент',
+    imagePath: '/stickers/all-in-sticker.png'
+  },
+  // Original collection
   {
     id: 'trophy',
     name: 'Кубок Победителя',
