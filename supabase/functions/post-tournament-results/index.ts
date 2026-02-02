@@ -284,11 +284,60 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Отправляем стикер из нашего пака после результатов
+    const stickerPackName = 'YYTTYYTTY'
+    const stickerOptions = [
+      'trophy',      // Кубок победителя
+      'crown',       // Корона чемпиона  
+      'chips',       // Покерные фишки
+      'cards',       // Карты
+      'royal_flush', // Роял флеш
+      'all_in',      // All-in
+    ]
+    
+    // Выбираем случайный стикер
+    const randomSticker = stickerOptions[Math.floor(Math.random() * stickerOptions.length)]
+    
+    try {
+      // Получаем стикерпак
+      const stickerSetResponse = await fetch(
+        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getStickerSet?name=${stickerPackName}`
+      )
+      const stickerSet = await stickerSetResponse.json()
+      
+      if (stickerSet.ok && stickerSet.result?.stickers?.length > 0) {
+        // Выбираем случайный стикер из пака
+        const stickers = stickerSet.result.stickers
+        const randomIndex = Math.floor(Math.random() * stickers.length)
+        const stickerId = stickers[randomIndex].file_id
+        
+        // Отправляем стикер
+        const stickerResponse = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendSticker`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: TELEGRAM_CHANNEL_ID,
+            sticker: stickerId,
+            reply_to_message_id: telegramResult.result?.message_id
+          })
+        })
+        
+        const stickerResult = await stickerResponse.json()
+        console.log('Sticker sent:', stickerResult.ok ? 'success' : stickerResult.description)
+      } else {
+        console.log('Sticker pack not found or empty:', stickerSet)
+      }
+    } catch (stickerError) {
+      console.error('Failed to send sticker (non-critical):', stickerError)
+      // Не прерываем выполнение - стикер опционален
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         message_id: telegramResult.result?.message_id,
-        channel_id: TELEGRAM_CHANNEL_ID
+        channel_id: TELEGRAM_CHANNEL_ID,
+        sticker_pack: stickerPackName
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
