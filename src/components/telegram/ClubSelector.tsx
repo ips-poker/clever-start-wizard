@@ -252,9 +252,12 @@ export function ClubSelector({ onSelectClub, onContinueWithoutClub }: ClubSelect
         />
       ))}
 
+      {/* Top Spacer for Telegram safe area */}
+      <div className="h-16" />
+
       {/* Header - Pushed down with padding */}
       <div className="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-syndikate-orange/20">
-        <div className="pt-8 pb-4 px-4">
+        <div className="pt-6 pb-4 px-4 safe-area-top">
           {/* Logo and Title */}
           <div className="flex items-center gap-4 mb-4">
             {/* Logo with Metal Frame */}
