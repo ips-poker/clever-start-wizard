@@ -983,99 +983,116 @@ const TableSeating = ({
         return;
       }
 
-      // Находим столы с свободными местами
-      const availableTables = tables.filter(t => 
-        t.table_number !== tableNumber && 
-        t.active_players < t.max_seats
-      );
+      // Собираем ВСЕ свободные места на ДРУГИХ столах
+      const allEmptySeats: { tableNumber: number; seatNumber: number; tableObj: Table }[] = [];
+      tables.forEach(table => {
+        if (table.table_number !== tableNumber) {
+          table.seats.forEach(seat => {
+            if (!seat.player_id) {
+              allEmptySeats.push({
+                tableNumber: table.table_number,
+                seatNumber: seat.seat_number,
+                tableObj: table
+              });
+            }
+          });
+        }
+      });
 
-      if (availableTables.length === 0) {
+      // Собираем игроков для перемещения
+      const playersToMove = tableToClose.seats
+        .filter(s => s.player_id)
+        .map(s => ({
+          playerId: s.player_id!,
+          playerName: s.player_name!,
+          chips: s.chips!,
+          status: s.status!,
+          stackBb: s.stack_bb!
+        }));
+
+      // Проверяем достаточно ли мест
+      if (allEmptySeats.length < playersToMove.length) {
         toast({
-          title: "Невозможно закрыть стол",
-          description: "Нет свободных мест за другими столами",
+          title: "Невозможно расформировать стол",
+          description: `Нужно ${playersToMove.length} мест, доступно только ${allEmptySeats.length}`,
           variant: "destructive",
           className: "font-medium"
         });
         return;
       }
 
-      // Перемещаем игроков
-      const playersToMove = tableToClose.seats.filter(s => s.player_id);
-      const newTables = [...tables];
+      // РАНДОМИЗИРУЕМ порядок игроков и мест
+      const shuffledPlayers = [...playersToMove].sort(() => Math.random() - 0.5);
+      const shuffledSeats = [...allEmptySeats].sort(() => Math.random() - 0.5);
+
+      // Создаем копию столов для обновления
+      const newTables = tables
+        .filter(t => t.table_number !== tableNumber)
+        .map(table => ({
+          ...table,
+          seats: table.seats.map(seat => ({ ...seat }))
+        }));
+
       let movedPlayers = 0;
 
-      for (const player of playersToMove) {
-        // Находим свободное место
-        let placed = false;
-        for (const targetTable of availableTables) {
-          const freeSeats = targetTable.seats.filter(s => !s.player_id);
-          if (freeSeats.length > 0) {
-            const freeSeat = freeSeats[0];
-            
-            // Обновляем место
-            freeSeat.player_id = player.player_id;
-            freeSeat.player_name = player.player_name;
-            freeSeat.chips = player.chips;
-            freeSeat.status = player.status;
-            freeSeat.stack_bb = player.stack_bb;
-            
-            // Обновляем счетчики
-            const newTargetTable = newTables.find(t => t.table_number === targetTable.table_number);
-            if (newTargetTable) {
-              newTargetTable.active_players++;
-            }
+      // Рассаживаем игроков рандомно
+      for (let i = 0; i < shuffledPlayers.length; i++) {
+        const player = shuffledPlayers[i];
+        const targetSeat = shuffledSeats[i];
+
+        // Находим стол в нашей копии
+        const targetTableObj = newTables.find(t => t.table_number === targetSeat.tableNumber);
+        if (targetTableObj) {
+          const seatToFill = targetTableObj.seats.find(s => s.seat_number === targetSeat.seatNumber);
+          if (seatToFill) {
+            // Заполняем место
+            seatToFill.player_id = player.playerId;
+            seatToFill.player_name = player.playerName;
+            seatToFill.chips = player.chips;
+            seatToFill.status = player.status;
+            seatToFill.stack_bb = player.stackBb;
+            targetTableObj.active_players++;
 
             // Обновляем в БД
-            const newAbsoluteSeatNumber = (targetTable.table_number - 1) * playersPerTable + freeSeat.seat_number;
+            const newAbsoluteSeatNumber = (targetSeat.tableNumber - 1) * playersPerTable + targetSeat.seatNumber;
             await supabase
               .from('tournament_registrations')
               .update({ seat_number: newAbsoluteSeatNumber })
-              .eq('player_id', player.player_id)
+              .eq('player_id', player.playerId)
               .eq('tournament_id', tournamentId);
 
             movedPlayers++;
-            placed = true;
-            break;
           }
-        }
-
-        if (!placed) {
-          toast({
-            title: "Предупреждение",
-            description: `Не удалось переместить ${player.player_name} - нет свободных мест`,
-            variant: "destructive",
-            className: "font-medium"
-          });
         }
       }
 
-      // Удаляем закрытый стол
-      const finalTables = newTables.filter(t => t.table_number !== tableNumber);
-      
       // Пересчитываем средние стеки
-      finalTables.forEach(table => {
+      newTables.forEach(table => {
         const activeSeats = table.seats.filter(s => s.player_id);
         table.average_stack = activeSeats.length > 0 
           ? Math.round(activeSeats.reduce((sum, seat) => sum + (seat.chips || 0), 0) / activeSeats.length)
           : 0;
       });
 
-      setTables(finalTables);
+      setTables(newTables);
 
       toast({
-        title: "Стол закрыт",
-        description: `Стол ${tableNumber} закрыт. ${movedPlayers} игроков перемещено.`,
+        title: "🎲 Стол расформирован",
+        description: `${movedPlayers} игроков рандомно рассажены за другие столы`,
         className: "font-medium"
       });
 
       if (onSeatingUpdate) {
         onSeatingUpdate();
       }
+      
+      // Перезагружаем данные для синхронизации
+      await loadSavedSeating();
     } catch (error) {
       console.error('Error closing table:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось закрыть стол",
+        description: "Не удалось расформировать стол",
         variant: "destructive",
         className: "font-medium"
       });
@@ -1311,16 +1328,17 @@ const TableSeating = ({
                       </Badge>
                     )}
                     
-                    {/* Кнопка закрытия стола */}
-                    {!table.is_final_table && (
+                    {/* Кнопка расформирования стола */}
+                    {!table.is_final_table && tables.length > 1 && (
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="absolute top-0 right-0 h-7 w-7 p-0 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                        className="absolute top-0 right-0 h-8 px-2 text-destructive hover:bg-destructive/20 hover:text-destructive font-bold text-xs"
                         onClick={() => closeTable(table.table_number)}
-                        title="Закрыть стол"
+                        title="Расформировать стол - игроки будут рандомно рассажены за другие столы"
                       >
-                        <X className="w-4 h-4" />
+                        <Shuffle className="w-3 h-3 mr-1" />
+                        <X className="w-3 h-3" />
                       </Button>
                     )}
                   </div>
