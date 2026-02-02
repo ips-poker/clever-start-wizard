@@ -32,7 +32,8 @@ import {
   Zap,
   Activity,
   UserX,
-  Grid3X3
+  Grid3X3,
+  Clock
 } from "lucide-react";
 
 interface Tournament {
@@ -401,12 +402,51 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
     }
   };
 
-  const activePlayers = registrations.filter(r => r.status !== 'eliminated');
+  // Ожидающие подтверждения (зарегистрированы, но не подтверждены)
+  const pendingPlayers = registrations.filter(r => r.status === 'registered');
+  // Подтверждённые активные игроки
+  const activePlayers = registrations.filter(r => r.status === 'playing');
   const eliminatedPlayers = registrations.filter(r => r.status === 'eliminated').sort((a, b) => {
     const posA = (a as any).final_position || a.position || 999;
     const posB = (b as any).final_position || b.position || 999;
     return posA - posB;
   });
+
+  // Функция подтверждения участия игрока
+  const confirmPlayer = async (registrationId: string) => {
+    const registration = registrations.find(r => r.id === registrationId);
+    if (!registration) return;
+
+    const { error } = await supabase
+      .from('tournament_registrations')
+      .update({ status: 'playing' })
+      .eq('id', registrationId);
+
+    if (error) {
+      toast({ title: "Ошибка", description: "Не удалось подтвердить игрока", variant: "destructive" });
+    } else {
+      toast({ title: "Игрок подтверждён", description: `${registration.player.name} добавлен в турнир` });
+      onRegistrationUpdate();
+    }
+  };
+
+  // Массовое подтверждение всех ожидающих
+  const confirmAllPending = async () => {
+    if (pendingPlayers.length === 0) return;
+
+    const { error } = await supabase
+      .from('tournament_registrations')
+      .update({ status: 'playing' })
+      .eq('tournament_id', tournament.id)
+      .eq('status', 'registered');
+
+    if (error) {
+      toast({ title: "Ошибка", description: "Не удалось подтвердить игроков", variant: "destructive" });
+    } else {
+      toast({ title: "Все игроки подтверждены", description: `${pendingPlayers.length} игроков добавлено в турнир` });
+      onRegistrationUpdate();
+    }
+  };
 
   const totalReentries = registrations.reduce((sum, reg) => sum + (reg.reentries || reg.rebuys || 0), 0);
   const totalAdditionalSets = registrations.reduce((sum, reg) => sum + (reg.additional_sets || reg.addons || 0), 0);
@@ -434,9 +474,12 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
       variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
     >
       <Tabs defaultValue="register" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-secondary/80 border-2 border-border p-1 rounded-xl">
+        <TabsList className="grid w-full grid-cols-6 bg-secondary/80 border-2 border-border p-1 rounded-xl">
           <TabsTrigger value="register" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold rounded-lg">
             Регистрация
+          </TabsTrigger>
+          <TabsTrigger value="pending" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-black font-bold rounded-lg">
+            Ожидают ({pendingPlayers.length})
           </TabsTrigger>
           <TabsTrigger value="active" className="data-[state=active]:bg-green-500 data-[state=active]:text-white font-bold rounded-lg">
             Активные ({activePlayers.length})
@@ -567,6 +610,103 @@ const PlayerManagement = ({ tournament, players, registrations, onRegistrationUp
               </Card>
             </motion.div>
           </div>
+        </TabsContent>
+
+        {/* Pending Players Tab - ожидают подтверждения */}
+        <TabsContent value="pending" className="space-y-6 mt-6">
+          <motion.div variants={itemVariants}>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-yellow-500/20 border-2 border-yellow-500/50">
+                  <Clock className="w-6 h-6 text-yellow-500" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-foreground">Ожидают подтверждения</h3>
+                  <p className="text-muted-foreground">{pendingPlayers.length} игроков зарегистрировано</p>
+                </div>
+              </div>
+              {pendingPlayers.length > 0 && (
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    onClick={confirmAllPending}
+                    className="bg-green-500 hover:bg-green-600 text-white font-bold"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Подтвердить всех ({pendingPlayers.length})
+                  </Button>
+                </motion.div>
+              )}
+            </div>
+            
+            {pendingPlayers.length === 0 ? (
+              <Card className="bg-card brutal-border p-12 text-center">
+                <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground/30" />
+                <p className="text-xl font-bold text-muted-foreground">Нет ожидающих игроков</p>
+                <p className="text-muted-foreground">Все зарегистрированные игроки подтверждены</p>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {pendingPlayers.map((registration, index) => (
+                  <motion.div
+                    key={registration.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <Card className="bg-card brutal-border hover:border-yellow-500/50 transition-all">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="w-14 h-14 border-2 border-yellow-500/50">
+                              <AvatarImage src={getPlayerAvatar(registration.player.id)} alt={registration.player.name} />
+                              <AvatarFallback className="bg-yellow-500/20 text-yellow-600 font-black text-lg">
+                                {registration.player.name.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h4 className="text-lg font-black text-foreground">{registration.player.name}</h4>
+                              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                <Badge className="bg-yellow-500/20 text-yellow-600 border border-yellow-500/30">
+                                  Ожидает
+                                </Badge>
+                                <span>•</span>
+                                <span className="text-primary font-bold">RPS {registration.player.elo_rating}</span>
+                                <span>•</span>
+                                <span className="font-medium">{registration.chips.toLocaleString()} фишек</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-3">
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                              <Button
+                                onClick={() => confirmPlayer(registration.id)}
+                                className="bg-green-500 hover:bg-green-600 text-white font-bold h-11 px-6"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                ПОДТВЕРДИТЬ
+                              </Button>
+                            </motion.div>
+                            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => eliminatePlayer(registration.id, registrations.length)}
+                                className="h-11 w-11 p-0 border-2 border-destructive/50 text-destructive hover:bg-destructive/20"
+                                title="Удалить регистрацию"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </motion.div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
         </TabsContent>
 
         {/* Active Players Tab */}
