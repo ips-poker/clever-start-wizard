@@ -89,7 +89,7 @@ const TournamentSyncManager = ({ tournaments, onRefresh }: TournamentSyncManager
   const archiveTournament = async (tournamentId: string) => {
     try {
       const { data, error } = await supabase.rpc('archive_tournament', {
-        tournament_id_param: tournamentId
+        p_tournament_id: tournamentId
       });
 
       if (error) throw error;

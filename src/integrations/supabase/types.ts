@@ -2596,15 +2596,7 @@ export type Database = {
       }
       get_server_time: { Args: never; Returns: string }
       get_system_statistics: { Args: never; Returns: Json }
-      get_tournament_stats: {
-        Args: { p_tournament_id: string }
-        Returns: {
-          prize_places: number
-          total_addons: number
-          total_entries: number
-          total_rebuys: number
-        }[]
-      }
+      get_tournament_stats: { Args: { p_tournament_id: string }; Returns: Json }
       get_tournament_voice_stats: {
         Args: { tournament_id_param: string }
         Returns: Json
