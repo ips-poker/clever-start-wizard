@@ -126,33 +126,67 @@ export function ClubTournamentPlayerManagement({
     return { totalReentries, totalAddons, entries, prizePool };
   }, [registrations, tournament]);
 
-  // Confirm player (registered -> playing)
+  // Realtime subscription for instant updates (like Tournament Director)
+  useEffect(() => {
+    const channel = supabase
+      .channel(`club_player_mgmt_${tournament.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tournament_registrations',
+          filter: `tournament_id=eq.${tournament.id}`
+        },
+        () => {
+          console.log('Realtime: registration changed, refreshing...');
+          onUpdate();
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [tournament.id, onUpdate]);
+
+  // Confirm player (registered -> playing) - only change status, chips already set
   const confirmPlayer = async (regId: string) => {
     setIsLoading(true);
     try {
+      // Get current registration to check if chips need to be set
+      const reg = registrations.find(r => r.id === regId);
+      const needsChips = !reg?.chips || reg.chips === 0;
+
+      const updateData: any = { status: 'playing' };
+      if (needsChips) {
+        updateData.chips = tournament.starting_chips;
+      }
+
       const { error } = await supabase
         .from('tournament_registrations')
-        .update({ 
-          status: 'playing',
-          chips: tournament.starting_chips
-        })
+        .update(updateData)
         .eq('id', regId);
 
       if (error) throw error;
-      toast({ title: "Игрок подтверждён" });
+      
+      const playerName = reg?.player?.name || 'Игрок';
+      toast({ 
+        title: "✅ Участник подтверждён", 
+        description: `${playerName} отмечен как активный` 
+      });
       onUpdate();
     } catch (error) {
       console.error('Error confirming player:', error);
-      toast({ title: "Ошибка", variant: "destructive" });
+      toast({ title: "Ошибка подтверждения", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Confirm all pending players
+  // Confirm all pending players - only change status (chips already set on registration)
   const confirmAllPlayers = async () => {
     setIsLoading(true);
     try {
+      // For players who might have 0 chips, set starting chips
       const { error } = await supabase
         .from('tournament_registrations')
         .update({ 
@@ -163,11 +197,14 @@ export function ClubTournamentPlayerManagement({
         .eq('status', 'registered');
 
       if (error) throw error;
-      toast({ title: `Подтверждено ${pendingPlayers.length} игроков` });
+      toast({ 
+        title: `✅ Подтверждено ${pendingPlayers.length} игроков`,
+        description: "Все ожидающие игроки переведены в активные"
+      });
       onUpdate();
     } catch (error) {
       console.error('Error confirming players:', error);
-      toast({ title: "Ошибка", variant: "destructive" });
+      toast({ title: "Ошибка массового подтверждения", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -310,14 +347,14 @@ export function ClubTournamentPlayerManagement({
         return;
       }
 
-      // Register to tournament
+      // Register to tournament with starting chips (like Tournament Director)
       const { error: regError } = await supabase
         .from('tournament_registrations')
         .insert({
           tournament_id: tournament.id,
           player_id: playerId,
           status: 'registered',
-          chips: 0
+          chips: tournament.starting_chips
         });
 
       if (regError) throw regError;
@@ -387,14 +424,14 @@ export function ClubTournamentPlayerManagement({
             continue;
           }
 
-          // Register to tournament
+          // Register to tournament with starting chips (like Tournament Director)
           await supabase
             .from('tournament_registrations')
             .insert({
               tournament_id: tournament.id,
               player_id: playerId,
               status: 'registered',
-              chips: 0
+              chips: tournament.starting_chips
             });
 
           addedCount++;
