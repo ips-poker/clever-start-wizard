@@ -2813,6 +2813,7 @@ export type Database = {
         Returns: Json
       }
       is_admin: { Args: { user_uuid: string }; Returns: boolean }
+      is_any_club_staff: { Args: { p_user_id: string }; Returns: boolean }
       is_club_admin: {
         Args: { p_clan_id: string; p_user_id: string }
         Returns: boolean
