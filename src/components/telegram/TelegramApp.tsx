@@ -119,7 +119,8 @@ export const TelegramApp = () => {
   const [isAtPokerTable, setIsAtPokerTable] = useState(false);
   
   // Club selection state
-  const [showClubSelector, setShowClubSelector] = useState(true); // Show club selector by default
+  // TODO: Re-enable club selector when ready: setShowClubSelector(true)
+  const [showClubSelector, setShowClubSelector] = useState(false); // Disabled temporarily - go directly to Syndicate
   const [selectedClub, setSelectedClub] = useState<Club | null>(null);
   
   // Make body transparent when at poker table for immersive theme backgrounds
