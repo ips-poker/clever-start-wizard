@@ -1,14 +1,19 @@
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { 
   Trophy,
   Medal,
   Crown,
   Coins,
   TrendingUp,
-  Users
+  Users,
+  RefreshCw,
+  Loader2,
+  Award
 } from "lucide-react";
 
 interface Tournament {
@@ -35,6 +40,13 @@ interface Registration {
   final_position: number | null;
 }
 
+interface Payout {
+  place: number;
+  percentage: number;
+  amount: number;
+  rps_points: number;
+}
+
 interface ClubTournamentResultsProps {
   tournament: Tournament;
   registrations: Registration[];
@@ -44,42 +56,78 @@ export function ClubTournamentResults({
   tournament,
   registrations
 }: ClubTournamentResultsProps) {
-  const finishedPlayers = registrations
-    .filter(r => r.status === 'eliminated' || r.final_position !== null)
-    .sort((a, b) => (a.final_position || 999) - (b.final_position || 999));
+  const [payouts, setPayouts] = useState<Payout[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load payouts from database
+  useEffect(() => {
+    const loadPayouts = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('tournament_payouts')
+          .select('*')
+          .eq('tournament_id', tournament.id)
+          .order('place', { ascending: true });
+
+        if (!error && data) {
+          setPayouts(data.map(p => ({
+            place: p.place,
+            percentage: p.percentage,
+            amount: p.amount,
+            rps_points: p.rps_points || 0
+          })));
+        }
+      } catch (error) {
+        console.error('Error loading payouts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPayouts();
+
+    // Subscribe to payout changes
+    const channel = supabase
+      .channel(`club_payouts_${tournament.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'tournament_payouts',
+        filter: `tournament_id=eq.${tournament.id}`
+      }, () => loadPayouts())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [tournament.id]);
+
+  const finishedPlayers = useMemo(() => {
+    return registrations
+      .filter(r => r.status === 'eliminated' || r.final_position !== null)
+      .sort((a, b) => (a.final_position || 999) - (b.final_position || 999));
+  }, [registrations]);
 
   // Calculate prize pool
-  const totalReentries = registrations.reduce((sum, r) => sum + (r.reentries || 0), 0);
-  const totalAddons = registrations.reduce((sum, r) => sum + (r.additional_sets || 0), 0);
-  
-  const basePrizePool = registrations.length * (tournament.participation_fee || 0);
-  const reentryPrizePool = totalReentries * (tournament.reentry_fee || 0);
-  const addonPrizePool = totalAddons * (tournament.additional_fee || 0);
-  const totalPrizePool = basePrizePool + reentryPrizePool + addonPrizePool;
+  const prizePoolDetails = useMemo(() => {
+    const totalReentries = registrations.reduce((sum, r) => sum + (r.reentries || 0), 0);
+    const totalAddons = registrations.reduce((sum, r) => sum + (r.additional_sets || 0), 0);
+    
+    const basePrizePool = registrations.length * (tournament.participation_fee || 0);
+    const reentryPrizePool = totalReentries * (tournament.reentry_fee || 0);
+    const addonPrizePool = totalAddons * (tournament.additional_fee || 0);
+    const totalPrizePool = basePrizePool + reentryPrizePool + addonPrizePool;
+    const rpsPool = Math.floor(totalPrizePool / 10);
 
-  // Standard payout structure
-  const getPayoutPercentage = (position: number, totalPlayers: number): number => {
-    if (totalPlayers <= 10) {
-      if (position === 1) return 100;
-      return 0;
-    } else if (totalPlayers <= 20) {
-      if (position === 1) return 65;
-      if (position === 2) return 35;
-      return 0;
-    } else if (totalPlayers <= 40) {
-      if (position === 1) return 50;
-      if (position === 2) return 30;
-      if (position === 3) return 20;
-      return 0;
-    } else {
-      if (position === 1) return 40;
-      if (position === 2) return 25;
-      if (position === 3) return 15;
-      if (position === 4) return 10;
-      if (position === 5) return 10;
-      return 0;
-    }
-  };
+    return {
+      totalReentries,
+      totalAddons,
+      basePrizePool,
+      reentryPrizePool,
+      addonPrizePool,
+      totalPrizePool,
+      rpsPool
+    };
+  }, [registrations, tournament]);
 
   const getRankIcon = (position: number) => {
     if (position === 1) return <Crown className="w-5 h-5 text-amber-500" />;
@@ -88,17 +136,36 @@ export function ClubTournamentResults({
     return null;
   };
 
-  const getRankColor = (position: number) => {
-    if (position === 1) return "from-amber-500/20 to-amber-500/5 border-amber-500/30";
-    if (position === 2) return "from-zinc-400/20 to-zinc-400/5 border-zinc-400/30";
-    if (position === 3) return "from-amber-700/20 to-amber-700/5 border-amber-700/30";
+  const getRankStyle = (position: number) => {
+    if (position === 1) return "bg-gradient-to-r from-amber-500/20 to-amber-500/5 border-l-4 border-l-amber-500";
+    if (position === 2) return "bg-gradient-to-r from-zinc-400/20 to-zinc-400/5 border-l-4 border-l-zinc-400";
+    if (position === 3) return "bg-gradient-to-r from-amber-700/20 to-amber-700/5 border-l-4 border-l-amber-700";
     return "";
   };
+
+  // Get payout for a position
+  const getPayoutForPosition = (position: number) => {
+    const payout = payouts.find(p => p.place === position);
+    if (payout) {
+      return { amount: payout.amount, rps: payout.rps_points };
+    }
+    return null;
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="py-12 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Prize Pool Summary */}
-      <Card>
+      <Card className="border-2 border-primary/20">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <Coins className="w-5 h-5 text-amber-500" />
@@ -107,85 +174,97 @@ export function ClubTournamentResults({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
+            <div className="text-center p-4 bg-secondary/50 rounded-lg">
               <p className="text-sm text-muted-foreground">Базовый</p>
-              <p className="text-xl font-bold">{basePrizePool.toLocaleString()}₽</p>
+              <p className="text-xl font-bold">{prizePoolDetails.basePrizePool.toLocaleString()}₽</p>
               <p className="text-xs text-muted-foreground">{registrations.length} игроков</p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Re-entry</p>
-              <p className="text-xl font-bold">{reentryPrizePool.toLocaleString()}₽</p>
-              <p className="text-xs text-muted-foreground">{totalReentries} re-entry</p>
+            <div className="text-center p-4 bg-purple-500/10 rounded-lg">
+              <p className="text-sm text-purple-500">Re-entry</p>
+              <p className="text-xl font-bold">{prizePoolDetails.reentryPrizePool.toLocaleString()}₽</p>
+              <p className="text-xs text-muted-foreground">{prizePoolDetails.totalReentries} re-entry</p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Addon</p>
-              <p className="text-xl font-bold">{addonPrizePool.toLocaleString()}₽</p>
-              <p className="text-xs text-muted-foreground">{totalAddons} addon</p>
+            <div className="text-center p-4 bg-blue-500/10 rounded-lg">
+              <p className="text-sm text-blue-500">Add-on</p>
+              <p className="text-xl font-bold">{prizePoolDetails.addonPrizePool.toLocaleString()}₽</p>
+              <p className="text-xs text-muted-foreground">{prizePoolDetails.totalAddons} addon</p>
             </div>
-            <div className="bg-primary/10 p-3 rounded-lg">
-              <p className="text-sm text-primary">Итого</p>
-              <p className="text-2xl font-bold text-primary">{totalPrizePool.toLocaleString()}₽</p>
+            <div className="text-center p-4 bg-primary/10 rounded-lg border border-primary/30">
+              <p className="text-sm text-primary font-medium">ИТОГО</p>
+              <p className="text-2xl font-bold text-primary">{prizePoolDetails.totalPrizePool.toLocaleString()}₽</p>
+              <p className="text-xs text-muted-foreground">{prizePoolDetails.rpsPool.toLocaleString()} RPS</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Payout Structure */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-primary" />
-            Структура выплат
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {[1, 2, 3, 4, 5].map(pos => {
-              const percentage = getPayoutPercentage(pos, registrations.length);
-              if (percentage === 0) return null;
-              
-              const amount = Math.round(totalPrizePool * percentage / 100);
-              const player = finishedPlayers.find(p => p.final_position === pos);
+      {/* Payout Structure from DB */}
+      {payouts.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-primary" />
+              Структура выплат ({payouts.length} мест)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {payouts.map(payout => {
+                const player = finishedPlayers.find(p => p.final_position === payout.place);
 
-              return (
-                <div 
-                  key={pos}
-                  className={`flex items-center justify-between p-3 rounded-lg bg-gradient-to-r ${getRankColor(pos) || 'bg-muted/50'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-background flex items-center justify-center">
-                      {getRankIcon(pos) || (
-                        <span className="font-bold text-muted-foreground">{pos}</span>
-                      )}
+                return (
+                  <div 
+                    key={payout.place}
+                    className={`flex items-center justify-between p-3 rounded-lg ${getRankStyle(payout.place) || 'bg-muted/50'}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center font-bold">
+                        {getRankIcon(payout.place) || payout.place}
+                      </div>
+                      <div>
+                        {player ? (
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={player.player.avatar_url || undefined} />
+                              <AvatarFallback className="text-xs">
+                                {player.player.name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{player.player.name}</p>
+                              <p className="text-xs text-muted-foreground">{player.player.elo_rating} ELO</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground">{payout.place} место</p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      {player ? (
-                        <>
-                          <p className="font-medium">{player.player.name}</p>
-                          <p className="text-xs text-muted-foreground">{player.player.elo_rating} ELO</p>
-                        </>
-                      ) : (
-                        <p className="text-muted-foreground">{pos} место</p>
-                      )}
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-green-500">{payout.amount.toLocaleString()}₽</p>
+                      <div className="flex items-center gap-2 justify-end">
+                        <span className="text-xs text-muted-foreground">{payout.percentage}%</span>
+                        {payout.rps_points > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{payout.rps_points} RPS
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold">{amount.toLocaleString()}₽</p>
-                    <p className="text-xs text-muted-foreground">{percentage}%</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Full Results */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <Users className="w-5 h-5" />
-            Результаты ({finishedPlayers.length})
+            Результаты турнира ({finishedPlayers.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -195,23 +274,28 @@ export function ClubTournamentResults({
             </p>
           ) : (
             <div className="space-y-2">
-              {finishedPlayers.map((reg, index) => {
-                const position = reg.final_position || index + 1;
-                const percentage = getPayoutPercentage(position, registrations.length);
-                const payout = percentage > 0 ? Math.round(totalPrizePool * percentage / 100) : 0;
+              {finishedPlayers.map((reg) => {
+                const position = reg.final_position || 0;
+                const payoutInfo = getPayoutForPosition(position);
+                const isTop3 = position <= 3;
 
                 return (
                   <div 
                     key={reg.id}
-                    className={`flex items-center gap-4 p-3 rounded-lg ${position <= 3 ? `bg-gradient-to-r ${getRankColor(position)}` : 'hover:bg-muted/50'}`}
+                    className={`flex items-center gap-4 p-3 rounded-lg ${getRankStyle(position) || 'hover:bg-muted/50'}`}
                   >
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-bold">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                      position === 1 ? 'bg-amber-500/20 text-amber-500' :
+                      position === 2 ? 'bg-zinc-400/20 text-zinc-400' :
+                      position === 3 ? 'bg-amber-700/20 text-amber-700' :
+                      'bg-muted text-muted-foreground'
+                    }`}>
                       {getRankIcon(position) || position}
                     </div>
 
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={reg.player.avatar_url || undefined} />
-                      <AvatarFallback className={position <= 3 ? 'bg-amber-500/20 text-amber-500' : 'bg-primary/10 text-primary'}>
+                      <AvatarFallback className={isTop3 ? 'bg-amber-500/20 text-amber-500' : 'bg-primary/10 text-primary'}>
                         {reg.player.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -225,16 +309,18 @@ export function ClubTournamentResults({
                         </span>
                         {reg.reentries > 0 && (
                           <Badge variant="secondary" className="text-xs">
-                            +{reg.reentries} re-entry
+                            +{reg.reentries} RE
                           </Badge>
                         )}
                       </div>
                     </div>
 
-                    {payout > 0 && (
+                    {payoutInfo && (
                       <div className="text-right">
-                        <p className="font-bold text-green-500">{payout.toLocaleString()}₽</p>
-                        <p className="text-xs text-muted-foreground">{percentage}%</p>
+                        <p className="font-bold text-green-500">{payoutInfo.amount.toLocaleString()}₽</p>
+                        {payoutInfo.rps > 0 && (
+                          <p className="text-xs text-muted-foreground">+{payoutInfo.rps} RPS</p>
+                        )}
                       </div>
                     )}
                   </div>
