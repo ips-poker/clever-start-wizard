@@ -14,6 +14,80 @@ interface UseCMSContentResult {
 
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
 
+// Global subscription manager to prevent duplicate subscriptions
+const subscriptionManager = {
+  subscriptions: new Map<string, { channel: any; subscribers: number }>(),
+  callbacks: new Map<string, Set<() => void>>(),
+  
+  subscribe(pageSlug: string, callback: () => void): () => void {
+    // Add callback
+    if (!this.callbacks.has(pageSlug)) {
+      this.callbacks.set(pageSlug, new Set());
+    }
+    this.callbacks.get(pageSlug)!.add(callback);
+    
+    // Check if subscription already exists
+    const existing = this.subscriptions.get(pageSlug);
+    if (existing) {
+      existing.subscribers++;
+      return () => this.unsubscribe(pageSlug, callback);
+    }
+    
+    // Create new subscription
+    console.log('CMS setting up realtime subscription for:', pageSlug);
+    
+    const channel = supabase
+      .channel(`cms_global_${pageSlug}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cms_content',
+          filter: `page_slug=eq.${pageSlug}`
+        },
+        () => {
+          // Notify all callbacks for this pageSlug
+          const callbacks = this.callbacks.get(pageSlug);
+          if (callbacks) {
+            callbacks.forEach(cb => cb());
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log(`CMS realtime subscription status: ${status} for ${pageSlug}`);
+        }
+      });
+    
+    this.subscriptions.set(pageSlug, { channel, subscribers: 1 });
+    
+    return () => this.unsubscribe(pageSlug, callback);
+  },
+  
+  unsubscribe(pageSlug: string, callback: () => void): void {
+    // Remove callback
+    const callbacks = this.callbacks.get(pageSlug);
+    if (callbacks) {
+      callbacks.delete(callback);
+      if (callbacks.size === 0) {
+        this.callbacks.delete(pageSlug);
+      }
+    }
+    
+    const existing = this.subscriptions.get(pageSlug);
+    if (!existing) return;
+    
+    existing.subscribers--;
+    
+    if (existing.subscribers <= 0) {
+      console.log('CMS cleaning up subscription for:', pageSlug);
+      supabase.removeChannel(existing.channel);
+      this.subscriptions.delete(pageSlug);
+    }
+  }
+};
+
 export function useCMSContent(pageSlug: string): UseCMSContentResult {
   const [content, setContent] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -22,16 +96,12 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
   const [lastSync, setLastSync] = useState<Date | null>(null);
   
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
-  const channelRef = useRef<any>(null);
-  const isSubscribingRef = useRef(false); // Prevent duplicate subscriptions
-  const isMountedRef = useRef(true); // Track component mount status
-  const lastReconnectTime = useRef(0);
+  const isMountedRef = useRef(true);
   const retryCountRef = useRef(0);
   const maxRetries = 3;
-  const baseRetryDelay = 1000; // 1 second
+  const baseRetryDelay = 1000;
   const cacheKey = `cms_content_${pageSlug}`;
 
-  // Get cached content from localStorage
   const getCachedContent = useCallback((): { content: Record<string, string>, timestamp: number } | null => {
     try {
       const cached = localStorage.getItem(cacheKey);
@@ -47,7 +117,6 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
     return null;
   }, [cacheKey]);
 
-  // Save content to localStorage
   const setCachedContent = useCallback((newContent: Record<string, string>) => {
     try {
       localStorage.setItem(cacheKey, JSON.stringify({
@@ -60,6 +129,8 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
   }, [cacheKey]);
 
   const fetchContent = useCallback(async (isRetry: boolean = false, useCache: boolean = true) => {
+    if (!isMountedRef.current) return;
+    
     try {
       // Try to use cached content first if not retrying
       if (!isRetry && useCache) {
@@ -78,169 +149,107 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
         setLoading(true);
       }
 
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('cms_content')
         .select('*')
         .eq('page_slug', pageSlug)
         .eq('is_active', true);
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
 
-      // Convert array to object with content_key as keys
       const contentObj = (data || []).reduce((acc: Record<string, string>, item: CMSContent) => {
         acc[item.content_key] = item.content_value || '';
         return acc;
       }, {});
 
-      setContent(contentObj);
-      setCachedContent(contentObj);
-      setError(null);
-      setLastSync(new Date());
-      retryCountRef.current = 0; // Reset retry count on success
+      if (isMountedRef.current) {
+        setContent(contentObj);
+        setCachedContent(contentObj);
+        setError(null);
+        setLastSync(new Date());
+        retryCountRef.current = 0;
+      }
     } catch (err: any) {
       console.error('Error fetching CMS content:', err);
       const errorMessage = err.message || 'Failed to fetch content';
-      setError(errorMessage);
+      
+      if (isMountedRef.current) {
+        setError(errorMessage);
 
-      // Try to use cached content as fallback
-      if (!isRetry) {
-        const cached = getCachedContent();
-        if (cached) {
-          setContent(cached.content);
-          setLastSync(new Date(cached.timestamp));
-          console.log('Using cached content as fallback');
+        // Try to use cached content as fallback
+        if (!isRetry) {
+          const cached = getCachedContent();
+          if (cached) {
+            setContent(cached.content);
+            setLastSync(new Date(cached.timestamp));
+          }
+        }
+
+        // Retry logic
+        if (retryCountRef.current < maxRetries) {
+          retryCountRef.current++;
+          const delay = baseRetryDelay * Math.pow(2, retryCountRef.current - 1);
+          
+          retryTimeoutRef.current = setTimeout(() => {
+            if (isMountedRef.current) {
+              fetchContent(true, false);
+            }
+          }, delay);
         }
       }
-
-      // Retry logic
-      if (retryCountRef.current < maxRetries) {
-        retryCountRef.current++;
-        const delay = baseRetryDelay * Math.pow(2, retryCountRef.current - 1); // Exponential backoff
-        
-        console.log(`Retrying CMS content fetch (attempt ${retryCountRef.current}/${maxRetries}) in ${delay}ms`);
-        
-        retryTimeoutRef.current = setTimeout(() => {
-          fetchContent(true, false);
-        }, delay);
-      }
     } finally {
-      setLoading(false);
-      setRetrying(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+        setRetrying(false);
+      }
     }
   }, [pageSlug, getCachedContent, setCachedContent]);
 
   useEffect(() => {
     isMountedRef.current = true;
     
-    // Call fetch directly without adding to dependencies
-    const initFetch = async () => {
-      try {
-        const cached = getCachedContent();
-        if (cached) {
-          setContent(cached.content);
-          setLastSync(new Date(cached.timestamp));
-          setLoading(false);
-        } else {
-          await fetchContent(false, true);
+    // Initial fetch with cache
+    const cached = getCachedContent();
+    if (cached) {
+      setContent(cached.content);
+      setLastSync(new Date(cached.timestamp));
+      setLoading(false);
+    } else {
+      fetchContent(false, true);
+    }
+    
+    // Subscribe using global manager (prevents duplicates)
+    const handleChange = () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+      retryTimeoutRef.current = setTimeout(() => {
+        if (isMountedRef.current) {
+          fetchContent(false, false);
         }
-      } catch (error) {
-        console.error('Error initializing CMS content:', error);
-      }
+      }, 500);
     };
     
-    initFetch();
-    
-    // Setup subscription only once per pageSlug
-    const setupSub = () => {
-      if (isSubscribingRef.current || !isMountedRef.current) return;
-      
-      isSubscribingRef.current = true;
-      
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-      
-      const now = Date.now();
-      if (now - lastReconnectTime.current < 15000) {
-        console.log('CMS realtime subscription rate limited, skipping...');
-        isSubscribingRef.current = false;
-        return;
-      }
-      lastReconnectTime.current = now;
-      
-      console.log('CMS setting up new realtime subscription for:', pageSlug);
-      
-      const channel = supabase
-        .channel(`cms_${pageSlug}_${Date.now()}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'cms_content',
-            filter: `page_slug=eq.${pageSlug}`
-          },
-          (payload) => {
-            if (!isMountedRef.current) return;
-            console.log('CMS content changed:', payload);
-            
-            if (retryTimeoutRef.current) {
-              clearTimeout(retryTimeoutRef.current);
-            }
-            retryTimeoutRef.current = setTimeout(() => {
-              if (isMountedRef.current) {
-                fetchContent(false, false);
-              }
-            }, 500);
-          }
-        )
-        .subscribe((status) => {
-          console.log(`CMS realtime subscription status: ${status}`);
-          
-          if (status === 'SUBSCRIBED') {
-            channelRef.current = channel;
-            isSubscribingRef.current = false;
-          } else if (status === 'CLOSED') {
-            // Normal when leaving page or during hot reload
-            console.log('CMS realtime subscription closed (cleanup)');
-            isSubscribingRef.current = false;
-          } else if (status === 'CHANNEL_ERROR') {
-            console.warn('CMS realtime subscription channel error');
-            isSubscribingRef.current = false;
-            channelRef.current = null;
-          }
-        });
-    };
-    
-    setupSub();
+    const unsubscribe = subscriptionManager.subscribe(pageSlug, handleChange);
 
     return () => {
       isMountedRef.current = false;
-      isSubscribingRef.current = false;
       
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
-        retryTimeoutRef.current = undefined;
       }
       
-      if (channelRef.current) {
-        console.log('CMS cleaning up subscription on unmount');
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      unsubscribe();
     };
-  }, [pageSlug]); // Only pageSlug as dependency
+  }, [pageSlug, getCachedContent, fetchContent]);
 
   const getContent = useCallback((key: string, fallback: string = '') => {
     const value = content[key];
     
-    // Если значение не найдено, возвращаем fallback
     if (value === undefined || value === null || value === '') {
       return fallback;
     }
     
-    // Если значение - объект, конвертируем в JSON строку
     if (typeof value === 'object') {
       try {
         return JSON.stringify(value);
@@ -249,13 +258,11 @@ export function useCMSContent(pageSlug: string): UseCMSContentResult {
       }
     }
     
-    // Всегда возвращаем строку
     return String(value);
   }, [content]);
 
   const refetch = useCallback(() => {
     retryCountRef.current = 0;
-    // Clear cache and fetch fresh data
     try {
       localStorage.removeItem(cacheKey);
     } catch (err) {
