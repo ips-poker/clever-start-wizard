@@ -16,8 +16,9 @@ const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
 
 // Global subscription manager to prevent duplicate subscriptions
 const subscriptionManager = {
-  subscriptions: new Map<string, { channel: any; subscribers: number }>(),
+  subscriptions: new Map<string, { channel: any; subscribers: number; setupInProgress: boolean }>(),
   callbacks: new Map<string, Set<() => void>>(),
+  setupTimeouts: new Map<string, NodeJS.Timeout>(),
   
   subscribe(pageSlug: string, callback: () => void): () => void {
     // Add callback
@@ -26,41 +27,63 @@ const subscriptionManager = {
     }
     this.callbacks.get(pageSlug)!.add(callback);
     
-    // Check if subscription already exists
+    // Check if subscription already exists or is being set up
     const existing = this.subscriptions.get(pageSlug);
     if (existing) {
       existing.subscribers++;
       return () => this.unsubscribe(pageSlug, callback);
     }
     
-    // Create new subscription
-    console.log('CMS setting up realtime subscription for:', pageSlug);
+    // Check if setup is already scheduled (debounce for StrictMode)
+    if (this.setupTimeouts.has(pageSlug)) {
+      return () => this.unsubscribe(pageSlug, callback);
+    }
     
-    const channel = supabase
-      .channel(`cms_global_${pageSlug}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'cms_content',
-          filter: `page_slug=eq.${pageSlug}`
-        },
-        () => {
-          // Notify all callbacks for this pageSlug
-          const callbacks = this.callbacks.get(pageSlug);
-          if (callbacks) {
-            callbacks.forEach(cb => cb());
+    // Mark as setup in progress with placeholder
+    this.subscriptions.set(pageSlug, { channel: null, subscribers: 1, setupInProgress: true });
+    
+    // Debounce subscription setup to handle StrictMode double-mount
+    const timeout = setTimeout(() => {
+      this.setupTimeouts.delete(pageSlug);
+      
+      const current = this.subscriptions.get(pageSlug);
+      if (!current || current.subscribers <= 0) {
+        // Was unsubscribed during debounce
+        this.subscriptions.delete(pageSlug);
+        return;
+      }
+      
+      console.log('CMS setting up realtime subscription for:', pageSlug);
+      
+      const channel = supabase
+        .channel(`cms_global_${pageSlug}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'cms_content',
+            filter: `page_slug=eq.${pageSlug}`
+          },
+          () => {
+            // Notify all callbacks for this pageSlug
+            const callbacks = this.callbacks.get(pageSlug);
+            if (callbacks) {
+              callbacks.forEach(cb => cb());
+            }
           }
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log(`CMS realtime subscription status: ${status} for ${pageSlug}`);
-        }
-      });
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log(`CMS realtime subscription status: ${status} for ${pageSlug}`);
+          }
+        });
+      
+      current.channel = channel;
+      current.setupInProgress = false;
+    }, 100); // 100ms debounce
     
-    this.subscriptions.set(pageSlug, { channel, subscribers: 1 });
+    this.setupTimeouts.set(pageSlug, timeout);
     
     return () => this.unsubscribe(pageSlug, callback);
   },
@@ -81,8 +104,18 @@ const subscriptionManager = {
     existing.subscribers--;
     
     if (existing.subscribers <= 0) {
-      console.log('CMS cleaning up subscription for:', pageSlug);
-      supabase.removeChannel(existing.channel);
+      // Cancel pending setup if any
+      const timeout = this.setupTimeouts.get(pageSlug);
+      if (timeout) {
+        clearTimeout(timeout);
+        this.setupTimeouts.delete(pageSlug);
+      }
+      
+      // Clean up channel if it was created
+      if (existing.channel) {
+        console.log('CMS cleaning up subscription for:', pageSlug);
+        supabase.removeChannel(existing.channel);
+      }
       this.subscriptions.delete(pageSlug);
     }
   }
