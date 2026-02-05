@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Trophy, TrendingUp, Users, Star } from "lucide-react";
@@ -8,15 +7,7 @@ import { ScrollProgress } from "@/components/ScrollProgress";
 import { RankedPlayerModal } from "@/components/telegram/RankedPlayerModal";
 import { RatingPodium } from "@/components/telegram/RatingPodium";
 import { PlayerRatingCard } from "@/components/telegram/PlayerRatingCard";
-interface Player {
-  id: string;
-  name: string;
-  elo_rating: number;
-  games_played: number;
-  wins: number;
-  avatar_url?: string;
-  manual_rank?: string | null;
-}
+import { usePlayersData, Player } from "@/hooks/usePlayersData";
 
 interface RecentTournament {
   tournament_name: string;
@@ -29,16 +20,15 @@ interface RecentTournament {
 // Removed getPokerAvatar - now using PlayerRatingCard component
 
 export default function Rating() {
-  const [allPlayers, setAllPlayers] = useState<Player[]>([]);
-  const [recentTournaments, setRecentTournaments] = useState<RecentTournament[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { players: allPlayers, loading } = usePlayersData();
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const baseTextureRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
-
+  
+  const topPlayers = useMemo(() => allPlayers.slice(0, 5), [allPlayers]);
+  
+  // Parallax scroll effect
   useEffect(() => {
-    loadData();
-    
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
@@ -52,80 +42,10 @@ export default function Rating() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     
-    // Real-time subscriptions
-    const playersChannel = supabase
-      .channel('rating-players-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'players' }, 
-        () => loadData()
-      );
-    
-    playersChannel.subscribe();
-
-    const tournamentsChannel = supabase
-      .channel('rating-tournaments-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'tournaments' }, 
-        () => loadData()
-      );
-    
-    tournamentsChannel.subscribe();
-
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      supabase.removeChannel(playersChannel);
-      supabase.removeChannel(tournamentsChannel);
     };
   }, []);
-
-  const loadData = async () => {
-    try {
-      // Загружаем игроков напрямую чтобы получить manual_rank
-      const { data: playersData, error: playersError } = await supabase
-        .from('players')
-        .select('id, name, elo_rating, games_played, wins, avatar_url, manual_rank');
-
-      if (playersError) throw playersError;
-
-      const { data: tournamentsData, error: tournamentsError } = await supabase
-        .from('tournaments')
-        .select(`
-          id,
-          name,
-          finished_at,
-          tournament_registrations!inner(
-            player_id,
-            position,
-            players!inner(name)
-          )
-        `)
-        .eq('status', 'completed')
-        .order('finished_at', { ascending: false })
-        .limit(5);
-
-      if (tournamentsError) throw tournamentsError;
-
-      const processedTournaments = tournamentsData?.map(tournament => {
-        const participants = tournament.tournament_registrations?.length || 0;
-        const winner = tournament.tournament_registrations?.find(reg => reg.position === 1);
-        return {
-          tournament_name: tournament.name,
-          tournament_id: tournament.id,
-          finished_at: tournament.finished_at,
-          participants,
-          winner: winner?.players?.name || 'Неизвестно'
-        };
-      }) || [];
-
-      const sortedPlayersData = (playersData || []).sort((a, b) => b.elo_rating - a.elo_rating);
-      setAllPlayers(sortedPlayersData);
-      setRecentTournaments(processedTournaments);
-    } catch (error) {
-      console.error('Error loading rating data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getWinRate = (wins: number, games: number) => {
     if (games === 0) return 0;
@@ -139,8 +59,6 @@ export default function Rating() {
       year: 'numeric'
     });
   };
-
-  const topPlayers = allPlayers.slice(0, 5);
 
   if (loading) {
     return (

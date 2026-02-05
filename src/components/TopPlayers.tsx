@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,15 +8,7 @@ import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { Trophy, Medal, Award, TrendingUp, Users, ChevronRight, Crown, Search, Filter } from "lucide-react";
 import { Link } from "react-router-dom";
 import { fixStorageUrl } from "@/utils/storageUtils";
-
-interface Player {
-  id: string;
-  name: string;
-  elo_rating: number;
-  games_played: number;
-  wins: number;
-  avatar_url: string | null;
-}
+import { usePlayersData, Player } from "@/hooks/usePlayersData";
 
 const PlayerAvatar = ({ player, size = "w-12 h-12", isChampion = false }: {
   player: Player;
@@ -57,53 +48,12 @@ const PlayerAvatar = ({ player, size = "w-12 h-12", isChampion = false }: {
 };
 
 export function TopPlayers() {
-  const [topPlayers, setTopPlayers] = useState<Player[]>([]);
-  const [allPlayers, setAllPlayers] = useState<Player[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { players: allPlayers, loading } = usePlayersData();
   const [searchTerm, setSearchTerm] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [showFirstPlaceOnly, setShowFirstPlaceOnly] = useState(false);
 
-  useEffect(() => {
-    loadPlayers();
-
-    const playersChannel = supabase.channel('players-changes').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'players'
-    }, () => {
-      loadPlayers();
-    });
-    
-    playersChannel.subscribe();
-
-    return () => {
-      supabase.removeChannel(playersChannel);
-    };
-  }, []);
-
-  const loadPlayers = async () => {
-    try {
-      setLoading(true);
-      console.log('🎯 Загрузка игроков через прокси...');
-      const { data, error } = await supabase.rpc('get_players_public');
-      
-      if (error) {
-        console.error('❌ Ошибка загрузки игроков:', error);
-        throw error;
-      }
-      
-      console.log('✅ Игроки успешно загружены:', data?.length || 0, 'записей');
-      const sortedPlayers = (data || []).sort((a, b) => b.elo_rating - a.elo_rating);
-      
-      setAllPlayers(sortedPlayers);
-      setTopPlayers(sortedPlayers.slice(0, 5));
-    } catch (error) {
-      console.error('💥 Критическая ошибка при загрузке игроков:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const topPlayers = useMemo(() => allPlayers.slice(0, 5), [allPlayers]);
 
   const filteredPlayers = useMemo(() => {
     let filtered = allPlayers;

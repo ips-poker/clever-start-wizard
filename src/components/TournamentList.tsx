@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,114 +7,13 @@ import { Calendar, Users, Trophy, Clock, Info, ChevronRight, DollarSign } from "
 import { useToast } from "@/hooks/use-toast";
 import { ModernTournamentModal } from "./ModernTournamentModal";
 import { TournamentTicketCard } from "./TournamentTicketCard";
-
-interface Tournament {
-  id: string;
-  name: string;
-  description: string;
-  participation_fee: number;
-  reentry_fee: number;
-  additional_fee: number;
-  reentry_chips: number;
-  additional_chips: number;
-  starting_chips: number;
-  max_players: number;
-  start_time: string;
-  status: string;
-  tournament_format: string;
-  reentry_end_level: number;
-  additional_level: number;
-  break_start_level: number;
-  total_reentries?: number;
-  total_additional_sets?: number;
-  _count?: {
-    tournament_registrations: number;
-  };
-}
+import { useTournamentsData, Tournament } from "@/hooks/useTournamentsData";
 
 export function TournamentList() {
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { tournaments, loading, refetch } = useTournamentsData();
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    loadTournaments();
-
-    // Добавляем realtime подписку для мгновенных обновлений
-    const channel = supabase
-      .channel('tournaments_realtime')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'tournaments'
-      }, () => {
-        loadTournaments();
-      })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'tournament_registrations'
-      }, () => {
-        loadTournaments();
-      });
-    
-    channel.subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const loadTournaments = async () => {
-    try {
-      console.log('🎪 Загрузка турниров через прокси...');
-      const { data, error } = await supabase
-        .from('tournaments')
-        .select(`
-          *,
-          tournament_registrations!tournament_id(id, reentries, additional_sets)
-        `)
-        .eq('is_published', true)
-        .not('is_archived', 'eq', true)
-        .in('status', ['scheduled', 'registration', 'running'])
-        .order('start_time', { ascending: true })
-        .limit(6);
-
-      if (error) {
-        console.error('❌ Ошибка загрузки турниров:', error);
-        throw error;
-      }
-      
-      console.log('✅ Турниры успешно загружены:', data?.length || 0, 'записей');
-
-      // Transform the data to include registration count and calculate prize pool
-      const tournamentsWithCount = data?.map(tournament => {
-        const registrations = tournament.tournament_registrations || [];
-        const registeredCount = registrations.length;
-        
-        // Calculate total reentries and additional sets
-        const totalReentries = registrations.reduce((sum, reg) => sum + (reg.reentries || 0), 0);
-        const totalAdditionalSets = registrations.reduce((sum, reg) => sum + (reg.additional_sets || 0), 0);
-
-        return {
-          ...tournament,
-          _count: {
-            tournament_registrations: registeredCount
-          },
-          total_reentries: totalReentries,
-          total_additional_sets: totalAdditionalSets
-        };
-      }) || [];
-
-      setTournaments(tournamentsWithCount);
-    } catch (error) {
-      console.error('Error loading tournaments:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const registerForTournament = async (tournamentId: string) => {
     try {
@@ -164,7 +63,7 @@ export function TournamentList() {
       });
 
       // Обновляем список турниров без кэширования
-      await loadTournaments();
+      refetch();
       
     } catch (error) {
       console.error('Error registering for tournament:', error);
@@ -339,7 +238,7 @@ export function TournamentList() {
         } : null}
         open={modalOpen}
         onOpenChange={setModalOpen}
-        onTournamentUpdate={loadTournaments}
+        onTournamentUpdate={refetch}
       />
     </section>
   );
