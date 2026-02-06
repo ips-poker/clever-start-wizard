@@ -21,8 +21,8 @@ function safeGetLocalStorage(key: string): string | null {
 
 export function getSupabaseMode(): SupabaseMode {
   const mode = safeGetLocalStorage('SUPABASE_MODE');
-  // По умолчанию direct - быстрее. Прокси включается при необходимости.
-  return mode === 'proxy' ? 'proxy' : 'direct';
+  // По умолчанию прокси - прямой режим не работает на мобильных
+  return mode === 'direct' ? 'direct' : 'proxy';
 }
 
 export function getSupabaseBaseUrl(): string {
