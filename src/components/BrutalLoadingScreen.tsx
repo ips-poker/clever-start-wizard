@@ -20,14 +20,29 @@ export const BrutalLoadingScreen = ({ onLoadingComplete, enableSounds: initialEn
   });
 
   useEffect(() => {
-    // Check if user already visited - skip slow loading for returning users
+    // Check if user already visited - skip loading entirely for returning users
     const hasVisited = sessionStorage.getItem('syndicate_visited');
     
     if (hasVisited) {
-      // Fast skip for returning users within session
+      // Instant skip for returning users within session
       setProgress(100);
       setIsComplete(true);
       onLoadingComplete?.();
+      return;
+    }
+
+    // Check if on mobile - use faster loading
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                     window.innerWidth < 768;
+
+    if (isMobile) {
+      // Ultra-fast mobile loading - just show logo briefly
+      setProgress(100);
+      sessionStorage.setItem('syndicate_visited', '1');
+      setTimeout(() => {
+        setIsComplete(true);
+        onLoadingComplete?.();
+      }, 400); // Just 400ms on mobile
       return;
     }
 
@@ -35,17 +50,13 @@ export const BrutalLoadingScreen = ({ onLoadingComplete, enableSounds: initialEn
       playHum();
     }
 
-    // Much faster loading - complete in ~800ms instead of ~2500ms
+    // Desktop loading - still fast but with animation
     const timer = setInterval(() => {
       setProgress((prev) => {
-        const newProgress = prev + Math.random() * 35 + 15; // Faster increments
+        const newProgress = prev + Math.random() * 40 + 20; // Fast increments
         
-        // Play sounds at milestones
-        if (soundsEnabled) {
-          if (Math.floor(newProgress / 25) > Math.floor(prev / 25)) {
-            playSpark();
-          }
-          if (newProgress >= 50 && prev < 50) playMetallic();
+        if (soundsEnabled && Math.floor(newProgress / 30) > Math.floor(prev / 30)) {
+          playSpark();
         }
 
         if (newProgress >= 100) {
@@ -53,20 +64,18 @@ export const BrutalLoadingScreen = ({ onLoadingComplete, enableSounds: initialEn
           if (soundsEnabled) {
             playPowerUp();
           }
-          // Mark as visited
           sessionStorage.setItem('syndicate_visited', '1');
-          // Faster completion - reduced delays
           setTimeout(() => {
             setIsComplete(true);
             setTimeout(() => {
               onLoadingComplete?.();
-            }, 300);
-          }, 200);
+            }, 200);
+          }, 150);
           return 100;
         }
         return newProgress;
       });
-    }, 60); // Faster interval
+    }, 50); // Very fast interval
 
     return () => clearInterval(timer);
   }, [onLoadingComplete, soundsEnabled, playHum, playSpark, playMetallic, playPowerUp]);

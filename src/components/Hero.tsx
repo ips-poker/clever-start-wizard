@@ -14,6 +14,10 @@ export function Hero() {
   const [isLogoGlitching, setIsLogoGlitching] = useState(false);
 
   useEffect(() => {
+    // Skip glitch effect on mobile for performance
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) return;
+
     const triggerGlitch = () => {
       setIsLogoGlitching(true);
       setTimeout(() => {
@@ -30,9 +34,7 @@ export function Hero() {
     };
   }, []);
 
-  if (loading) {
-    return <HeroSkeleton />;
-  }
+  // Don't block render on CMS loading - show content immediately with fallbacks
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-background pt-20">

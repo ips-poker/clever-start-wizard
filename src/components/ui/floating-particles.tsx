@@ -16,8 +16,17 @@ export function FloatingParticles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const animationFrameRef = useRef<number>();
+  const lastFrameTimeRef = useRef<number>(0);
 
   useEffect(() => {
+    // Skip on mobile devices - too CPU intensive
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                     window.innerWidth < 768;
+    
+    if (isMobile) {
+      return; // Don't run particles on mobile
+    }
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -32,10 +41,10 @@ export function FloatingParticles() {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Create particles
+    // Create particles - reduced count for better performance
     const createParticles = () => {
       const particles: Particle[] = [];
-      const particleCount = Math.floor((canvas.width * canvas.height) / 15000); // Adaptive count
+      const particleCount = Math.floor((canvas.width * canvas.height) / 25000); // Reduced count
       
       for (let i = 0; i < particleCount; i++) {
         const types: Array<'square' | 'line' | 'dot'> = ['square', 'line', 'dot'];
@@ -56,9 +65,17 @@ export function FloatingParticles() {
 
     particlesRef.current = createParticles();
 
-    // Animation loop
-    const animate = () => {
+    // Animation loop with frame throttling (30fps instead of 60fps)
+    const animate = (currentTime: number) => {
       if (!ctx || !canvas) return;
+
+      // Throttle to ~30fps for better performance
+      const elapsed = currentTime - lastFrameTimeRef.current;
+      if (elapsed < 33) { // ~30fps
+        animationFrameRef.current = requestAnimationFrame(animate);
+        return;
+      }
+      lastFrameTimeRef.current = currentTime;
 
       // Clear canvas with fade effect
       ctx.fillStyle = 'rgba(0, 0, 0, 0.02)';
@@ -112,23 +129,12 @@ export function FloatingParticles() {
         }
 
         ctx.restore();
-
-        // Occasional sparkle effect
-        if (Math.random() > 0.998) {
-          ctx.save();
-          ctx.translate(particle.x, particle.y);
-          ctx.fillStyle = `rgba(255, 135, 31, ${particle.opacity * 2})`;
-          ctx.beginPath();
-          ctx.arc(0, 0, particle.size * 2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        }
       });
 
       animationFrameRef.current = requestAnimationFrame(animate);
     };
 
-    animate();
+    animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);

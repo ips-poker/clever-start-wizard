@@ -27,17 +27,31 @@ export default function Rating() {
   
   const topPlayers = useMemo(() => allPlayers.slice(0, 5), [allPlayers]);
   
-  // Parallax scroll effect
+  // Parallax scroll effect - disabled on mobile for performance
   useEffect(() => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                     window.innerWidth < 768;
+    
+    if (isMobile) return; // Skip parallax on mobile
+
+    let ticking = false;
+    
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
+      if (ticking) return;
       
-      if (baseTextureRef.current) {
-        baseTextureRef.current.style.transform = `translateY(${currentScrollY * 0.15}px)`;
-      }
-      if (gridRef.current) {
-        gridRef.current.style.transform = `translateY(${currentScrollY * 0.25}px)`;
-      }
+      ticking = true;
+      requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY;
+        
+        if (baseTextureRef.current) {
+          baseTextureRef.current.style.transform = `translateY(${currentScrollY * 0.15}px)`;
+        }
+        if (gridRef.current) {
+          gridRef.current.style.transform = `translateY(${currentScrollY * 0.25}px)`;
+        }
+        
+        ticking = false;
+      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
