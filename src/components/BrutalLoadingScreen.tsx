@@ -20,22 +20,32 @@ export const BrutalLoadingScreen = ({ onLoadingComplete, enableSounds: initialEn
   });
 
   useEffect(() => {
+    // Check if user already visited - skip slow loading for returning users
+    const hasVisited = sessionStorage.getItem('syndicate_visited');
+    
+    if (hasVisited) {
+      // Fast skip for returning users within session
+      setProgress(100);
+      setIsComplete(true);
+      onLoadingComplete?.();
+      return;
+    }
+
     if (soundsEnabled) {
       playHum();
     }
 
+    // Much faster loading - complete in ~800ms instead of ~2500ms
     const timer = setInterval(() => {
       setProgress((prev) => {
-        const newProgress = prev + Math.random() * 15;
+        const newProgress = prev + Math.random() * 35 + 15; // Faster increments
         
         // Play sounds at milestones
         if (soundsEnabled) {
-          if (Math.floor(newProgress / 10) > Math.floor(prev / 10)) {
+          if (Math.floor(newProgress / 25) > Math.floor(prev / 25)) {
             playSpark();
           }
-          if (newProgress >= 25 && prev < 25) playMetallic();
           if (newProgress >= 50 && prev < 50) playMetallic();
-          if (newProgress >= 75 && prev < 75) playMetallic();
         }
 
         if (newProgress >= 100) {
@@ -43,17 +53,20 @@ export const BrutalLoadingScreen = ({ onLoadingComplete, enableSounds: initialEn
           if (soundsEnabled) {
             playPowerUp();
           }
+          // Mark as visited
+          sessionStorage.setItem('syndicate_visited', '1');
+          // Faster completion - reduced delays
           setTimeout(() => {
             setIsComplete(true);
             setTimeout(() => {
               onLoadingComplete?.();
-            }, 800);
-          }, 500);
+            }, 300);
+          }, 200);
           return 100;
         }
         return newProgress;
       });
-    }, 150);
+    }, 60); // Faster interval
 
     return () => clearInterval(timer);
   }, [onLoadingComplete, soundsEnabled, playHum, playSpark, playMetallic, playPowerUp]);
