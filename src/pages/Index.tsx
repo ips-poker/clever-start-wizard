@@ -25,29 +25,46 @@ const Index = () => {
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
+    // Skip heavy parallax effects on mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                     window.innerWidth < 768;
+    
+    if (isMobile) {
+      return; // No parallax on mobile - saves CPU
+    }
+
+    let ticking = false;
+    
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      setScrollY(currentScrollY);
+      if (ticking) return;
       
-      // Apply parallax transforms with different speeds for depth
-      if (baseTextureRef.current) {
-        baseTextureRef.current.style.transform = `translateY(${currentScrollY * 0.15}px)`;
-      }
-      if (gridRef.current) {
-        gridRef.current.style.transform = `translateY(${currentScrollY * 0.25}px)`;
-      }
-      if (platesRef.current) {
-        platesRef.current.style.transform = `translateY(${currentScrollY * 0.35}px) rotate(0deg)`;
-      }
-      if (glowTopRef.current) {
-        glowTopRef.current.style.transform = `translate(-24px, ${-128 + currentScrollY * 0.1}px)`;
-      }
-      if (glowBottomRef.current) {
-        glowBottomRef.current.style.transform = `translate(-120px, ${-180 + currentScrollY * 0.2}px)`;
-      }
-      if (glowCenterRef.current) {
-        glowCenterRef.current.style.transform = `translate(-50%, -50%) scale(${1 + currentScrollY * 0.0001})`;
-      }
+      ticking = true;
+      requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY;
+        setScrollY(currentScrollY);
+        
+        // Apply parallax transforms with different speeds for depth
+        if (baseTextureRef.current) {
+          baseTextureRef.current.style.transform = `translateY(${currentScrollY * 0.15}px)`;
+        }
+        if (gridRef.current) {
+          gridRef.current.style.transform = `translateY(${currentScrollY * 0.25}px)`;
+        }
+        if (platesRef.current) {
+          platesRef.current.style.transform = `translateY(${currentScrollY * 0.35}px) rotate(0deg)`;
+        }
+        if (glowTopRef.current) {
+          glowTopRef.current.style.transform = `translate(-24px, ${-128 + currentScrollY * 0.1}px)`;
+        }
+        if (glowBottomRef.current) {
+          glowBottomRef.current.style.transform = `translate(-120px, ${-180 + currentScrollY * 0.2}px)`;
+        }
+        if (glowCenterRef.current) {
+          glowCenterRef.current.style.transform = `translate(-50%, -50%) scale(${1 + currentScrollY * 0.0001})`;
+        }
+        
+        ticking = false;
+      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
